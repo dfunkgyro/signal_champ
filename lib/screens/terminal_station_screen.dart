@@ -2225,6 +2225,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 _buildCbtcTrainModeControls(controller),
                 const SizedBox(height: 12),
 
+                // Destination Management
+                _buildCbtcDestinationManagement(controller),
+                const SizedBox(height: 12),
+
                 // Quick Actions Panel
                 _buildCbtcQuickActions(controller),
                 const SizedBox(height: 12),
@@ -3886,6 +3890,145 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                         );
                       }).toList(),
                     ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCbtcDestinationManagement(TerminalStationController controller) {
+    final cbtcTrains = controller.getCbtcTrains()
+        .where((t) => t.cbtcMode == CbtcMode.auto || t.cbtcMode == CbtcMode.pm)
+        .toList();
+
+    if (cbtcTrains.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final availableDestinations = controller.getAvailableDestinations();
+
+    return Card(
+      color: Colors.purple[50],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.location_on, color: Colors.purple[700], size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'Destination Management',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Set destinations for AUTO/PM mode trains',
+              style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic),
+            ),
+            const SizedBox(height: 12),
+            ...cbtcTrains.map((train) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.purple.withOpacity(0.3), width: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: train.color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          train.name,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _getCbtcModeColor(train.cbtcMode).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            train.cbtcMode.name.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: _getCbtcModeColor(train.cbtcMode),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (train.smcDestination != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.green, width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.flag, size: 12, color: Colors.green),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Destination: ${train.smcDestination}',
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green),
+                            ),
+                            const Spacer(),
+                            InkWell(
+                              onTap: () => controller.clearCbtcTrainDestination(train.id),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: const Icon(Icons.close, size: 12, color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      DropdownButton<String>(
+                        isExpanded: true,
+                        hint: const Text('Select Destination', style: TextStyle(fontSize: 11)),
+                        style: const TextStyle(fontSize: 11, color: Colors.black),
+                        items: availableDestinations.map((dest) {
+                          return DropdownMenuItem(
+                            value: dest,
+                            child: Text(dest),
+                          );
+                        }).toList(),
+                        onChanged: (destination) {
+                          if (destination != null) {
+                            controller.setCbtcTrainDestination(train.id, destination);
+                          }
+                        },
+                      ),
+                    ],
                   ],
                 ),
               );

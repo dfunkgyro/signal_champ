@@ -740,6 +740,49 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCbtcTrainDestination(String trainId, String destination) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => trains.first);
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('❌ Cannot set destination: ${train.name} is not CBTC equipped');
+      return;
+    }
+
+    if (train.cbtcMode != CbtcMode.auto && train.cbtcMode != CbtcMode.pm) {
+      _logEvent('❌ Cannot set destination: ${train.name} must be in AUTO or PM mode (currently ${train.cbtcMode.name.toUpperCase()})');
+      return;
+    }
+
+    train.smcDestination = destination;
+    _logEvent('🎯 ${train.name} destination set to $destination');
+    notifyListeners();
+  }
+
+  void clearCbtcTrainDestination(String trainId) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => trains.first);
+
+    if (train.smcDestination != null) {
+      final oldDest = train.smcDestination;
+      train.smcDestination = null;
+      _logEvent('🔄 ${train.name} destination cleared (was: $oldDest)');
+      notifyListeners();
+    }
+  }
+
+  List<String> getAvailableDestinations() {
+    List<String> destinations = [];
+
+    // Add platforms
+    for (var platform in platforms) {
+      destinations.add(platform.id);
+    }
+
+    // Add major blocks
+    destinations.addAll(['100', '102', '105', '107', '108', '110', '111', '112', '114']);
+
+    return destinations;
+  }
+
   List<Train> getCbtcTrains() {
     return trains.where((t) => t.isCbtcEquipped).toList();
   }

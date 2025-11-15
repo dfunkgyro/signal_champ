@@ -157,6 +157,7 @@ class Train {
   double y;
   double speed;
   double targetSpeed;
+  double maxSpeed; // Maximum speed limit for this train
   int direction;
   Color color;
   TrainControlMode controlMode;
@@ -181,6 +182,7 @@ class Train {
     required this.y,
     required this.speed,
     required this.targetSpeed,
+    this.maxSpeed = 5.0, // Default maximum speed
     required this.direction,
     required this.color,
     required this.controlMode,

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/railway_model.dart';
-import '../controllers/simulation_controller.dart';
-import '../controllers/ai_controller.dart';
-import '../controllers/theme_controller.dart';
-import '../services/supabase_service.dart';
-import '../widgets/railway_canvas.dart' hide Train;
-import '../widgets/control_panel.dart';
-import '../widgets/status_panel.dart';
-import 'history_screen.dart';
-import 'analytics_screen.dart';
+import 'package:rail_champ/models/railway_model.dart';
+import 'package:rail_champ/controllers/simulation_controller.dart';
+import 'package:rail_champ/controllers/ai_controller.dart';
+import 'package:rail_champ/controllers/theme_controller.dart';
+import 'package:rail_champ/services/supabase_service.dart';
+import 'package:rail_champ/widgets/railway_canvas.dart' hide Train;
+import 'package:rail_champ/widgets/control_panel.dart';
+import 'package:rail_champ/widgets/status_panel.dart';
+import 'package:rail_champ/history_screen.dart';
+import 'package:rail_champ/analytics_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});

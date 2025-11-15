@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../services/supabase_service.dart';
-import 'diagnostic_ai.dart';
+import 'package:rail_champ/services/supabase_service.dart';
+import 'package:rail_champ/diagnostic_ai.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({Key? key}) : super(key: key);

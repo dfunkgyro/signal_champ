@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/railway_model.dart';
-import '../controllers/simulation_controller.dart';
-import 'relay_rack_panel.dart';
-import 'vcc1_console.dart';
+import 'package:rail_champ/models/railway_model.dart';
+import 'package:rail_champ/controllers/simulation_controller.dart';
+import 'package:rail_champ/widgets/relay_rack_panel.dart';
+import 'package:rail_champ/widgets/vcc1_console.dart';
 
 class StatusPanel extends StatelessWidget {
   const StatusPanel({super.key});

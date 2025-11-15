@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/railway_model.dart';
+import 'package:rail_champ/models/railway_model.dart';
 
 class SmcOverviewPanel extends StatefulWidget {
   const SmcOverviewPanel({super.key});

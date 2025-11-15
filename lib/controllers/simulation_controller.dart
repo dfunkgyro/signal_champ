@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../models/railway_model.dart';
+import 'package:rail_champ/models/railway_model.dart';
 
 class SimulationController extends ChangeNotifier {
   Timer? _simulationTimer;

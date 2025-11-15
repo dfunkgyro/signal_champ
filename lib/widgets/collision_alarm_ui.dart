@@ -1,6 +1,6 @@
 // MA1 v3.0 - Collision Alarm UI Components
 import 'package:flutter/material.dart';
-import '../screens/collision_analysis_system.dart';
+import 'package:rail_champ/screens/collision_analysis_system.dart';
 
 // ============================================================================
 // COLLISION ALARM WIDGET (Red Flashing Banner)

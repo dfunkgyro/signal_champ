@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
-import '../models/railway_model.dart';
+import 'package:rail_champ/models/railway_model.dart';
 
 class RailwayCanvas extends StatefulWidget {
   const RailwayCanvas({Key? key}) : super(key: key);

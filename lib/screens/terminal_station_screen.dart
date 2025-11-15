@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
-import 'terminal_station_models.dart';
-import '../controllers/terminal_station_controller.dart';
-import '../widgets/collision_alarm_ui.dart';
+import 'package:rail_champ/screens/terminal_station_models.dart';
+import 'package:rail_champ/controllers/terminal_station_controller.dart';
+import 'package:rail_champ/widgets/collision_alarm_ui.dart';
 import 'dart:math' as math;
 
 // ============================================================================
 // TERMINAL STATION SCREEN
 // ============================================================================
 
-import 'terminal_station_painter.dart';
+import 'package:rail_champ/screens/terminal_station_painter.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);

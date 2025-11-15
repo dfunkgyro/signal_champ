@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/railway_model.dart';
-import 'smc_overview_panel.dart';
+import 'package:rail_champ/models/railway_model.dart';
+import 'package:rail_champ/widgets/smc_overview_panel.dart';
 
 class ControlPanel extends StatelessWidget {
   const ControlPanel({Key? key}) : super(key: key);

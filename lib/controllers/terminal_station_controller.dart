@@ -470,6 +470,7 @@ class TerminalStationController extends ChangeNotifier {
   late AxleCounterEvaluator ace;
   bool axleCountersVisible = true;
   bool signalsVisible = true;
+  bool cbtcDevicesVisible = true; // NEW: CBTC devices visibility toggle
 
   Duration _simulationRunningTime = Duration.zero;
   Timer? _simulationTimer;
@@ -564,6 +565,12 @@ class TerminalStationController extends ChangeNotifier {
   void toggleSignalsVisibility() {
     signalsVisible = !signalsVisible;
     _logEvent(signalsVisible ? '✅ Signals enabled' : '❌ Signals disabled');
+    notifyListeners();
+  }
+
+  void toggleCBTCDevicesVisibility() {
+    cbtcDevicesVisible = !cbtcDevicesVisible;
+    _logEvent(cbtcDevicesVisible ? '✅ CBTC devices visible' : '❌ CBTC devices hidden');
     notifyListeners();
   }
 
@@ -1830,7 +1837,7 @@ class TerminalStationController extends ChangeNotifier {
         .any((reservation) => reservation.reservedBlocks.contains(blockId));
   }
 
-  void addTrainToBlock(String blockId) {
+  void addTrainToBlock(String blockId, {bool isCbtc = false}) {
     final safeBlocks = getSafeBlocksForTrainAdd();
     if (!safeBlocks.contains(blockId)) {
       _logEvent(
@@ -1851,20 +1858,21 @@ class TerminalStationController extends ChangeNotifier {
       direction = -1;
     }
 
+    final trainPrefix = isCbtc ? 'CBTC' : 'Train';
     final train = Train(
       id: 'T$nextTrainNumber',
-      name: 'Train $nextTrainNumber',
-      vin: _generateVin(nextTrainNumber, false),
+      name: '$trainPrefix $nextTrainNumber',
+      vin: _generateVin(nextTrainNumber, isCbtc),
       x: _getInitialXForBlock(blockId),
       y: block.y,
       speed: 0,
       targetSpeed: 0,
       direction: direction,
-      color: Colors.primaries[nextTrainNumber % Colors.primaries.length],
+      color: isCbtc ? Colors.cyan : Colors.primaries[nextTrainNumber % Colors.primaries.length],
       controlMode: TrainControlMode.automatic,
       manualStop: false,
-      isCbtcEquipped: false,
-      cbtcMode: CbtcMode.off,
+      isCbtcEquipped: isCbtc,
+      cbtcMode: isCbtc ? CbtcMode.auto : CbtcMode.off,
     );
 
     trains.add(train);
@@ -1872,8 +1880,9 @@ class TerminalStationController extends ChangeNotifier {
     _updateBlockOccupation();
 
     String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    String trainType = isCbtc ? 'CBTC train' : 'Train';
     _logEvent(
-        '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+        '🚂 $trainType ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
     notifyListeners();
   }
 
@@ -2388,6 +2397,44 @@ class TerminalStationController extends ChangeNotifier {
     selectedBlock ??= safeBlocks.first;
 
     addTrainToBlock(selectedBlock);
+  }
+
+  void addCBTCTrain() {
+    // Add a CBTC-equipped train
+    final safeBlocks = getSafeBlocksForTrainAdd();
+
+    if (safeBlocks.isEmpty) {
+      _logEvent('❌ Cannot add CBTC train: No safe blocks available');
+      return;
+    }
+
+    // Use the first available safe block with priority order
+    final preferredOrder = [
+      '100',
+      '102',
+      '108',
+      '110',
+      '112',
+      '114',
+      '111',
+      '105',
+      '107',
+      '109'
+    ];
+    String? selectedBlock;
+
+    for (var blockId in preferredOrder) {
+      if (safeBlocks.contains(blockId)) {
+        selectedBlock = blockId;
+        break;
+      }
+    }
+
+    // Fallback to first safe block if none of the preferred blocks are available
+    selectedBlock ??= safeBlocks.first;
+
+    // Add the train with CBTC equipment
+    addTrainToBlock(selectedBlock, isCbtc: true);
   }
 
   void reverseTrain(String id) {

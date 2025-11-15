@@ -269,6 +269,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   // NEW: Draw CBTC white tags and cyan wifi antennas
   void _drawCBTCDevices(Canvas canvas) {
+    // Only draw if CBTC devices are visible
+    if (!controller.cbtcDevicesVisible) return;
+
     // CBTC white tags (transponders/balises) at regular intervals
     final cbtcTagPositions = [
       Offset(150, 115), Offset(350, 115), Offset(550, 115), Offset(750, 115),

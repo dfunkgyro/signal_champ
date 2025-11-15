@@ -1499,6 +1499,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               _buildAddTrainSection(controller),
               const Divider(height: 32),
 
+              // CBTC Controls Section
+              _buildCBTCControlsSection(controller),
+              const Divider(height: 32),
+
+              // SMC Overview Panel (Inline)
+              _buildSMCOverviewPanel(controller),
+              const Divider(height: 32),
+
               // Axle Counter Controls
               _buildAxleCounterControlsSection(controller),
               const Divider(height: 32),
@@ -2708,6 +2716,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // VCC1 Console Section
+              _buildVCC1Console(controller),
+              const SizedBox(height: 16),
+
+              // Relay Rack Panel Section
+              _buildRelayRackPanel(controller),
+              const SizedBox(height: 16),
+
               // Simulation Running Time
               Card(
                 color: Colors.blue[50],
@@ -3454,6 +3470,452 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   // ============================================================================
   // === HELPER METHODS ===
+  // ============================================================================
+  // CBTC CONTROL SECTIONS
+  // ============================================================================
+
+  Widget _buildCBTCControlsSection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.router, size: 20, color: Colors.cyan[700]),
+            const SizedBox(width: 8),
+            const Text(
+              'CBTC System',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // CBTC Devices Toggle
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.cbtcDevicesVisible ? Icons.wifi : Icons.wifi_off,
+                  color: controller.cbtcDevicesVisible ? Colors.cyan : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'CBTC Devices',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        controller.cbtcDevicesVisible ? 'Visible' : 'Hidden',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: controller.cbtcDevicesVisible,
+                  onChanged: (value) => controller.toggleCBTCDevicesVisibility(),
+                  activeColor: Colors.cyan,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Add CBTC Train Button
+        ElevatedButton.icon(
+          onPressed: () {
+            _selectedBlockForTrain = null;
+            setState(() {});
+            controller.addCBTCTrain();
+          },
+          icon: const Icon(Icons.train),
+          label: const Text('Add CBTC Train'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.cyan,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 44),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // CBTC Info
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.cyan[50],
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.cyan[300]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 16, color: Colors.cyan[900]),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'CBTC trains use continuous communication with wayside equipment for movement authority',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.cyan[900],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSMCOverviewPanel(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.control_point, size: 20, color: Colors.blue[700]),
+            const SizedBox(width: 8),
+            const Text(
+              'SMC Overview',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'System Management Centre',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Track Status
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.track_changes, size: 16, color: Colors.blue[700]),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Track Status',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[900],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildSMCTrackStatus('All tracks operational', Colors.green),
+              const SizedBox(height: 4),
+              _buildSMCTrackStatus(
+                '${controller.blocks.values.where((b) => b.occupied).length} blocks occupied',
+                Colors.orange,
+              ),
+              const SizedBox(height: 4),
+              _buildSMCTrackStatus(
+                '${controller.signals.values.where((s) => s.aspect == SignalAspect.green).length}/${controller.signals.length} signals green',
+                Colors.green,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSMCTrackStatus(String status, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            status,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Right Sidebar Components
+  Widget _buildVCC1Console(TerminalStationController controller) {
+    final cbtcTrains = controller.trains.where((t) => t.isCbtcEquipped).toList();
+
+    return Card(
+      elevation: 4,
+      color: Colors.black,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.green[700]!, width: 3),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // VCC1 Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green[900],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(5),
+                  topRight: Radius.circular(5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.computer, color: Colors.green[300], size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'VCC1 - Vehicle Control Computer',
+                    style: TextStyle(
+                      color: Colors.green[300],
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Courier',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Console Content
+            Container(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildConsoleLine('SYSTEM STATUS: ONLINE', Colors.green[400]!, bold: true),
+                  _buildConsoleLine('MODE: MOVING BLOCK SUPERVISION', Colors.green[400]!),
+                  _buildConsoleLine('SAFETY DISTANCE: 200 UNITS', Colors.green[400]!),
+                  const SizedBox(height: 8),
+                  Container(height: 1, color: Colors.green[700]),
+                  const SizedBox(height: 8),
+                  _buildConsoleLine('CBTC TRAINS TRACKED: ${cbtcTrains.length}', Colors.green[300]!, bold: true),
+                  const SizedBox(height: 4),
+                  if (cbtcTrains.isEmpty)
+                    _buildConsoleLine('> NO CBTC TRAINS DETECTED', Colors.green[600]!)
+                  else
+                    ...cbtcTrains.map((train) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildConsoleLine('> ${train.name}', Colors.green[300]!, bold: true),
+                            _buildConsoleLine('  POSITION: ${train.x.toStringAsFixed(0)} units', Colors.green[400]!),
+                            _buildConsoleLine('  BLOCK: ${train.currentBlockId}', Colors.green[400]!),
+                            _buildConsoleLine('  SPEED: ${train.speed.toStringAsFixed(1)} km/h', Colors.green[400]!),
+                          ],
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConsoleLine(String text, Color color, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+          fontFamily: 'Courier',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRelayRackPanel(TerminalStationController controller) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.electrical_services, size: 16),
+                SizedBox(width: 8),
+                Text(
+                  'Relay Rack',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Signal Relays Section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue[700],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'Signal Relays',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: controller.signals.values.map((signal) {
+                  final relayName = '${signal.id}GR';
+                  final isUp = signal.aspect == SignalAspect.green;
+                  return _buildRelayIndicator(relayName, isUp);
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Track Relays Section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue[700],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'Track Relays',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: controller.blocks.entries
+                    .where((entry) => !entry.value.isCrossover)
+                    .take(12) // Limit to prevent overflow
+                    .map((entry) {
+                  final block = entry.value;
+                  final relayName = '${block.id}TR';
+                  final isUp = !block.occupied;
+                  return _buildRelayIndicator(relayName, isUp);
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRelayIndicator(String relayName, bool isUp) {
+    return Container(
+      width: 50,
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+      decoration: BoxDecoration(
+        color: isUp ? Colors.green[50] : Colors.red[50],
+        border: Border.all(
+          color: isUp ? Colors.green[700]! : Colors.red[700]!,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            relayName,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: isUp ? Colors.green[900] : Colors.red[900],
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: isUp ? Colors.green[700] : Colors.red[700],
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Text(
+              isUp ? 'UP' : 'DN',
+              style: const TextStyle(
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ============================================================================
 
   /// Add helper method to check if train is at platform

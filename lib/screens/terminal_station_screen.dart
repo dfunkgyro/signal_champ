@@ -115,23 +115,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Railway Simulator'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: 30,
-            ),
-            onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
-            tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showInfo(context),
-          ),
-        ],
-      ),
       body: Column(
         children: [
           // SPAD Alarm - make it smaller and positioned at top

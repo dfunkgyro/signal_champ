@@ -256,6 +256,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrainStops(canvas);
     _drawAxleCounters(canvas);
     _drawABOccupations(canvas);
+    _drawCBTCDevices(canvas); // NEW: Draw CBTC tags and wifi antennas
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
@@ -264,6 +265,102 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     drawCollisionEffects(canvas, controller, animationTick);
 
     canvas.restore();
+  }
+
+  // NEW: Draw CBTC white tags and cyan wifi antennas
+  void _drawCBTCDevices(Canvas canvas) {
+    // CBTC white tags (transponders/balises) at regular intervals
+    final cbtcTagPositions = [
+      Offset(150, 115), Offset(350, 115), Offset(550, 115), Offset(750, 115),
+      Offset(950, 115), Offset(1150, 115), Offset(1350, 115),
+      Offset(150, 315), Offset(350, 315), Offset(550, 315), Offset(750, 315),
+      Offset(950, 315), Offset(1150, 315),
+    ];
+
+    for (var position in cbtcTagPositions) {
+      // Draw white rectangle tag (balise/transponder)
+      final tagPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+
+      final borderPaint = Paint()
+        ..color = Colors.grey[700]!
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: position, width: 12, height: 8),
+          const Radius.circular(2),
+        ),
+        tagPaint,
+      );
+
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: position, width: 12, height: 8),
+          const Radius.circular(2),
+        ),
+        borderPaint,
+      );
+
+      // Draw small "C" in the tag to indicate CBTC
+      final textPainter = TextPainter(
+        text: const TextSpan(
+          text: 'C',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 6,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(position.dx - 2, position.dy - 3),
+      );
+    }
+
+    // Cyan wifi antennas at strategic positions (track-side radios)
+    final wifiAntennaPositions = [
+      Offset(250, 80), Offset(650, 80), Offset(1050, 80),
+      Offset(250, 350), Offset(650, 350), Offset(1050, 350),
+    ];
+
+    for (var position in wifiAntennaPositions) {
+      // Draw wifi antenna pole
+      final polePaint = Paint()
+        ..color = Colors.grey[600]!
+        ..strokeWidth = 2;
+
+      canvas.drawLine(
+        Offset(position.dx, position.dy),
+        Offset(position.dx, position.dy + 20),
+        polePaint,
+      );
+
+      // Draw wifi antenna symbol (cyan)
+      final wifiPaint = Paint()
+        ..color = Colors.cyan
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      // Draw 3 curved wifi arcs
+      for (int i = 1; i <= 3; i++) {
+        final radius = i * 5.0;
+        final rect = Rect.fromCircle(center: Offset(position.dx, position.dy + 20), radius: radius);
+        canvas.drawArc(rect, -2.4, 1.2, false, wifiPaint);
+      }
+
+      // Draw center dot
+      final dotPaint = Paint()
+        ..color = Colors.cyan
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(position.dx, position.dy + 20), 2, dotPaint);
+    }
   }
 
   void _drawAxleCounters(Canvas canvas) {

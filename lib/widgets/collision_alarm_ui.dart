@@ -142,53 +142,36 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
                 ),
               ),
               const SizedBox(width: 16),
-              // Recovery buttons (only show for collision, not SPAD)
-              if (!widget.isSPAD && widget.onAutoRecover != null) ...[
-                ElevatedButton.icon(
-                  onPressed: widget.onAutoRecover,
-                  icon: const Icon(Icons.autorenew),
-                  label: const Text('Auto Recover'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              if (!widget.isSPAD && widget.onManualRecover != null) ...[
-                ElevatedButton.icon(
-                  onPressed: widget.onManualRecover,
-                  icon: const Icon(Icons.directions),
-                  label: const Text('Manual'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange.shade700,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              ElevatedButton.icon(
-                onPressed: () {
-                  _showIncidentReport(
-                      context, widget.currentIncident!, widget.isSPAD);
-                },
-                icon: const Icon(Icons.article),
-                label: const Text('Report'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: widget.isSPAD
-                      ? Colors.orange.shade900
-                      : Colors.red.shade900,
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (widget.onForceResolve != null) ...[
+              // Simplified recovery buttons (only Report and Force Recovery)
+              if (!widget.isSPAD) ...[
                 ElevatedButton.icon(
                   onPressed: () {
-                    _confirmForceResolve(context);
+                    _showIncidentReport(
+                        context, widget.currentIncident!, widget.isSPAD);
                   },
-                  icon: const Icon(Icons.done_all),
-                  label: const Text('Force Resolve'),
+                  icon: const Icon(Icons.article),
+                  label: const Text('Report'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.red.shade900,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              if (!widget.isSPAD && widget.onForceResolve != null) ...[
+                ElevatedButton.icon(
+                  onPressed: () {
+                    widget.onForceResolve?.call();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✅ Collision cleared - trains separated by 20 units'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.build),
+                  label: const Text('Force Recovery'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.purple.shade700,
                     foregroundColor: Colors.white,
@@ -196,15 +179,6 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
                 ),
                 const SizedBox(width: 8),
               ],
-              ElevatedButton.icon(
-                onPressed: widget.onDismiss,
-                icon: const Icon(Icons.check_circle),
-                label: const Text('Acknowledge'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  foregroundColor: Colors.white,
-                ),
-              ),
             ],
           ),
         );

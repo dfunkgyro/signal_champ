@@ -712,6 +712,25 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void forceCollisionResolution() {
+    // Separate collided trains by 20 units
+    if (currentCollisionIncident != null) {
+      for (var trainId in currentCollisionIncident!.trainsInvolved) {
+        try {
+          final train = trains.firstWhere((t) => t.name == trainId || t.id == trainId);
+          // Move train 20 units in the direction opposite to its current direction
+          if (train.direction > 0) {
+            train.x -= 20;
+          } else {
+            train.x += 20;
+          }
+          train.emergencyBrake = false;
+          _logEvent('🔧 ${train.name} separated by 20 units');
+        } catch (e) {
+          // Train might have been removed, skip
+        }
+      }
+    }
+
     _activeCollisionRecoveries.clear();
     collisionAlarmActive = false;
     currentCollisionIncident = null;
@@ -720,7 +739,7 @@ class TerminalStationController extends ChangeNotifier {
       train.emergencyBrake = false;
     }
 
-    _logEvent('🔄 All collisions force-resolved by user');
+    _logEvent('🔄 Collision force-resolved - trains separated by 20 units');
     notifyListeners();
   }
 

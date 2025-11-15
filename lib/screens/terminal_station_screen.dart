@@ -132,57 +132,53 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // SPAD Alarm - make it smaller and positioned at top
-          Container(
-            height: 80,
-            child: Consumer<TerminalStationController>(
-              builder: (context, controller, _) {
-                return CollisionAlarmWidget(
-                  isActive: controller.spadAlarmActive,
-                  currentIncident: controller.currentSpadIncident,
-                  onDismiss: () => controller.acknowledgeSPADAlarm(),
-                  isSPAD: true,
-                  trainStopId: controller.spadTrainStopId,
-                );
-              },
-            ),
-          ),
-          // Collision Alarm - make it smaller
-          Container(
-            height: 80,
-            child: Consumer<TerminalStationController>(
-              builder: (context, controller, _) {
-                return CollisionAlarmWidget(
-                  isActive: controller.collisionAlarmActive,
-                  currentIncident: controller.currentCollisionIncident,
-                  onDismiss: () => controller.acknowledgeCollisionAlarm(),
-                  onAutoRecover: () {
-                    controller.startAutomaticCollisionRecovery();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🤖 Automatic recovery started'),
-                        backgroundColor: Colors.blue,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  onManualRecover: () {
-                    controller.startManualCollisionRecovery();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🎮 Manual recovery enabled'),
-                        backgroundColor: Colors.orange,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  onForceResolve: () => controller.forceCollisionResolution(),
-                );
-              },
-            ),
-          ),
+      body: Consumer<TerminalStationController>(
+        builder: (context, controller, _) {
+          return Column(
+            children: [
+              // SPAD Alarm - only show when active
+              if (controller.spadAlarmActive)
+                Container(
+                  height: 80,
+                  child: CollisionAlarmWidget(
+                    isActive: controller.spadAlarmActive,
+                    currentIncident: controller.currentSpadIncident,
+                    onDismiss: () => controller.acknowledgeSPADAlarm(),
+                    isSPAD: true,
+                    trainStopId: controller.spadTrainStopId,
+                  ),
+                ),
+              // Collision Alarm - only show when active
+              if (controller.collisionAlarmActive)
+                Container(
+                  height: 80,
+                  child: CollisionAlarmWidget(
+                    isActive: controller.collisionAlarmActive,
+                    currentIncident: controller.currentCollisionIncident,
+                    onDismiss: () => controller.acknowledgeCollisionAlarm(),
+                    onAutoRecover: () {
+                      controller.startAutomaticCollisionRecovery();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('🤖 Automatic recovery started'),
+                          backgroundColor: Colors.blue,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    onManualRecover: () {
+                      controller.startManualCollisionRecovery();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('🎮 Manual recovery enabled'),
+                          backgroundColor: Colors.orange,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    onForceResolve: () => controller.forceCollisionResolution(),
+                  ),
+                ),
 
           // Top Control Panel
           if (_showTopPanel) _buildTopControlPanel(),
@@ -342,6 +338,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ),
           ),
         ],
+          );
+        },
       ),
     );
   }
@@ -1524,6 +1522,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               _buildABResetSection(controller),
               const Divider(height: 32),
 
+              // CBTC System Controls
+              _buildCbtcSection(controller),
+              const Divider(height: 32),
+
               // Enhanced Train Management Section
               Text('Train Management',
                   style: Theme.of(context)
@@ -2681,6 +2683,167 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             minimumSize: const Size(double.infinity, 40),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildCbtcSection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.settings_remote, size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'CBTC System',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Toggle CBTC Devices
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: controller.cbtcDevicesEnabled ? Colors.blue[50] : Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: controller.cbtcDevicesEnabled ? Colors.blue : Colors.grey,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.sensors,
+                size: 20,
+                color: controller.cbtcDevicesEnabled ? Colors.blue : Colors.grey,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'CBTC Devices',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+              Switch(
+                value: controller.cbtcDevicesEnabled,
+                onChanged: (value) {
+                  controller.toggleCbtcDevices(value);
+                },
+                activeColor: Colors.blue,
+              ),
+            ],
+          ),
+        ),
+
+        if (controller.cbtcDevicesEnabled) ...[
+          const SizedBox(height: 12),
+
+          // Device info
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.check_circle, size: 16, color: Colors.green[700]),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Devices Active',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[900],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '• ${controller.transponders.length} Transponder tags\n'
+                  '• ${controller.wifiAntennas.length} WiFi antennas',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.green[800],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Start CBTC Mode button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                controller.toggleCbtcMode(!controller.cbtcModeActive);
+              },
+              icon: Icon(
+                controller.cbtcModeActive ? Icons.stop_circle : Icons.play_circle,
+              ),
+              label: Text(
+                controller.cbtcModeActive ? 'Stop CBTC Mode' : 'Start CBTC Mode',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    controller.cbtcModeActive ? Colors.orange : Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+
+          if (controller.cbtcModeActive) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.blue, width: 2),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.radio_button_checked,
+                          size: 16, color: Colors.blue[700]),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Moving Block System Active',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[900],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'All signals showing blue aspect.\nNew trains will be CBTC-equipped.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.blue[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ],
     );
   }

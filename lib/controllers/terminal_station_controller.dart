@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
+import 'package:rail_champ/models/railway_model.dart' show Transponder, WifiAntenna, TransponderType;
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -497,6 +498,17 @@ class TerminalStationController extends ChangeNotifier {
   bool get spadAlarmActive => _spadAlarmActive;
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
+
+  // CBTC System State
+  bool _cbtcDevicesEnabled = false;
+  bool _cbtcModeActive = false;
+  final List<Transponder> _transponders = [];
+  final List<WifiAntenna> _wifiAntennas = [];
+
+  bool get cbtcDevicesEnabled => _cbtcDevicesEnabled;
+  bool get cbtcModeActive => _cbtcModeActive;
+  List<Transponder> get transponders => _transponders;
+  List<WifiAntenna> get wifiAntennas => _wifiAntennas;
 
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
@@ -1832,10 +1844,14 @@ class TerminalStationController extends ChangeNotifier {
       direction = -1;
     }
 
+    // Determine CBTC equipment based on current mode
+    final bool isCbtc = _cbtcModeActive;
+    final CbtcMode trainCbtcMode = isCbtc ? CbtcMode.auto : CbtcMode.off;
+
     final train = Train(
       id: 'T$nextTrainNumber',
       name: 'Train $nextTrainNumber',
-      vin: _generateVin(nextTrainNumber, false),
+      vin: _generateVin(nextTrainNumber, isCbtc),
       x: _getInitialXForBlock(blockId),
       y: block.y,
       speed: 0,
@@ -1844,8 +1860,8 @@ class TerminalStationController extends ChangeNotifier {
       color: Colors.primaries[nextTrainNumber % Colors.primaries.length],
       controlMode: TrainControlMode.automatic,
       manualStop: false,
-      isCbtcEquipped: false,
-      cbtcMode: CbtcMode.off,
+      isCbtcEquipped: isCbtc,
+      cbtcMode: trainCbtcMode,
     );
 
     trains.add(train);
@@ -1853,8 +1869,9 @@ class TerminalStationController extends ChangeNotifier {
     _updateBlockOccupation();
 
     String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    String cbtcStatus = isCbtc ? '(CBTC-equipped, AUTO mode)' : '(Conventional)';
     _logEvent(
-        '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+        '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode $cbtcStatus');
     notifyListeners();
   }
 
@@ -1947,6 +1964,99 @@ class TerminalStationController extends ChangeNotifier {
         ? '🔄 Self-normalizing points ENABLED'
         : '⏸️ Self-normalizing points DISABLED');
     notifyListeners();
+  }
+
+  // ============================================================================
+  // CBTC SYSTEM MANAGEMENT
+  // ============================================================================
+
+  void toggleCbtcDevices(bool enabled) {
+    _cbtcDevicesEnabled = enabled;
+    if (enabled) {
+      _initializeCbtcDevices();
+      _logEvent('📡 CBTC devices ENABLED');
+    } else {
+      _transponders.clear();
+      _wifiAntennas.clear();
+      _cbtcModeActive = false;
+      _logEvent('📡 CBTC devices DISABLED');
+    }
+    notifyListeners();
+  }
+
+  void toggleCbtcMode(bool active) {
+    if (!_cbtcDevicesEnabled) {
+      _logEvent('⚠️ Cannot activate CBTC mode: CBTC devices not enabled');
+      return;
+    }
+
+    _cbtcModeActive = active;
+    if (active) {
+      _logEvent('🚄 CBTC mode ACTIVATED - Moving block system enabled');
+      _setAllSignalsBlue();
+    } else {
+      _logEvent('🚄 CBTC mode DEACTIVATED - Returning to fixed block');
+      _restoreNormalSignalColors();
+    }
+    notifyListeners();
+  }
+
+  void _initializeCbtcDevices() {
+    _transponders.clear();
+    _wifiAntennas.clear();
+
+    // Add transponders along the track
+    _transponders.add(Transponder(
+      id: 'T1_100',
+      type: TransponderType.t1,
+      x: 100,
+      y: 120,
+      description: 'Block 100 entry',
+    ));
+    _transponders.add(Transponder(
+      id: 'T1_104',
+      type: TransponderType.t1,
+      x: 550,
+      y: 120,
+      description: 'Block 104 entry',
+    ));
+    _transponders.add(Transponder(
+      id: 'T1_108',
+      type: TransponderType.t1,
+      x: 700,
+      y: 120,
+      description: 'Block 108 entry',
+    ));
+    _transponders.add(Transponder(
+      id: 'T1_112',
+      type: TransponderType.t1,
+      x: 1300,
+      y: 120,
+      description: 'Block 112 entry',
+    ));
+
+    // WiFi antennas for continuous communication
+    _wifiAntennas.add(WifiAntenna(id: 'W1', x: 400, y: 120));
+    _wifiAntennas.add(WifiAntenna(id: 'W2', x: 900, y: 120));
+    _wifiAntennas.add(WifiAntenna(id: 'W3', x: 400, y: 320));
+    _wifiAntennas.add(WifiAntenna(id: 'W4', x: 900, y: 320));
+  }
+
+  void _setAllSignalsBlue() {
+    for (var signal in signals.values) {
+      signal.state = SignalState.blue;
+    }
+  }
+
+  void _restoreNormalSignalColors() {
+    // Restore signals based on block occupancy and routes
+    for (var signal in signals.values) {
+      if (signal.activeRouteId != null && signal.routeState == RouteState.set) {
+        signal.state = SignalState.green;
+      } else {
+        signal.state = SignalState.red;
+      }
+    }
   }
 
   // ============================================================================

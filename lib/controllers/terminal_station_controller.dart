@@ -1993,10 +1993,10 @@ class TerminalStationController extends ChangeNotifier {
     _cbtcModeActive = active;
     if (active) {
       _logEvent('🚄 CBTC mode ACTIVATED - Moving block system enabled');
-      _setAllSignalsBlue();
+      // Note: Terminal station signals don't have blue aspect
+      // CBTC trains use movement authorities for dynamic braking instead
     } else {
       _logEvent('🚄 CBTC mode DEACTIVATED - Returning to fixed block');
-      _restoreNormalSignalColors();
     }
     notifyListeners();
   }
@@ -2040,23 +2040,6 @@ class TerminalStationController extends ChangeNotifier {
     _wifiAntennas.add(WifiAntenna(id: 'W2', x: 900, y: 120));
     _wifiAntennas.add(WifiAntenna(id: 'W3', x: 400, y: 320));
     _wifiAntennas.add(WifiAntenna(id: 'W4', x: 900, y: 320));
-  }
-
-  void _setAllSignalsBlue() {
-    for (var signal in signals.values) {
-      signal.state = SignalState.blue;
-    }
-  }
-
-  void _restoreNormalSignalColors() {
-    // Restore signals based on block occupancy and routes
-    for (var signal in signals.values) {
-      if (signal.activeRouteId != null && signal.routeState == RouteState.set) {
-        signal.state = SignalState.green;
-      } else {
-        signal.state = SignalState.red;
-      }
-    }
   }
 
   // ============================================================================

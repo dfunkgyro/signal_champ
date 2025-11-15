@@ -2833,7 +2833,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'All signals showing blue aspect.\nNew trains will be CBTC-equipped.',
+                    'Movement authorities active.\nNew trains will be CBTC-equipped.',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.blue[800],

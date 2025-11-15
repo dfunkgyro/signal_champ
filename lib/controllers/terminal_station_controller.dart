@@ -1869,6 +1869,53 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void addCbtcTrainToBlock(String blockId) {
+    final safeBlocks = getSafeBlocksForTrainAdd();
+    if (!safeBlocks.contains(blockId)) {
+      _logEvent(
+          '❌ Cannot add CBTC train: Block $blockId is not safe for train addition');
+      return;
+    }
+
+    final block = blocks[blockId];
+    if (block == null) return;
+
+    int direction = 1;
+
+    if (blockId == '114' || blockId == '111') {
+      direction = -1;
+    }
+
+    if (block.y == 300 && !['111'].contains(blockId)) {
+      direction = -1;
+    }
+
+    final train = Train(
+      id: 'T$nextTrainNumber',
+      name: 'Train $nextTrainNumber',
+      vin: _generateVin(nextTrainNumber, true),
+      x: _getInitialXForBlock(blockId),
+      y: block.y,
+      speed: 0,
+      targetSpeed: 0,
+      direction: direction,
+      color: Colors.primaries[nextTrainNumber % Colors.primaries.length],
+      controlMode: TrainControlMode.automatic,
+      manualStop: false,
+      isCbtcEquipped: true,
+      cbtcMode: CbtcMode.auto,
+    );
+
+    trains.add(train);
+    nextTrainNumber++;
+    _updateBlockOccupation();
+
+    String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    _logEvent(
+        '🚂 CBTC Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+    notifyListeners();
+  }
+
   double _getInitialXForBlock(String blockId) {
     final block = blocks[blockId];
     if (block == null) return 50;

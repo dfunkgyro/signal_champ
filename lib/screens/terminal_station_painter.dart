@@ -997,6 +997,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawMovementAuthorities(Canvas canvas) {
+    // Only draw if CBTC is enabled
+    if (!controller.cbtcEnabled) return;
+
     // Get current time for animation
     final animationOffset = (DateTime.now().millisecondsSinceEpoch % 2000) / 2000.0;
 

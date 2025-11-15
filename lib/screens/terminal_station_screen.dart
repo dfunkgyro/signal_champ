@@ -29,6 +29,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   bool _showRightPanel = true;
   bool _showTopPanel = false;
   String? _selectedBlockForTrain;
+  String? _selectedBlockForCbtcTrain;
 
   // NEW: Canvas size controls
   double _canvasWidth = 1600.0; // Default width
@@ -2155,6 +2156,67 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 ),
               ),
               const SizedBox(height: 12),
+
+              // CBTC Train Controls (only visible when CBTC is enabled)
+              if (controller.cbtcEnabled) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Add CBTC Train',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButton<String>(
+                          isExpanded: true,
+                          hint: const Text('Select Block', style: TextStyle(fontSize: 12)),
+                          value: _selectedBlockForCbtcTrain,
+                          items: controller.getSafeBlocksForTrainAdd().map((blockId) {
+                            return DropdownMenuItem(
+                              value: blockId,
+                              child: Text('Block $blockId', style: const TextStyle(fontSize: 12)),
+                            );
+                          }).toList(),
+                          onChanged: (blockId) {
+                            setState(() {
+                              _selectedBlockForCbtcTrain = blockId;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton.icon(
+                          onPressed: _selectedBlockForCbtcTrain != null
+                              ? () {
+                                  controller.addCbtcTrainToBlock(_selectedBlockForCbtcTrain!);
+                                  setState(() {
+                                    _selectedBlockForCbtcTrain = null;
+                                  });
+                                }
+                              : null,
+                          icon: const Icon(Icons.train, size: 16),
+                          label: Text(
+                            _selectedBlockForCbtcTrain != null
+                                ? 'Add to Block $_selectedBlockForCbtcTrain'
+                                : 'Select Block First',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.cyan[700],
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               ...controller.signals.entries.map((entry) {
                 final signal = entry.value;

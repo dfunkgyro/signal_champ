@@ -4099,7 +4099,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ),
             const SizedBox(height: 12),
             _buildMetricRow('Avg Speed', '${avgSpeed.toStringAsFixed(1)} u/s'),
-            _buildMetricRow('System Uptime', controller.simulationTime),
+            _buildMetricRow('System Uptime', controller.getFormattedRunningTime()),
             _buildMetricRow('Infrastructure', '${status['transponders']} T-Ponders, ${status['wifi_antennas']} WiFi'),
           ],
         ),

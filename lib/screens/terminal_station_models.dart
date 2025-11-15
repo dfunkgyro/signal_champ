@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'collision_analysis_system.dart' as collision_system;
+import '../models/railway_model.dart' show PointPosition, CbtcMode;
 
 // ============================================================================
 // ENUMS
 // ============================================================================
-
-enum PointPosition { normal, reverse }
 
 enum SignalAspect { red, green }
 
@@ -22,14 +21,6 @@ enum CollisionRecoveryState {
 }
 
 enum ReleaseState { inactive, counting, completed }
-
-enum CbtcMode {
-  auto,      // Automatic mode - cyan
-  pm,        // Protective Manual mode - orange
-  rm,        // Restrictive Manual mode - brown
-  off,       // Off mode - white
-  storage    // Storage mode - green
-}
 
 // ============================================================================
 // MODELS

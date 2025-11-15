@@ -4,6 +4,10 @@ import 'dart:convert';
 import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
+import '../widgets/relay_rack_panel.dart';
+import '../widgets/vcc1_console.dart';
+import '../widgets/smc_overview_panel.dart';
+import '../models/railway_model.dart';
 import 'dart:math' as math;
 
 // ============================================================================
@@ -1524,6 +1528,25 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               _buildABResetSection(controller),
               const Divider(height: 32),
 
+              // CBTC System Controls
+              _buildCBTCControlsSection(controller),
+              const Divider(height: 32),
+
+              // SMC Overview Panel (shown when CBTC mode active)
+              Consumer<RailwayModel>(
+                builder: (context, railwayModel, _) {
+                  if (railwayModel.cbtcModeActive) {
+                    return Column(
+                      children: [
+                        const SmcOverviewPanel(),
+                        const Divider(height: 32),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+
               // Enhanced Train Management Section
               Text('Train Management',
                   style: Theme.of(context)
@@ -2685,6 +2708,241 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
+  Widget _buildCBTCControlsSection(TerminalStationController controller) {
+    return Consumer<RailwayModel>(
+      builder: (context, railwayModel, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('CBTC System Controls',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+
+            // CBTC Devices Toggle
+            Card(
+              color: railwayModel.cbtcDevicesEnabled
+                  ? Colors.blue[50]
+                  : Colors.grey[100],
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      railwayModel.cbtcDevicesEnabled
+                          ? Icons.router
+                          : Icons.router_outlined,
+                      color: railwayModel.cbtcDevicesEnabled
+                          ? Colors.blue
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CBTC Devices',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            railwayModel.cbtcDevicesEnabled
+                                ? 'Transponders & WiFi Active'
+                                : 'Transponders & WiFi Inactive',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: railwayModel.cbtcDevicesEnabled,
+                      onChanged: (value) =>
+                          railwayModel.toggleCbtcDevices(value),
+                      activeColor: Colors.blue,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // CBTC Mode Toggle (only enabled if devices are enabled)
+            Card(
+              color: railwayModel.cbtcModeActive
+                  ? Colors.green[50]
+                  : Colors.grey[100],
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      railwayModel.cbtcModeActive
+                          ? Icons.directions_railway
+                          : Icons.directions_railway_outlined,
+                      color: railwayModel.cbtcModeActive
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CBTC Mode',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            railwayModel.cbtcModeActive
+                                ? 'Moving Block System Active'
+                                : 'Fixed Block System Active',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: railwayModel.cbtcModeActive,
+                      onChanged: railwayModel.cbtcDevicesEnabled
+                          ? (value) => railwayModel.toggleCbtcMode(value)
+                          : null,
+                      activeColor: Colors.green,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // CBTC Train Management (only show if devices enabled)
+            if (railwayModel.cbtcDevicesEnabled) ...[
+              const Text('CBTC Train Management',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+
+              // Add CBTC Train Button
+              ElevatedButton.icon(
+                onPressed: () {
+                  final result = railwayModel.addTrain(isCbtc: true);
+                  if (result['success']) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('✅ ${result['message']}'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('❌ ${result['message']}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Add CBTC Train'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 40),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // CBTC Train Mode Controls
+              ...railwayModel.trains.where((t) => t.isCbtcEquipped).map((train) {
+                return Card(
+                  color: _getCbtcModeCardColor(train.cbtcMode),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: train.color,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.black, width: 2),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${train.name} (${train.vin})',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Mode:',
+                            style: TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: CbtcMode.values.map((mode) {
+                            return ChoiceChip(
+                              label: Text(
+                                mode.name.toUpperCase(),
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                              selected: train.cbtcMode == mode,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  railwayModel.setCbtcTrainMode(train.id, mode);
+                                }
+                              },
+                              selectedColor: railwayModel.getCbtcModeColor(mode),
+                              backgroundColor: Colors.grey[200],
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Color _getCbtcModeCardColor(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return Colors.cyan[50]!;
+      case CbtcMode.pm:
+        return Colors.orange[50]!;
+      case CbtcMode.rm:
+        return Colors.brown[50]!;
+      case CbtcMode.off:
+        return Colors.grey[50]!;
+      case CbtcMode.storage:
+        return Colors.green[50]!;
+    }
+  }
+
   Widget _buildStationCanvas() {
     return Container(
       color: Colors.grey[200],
@@ -3064,6 +3322,26 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   child: Text('No active route reservations',
                       style: TextStyle(fontSize: 12, color: Colors.grey)),
                 ),
+              const Divider(height: 32),
+
+              // CBTC System Panels
+              Consumer<RailwayModel>(
+                builder: (context, railwayModel, _) {
+                  return Column(
+                    children: [
+                      // Relay Rack Panel - Always visible
+                      const RelayRackPanel(),
+                      const SizedBox(height: 16),
+
+                      // VCC1 Console - Only visible when CBTC mode is active
+                      if (railwayModel.cbtcModeActive) ...[
+                        const Vcc1Console(),
+                        const SizedBox(height: 16),
+                      ],
+                    ],
+                  );
+                },
+              ),
               const Divider(height: 32),
 
               // Event Log

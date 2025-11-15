@@ -498,6 +498,20 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // CBTC System Properties
+  bool _cbtcSystemEnabled = false;
+  bool _vcc1Active = false;
+  bool _smcActive = false;
+  final List<Transponder> transponders = [];
+  final List<WifiAntenna> wifiAntennas = [];
+  final List<CbtcDevice> cbtcDevices = [];
+  final List<VccCommand> vccCommandQueue = [];
+  final Map<String, SmcTrackClosure> smcClosedTracks = {};
+
+  bool get cbtcSystemEnabled => _cbtcSystemEnabled;
+  bool get vcc1Active => _vcc1Active;
+  bool get smcActive => _smcActive;
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -1138,6 +1152,7 @@ class TerminalStationController extends ChangeNotifier {
   TerminalStationController() {
     _initializeLayout();
     _initializeClock();
+    _initializeCbtcSystem();
     ace = AxleCounterEvaluator(axleCounters);
   }
 
@@ -3302,6 +3317,370 @@ class TerminalStationController extends ChangeNotifier {
 
     _logEvent('📄 Layout exported to XML (${buffer.length} bytes)');
     return buffer.toString();
+  }
+
+  // ============================================================================
+  // CBTC SYSTEM METHODS
+  // ============================================================================
+
+  void _initializeCbtcSystem() {
+    // Initialize transponders along the tracks
+    transponders.addAll([
+      Transponder(id: 'T1-100', type: TransponderType.t1, x: 50, y: 100, description: 'Block 100 entry'),
+      Transponder(id: 'T1-102', type: TransponderType.t1, x: 250, y: 100, description: 'Block 102 entry'),
+      Transponder(id: 'T1-104', type: TransponderType.t1, x: 450, y: 100, description: 'Block 104 entry'),
+      Transponder(id: 'T1-106', type: TransponderType.t1, x: 650, y: 100, description: 'Block 106 entry'),
+      Transponder(id: 'T1-108', type: TransponderType.t1, x: 850, y: 100, description: 'Block 108 entry'),
+      Transponder(id: 'T1-110', type: TransponderType.t1, x: 1050, y: 100, description: 'Block 110 entry'),
+      Transponder(id: 'T1-112', type: TransponderType.t1, x: 1250, y: 100, description: 'Block 112 entry'),
+
+      Transponder(id: 'T1-101', type: TransponderType.t1, x: 50, y: 300, description: 'Block 101 entry'),
+      Transponder(id: 'T1-103', type: TransponderType.t1, x: 250, y: 300, description: 'Block 103 entry'),
+      Transponder(id: 'T1-105', type: TransponderType.t1, x: 450, y: 300, description: 'Block 105 entry'),
+      Transponder(id: 'T1-107', type: TransponderType.t1, x: 650, y: 300, description: 'Block 107 entry'),
+      Transponder(id: 'T1-109', type: TransponderType.t1, x: 850, y: 300, description: 'Block 109 entry'),
+      Transponder(id: 'T1-111', type: TransponderType.t1, x: 1050, y: 300, description: 'Block 111 entry'),
+    ]);
+
+    // Initialize WiFi antennas
+    wifiAntennas.addAll([
+      WifiAntenna(id: 'WiFi-1', x: 300, y: 200),
+      WifiAntenna(id: 'WiFi-2', x: 700, y: 200),
+      WifiAntenna(id: 'WiFi-3', x: 1100, y: 200),
+    ]);
+
+    // Initialize CBTC devices
+    cbtcDevices.addAll([
+      CbtcDevice(id: 'VCC1', type: 'VCC1', x: 50, y: 50, isOnline: false),
+      CbtcDevice(id: 'SMC', type: 'SMC', x: 150, y: 50, isOnline: false),
+    ]);
+
+    _logEvent('🔧 CBTC system initialized with ${transponders.length} transponders and ${wifiAntennas.length} WiFi antennas');
+  }
+
+  void toggleCbtcSystem() {
+    _cbtcSystemEnabled = !_cbtcSystemEnabled;
+
+    if (_cbtcSystemEnabled) {
+      _vcc1Active = true;
+      _smcActive = true;
+      // Update CBTC device status
+      for (var device in cbtcDevices) {
+        device.isOnline = true;
+        device.lastCommunication = DateTime.now();
+      }
+      _logEvent('✅ CBTC system ENABLED - VCC1 and SMC are now online');
+    } else {
+      _vcc1Active = false;
+      _smcActive = false;
+      // Update CBTC device status
+      for (var device in cbtcDevices) {
+        device.isOnline = false;
+      }
+      _logEvent('❌ CBTC system DISABLED - All CBTC devices offline');
+    }
+
+    notifyListeners();
+  }
+
+  void toggleVcc1() {
+    if (!_cbtcSystemEnabled) {
+      _logEvent('⚠️ Cannot toggle VCC1 - CBTC system is disabled');
+      return;
+    }
+
+    _vcc1Active = !_vcc1Active;
+    final vcc1Device = cbtcDevices.firstWhere((d) => d.id == 'VCC1');
+    vcc1Device.isOnline = _vcc1Active;
+    vcc1Device.lastCommunication = DateTime.now();
+
+    _logEvent(_vcc1Active ? '✅ VCC1 (Vehicle Control Computer) activated' : '❌ VCC1 deactivated');
+    notifyListeners();
+  }
+
+  void toggleSmc() {
+    if (!_cbtcSystemEnabled) {
+      _logEvent('⚠️ Cannot toggle SMC - CBTC system is disabled');
+      return;
+    }
+
+    _smcActive = !_smcActive;
+    final smcDevice = cbtcDevices.firstWhere((d) => d.id == 'SMC');
+    smcDevice.isOnline = _smcActive;
+    smcDevice.lastCommunication = DateTime.now();
+
+    _logEvent(_smcActive ? '✅ SMC (System Management Centre) activated' : '❌ SMC deactivated');
+    notifyListeners();
+  }
+
+  // VCC1 Methods
+  void vcc1SendSpeedCommand(String trainVin, double speedLimit) {
+    if (!_vcc1Active) {
+      _logEvent('⚠️ VCC1 is offline - Cannot send command');
+      return;
+    }
+
+    final train = trains.firstWhere((t) => t.vin == trainVin, orElse: () => throw Exception('Train not found'));
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('⚠️ ${train.name} is not CBTC-equipped');
+      return;
+    }
+
+    final command = VccCommand(
+      id: 'VCC-${DateTime.now().millisecondsSinceEpoch}',
+      trainVin: trainVin,
+      timestamp: DateTime.now(),
+      commandType: 'speed_limit',
+      parameters: {'speed_limit': speedLimit},
+    );
+
+    vccCommandQueue.add(command);
+    train.targetSpeed = speedLimit;
+
+    _logEvent('🚦 VCC1 → ${train.name}: Speed limit set to ${speedLimit.toStringAsFixed(1)} km/h');
+    notifyListeners();
+  }
+
+  void vcc1EmergencyStop(String trainVin) {
+    if (!_vcc1Active) {
+      _logEvent('⚠️ VCC1 is offline - Cannot send command');
+      return;
+    }
+
+    final train = trains.firstWhere((t) => t.vin == trainVin, orElse: () => throw Exception('Train not found'));
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('⚠️ ${train.name} is not CBTC-equipped');
+      return;
+    }
+
+    final command = VccCommand(
+      id: 'VCC-${DateTime.now().millisecondsSinceEpoch}',
+      trainVin: trainVin,
+      timestamp: DateTime.now(),
+      commandType: 'emergency_stop',
+      parameters: {},
+    );
+
+    vccCommandQueue.add(command);
+    train.emergencyBrake = true;
+    train.speed = 0;
+
+    _logEvent('🚨 VCC1 → ${train.name}: EMERGENCY STOP activated');
+    notifyListeners();
+  }
+
+  void vcc1UpdateMovementAuthority(Train train) {
+    if (!_vcc1Active || !train.isCbtcEquipped) return;
+
+    if (train.cbtcMode != CbtcMode.auto && train.cbtcMode != CbtcMode.pm) {
+      train.movementAuthority = null;
+      return;
+    }
+
+    // Calculate movement authority (how far train can go)
+    double maxDistance = 0;
+    String? limitReason;
+    bool hasDestination = train.smcDestination != null;
+
+    // Check ahead for obstacles (trains, closed tracks, block limits)
+    final isEastbound = train.direction > 0;
+    final searchDistance = 1000.0; // Look ahead 1000 units
+
+    // Find next obstacle
+    for (var otherTrain in trains) {
+      if (otherTrain.id == train.id) continue;
+
+      final distanceToTrain = isEastbound
+          ? otherTrain.x - train.x
+          : train.x - otherTrain.x;
+
+      if (distanceToTrain > 0 && distanceToTrain < searchDistance && otherTrain.y == train.y) {
+        final safetyDistance = 200.0; // 200 unit safety margin
+        final authorizedDistance = distanceToTrain - safetyDistance;
+
+        if (maxDistance == 0 || authorizedDistance < maxDistance) {
+          maxDistance = authorizedDistance.clamp(0, searchDistance);
+          limitReason = 'Train ahead (${otherTrain.name})';
+        }
+      }
+    }
+
+    // Check for closed tracks by SMC
+    for (var closure in smcClosedTracks.values) {
+      final block = blocks[closure.blockId];
+      if (block != null && block.y == train.y) {
+        final distanceToBlock = isEastbound
+            ? block.startX - train.x
+            : train.x - block.endX;
+
+        if (distanceToBlock > 0 && distanceToBlock < searchDistance) {
+          final safetyDistance = 200.0;
+          final authorizedDistance = distanceToBlock - safetyDistance;
+
+          if (maxDistance == 0 || authorizedDistance < maxDistance) {
+            maxDistance = authorizedDistance.clamp(0, searchDistance);
+            limitReason = 'Track closed';
+            hasDestination = false;
+          }
+        }
+      }
+    }
+
+    // If no obstacles, check for destination
+    if (maxDistance == 0 && train.smcDestination != null) {
+      // Find destination block
+      final destBlock = blocks[train.smcDestination];
+      if (destBlock != null) {
+        final distanceToDest = isEastbound
+            ? destBlock.centerX - train.x
+            : train.x - destBlock.centerX;
+
+        if (distanceToDest > 0) {
+          maxDistance = distanceToDest;
+          limitReason = 'Destination: ${train.smcDestination}';
+          hasDestination = true;
+        }
+      }
+    }
+
+    // Default: open track ahead
+    if (maxDistance == 0) {
+      maxDistance = searchDistance;
+      limitReason = null;
+    }
+
+    train.movementAuthority = MovementAuthority(
+      maxDistance: maxDistance,
+      limitReason: limitReason,
+      hasDestination: hasDestination,
+    );
+  }
+
+  // SMC Methods
+  void smcCloseTrack(String blockId) {
+    if (!_smcActive) {
+      _logEvent('⚠️ SMC is offline - Cannot close track');
+      return;
+    }
+
+    if (!blocks.containsKey(blockId)) {
+      _logEvent('⚠️ Block $blockId not found');
+      return;
+    }
+
+    smcClosedTracks[blockId] = SmcTrackClosure(
+      blockId: blockId,
+      closedAt: DateTime.now(),
+      reason: 'SMC operator command',
+      closedBy: 'SMC',
+    );
+
+    _logEvent('🚫 SMC: Track $blockId CLOSED for safety');
+    notifyListeners();
+  }
+
+  void smcOpenTrack(String blockId) {
+    if (!_smcActive) {
+      _logEvent('⚠️ SMC is offline - Cannot open track');
+      return;
+    }
+
+    if (smcClosedTracks.remove(blockId) != null) {
+      _logEvent('✅ SMC: Track $blockId REOPENED');
+      notifyListeners();
+    } else {
+      _logEvent('⚠️ Track $blockId was not closed');
+    }
+  }
+
+  void smcSetDestination(String trainVin, String destination) {
+    if (!_smcActive) {
+      _logEvent('⚠️ SMC is offline - Cannot set destination');
+      return;
+    }
+
+    final train = trains.firstWhere((t) => t.vin == trainVin, orElse: () => throw Exception('Train not found'));
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('⚠️ ${train.name} is not CBTC-equipped');
+      return;
+    }
+
+    train.smcDestination = destination;
+    _logEvent('📍 SMC: ${train.name} destination set to $destination');
+    notifyListeners();
+  }
+
+  List<String> getClosedTracks() {
+    return smcClosedTracks.keys.toList();
+  }
+
+  String getVcc1SafetyStatus(String trainId) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => throw Exception('Train not found'));
+
+    if (!train.isCbtcEquipped || !_vcc1Active) return '';
+
+    if (train.emergencyBrake) return 'EMERGENCY BRAKE';
+    if (train.speed > train.targetSpeed) return 'OVERSPEED';
+    if (train.movementAuthority?.maxDistance != null && train.movementAuthority!.maxDistance < 50) {
+      return 'APPROACHING LIMIT';
+    }
+
+    return '';
+  }
+
+  List<String> getVcc1ActiveConstraints() {
+    List<String> constraints = [];
+
+    for (var train in trains) {
+      if (!train.isCbtcEquipped || train.cbtcMode == CbtcMode.off) continue;
+
+      if (train.emergencyBrake) {
+        constraints.add('${train.name}: Emergency brake active');
+      }
+
+      if (train.targetSpeed < train.maxSpeed) {
+        constraints.add('${train.name}: Speed limit ${train.targetSpeed.toStringAsFixed(0)} km/h');
+      }
+
+      if (train.movementAuthority != null && train.movementAuthority!.limitReason != null) {
+        constraints.add('${train.name}: ${train.movementAuthority!.limitReason}');
+      }
+    }
+
+    return constraints;
+  }
+
+  void updateCbtcTrains() {
+    if (!_vcc1Active) return;
+
+    for (var train in trains) {
+      if (!train.isCbtcEquipped) continue;
+
+      // Update movement authority for CBTC trains
+      vcc1UpdateMovementAuthority(train);
+
+      // Check for closed tracks and stop trains
+      if (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm) {
+        _checkClosedTracksAhead(train);
+      }
+    }
+  }
+
+  void _checkClosedTracksAhead(Train train) {
+    if (train.movementAuthority == null) return;
+
+    // If movement authority is limited due to closed track, apply emergency brake
+    if (train.movementAuthority!.limitReason?.contains('Track closed') == true &&
+        train.movementAuthority!.maxDistance < 200) {
+      if (!train.emergencyBrake) {
+        train.emergencyBrake = true;
+        _logEvent('🚨 ${train.name}: Emergency brake due to closed track ahead');
+        notifyListeners();
+      }
+    }
   }
 
   @override

@@ -256,6 +256,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrainStops(canvas);
     _drawAxleCounters(canvas);
     _drawABOccupations(canvas);
+    _drawCbtcDevices(canvas); // Draw CBTC devices (transponders, WiFi, etc.)
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
@@ -264,6 +265,219 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     drawCollisionEffects(canvas, controller, animationTick);
 
     canvas.restore();
+  }
+
+  // ============================================================================
+  // CBTC DEVICE RENDERING
+  // ============================================================================
+
+  void _drawCbtcDevices(Canvas canvas) {
+    if (!controller.cbtcSystemEnabled) return;
+
+    // Draw transponders
+    for (var transponder in controller.transponders) {
+      _drawTransponder(canvas, transponder);
+    }
+
+    // Draw WiFi antennas
+    for (var antenna in controller.wifiAntennas) {
+      _drawWifiAntenna(canvas, antenna);
+    }
+
+    // Draw CBTC control devices
+    for (var device in controller.cbtcDevices) {
+      _drawCbtcControlDevice(canvas, device);
+    }
+
+    // Draw SMC closed track indicators
+    for (var closure in controller.smcClosedTracks.values) {
+      _drawClosedTrackIndicator(canvas, closure);
+    }
+  }
+
+  void _drawTransponder(Canvas canvas, Transponder transponder) {
+    if (!transponder.isActive) return;
+
+    // Draw transponder as small diamond
+    final paint = Paint()
+      ..color = _getTransponderColor(transponder.type)
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(transponder.x, transponder.y - 6)
+      ..lineTo(transponder.x + 4, transponder.y)
+      ..lineTo(transponder.x, transponder.y + 6)
+      ..lineTo(transponder.x - 4, transponder.y)
+      ..close();
+
+    canvas.drawPath(path, paint);
+
+    // Draw outline
+    final outlinePaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    canvas.drawPath(path, outlinePaint);
+  }
+
+  Color _getTransponderColor(TransponderType type) {
+    switch (type) {
+      case TransponderType.t1:
+        return Colors.cyan;
+      case TransponderType.t2:
+        return Colors.blue;
+      case TransponderType.t3:
+        return Colors.purple;
+      case TransponderType.t6:
+        return Colors.indigo;
+    }
+  }
+
+  void _drawWifiAntenna(Canvas canvas, WifiAntenna antenna) {
+    if (!antenna.isActive) return;
+
+    final baseColor = antenna.isActive ? Colors.green : Colors.grey;
+
+    // Draw antenna base
+    final basePaint = Paint()
+      ..color = baseColor
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(Offset(antenna.x, antenna.y), 8, basePaint);
+
+    // Draw WiFi signal waves
+    for (int i = 1; i <= 3; i++) {
+      final wavePaint = Paint()
+        ..color = baseColor.withOpacity(0.4 - (i * 0.1))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      final radius = 8.0 + (i * 6.0);
+      canvas.drawCircle(Offset(antenna.x, antenna.y), radius, wavePaint);
+    }
+
+    // Draw WiFi icon
+    final iconPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    // Three small arcs for WiFi icon
+    canvas.drawCircle(Offset(antenna.x, antenna.y + 2), 2, iconPaint);
+
+    // Draw label below antenna
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: antenna.id,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+        canvas, Offset(antenna.x - textPainter.width / 2, antenna.y + 12));
+  }
+
+  void _drawCbtcControlDevice(Canvas canvas, CbtcDevice device) {
+    // Draw device icon
+    final paint = Paint()
+      ..color = device.isOnline ? Colors.green[700]! : Colors.grey[700]!
+      ..style = PaintingStyle.fill;
+
+    // Draw rectangular device box
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(device.x - 15, device.y - 10, 30, 20),
+        const Radius.circular(4),
+      ),
+      paint,
+    );
+
+    // Draw outline
+    final outlinePaint = Paint()
+      ..color = device.isOnline ? Colors.green[900]! : Colors.grey[900]!
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(device.x - 15, device.y - 10, 30, 20),
+        const Radius.circular(4),
+      ),
+      outlinePaint,
+    );
+
+    // Draw device label
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: device.type,
+        style: TextStyle(
+          color: device.isOnline ? Colors.white : Colors.grey[300],
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+        canvas, Offset(device.x - textPainter.width / 2, device.y - 4));
+
+    // Draw online indicator
+    if (device.isOnline) {
+      final indicatorPaint = Paint()
+        ..color = Colors.greenAccent
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(device.x + 12, device.y - 7), 3, indicatorPaint);
+    }
+  }
+
+  void _drawClosedTrackIndicator(Canvas canvas, SmcTrackClosure closure) {
+    final block = controller.blocks[closure.blockId];
+    if (block == null) return;
+
+    // Draw red X over the closed block
+    final paint = Paint()
+      ..color = Colors.red.withOpacity(0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4;
+
+    final centerX = (block.startX + block.endX) / 2;
+    final centerY = block.y;
+
+    // Draw X
+    canvas.drawLine(
+      Offset(centerX - 20, centerY - 20),
+      Offset(centerX + 20, centerY + 20),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(centerX + 20, centerY - 20),
+      Offset(centerX - 20, centerY + 20),
+      paint,
+    );
+
+    // Draw "CLOSED" text
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'CLOSED\nBY SMC',
+        style: TextStyle(
+          color: Colors.red[900],
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+        canvas, Offset(centerX - textPainter.width / 2, centerY + 25));
   }
 
   void _drawAxleCounters(Canvas canvas) {

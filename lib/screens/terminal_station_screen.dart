@@ -1524,6 +1524,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               _buildABResetSection(controller),
               const Divider(height: 32),
 
+              // CBTC System Controls
+              _buildCbtcSystemSection(controller),
+              const Divider(height: 32),
+
               // Enhanced Train Management Section
               Text('Train Management',
                   style: Theme.of(context)
@@ -3570,5 +3574,292 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         ),
       );
     }
+  }
+
+  // ============================================================================
+  // CBTC SYSTEM CONTROLS
+  // ============================================================================
+
+  Widget _buildCbtcSystemSection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'CBTC System',
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+
+        // CBTC System Toggle
+        Card(
+          color: controller.cbtcSystemEnabled ? Colors.cyan[50] : Colors.grey[100],
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      controller.cbtcSystemEnabled
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: controller.cbtcSystemEnabled
+                          ? Colors.cyan[700]
+                          : Colors.grey[600],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CBTC System',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            controller.cbtcSystemEnabled ? 'ACTIVE' : 'OFFLINE',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: controller.cbtcSystemEnabled
+                                  ? Colors.cyan[700]
+                                  : Colors.grey[600],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: controller.cbtcSystemEnabled,
+                      onChanged: (value) => controller.toggleCbtcSystem(),
+                      activeColor: Colors.cyan,
+                    ),
+                  ],
+                ),
+                if (controller.cbtcSystemEnabled) ...[
+                  const SizedBox(height: 8),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${controller.transponders.length} Transponders | ${controller.wifiAntennas.length} WiFi Antennas',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+
+        if (controller.cbtcSystemEnabled) ...[
+          const SizedBox(height: 12),
+
+          // VCC1 (Vehicle Control Computer) Card
+          Card(
+            color: controller.vcc1Active ? Colors.green[50] : Colors.grey[100],
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.computer,
+                    color: controller.vcc1Active ? Colors.green[700] : Colors.grey[600],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'VCC1',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Vehicle Control Computer',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: controller.vcc1Active,
+                    onChanged: (value) => controller.toggleVcc1(),
+                    activeColor: Colors.green,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // SMC (System Management Centre) Card
+          Card(
+            color: controller.smcActive ? Colors.blue[50] : Colors.grey[100],
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.control_point,
+                    color: controller.smcActive ? Colors.blue[700] : Colors.grey[600],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'SMC',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'System Management Centre',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: controller.smcActive,
+                    onChanged: (value) => controller.toggleSmc(),
+                    activeColor: Colors.blue,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // CBTC Device Status Summary
+          if (controller.vcc1Active || controller.smcActive)
+            Card(
+              color: Colors.amber[50],
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.amber[900]),
+                        const SizedBox(width: 6),
+                        Text(
+                          'CBTC Device Status',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber[900],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...controller.cbtcDevices.map((device) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: device.isOnline ? Colors.green : Colors.grey,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${device.type}: ${device.isOnline ? "ONLINE" : "OFFLINE"}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: device.isOnline ? Colors.green[900] : Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 12),
+
+          // Closed Tracks Summary
+          if (controller.smcActive && controller.smcClosedTracks.isNotEmpty)
+            Card(
+              color: Colors.red[50],
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.warning_amber, size: 16, color: Colors.red[900]),
+                        const SizedBox(width: 6),
+                        Text(
+                          'SMC Track Closures',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red[900],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: controller.getClosedTracks().map((trackId) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red[100],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.red[700]!),
+                          ),
+                          child: Text(
+                            'AB $trackId',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[900],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ],
+    );
   }
 }

@@ -301,3 +301,93 @@ class CollisionRecoveryPlan {
     required this.state,
   }) : detectedAt = DateTime.now();
 }
+
+// ============================================================================
+// CBTC SYSTEM MODELS
+// ============================================================================
+
+enum TransponderType { t1, t2, t3, t6 }
+
+class Transponder {
+  final String id;
+  final TransponderType type;
+  final double x;
+  final double y;
+  final String description;
+  bool isActive;
+
+  Transponder({
+    required this.id,
+    required this.type,
+    required this.x,
+    required this.y,
+    required this.description,
+    this.isActive = true,
+  });
+}
+
+class WifiAntenna {
+  final String id;
+  final double x;
+  final double y;
+  bool isActive;
+  int signalStrength; // 0-100
+
+  WifiAntenna({
+    required this.id,
+    required this.x,
+    required this.y,
+    this.isActive = true,
+    this.signalStrength = 100,
+  });
+}
+
+class VccCommand {
+  final String id;
+  final String trainVin;
+  final DateTime timestamp;
+  final String commandType; // e.g., "speed_limit", "stop", "proceed"
+  final Map<String, dynamic> parameters;
+  bool executed;
+
+  VccCommand({
+    required this.id,
+    required this.trainVin,
+    required this.timestamp,
+    required this.commandType,
+    required this.parameters,
+    this.executed = false,
+  });
+}
+
+class SmcTrackClosure {
+  final String blockId;
+  final DateTime closedAt;
+  final String reason;
+  String? closedBy; // operator ID
+
+  SmcTrackClosure({
+    required this.blockId,
+    required this.closedAt,
+    required this.reason,
+    this.closedBy,
+  });
+}
+
+class CbtcDevice {
+  final String id;
+  final String type; // "VCC1", "SMC", "Balise", "WiFi"
+  final double x;
+  final double y;
+  bool isOnline;
+  DateTime? lastCommunication;
+
+  CbtcDevice({
+    required this.id,
+    required this.type,
+    required this.x,
+    required this.y,
+    this.isOnline = true,
+    this.lastCommunication,
+  });
+}

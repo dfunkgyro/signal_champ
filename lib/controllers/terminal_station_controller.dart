@@ -470,6 +470,7 @@ class TerminalStationController extends ChangeNotifier {
   late AxleCounterEvaluator ace;
   bool axleCountersVisible = true;
   bool signalsVisible = true;
+  bool cbtcEnabled = true;
 
   Duration _simulationRunningTime = Duration.zero;
   Timer? _simulationTimer;
@@ -564,6 +565,16 @@ class TerminalStationController extends ChangeNotifier {
   void toggleSignalsVisibility() {
     signalsVisible = !signalsVisible;
     _logEvent(signalsVisible ? '✅ Signals enabled' : '❌ Signals disabled');
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // CBTC TOGGLE
+  // ============================================================================
+
+  void toggleCBTC() {
+    cbtcEnabled = !cbtcEnabled;
+    _logEvent(cbtcEnabled ? '✅ CBTC enabled' : '❌ CBTC disabled');
     notifyListeners();
   }
 

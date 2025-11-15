@@ -2107,6 +2107,55 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
+
+              // CBTC Toggle
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.cbtcEnabled
+                            ? Icons.train
+                            : Icons.train_outlined,
+                        color: controller.cbtcEnabled
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'CBTC',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.cbtcEnabled ? 'Enabled' : 'Disabled',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.cbtcEnabled,
+                        onChanged: (value) =>
+                            controller.toggleCBTC(),
+                        activeColor: Colors.blue,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               ...controller.signals.entries.map((entry) {
                 final signal = entry.value;
                 if (signal.routes.isEmpty) return const SizedBox.shrink();

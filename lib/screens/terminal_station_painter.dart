@@ -256,6 +256,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrainStops(canvas);
     _drawAxleCounters(canvas);
     _drawABOccupations(canvas);
+    _drawCbtcDevices(canvas); // Draw CBTC transponders and WiFi antennas
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
@@ -264,6 +265,111 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     drawCollisionEffects(canvas, controller, animationTick);
 
     canvas.restore();
+  }
+
+  // Draw CBTC transponders (white tags) and WiFi antennas (cyan)
+  void _drawCbtcDevices(Canvas canvas) {
+    // Draw transponders (white tags)
+    for (var transponder in controller.transponders) {
+      final tagPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+
+      final borderPaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      // Draw white tag
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(transponder.x, transponder.y),
+          width: 24,
+          height: 16,
+        ),
+        const Radius.circular(3),
+      );
+      canvas.drawRRect(rect, tagPaint);
+      canvas.drawRRect(rect, borderPaint);
+
+      // Draw transponder ID
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: transponder.type,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(
+          transponder.x - textPainter.width / 2,
+          transponder.y - textPainter.height / 2,
+        ),
+      );
+    }
+
+    // Draw WiFi antennas (cyan)
+    for (var antenna in controller.wifiAntennas) {
+      final antennaPaint = Paint()
+        ..color = Colors.cyan
+        ..style = PaintingStyle.fill;
+
+      // Draw antenna symbol (triangle with waves)
+      final path = Path();
+      path.moveTo(antenna.x, antenna.y - 10); // Top
+      path.lineTo(antenna.x - 8, antenna.y + 6); // Bottom left
+      path.lineTo(antenna.x + 8, antenna.y + 6); // Bottom right
+      path.close();
+      canvas.drawPath(path, antennaPaint);
+
+      // Draw WiFi waves
+      final wavePaint = Paint()
+        ..color = Colors.cyan
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      // Draw three WiFi wave arcs
+      for (int i = 1; i <= 3; i++) {
+        final radius = i * 6.0;
+        canvas.drawArc(
+          Rect.fromCircle(
+            center: Offset(antenna.x, antenna.y),
+            radius: radius,
+          ),
+          -2.5, // Start angle
+          2.0, // Sweep angle
+          false,
+          wavePaint,
+        );
+      }
+
+      // Draw antenna ID
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: antenna.id,
+          style: const TextStyle(
+            color: Colors.cyan,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(
+          antenna.x - textPainter.width / 2,
+          antenna.y + 10,
+        ),
+      );
+    }
   }
 
   void _drawAxleCounters(Canvas canvas) {

@@ -115,23 +115,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Railway Simulator'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: 30,
-            ),
-            onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
-            tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showInfo(context),
-          ),
-        ],
-      ),
       body: Column(
         children: [
           // SPAD Alarm - make it smaller and positioned at top
@@ -158,26 +141,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   isActive: controller.collisionAlarmActive,
                   currentIncident: controller.currentCollisionIncident,
                   onDismiss: () => controller.acknowledgeCollisionAlarm(),
-                  onAutoRecover: () {
-                    controller.startAutomaticCollisionRecovery();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🤖 Automatic recovery started'),
-                        backgroundColor: Colors.blue,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  onManualRecover: () {
-                    controller.startManualCollisionRecovery();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🎮 Manual recovery enabled'),
-                        backgroundColor: Colors.orange,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
                   onForceResolve: () => controller.forceCollisionResolution(),
                 );
               },
@@ -1508,6 +1471,115 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
               const Divider(height: 32),
 
+              // CBTC Devices Toggle
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.cell_tower,
+                        color: Colors.cyan,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'CBTC Devices',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Show transponders & WiFi',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: true, // Always show CBTC devices
+                        onChanged: null, // Disabled for now
+                        activeColor: Colors.cyan,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 32),
+
+              // SMC Overview Panel
+              Text('SMC Overview',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.control_point, size: 20, color: Colors.blue[700]),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'System Management Centre',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'CBTC Train Count: ${controller.trains.where((t) => t.isCbtcEquipped).length}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Auto Mode: ${controller.trains.where((t) => t.isCbtcEquipped && t.cbtcMode == CbtcMode.auto).length}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                      Text(
+                        'PM Mode: ${controller.trains.where((t) => t.isCbtcEquipped && t.cbtcMode == CbtcMode.pm).length}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                      Text(
+                        'RM Mode: ${controller.trains.where((t) => t.isCbtcEquipped && t.cbtcMode == CbtcMode.rm).length}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.brown[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 32),
+
               // NEW: Canvas Controls Section
               _buildCanvasControlsSection(),
               const Divider(height: 32),
@@ -2464,6 +2536,25 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             foregroundColor: Colors.white,
           ),
         ),
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: _selectedBlockForTrain != null
+              ? () {
+                  controller.addCbtcTrainToBlock(_selectedBlockForTrain!);
+                  setState(() {
+                    _selectedBlockForTrain = null;
+                  });
+                }
+              : null,
+          icon: const Icon(Icons.cell_tower),
+          label: Text(_selectedBlockForTrain != null
+              ? 'Add CBTC Train to Block $_selectedBlockForTrain'
+              : 'Select a Block for CBTC Train'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.cyan,
+            foregroundColor: Colors.white,
+          ),
+        ),
         if (controller.getSafeBlocksForTrainAdd().isEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 8),
@@ -2870,6 +2961,177 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ),
                         );
                       }).toList(),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // VCC1 Console
+              Card(
+                elevation: 4,
+                color: Colors.black,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.green[700]!, width: 3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green[900],
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(5),
+                            topRight: Radius.circular(5),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.computer, color: Colors.green[300], size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'VCC1 - Vehicle Control Computer',
+                              style: TextStyle(
+                                color: Colors.green[300],
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Courier',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildConsoleLine('SYSTEM STATUS: ONLINE', Colors.green[400]!, bold: true),
+                            _buildConsoleLine('MODE: MOVING BLOCK SUPERVISION', Colors.green[400]!),
+                            const SizedBox(height: 8),
+                            Container(height: 1, color: Colors.green[700]),
+                            const SizedBox(height: 8),
+                            _buildConsoleLine('CBTC TRAINS TRACKED: ${controller.trains.where((t) => t.isCbtcEquipped).length}', Colors.green[300]!, bold: true),
+                            const SizedBox(height: 4),
+                            ...controller.trains.where((t) => t.isCbtcEquipped).map((train) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildConsoleLine('> ${train.name}', Colors.green[300]!, bold: true),
+                                    _buildConsoleLine('  MODE: ${train.cbtcMode.name.toUpperCase()}', Colors.green[400]!),
+                                    _buildConsoleLine('  BLOCK: ${train.currentBlockId ?? "N/A"}', Colors.green[400]!),
+                                    _buildConsoleLine('  SPEED: ${train.speed.toStringAsFixed(1)}', Colors.green[400]!),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Relay Rack Panel
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.electrical_services, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            'Relay Rack (Live)',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Signal Relays Section
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[700],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Signal Relays',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: controller.signals.entries.map((entry) {
+                            final signal = entry.value;
+                            final isUp = signal.aspect == SignalAspect.green;
+                            final relayName = signal.id.substring(1) + 'GR';
+                            return _buildRelayIndicator(relayName, isUp);
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Points Relays Section
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[700],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Points Relays',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: controller.points.entries.map((entry) {
+                            final point = entry.value;
+                            final relayName = point.id + ' WKR';
+                            final position = point.position == PointPosition.normal ? 'normal' : 'reverse';
+                            return _buildPointRelayIndicator(relayName, position);
+                          }).toList(),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -3570,5 +3832,127 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         ),
       );
     }
+  }
+
+  // Helper method for VCC1 console lines
+  Widget _buildConsoleLine(String text, Color color, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+          fontFamily: 'Courier',
+        ),
+      ),
+    );
+  }
+
+  // Helper method for relay indicators
+  Widget _buildRelayIndicator(String relayName, bool isUp) {
+    return Container(
+      width: 70,
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      decoration: BoxDecoration(
+        color: isUp ? Colors.green[50] : Colors.red[50],
+        border: Border.all(
+          color: isUp ? Colors.green[700]! : Colors.red[700]!,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            relayName,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isUp ? Colors.green[900] : Colors.red[900],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: isUp ? Colors.green[700] : Colors.red[700],
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Text(
+              isUp ? 'UP' : 'DOWN',
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for point relay indicators
+  Widget _buildPointRelayIndicator(String relayName, String position) {
+    Color backgroundColor;
+    Color borderColor;
+    Color textColor;
+
+    if (position == 'normal') {
+      backgroundColor = Colors.red[50]!;
+      borderColor = Colors.red[700]!;
+      textColor = Colors.red[900]!;
+    } else {
+      backgroundColor = Colors.green[50]!;
+      borderColor = Colors.green[700]!;
+      textColor = Colors.green[900]!;
+    }
+
+    return Container(
+      width: 80,
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        border: Border.all(
+          color: borderColor,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            relayName,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: position == 'normal' ? Colors.red[700] : Colors.green[700],
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Text(
+              position.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

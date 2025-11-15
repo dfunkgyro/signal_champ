@@ -455,6 +455,8 @@ class TerminalStationController extends ChangeNotifier {
   final Map<String, Signal> signals = {};
   final List<Platform> platforms = [];
   final Map<String, TrainStop> trainStops = {};
+  final List<Transponder> transponders = [];
+  final List<WifiAntenna> wifiAntennas = [];
   final List<String> eventLog = [];
   final CollisionAnalysisSystem _collisionSystem = CollisionAnalysisSystem();
   final Map<String, bool> _pendingRouteCancellations = {};
@@ -712,15 +714,30 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void forceCollisionResolution() {
+    // Separate collided trains by 20 units
+    if (currentCollisionIncident != null) {
+      for (var trainId in currentCollisionIncident!.trainsInvolved) {
+        try {
+          final train = trains.firstWhere((t) => t.id == trainId);
+          // Move train backwards by 20 units based on direction
+          if (train.direction > 0) {
+            train.x -= 20;
+          } else {
+            train.x += 20;
+          }
+          train.emergencyBrake = false;
+          _logEvent('🔄 ${train.name} separated by 20 units');
+        } catch (e) {
+          // Train not found, skip
+        }
+      }
+    }
+
     _activeCollisionRecoveries.clear();
     collisionAlarmActive = false;
     currentCollisionIncident = null;
 
-    for (var train in trains) {
-      train.emergencyBrake = false;
-    }
-
-    _logEvent('🔄 All collisions force-resolved by user');
+    _logEvent('✅ Collision force-resolved and trains separated');
     notifyListeners();
   }
 
@@ -1351,8 +1368,26 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 980, y: 340);
     trainStops['T28'] = TrainStop(id: 'T28', signalId: 'C28', x: 380, y: 340);
 
+    // Initialize CBTC transponders (white tags)
+    transponders.add(Transponder(id: 'T1', x: 150, y: 100, type: 'T1'));
+    transponders.add(Transponder(id: 'T2', x: 500, y: 100, type: 'T2'));
+    transponders.add(Transponder(id: 'T3', x: 900, y: 100, type: 'T3'));
+    transponders.add(Transponder(id: 'T4', x: 1300, y: 100, type: 'T1'));
+    transponders.add(Transponder(id: 'T5', x: 150, y: 300, type: 'T1'));
+    transponders.add(Transponder(id: 'T6', x: 500, y: 300, type: 'T6'));
+    transponders.add(Transponder(id: 'T7', x: 900, y: 300, type: 'T3'));
+    transponders.add(Transponder(id: 'T8', x: 1100, y: 300, type: 'T2'));
+
+    // Initialize WiFi antennas (cyan)
+    wifiAntennas.add(WifiAntenna(id: 'W1', x: 300, y: 100));
+    wifiAntennas.add(WifiAntenna(id: 'W2', x: 700, y: 100));
+    wifiAntennas.add(WifiAntenna(id: 'W3', x: 1100, y: 100));
+    wifiAntennas.add(WifiAntenna(id: 'W4', x: 300, y: 300));
+    wifiAntennas.add(WifiAntenna(id: 'W5', x: 700, y: 300));
+    wifiAntennas.add(WifiAntenna(id: 'W6', x: 1000, y: 300));
+
     _logEvent(
-        'Station initialized: 2 platforms, 4 signals, 2 points, 4 train stops, 8 axle counters');
+        'Station initialized: 2 platforms, 4 signals, 2 points, 4 train stops, 8 axle counters, 8 transponders, 6 WiFi antennas');
   }
 
   // ============================================================================
@@ -1855,6 +1890,53 @@ class TerminalStationController extends ChangeNotifier {
     String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
     _logEvent(
         '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+    notifyListeners();
+  }
+
+  void addCbtcTrainToBlock(String blockId) {
+    final safeBlocks = getSafeBlocksForTrainAdd();
+    if (!safeBlocks.contains(blockId)) {
+      _logEvent(
+          '❌ Cannot add CBTC train: Block $blockId is not safe for train addition');
+      return;
+    }
+
+    final block = blocks[blockId];
+    if (block == null) return;
+
+    int direction = 1;
+
+    if (blockId == '114' || blockId == '111') {
+      direction = -1;
+    }
+
+    if (block.y == 300 && !['111'].contains(blockId)) {
+      direction = -1;
+    }
+
+    final train = Train(
+      id: 'T$nextTrainNumber',
+      name: 'CBTC-$nextTrainNumber',
+      vin: _generateVin(nextTrainNumber, true),
+      x: _getInitialXForBlock(blockId),
+      y: block.y,
+      speed: 0,
+      targetSpeed: 0,
+      direction: direction,
+      color: Colors.cyan,
+      controlMode: TrainControlMode.automatic,
+      manualStop: false,
+      isCbtcEquipped: true,
+      cbtcMode: CbtcMode.auto,
+    );
+
+    trains.add(train);
+    nextTrainNumber++;
+    _updateBlockOccupation();
+
+    String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    _logEvent(
+        '🚂 CBTC Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode with CBTC');
     notifyListeners();
   }
 

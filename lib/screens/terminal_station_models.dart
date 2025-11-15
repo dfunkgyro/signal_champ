@@ -301,3 +301,33 @@ class CollisionRecoveryPlan {
     required this.state,
   }) : detectedAt = DateTime.now();
 }
+
+// ============================================================================
+// CBTC DEVICES
+// ============================================================================
+
+class Transponder {
+  final String id;
+  final double x;
+  final double y;
+  final String type; // T1, T2, T3, T6
+
+  Transponder({
+    required this.id,
+    required this.x,
+    required this.y,
+    required this.type,
+  });
+}
+
+class WifiAntenna {
+  final String id;
+  final double x;
+  final double y;
+
+  WifiAntenna({
+    required this.id,
+    required this.x,
+    required this.y,
+  });
+}

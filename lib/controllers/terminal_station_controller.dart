@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
-import 'package:rail_champ/screens/terminal_station_models.dart'
-    hide CollisionIncident;
+import 'package:rail_champ/screens/terminal_station_models.dart' hide CollisionIncident;
 import 'dart:async';
 import 'dart:math' as math;
 

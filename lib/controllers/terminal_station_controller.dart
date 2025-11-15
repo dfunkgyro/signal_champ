@@ -498,6 +498,17 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // CBTC System properties
+  bool _cbtcDevicesEnabled = false;
+  bool _cbtcModeActive = false;
+  int _transpondersCount = 0;
+  int _wifiAntennasCount = 0;
+
+  bool get cbtcDevicesEnabled => _cbtcDevicesEnabled;
+  bool get cbtcModeActive => _cbtcModeActive;
+  int get transpondersCount => _transpondersCount;
+  int get wifiAntennasCount => _wifiAntennasCount;
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -564,6 +575,66 @@ class TerminalStationController extends ChangeNotifier {
   void toggleSignalsVisibility() {
     signalsVisible = !signalsVisible;
     _logEvent(signalsVisible ? '✅ Signals enabled' : '❌ Signals disabled');
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // CBTC SYSTEM METHODS
+  // ============================================================================
+
+  void toggleCbtcDevices(bool enabled) {
+    _cbtcDevicesEnabled = enabled;
+
+    if (enabled) {
+      // Calculate and activate CBTC devices
+      _initializeCbtcDevices();
+      _logEvent('✅ CBTC devices enabled');
+    } else {
+      // Disable CBTC devices and mode
+      _transpondersCount = 0;
+      _wifiAntennasCount = 0;
+      _cbtcModeActive = false;
+      _logEvent('❌ CBTC devices disabled');
+    }
+
+    notifyListeners();
+  }
+
+  void _initializeCbtcDevices() {
+    // Simulate 10 transponder tags (5 per track)
+    _transpondersCount = 10;
+    // Simulate 2 WiFi antennas
+    _wifiAntennasCount = 2;
+  }
+
+  void toggleCbtcMode(bool active) {
+    if (!_cbtcDevicesEnabled) {
+      _logEvent('⚠️ Cannot activate CBTC mode - devices not enabled');
+      return;
+    }
+
+    _cbtcModeActive = active;
+
+    if (active) {
+      _logEvent('🔵 CBTC Moving Block mode activated');
+
+      // Update all CBTC-equipped trains to AUTO mode
+      for (var train in trains) {
+        if (train.isCbtcEquipped && train.cbtcMode == CbtcMode.off) {
+          train.cbtcMode = CbtcMode.auto;
+        }
+      }
+    } else {
+      _logEvent('⚪ CBTC mode deactivated');
+
+      // Switch all CBTC trains back to OFF mode
+      for (var train in trains) {
+        if (train.isCbtcEquipped) {
+          train.cbtcMode = CbtcMode.off;
+        }
+      }
+    }
+
     notifyListeners();
   }
 

@@ -543,6 +543,195 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
+  // CBTC System Section
+  Widget _buildCbtcSection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.settings_remote, size: 20, color: Colors.blue),
+            const SizedBox(width: 8),
+            const Text(
+              'CBTC System',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Toggle CBTC Devices
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: controller.cbtcDevicesEnabled
+                    ? Colors.blue[50]
+                    : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: controller.cbtcDevicesEnabled
+                      ? Colors.blue
+                      : Colors.grey,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sensors,
+                      size: 20,
+                      color: controller.cbtcDevicesEnabled
+                          ? Colors.blue
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'CBTC Devices',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    Switch(
+                      value: controller.cbtcDevicesEnabled,
+                      onChanged: (value) {
+                        controller.toggleCbtcDevices(value);
+                      },
+                      activeColor: Colors.blue,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        if (controller.cbtcDevicesEnabled) ...[
+          const SizedBox(height: 12),
+
+          // Device info
+          Card(
+            color: Colors.green[50],
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle, size: 16, color: Colors.green[700]),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Devices Active',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green[900],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '• ${controller.transpondersCount} Transponder tags\n'
+                    '• ${controller.wifiAntennasCount} WiFi antennas',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.green[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Start CBTC Mode button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                controller.toggleCbtcMode(!controller.cbtcModeActive);
+              },
+              icon: Icon(
+                controller.cbtcModeActive
+                    ? Icons.stop_circle
+                    : Icons.play_circle,
+              ),
+              label: Text(
+                controller.cbtcModeActive
+                    ? 'Stop CBTC Mode'
+                    : 'Start CBTC Mode',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: controller.cbtcModeActive
+                    ? Colors.orange
+                    : Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+
+          if (controller.cbtcModeActive) ...[
+            const SizedBox(height: 12),
+            Card(
+              color: Colors.blue[50],
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.radio_button_checked,
+                            size: 16,
+                            color: Colors.blue[700]),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Moving Block System Active',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[900],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'All signals showing blue aspect.\nTrains using continuous ATP supervision.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.blue[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+
+        if (!controller.cbtcDevicesEnabled) ...[
+          const SizedBox(height: 12),
+          const Text(
+            'Enable CBTC devices to access Moving Block mode and advanced train control features.',
+            style: TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ],
+      ],
+    );
+  }
+
   // Top Control Panel Method
   Widget _buildTopControlPanel() {
     return Container(
@@ -2099,6 +2288,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               }),
               const Divider(height: 32),
               _buildTrainStopControls(controller),
+              const Divider(height: 32),
+
+              // CBTC System Controls
+              _buildCbtcSection(controller),
+              const Divider(height: 32),
 
               // Route Setting Controls
               Text('Route Setting',

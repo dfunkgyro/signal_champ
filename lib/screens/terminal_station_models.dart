@@ -54,6 +54,9 @@ class BlockSection {
   final double y;
   bool occupied;
   String? occupyingTrainId;
+  final bool isCrossover;
+  final bool isReversingArea;
+  bool closedBySmc;
 
   BlockSection({
     required this.id,
@@ -62,6 +65,9 @@ class BlockSection {
     required this.y,
     this.occupied = false,
     this.occupyingTrainId,
+    this.isCrossover = false,
+    this.isReversingArea = false,
+    this.closedBySmc = false,
   });
 
   bool containsPosition(double x, double y) {

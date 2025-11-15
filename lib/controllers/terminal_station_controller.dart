@@ -1616,26 +1616,43 @@ class TerminalStationController extends ChangeNotifier {
   void _handleCollision(List<String> trainIds, String location) {
     final collisionId = 'COL-${DateTime.now().millisecondsSinceEpoch}';
 
-    // Separate trains by 400 units if possible
+    // Separate trains by 20 units each (40 units total) if possible
     if (trainIds.length == 2) {
       final train1 = trains.firstWhere((t) => t.id == trainIds[0]);
       final train2 = trains.firstWhere((t) => t.id == trainIds[1]);
 
-      // Calculate midpoint between trains
-      final midX = (train1.x + train2.x) / 2;
+      // Determine which train is on the left and which is on the right
+      final leftTrain = train1.x < train2.x ? train1 : train2;
+      final rightTrain = train1.x < train2.x ? train2 : train1;
 
-      // Move each train 200 units away from midpoint (total 400 units apart)
-      // Check if we have space to move them apart
-      final newTrain1X = midX - 200;
-      final newTrain2X = midX + 200;
+      // Calculate proposed new positions (20 units separation in each direction)
+      final newLeftX = leftTrain.x - 20;
+      final newRightX = rightTrain.x + 20;
 
-      // Only move if positions are valid (within track bounds)
-      if (newTrain1X >= 0 && newTrain2X <= 1600) {
-        train1.x = newTrain1X;
-        train2.x = newTrain2X;
-        _logEvent('🔧 Trains separated by 400 units for collision recovery');
+      // Check for obstacles within 20 units in each direction
+      bool canMoveLeft = _canMoveTrainToPosition(leftTrain, newLeftX);
+      bool canMoveRight = _canMoveTrainToPosition(rightTrain, newRightX);
+
+      // Apply movement based on obstacle checks
+      if (canMoveLeft && canMoveRight) {
+        // Both trains can move - separate by 20 units each (40 total)
+        leftTrain.x = newLeftX;
+        rightTrain.x = newRightX;
+        _logEvent('🔧 Trains separated by 20 units each (40 units total) for collision recovery');
+      } else if (canMoveLeft && !canMoveRight) {
+        // Only left train can move
+        leftTrain.x = newLeftX;
+        _logEvent('🔧 Left train moved 20 units away (obstacle blocks right train)');
+      } else if (!canMoveLeft && canMoveRight) {
+        // Only right train can move
+        rightTrain.x = newRightX;
+        _logEvent('🔧 Right train moved 20 units away (obstacle blocks left train)');
+      } else {
+        // Neither train can move - obstacles on both sides
+        _logEvent('⚠️ Cannot separate trains - obstacles within 20 units on both sides');
       }
 
+      // Emergency stop both trains
       train1.speed = 0;
       train1.targetSpeed = 0;
       train1.emergencyBrake = true;
@@ -1669,6 +1686,36 @@ class TerminalStationController extends ChangeNotifier {
         '💥 COLLISION: ${trainIds.join(" & ")} at $location - Recovery available');
 
     notifyListeners();
+  }
+
+  /// Check if a train can safely move to a new position without hitting obstacles
+  bool _canMoveTrainToPosition(Train train, double newX) {
+    // Check buffer stops (track boundaries)
+    // Left buffer at x=0
+    if (newX < 0) {
+      return false;
+    }
+
+    // Right buffer - depends on track
+    // Upper track (y < 200): buffer at x=1600
+    // Lower track (y > 200): buffer at x=1190
+    final rightBufferX = train.y < 200 ? 1600.0 : 1190.0;
+    if (newX > rightBufferX) {
+      return false;
+    }
+
+    // Check for other trains within 20 units of the new position
+    for (final otherTrain in trains) {
+      if (otherTrain.id == train.id) continue;
+
+      // Check if other train is too close to the proposed new position
+      final distance = (otherTrain.x - newX).abs();
+      if (distance < 20) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   CollisionRecoveryPlan _generateRecoveryPlan(

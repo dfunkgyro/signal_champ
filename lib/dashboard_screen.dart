@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'animated_info_card.dart';
+import 'controllers/terminal_station_controller.dart';
+import 'services/supabase_service.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  final Function(int)? onNavigate;
+
+  const DashboardScreen({Key? key, this.onNavigate}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +60,7 @@ class DashboardScreen extends StatelessWidget {
                   icon: Icons.train,
                   color: Colors.blue,
                   onTap: () {
-                    // Navigate to trains view
+                    onNavigate?.call(1); // Navigate to simulation
                   },
                 ),
                 AnimatedInfoCard(
@@ -65,7 +69,7 @@ class DashboardScreen extends StatelessWidget {
                   icon: Icons.traffic,
                   color: Colors.green,
                   onTap: () {
-                    // Navigate to signals view
+                    onNavigate?.call(1); // Navigate to simulation
                   },
                 ),
                 AnimatedInfoCard(
@@ -74,7 +78,7 @@ class DashboardScreen extends StatelessWidget {
                   icon: Icons.grid_on,
                   color: Colors.orange,
                   onTap: () {
-                    // Navigate to blocks view
+                    onNavigate?.call(1); // Navigate to simulation
                   },
                 ),
                 AnimatedInfoCard(
@@ -83,7 +87,7 @@ class DashboardScreen extends StatelessWidget {
                   icon: Icons.health_and_safety,
                   color: Colors.purple,
                   onTap: () {
-                    // Navigate to diagnostics
+                    onNavigate?.call(2); // Navigate to analytics/diagnostics
                   },
                 ),
               ]),
@@ -165,7 +169,11 @@ class DashboardScreen extends StatelessWidget {
                           context,
                           icon: Icons.add,
                           label: 'Add Train',
-                          onTap: () {},
+                          onTap: () {
+                            // Add train and navigate to simulation
+                            context.read<TerminalStationController>().addTrain();
+                            onNavigate?.call(1);
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -174,7 +182,14 @@ class DashboardScreen extends StatelessWidget {
                           context,
                           icon: Icons.play_arrow,
                           label: 'Start Sim',
-                          onTap: () {},
+                          onTap: () {
+                            // Start simulation
+                            final controller = context.read<TerminalStationController>();
+                            if (!controller.isRunning) {
+                              controller.startSimulation();
+                            }
+                            onNavigate?.call(1);
+                          },
                         ),
                       ),
                     ],
@@ -187,7 +202,25 @@ class DashboardScreen extends StatelessWidget {
                           context,
                           icon: Icons.cloud_upload,
                           label: 'Save Cloud',
-                          onTap: () {},
+                          onTap: () async {
+                            // Save simulation state to cloud
+                            try {
+                              final controller = context.read<TerminalStationController>();
+                              final supabase = context.read<SupabaseService>();
+                              await supabase.saveSimulationState(controller.getCurrentState());
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Simulation saved to cloud')),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to save: $e')),
+                                );
+                              }
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -196,7 +229,9 @@ class DashboardScreen extends StatelessWidget {
                           context,
                           icon: Icons.analytics,
                           label: 'View Stats',
-                          onTap: () {},
+                          onTap: () {
+                            onNavigate?.call(2); // Navigate to analytics
+                          },
                         ),
                       ),
                     ],

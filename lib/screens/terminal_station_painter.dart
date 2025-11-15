@@ -257,7 +257,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawAxleCounters(canvas);
     _drawABOccupations(canvas);
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
+    _drawMovingBlocks(canvas); // Draw moving blocks before trains
     _drawTrains(canvas);
+    _drawCommunicationStatus(canvas); // Draw communication status indicators
     _drawDirectionLabels(canvas);
     _drawLabels(canvas);
 
@@ -746,6 +748,273 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         ),
         edgePaint,
       );
+
+      // Draw Platform Screen Doors (PSD) if equipped
+      if (platform.psd != null && controller.psdEnabled) {
+        _drawPlatformScreenDoors(canvas, platform);
+      }
+    }
+  }
+
+  /// Draw Platform Screen Doors for a platform
+  void _drawPlatformScreenDoors(Canvas canvas, Platform platform) {
+    final psd = platform.psd!;
+    final yOffset = platform.y == 100 ? 40 : -40;
+
+    // Determine PSD color based on state
+    Color psdColor;
+    switch (psd.state) {
+      case PSDState.closed:
+        psdColor = Colors.grey[700]!;
+        break;
+      case PSDState.opening:
+        psdColor = Colors.orange;
+        break;
+      case PSDState.open:
+        psdColor = Colors.green;
+        break;
+      case PSDState.closing:
+        psdColor = Colors.orange;
+        break;
+      case PSDState.fault:
+        psdColor = Colors.red;
+        break;
+      case PSDState.locked:
+        psdColor = Colors.grey[400]!;
+        break;
+    }
+
+    // Draw PSD doors as vertical lines along platform edge
+    final doorPaint = Paint()
+      ..color = psdColor
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke;
+
+    final numDoors = 8; // Number of door panels
+    final doorWidth = (platform.endX - platform.startX) / numDoors;
+
+    for (int i = 0; i < numDoors; i++) {
+      final doorX = platform.startX + (i * doorWidth);
+      final doorY = platform.y + yOffset + (platform.y == 100 ? -18 : 18);
+
+      // Draw door panel
+      if (psd.state == PSDState.open) {
+        // Draw doors retracted (small markers)
+        canvas.drawLine(
+          Offset(doorX, doorY - 2),
+          Offset(doorX, doorY + 2),
+          doorPaint,
+        );
+      } else {
+        // Draw doors closed/closing/opening (full height)
+        final doorHeight = psd.state == PSDState.opening || psd.state == PSDState.closing ? 8.0 : 12.0;
+        canvas.drawLine(
+          Offset(doorX + doorWidth / 2, doorY - doorHeight / 2),
+          Offset(doorX + doorWidth / 2, doorY + doorHeight / 2),
+          doorPaint,
+        );
+      }
+    }
+
+    // Draw PSD status indicator
+    final statusPaint = Paint()
+      ..color = psdColor
+      ..style = PaintingStyle.fill;
+
+    final indicatorX = platform.startX + (platform.endX - platform.startX) / 2;
+    final indicatorY = platform.y + yOffset + (platform.y == 100 ? -25 : 25);
+
+    canvas.drawCircle(Offset(indicatorX, indicatorY), 4, statusPaint);
+
+    // Draw PSD state label (small)
+    String stateLabel = '';
+    switch (psd.state) {
+      case PSDState.closed:
+        stateLabel = 'PSD: CLOSED';
+        break;
+      case PSDState.opening:
+        stateLabel = 'PSD: OPENING';
+        break;
+      case PSDState.open:
+        stateLabel = 'PSD: OPEN';
+        break;
+      case PSDState.closing:
+        stateLabel = 'PSD: CLOSING';
+        break;
+      case PSDState.fault:
+        stateLabel = 'PSD: FAULT';
+        break;
+      case PSDState.locked:
+        stateLabel = 'PSD: LOCKED';
+        break;
+    }
+
+    if (stateLabel.isNotEmpty) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: stateLabel,
+          style: TextStyle(
+            color: psdColor,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(indicatorX - textPainter.width / 2, indicatorY + 6),
+      );
+    }
+  }
+
+  /// Draw moving blocks for CBTC trains
+  void _drawMovingBlocks(Canvas canvas) {
+    if (!controller.movingBlockEnabled) return;
+
+    for (var train in controller.trains) {
+      if (!train.isCbtcEquipped || train.movingBlock == null) continue;
+
+      final block = train.movingBlock!;
+
+      // Draw moving block zone as semi-transparent area
+      final blockPaint = Paint()
+        ..color = Colors.cyan.withOpacity(0.15)
+        ..style = PaintingStyle.fill;
+
+      final blockRect = Rect.fromLTRB(
+        math.min(block.rearPosition, block.blockEndPosition),
+        train.y - 20,
+        math.max(block.rearPosition, block.blockEndPosition),
+        train.y + 20,
+      );
+
+      canvas.drawRect(blockRect, blockPaint);
+
+      // Draw block boundaries
+      final boundaryPaint = Paint()
+        ..color = Colors.cyan.withOpacity(0.6)
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke;
+
+      // Rear boundary (train position)
+      canvas.drawLine(
+        Offset(block.rearPosition, train.y - 20),
+        Offset(block.rearPosition, train.y + 20),
+        boundaryPaint,
+      );
+
+      // Front boundary (block end authority)
+      canvas.drawLine(
+        Offset(block.blockEndPosition, train.y - 20),
+        Offset(block.blockEndPosition, train.y + 20),
+        boundaryPaint,
+      );
+
+      // Draw safety margin indicator
+      final marginPaint = Paint()
+        ..color = Colors.yellow.withOpacity(0.4)
+        ..strokeWidth = 1
+        ..style = PaintingStyle.stroke;
+
+      final safetyMarginPos = train.direction > 0
+          ? block.frontPosition + block.safetyMargin
+          : block.frontPosition - block.safetyMargin;
+
+      canvas.drawLine(
+        Offset(safetyMarginPos, train.y - 15),
+        Offset(safetyMarginPos, train.y + 15),
+        marginPaint,
+      );
+
+      // Draw label
+      final labelText = 'MB: ${block.availableDistance.toInt()}m';
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: labelText,
+          style: const TextStyle(
+            color: Colors.cyan,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(
+          (block.rearPosition + block.blockEndPosition) / 2 - textPainter.width / 2,
+          train.y - 35,
+        ),
+      );
+    }
+  }
+
+  /// Draw communication status for CBTC trains
+  void _drawCommunicationStatus(Canvas canvas) {
+    for (var train in controller.trains) {
+      if (!train.isCbtcEquipped || train.commSession == null) continue;
+
+      final session = train.commSession!;
+
+      // Draw communication indicator above train
+      final indicatorX = train.x + 35;
+      final indicatorY = train.y - 45;
+
+      // Communication status circle
+      final statusColor = session.isHealthy
+          ? Colors.green
+          : (session.isConnected ? Colors.orange : Colors.red);
+
+      final statusPaint = Paint()
+        ..color = statusColor
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(indicatorX, indicatorY), 5, statusPaint);
+
+      // Signal strength bars
+      final signalQuality = session.signalQuality;
+      final numBars = (signalQuality * 5).round().clamp(0, 5);
+
+      for (int i = 0; i < 5; i++) {
+        final barPaint = Paint()
+          ..color = i < numBars ? Colors.green : Colors.grey[400]!
+          ..style = PaintingStyle.fill;
+
+        final barHeight = 3.0 + (i * 2.0);
+        canvas.drawRect(
+          Rect.fromLTWH(
+            indicatorX + 8 + (i * 3),
+            indicatorY + 5 - barHeight,
+            2,
+            barHeight,
+          ),
+          barPaint,
+        );
+      }
+
+      // Latency text (if poor connection)
+      if (session.averageLatency > 100) {
+        final latencyText = '${session.averageLatency}ms';
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: latencyText,
+            style: const TextStyle(
+              color: Colors.orange,
+              fontSize: 7,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(indicatorX - textPainter.width / 2, indicatorY + 8),
+        );
+      }
     }
   }
 

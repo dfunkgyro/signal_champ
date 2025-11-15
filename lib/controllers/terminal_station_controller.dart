@@ -498,6 +498,33 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // ============================================================================
+  // CBTC SYSTEMS
+  // ============================================================================
+
+  // ATS (Automatic Train Supervision) System
+  final Map<String, ATSTrainAssignment> _atsAssignments = {}; // Train assignments
+  final Map<String, ATSTrainMonitoring> _atsMonitoring = {}; // Train monitoring data
+  final List<ATSRouteConflict> _atsConflicts = []; // Active route conflicts
+  bool atsEnabled = true; // Master switch for ATS
+
+  // Communication System
+  final List<CbtcMessage> _messageQueue = []; // Pending messages
+  final Map<String, List<CbtcMessage>> _messageHistory = {}; // Message history per train
+  Timer? _communicationTimer;
+  double communicationPacketLoss = 0.0; // 0.0 to 1.0
+  int communicationLatency = 50; // milliseconds
+
+  // Moving Block System
+  final BrakingCurve _defaultBrakingCurve = BrakingCurve();
+  bool movingBlockEnabled = true; // Master switch for moving block
+
+  // Platform Screen Doors
+  bool psdEnabled = true; // Master switch for PSDs
+
+  // CBTC Feature Toggles
+  bool cbtcSystemEnabled = true; // Master CBTC enable/disable
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -1217,10 +1244,23 @@ class TerminalStationController extends ChangeNotifier {
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
+    // Platforms with CBTC Platform Screen Doors (PSD)
     platforms.add(Platform(
-        id: 'P1', name: 'Platform 1', startX: 980, endX: 1240, y: 100));
+      id: 'P1',
+      name: 'Platform 1',
+      startX: 980,
+      endX: 1240,
+      y: 100,
+      psd: PlatformScreenDoor(platformId: 'P1', inService: true),
+    ));
     platforms.add(Platform(
-        id: 'P2', name: 'Platform 2 (Bay)', startX: 980, endX: 1240, y: 300));
+      id: 'P2',
+      name: 'Platform 2 (Bay)',
+      startX: 980,
+      endX: 1240,
+      y: 300,
+      psd: PlatformScreenDoor(platformId: 'P2', inService: true),
+    ));
 
     signals['C31'] = Signal(
       id: 'C31',
@@ -1855,6 +1895,57 @@ class TerminalStationController extends ChangeNotifier {
     String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
     _logEvent(
         '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+    notifyListeners();
+  }
+
+  /// Add a CBTC-equipped train to a block
+  void addCbtcTrainToBlock(String blockId) {
+    final safeBlocks = getSafeBlocksForTrainAdd();
+    if (!safeBlocks.contains(blockId)) {
+      _logEvent(
+          '❌ Cannot add CBTC train: Block $blockId is not safe for train addition');
+      return;
+    }
+
+    final block = blocks[blockId];
+    if (block == null) return;
+
+    int direction = 1;
+
+    if (blockId == '114' || blockId == '111') {
+      direction = -1;
+    }
+
+    if (block.y == 300 && !['111'].contains(blockId)) {
+      direction = -1;
+    }
+
+    final train = Train(
+      id: 'T$nextTrainNumber',
+      name: 'CBTC $nextTrainNumber',
+      vin: _generateVin(nextTrainNumber, true),
+      x: _getInitialXForBlock(blockId),
+      y: block.y,
+      speed: 0,
+      targetSpeed: 0,
+      direction: direction,
+      color: Colors.primaries[nextTrainNumber % Colors.primaries.length],
+      controlMode: TrainControlMode.automatic,
+      manualStop: false,
+      isCbtcEquipped: true,
+      cbtcMode: CbtcMode.auto,
+    );
+
+    // Initialize CBTC communication session
+    _initializeCommunicationSession(train);
+
+    trains.add(train);
+    nextTrainNumber++;
+    _updateBlockOccupation();
+
+    String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    _logEvent(
+        '🚂 CBTC Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - CBTC AUTO mode');
     notifyListeners();
   }
 
@@ -2555,7 +2646,25 @@ class TerminalStationController extends ChangeNotifier {
     _updateAxleCounters();
     _updateMovementAuthorities();
 
+    // CBTC system updates
+    if (cbtcSystemEnabled) {
+      _updateATSMonitoring();
+      _detectRouteConflicts();
+      _processCbtcMessages();
+      _updatePlatformScreenDoors();
+    }
+
     for (var train in trains) {
+      // CBTC updates for each train
+      if (cbtcSystemEnabled && train.isCbtcEquipped) {
+        _updateATOControl(train);
+        _updateMovingBlock(train);
+
+        // Send periodic position reports
+        if (train.commSession != null && tickCount % 10 == 0) {
+          _sendPositionReport(train);
+        }
+      }
       // ========== EARLY EXIT CONDITIONS ==========
 
       // 1. Door override - train cannot move with open doors
@@ -3304,11 +3413,612 @@ class TerminalStationController extends ChangeNotifier {
     return buffer.toString();
   }
 
+  // ============================================================================
+  // CBTC - ATO (Automatic Train Operation) METHODS
+  // ============================================================================
+
+  /// Enable ATO mode for a train with specified Grade of Automation
+  void enableATOMode(Train train, ATOMode mode) {
+    if (!train.isCbtcEquipped) {
+      _logEvent('❌ ${train.name}: Cannot enable ATO - not CBTC equipped');
+      return;
+    }
+
+    train.atoData = ATOControlData(
+      mode: mode,
+      state: ATOState.idle,
+      speedProfile: ATOSpeedProfile(),
+    );
+
+    // Set doors to automatic for GoA3 and GoA4
+    if (mode == ATOMode.atoGoA3 || mode == ATOMode.atoGoA4) {
+      train.atoData!.doorsAutomatic = true;
+    }
+
+    _logEvent('🤖 ${train.name}: ATO mode enabled - $mode');
+    notifyListeners();
+  }
+
+  /// Disable ATO mode for a train
+  void disableATOMode(Train train) {
+    if (train.atoData == null) return;
+
+    train.atoData = null;
+    _logEvent('🤖 ${train.name}: ATO mode disabled - switched to manual');
+    notifyListeners();
+  }
+
+  /// Assign a journey plan to a train (requires ATO)
+  void assignATOJourneyPlan(Train train, ATOJourneyPlan journeyPlan) {
+    if (train.atoData == null) {
+      _logEvent('❌ ${train.name}: Cannot assign journey - ATO not enabled');
+      return;
+    }
+
+    train.atoData!.journeyPlan = journeyPlan;
+    train.atoData!.state = ATOState.idle;
+
+    // Set first target
+    if (journeyPlan.currentStop != null) {
+      train.atoData!.targetPlatformId = journeyPlan.currentStop;
+    }
+
+    _logEvent(
+        '🗺️  ${train.name}: Journey plan assigned - ${journeyPlan.plannedStops.length} stops to ${journeyPlan.finalDestination}');
+    notifyListeners();
+  }
+
+  /// Update ATO control for a train (called each simulation tick)
+  void _updateATOControl(Train train) {
+    if (train.atoData == null || !train.atoData!.isAutomatic) return;
+
+    final atoData = train.atoData!;
+    final speedProfile = atoData.speedProfile;
+
+    // Check if we have a journey plan
+    if (atoData.journeyPlan == null || atoData.journeyPlan!.isComplete) {
+      // No journey or journey complete - idle
+      atoData.state = ATOState.idle;
+      train.targetSpeed = 0;
+      return;
+    }
+
+    // Find target platform
+    final targetPlatformId = atoData.targetPlatformId;
+    if (targetPlatformId == null) return;
+
+    final targetPlatform = platforms.firstWhere(
+      (p) => p.id == targetPlatformId,
+      orElse: () => platforms.first,
+    );
+
+    // Calculate distance to platform
+    final distanceToPlatform = (targetPlatform.centerX - train.x).abs();
+    atoData.distanceToTarget = distanceToPlatform;
+
+    // State machine for ATO operation
+    switch (atoData.state) {
+      case ATOState.idle:
+        // Ready to start - check if we should depart
+        if (train.speed == 0 && !train.doorsOpen) {
+          atoData.state = ATOState.starting;
+          _logEvent('🚀 ${train.name}: ATO starting journey to $targetPlatformId');
+        }
+        break;
+
+      case ATOState.starting:
+        // Accelerate to cruising speed
+        atoData.state = ATOState.cruising;
+        train.targetSpeed = speedProfile.maxSpeed;
+        break;
+
+      case ATOState.cruising:
+        // Check if we need to start braking
+        final brakingDistance = speedProfile.calculateBrakingDistance(train.speed);
+        if (distanceToPlatform <= brakingDistance + 50) {
+          // Start braking
+          atoData.state = ATOState.braking;
+          _logEvent('🛑 ${train.name}: ATO braking for $targetPlatformId');
+        }
+        break;
+
+      case ATOState.coasting:
+        // Coasting (not implemented in basic version)
+        atoData.state = ATOState.cruising;
+        break;
+
+      case ATOState.braking:
+        // Calculate target speed based on distance
+        final targetSpeed = speedProfile.calculateTargetSpeed(distanceToPlatform);
+        train.targetSpeed = targetSpeed;
+
+        // Check if we're approaching platform
+        if (distanceToPlatform < 30) {
+          atoData.state = ATOState.approaching;
+        }
+        break;
+
+      case ATOState.approaching:
+        // Final approach - very slow
+        train.targetSpeed = 1.0; // 1 m/s
+
+        // Check if we've reached platform
+        if (distanceToPlatform < 10 && train.speed < 0.5) {
+          atoData.state = ATOState.dwelling;
+          atoData.dwellStartTime = DateTime.now();
+          train.targetSpeed = 0;
+
+          // Open doors if automatic
+          if (atoData.doorsAutomatic) {
+            _openTrainDoors(train, targetPlatform);
+          }
+
+          _logEvent('🏁 ${train.name}: ATO arrived at $targetPlatformId');
+        }
+        break;
+
+      case ATOState.dwelling:
+        // At platform with doors open
+        train.targetSpeed = 0;
+
+        if (atoData.dwellStartTime != null) {
+          final dwellTime = DateTime.now().difference(atoData.dwellStartTime!).inSeconds;
+
+          // Check if dwell time complete
+          if (dwellTime >= atoData.dwellDuration) {
+            // Close doors if automatic
+            if (atoData.doorsAutomatic && train.doorsOpen) {
+              _closeTrainDoors(train, targetPlatform);
+            }
+
+            // Check if ready to depart
+            if (!train.doorsOpen) {
+              atoData.readyToDepart = true;
+
+              // Advance to next stop
+              atoData.journeyPlan!.advanceToNextStop();
+
+              if (atoData.journeyPlan!.isComplete) {
+                _logEvent('✅ ${train.name}: ATO journey complete');
+                atoData.state = ATOState.idle;
+              } else {
+                // Set next target
+                atoData.targetPlatformId = atoData.journeyPlan!.currentStop;
+                atoData.state = ATOState.starting;
+                _logEvent(
+                    '🚀 ${train.name}: ATO departing for ${atoData.targetPlatformId}');
+              }
+            }
+          }
+        }
+        break;
+
+      case ATOState.emergency:
+        // Emergency brake applied
+        train.targetSpeed = 0;
+        train.emergencyBrake = true;
+        break;
+    }
+  }
+
+  /// Helper method to open train doors at platform
+  void _openTrainDoors(Train train, Platform platform) {
+    if (!train.doorsOpen) {
+      train.doorsOpen = true;
+      train.doorsOpenedAt = DateTime.now();
+
+      // Open PSD if equipped
+      if (psdEnabled && platform.psd != null) {
+        platform.psd!.trainDetected = true;
+        platform.psd!.trainDoorsOpen = true;
+        platform.psd!.safeToOpen = true;
+        platform.psd!.open();
+      }
+    }
+  }
+
+  /// Helper method to close train doors at platform
+  void _closeTrainDoors(Train train, Platform platform) {
+    if (train.doorsOpen) {
+      train.doorsOpen = false;
+      train.doorsOpenedAt = null;
+
+      // Close PSD if equipped
+      if (psdEnabled && platform.psd != null) {
+        platform.psd!.trainDoorsOpen = false;
+        platform.psd!.close();
+      }
+    }
+  }
+
+  // ============================================================================
+  // CBTC - ATS (Automatic Train Supervision) METHODS
+  // ============================================================================
+
+  /// Assign a train to a service with journey plan
+  void assignTrainToService(
+      Train train, String serviceId, ServiceType serviceType, ATOJourneyPlan journeyPlan) {
+    final assignment = ATSTrainAssignment(
+      trainId: train.id,
+      serviceId: serviceId,
+      serviceType: serviceType,
+      journeyPlan: journeyPlan,
+    );
+
+    _atsAssignments[train.id] = assignment;
+
+    // Create monitoring entry
+    _atsMonitoring[train.id] = ATSTrainMonitoring(
+      trainId: train.id,
+      currentSpeed: train.speed,
+      currentPosition: train.x,
+    );
+
+    // If train has ATO, assign the journey plan
+    if (train.atoData != null) {
+      assignATOJourneyPlan(train, journeyPlan);
+    }
+
+    _logEvent('📋 ATS: ${train.name} assigned to service $serviceId ($serviceType)');
+    notifyListeners();
+  }
+
+  /// Update ATS monitoring for all trains
+  void _updateATSMonitoring() {
+    if (!atsEnabled) return;
+
+    for (var train in trains) {
+      if (_atsMonitoring.containsKey(train.id)) {
+        final monitoring = _atsMonitoring[train.id]!;
+        monitoring.currentSpeed = train.speed;
+        monitoring.currentPosition = train.x;
+        monitoring.currentBlock = train.currentBlockId;
+        monitoring.lastUpdate = DateTime.now();
+
+        // Check for faults
+        if (train.emergencyBrake) {
+          if (!monitoring.activeFaults.contains('EMERGENCY_BRAKE')) {
+            monitoring.activeFaults.add('EMERGENCY_BRAKE');
+          }
+        } else {
+          monitoring.activeFaults.remove('EMERGENCY_BRAKE');
+        }
+      }
+    }
+  }
+
+  /// Detect route conflicts between trains
+  void _detectRouteConflicts() {
+    if (!atsEnabled) return;
+
+    // Clear resolved conflicts
+    _atsConflicts.removeWhere((c) => c.resolved);
+
+    // Check for new conflicts (simplified version)
+    for (var i = 0; i < trains.length; i++) {
+      for (var j = i + 1; j < trains.length; j++) {
+        final train1 = trains[i];
+        final train2 = trains[j];
+
+        // Check if trains are on conflicting paths
+        if (train1.currentBlockId != null &&
+            train1.currentBlockId == train2.currentBlockId) {
+          // Same block - potential conflict
+          final conflictId = 'conflict_${train1.id}_${train2.id}';
+
+          // Check if conflict already exists
+          final existingConflict =
+              _atsConflicts.firstWhere((c) => c.id == conflictId, orElse: () {
+            // Create new conflict
+            final newConflict = ATSRouteConflict(
+              id: conflictId,
+              conflictingTrainIds: [train1.id, train2.id],
+              conflictingBlocks: [train1.currentBlockId!],
+              description:
+                  '${train1.name} and ${train2.name} in same block ${train1.currentBlockId}',
+            );
+            _atsConflicts.add(newConflict);
+            _logEvent('⚠️  ATS: Route conflict detected - $conflictId');
+            return newConflict;
+          });
+        }
+      }
+    }
+  }
+
+  /// Get ATS assignment for a train
+  ATSTrainAssignment? getATSAssignment(String trainId) {
+    return _atsAssignments[trainId];
+  }
+
+  /// Get ATS monitoring data for a train
+  ATSTrainMonitoring? getATSMonitoring(String trainId) {
+    return _atsMonitoring[trainId];
+  }
+
+  /// Get all active route conflicts
+  List<ATSRouteConflict> getActiveConflicts() {
+    return _atsConflicts.where((c) => !c.resolved).toList();
+  }
+
+  // ============================================================================
+  // CBTC - MOVING BLOCK METHODS
+  // ============================================================================
+
+  /// Update moving block for a train
+  void _updateMovingBlock(Train train) {
+    if (!movingBlockEnabled || !train.isCbtcEquipped) return;
+
+    final trainLength = 60.0; // meters (fixed train length)
+    final rearPosition = train.x - (trainLength / 2);
+    final frontPosition = train.x + (trainLength / 2);
+
+    // Calculate safe stopping distance
+    final stoppingDistance =
+        _defaultBrakingCurve.calculateStoppingDistance(train.speed);
+
+    // Find obstacles ahead
+    final obstacleDistance = _findObstacleAhead(train);
+
+    // Calculate block end position (can travel up to obstacle - stopping distance)
+    final blockEndPosition = train.direction > 0
+        ? frontPosition + math.min(obstacleDistance - stoppingDistance, 500)
+        : frontPosition - math.min(obstacleDistance - stoppingDistance, 500);
+
+    // Update or create moving block
+    train.movingBlock = MovingBlock(
+      trainId: train.id,
+      rearPosition: rearPosition,
+      frontPosition: frontPosition,
+      blockEndPosition: blockEndPosition,
+    );
+
+    // Update movement authority based on moving block
+    final availableDistance = (blockEndPosition - frontPosition).abs();
+    train.movementAuthority = MovementAuthority(
+      maxDistance: availableDistance,
+      limitReason: availableDistance < 100 ? 'Obstacle ahead' : null,
+      hasDestination: train.atoData?.targetPlatformId != null,
+    );
+  }
+
+  /// Find distance to next obstacle ahead of train
+  double _findObstacleAhead(Train train) {
+    double minDistance = 1000.0; // Default maximum
+
+    // Check for other trains ahead
+    for (var otherTrain in trains) {
+      if (otherTrain.id == train.id) continue;
+
+      // Check if train is ahead in same direction
+      if (train.direction > 0 && otherTrain.x > train.x && otherTrain.y == train.y) {
+        final distance = otherTrain.x - train.x;
+        minDistance = math.min(minDistance, distance);
+      } else if (train.direction < 0 && otherTrain.x < train.x && otherTrain.y == train.y) {
+        final distance = train.x - otherTrain.x;
+        minDistance = math.min(minDistance, distance);
+      }
+    }
+
+    // Check for track end (buffer stops)
+    if (train.direction > 0 && train.y > 200) {
+      // Westbound track heading east (toward buffer)
+      final distanceToBuffer = 1200 - train.x;
+      minDistance = math.min(minDistance, distanceToBuffer);
+    }
+
+    return minDistance;
+  }
+
+  // ============================================================================
+  // CBTC - COMMUNICATION METHODS
+  // ============================================================================
+
+  /// Initialize communication session for a train
+  void _initializeCommunicationSession(Train train) {
+    if (!train.isCbtcEquipped) return;
+
+    train.commSession = CbtcCommunicationSession(
+      trainId: train.id,
+      signalQuality: 1.0,
+      averageLatency: communicationLatency,
+    );
+
+    _messageHistory[train.id] = [];
+  }
+
+  /// Send a CBTC message
+  void _sendCbtcMessage(CbtcMessage message) {
+    // Simulate packet loss
+    final random = math.Random();
+    if (random.nextDouble() < communicationPacketLoss) {
+      message.lost = true;
+      _logEvent('📡 Message lost: ${message.type} from ${message.senderId}');
+      return;
+    }
+
+    // Add to queue with simulated delay
+    _messageQueue.add(message);
+
+    // Update communication stats
+    if (message.senderId != 'WAYSIDE') {
+      final session = trains.firstWhere((t) => t.id == message.senderId).commSession;
+      session?.messagesSent++;
+    }
+  }
+
+  /// Process message queue (called periodically)
+  void _processCbtcMessages() {
+    final now = DateTime.now();
+
+    // Process messages that have waited long enough
+    _messageQueue.removeWhere((message) {
+      if (message.lost) return true;
+
+      final age = now.difference(message.timestamp).inMilliseconds;
+      if (age >= message.transmissionDelay) {
+        // Deliver message
+        message.delivered = true;
+        _deliverCbtcMessage(message);
+
+        // Add to history
+        if (_messageHistory.containsKey(message.senderId)) {
+          _messageHistory[message.senderId]!.add(message);
+        }
+
+        return true; // Remove from queue
+      }
+
+      return false; // Keep in queue
+    });
+  }
+
+  /// Deliver a CBTC message to recipient
+  void _deliverCbtcMessage(CbtcMessage message) {
+    switch (message.type) {
+      case CbtcMessageType.positionReport:
+        // Train reporting position to wayside
+        // Wayside already knows position, this is just for simulation
+        break;
+
+      case CbtcMessageType.movementAuthority:
+        // Wayside sending movement authority to train
+        final train = trains.firstWhere((t) => t.id == message.recipientId,
+            orElse: () => trains.first);
+        if (message.payload.containsKey('maxDistance')) {
+          train.movementAuthority = MovementAuthority(
+            maxDistance: message.payload['maxDistance'],
+            limitReason: message.payload['limitReason'],
+            hasDestination: message.payload['hasDestination'] ?? false,
+          );
+        }
+        break;
+
+      case CbtcMessageType.statusUpdate:
+        // Train status update
+        break;
+
+      case CbtcMessageType.emergencyBrake:
+        // Emergency brake command
+        final train = trains.firstWhere((t) => t.id == message.recipientId,
+            orElse: () => trains.first);
+        train.emergencyBrake = true;
+        _logEvent('🚨 Emergency brake command sent to ${train.name}');
+        break;
+
+      case CbtcMessageType.doorControl:
+        // Door control command
+        break;
+
+      case CbtcMessageType.heartbeat:
+        // Keep-alive message
+        if (message.senderId != 'WAYSIDE') {
+          final train = trains.firstWhere((t) => t.id == message.senderId,
+              orElse: () => trains.first);
+          train.commSession?.lastHeartbeat = DateTime.now();
+        }
+        break;
+    }
+  }
+
+  /// Send position report from train to wayside
+  void _sendPositionReport(Train train) {
+    if (train.commSession == null) return;
+
+    final message = CbtcMessage(
+      id: 'msg_${DateTime.now().millisecondsSinceEpoch}_${train.id}',
+      type: CbtcMessageType.positionReport,
+      senderId: train.id,
+      recipientId: 'WAYSIDE',
+      payload: {
+        'x': train.x,
+        'y': train.y,
+        'speed': train.speed,
+        'direction': train.direction,
+      },
+      transmissionDelay: communicationLatency,
+    );
+
+    _sendCbtcMessage(message);
+  }
+
+  // ============================================================================
+  // CBTC - PLATFORM SCREEN DOOR METHODS
+  // ============================================================================
+
+  /// Update PSD state for all platforms
+  void _updatePlatformScreenDoors() {
+    if (!psdEnabled) return;
+
+    for (var platform in platforms) {
+      if (platform.psd == null) continue;
+
+      final psd = platform.psd!;
+
+      // Check if train is at platform
+      bool trainAtPlatform = false;
+      for (var train in trains) {
+        final distanceToPlatform = (train.x - platform.centerX).abs();
+        if (distanceToPlatform < 50 && (train.y - platform.y).abs() < 50) {
+          trainAtPlatform = true;
+          psd.trainDetected = true;
+          psd.trainDoorsOpen = train.doorsOpen;
+          break;
+        }
+      }
+
+      if (!trainAtPlatform) {
+        psd.trainDetected = false;
+        psd.trainDoorsOpen = false;
+      }
+
+      // Update PSD state transitions
+      if (psd.lastStateChange != null) {
+        final timeSinceChange = DateTime.now().difference(psd.lastStateChange!);
+
+        // Complete opening/closing after 2 seconds
+        if (timeSinceChange.inSeconds >= 2) {
+          psd.completeTransition();
+        }
+      }
+
+      // Auto-close if train doors closed
+      if (psd.state == PSDState.open && !psd.trainDoorsOpen && trainAtPlatform) {
+        psd.close();
+      }
+    }
+  }
+
+  /// Manually open PSD at platform
+  void openPSD(String platformId) {
+    final platform = platforms.firstWhere((p) => p.id == platformId,
+        orElse: () => platforms.first);
+
+    if (platform.psd != null && platform.psd!.canOpen()) {
+      platform.psd!.open();
+      _logEvent('🚪 PSD opening at ${platform.name}');
+      notifyListeners();
+    }
+  }
+
+  /// Manually close PSD at platform
+  void closePSD(String platformId) {
+    final platform = platforms.firstWhere((p) => p.id == platformId,
+        orElse: () => platforms.first);
+
+    if (platform.psd != null && platform.psd!.canClose()) {
+      platform.psd!.close();
+      _logEvent('🚪 PSD closing at ${platform.name}');
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     _clockTimer?.cancel();
     _cancellationTimer?.cancel();
     _simulationTimer?.cancel();
+    _communicationTimer?.cancel();
     super.dispose();
   }
 }

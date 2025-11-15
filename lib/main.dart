@@ -107,11 +107,14 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: const [
-          DashboardScreen(),
-          TerminalStationScreen(), // ✅ Terminal station with crossover!
-          AnalyticsScreen(),
-          SettingsScreen(),
+        children: [
+          DashboardScreen(
+            onNavigate: (index) => setState(() => _currentIndex = index),
+          ),
+          const TerminalStationScreen(), // ✅ Terminal station with crossover!
+          const AnalyticsScreen(),
+          const HistoryScreen(),
+          const SettingsScreen(),
         ],
       ),
       bottomNavigationBar: CustomBottomNav(

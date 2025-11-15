@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
+// CBTC device types for transponders and WiFi communication
 import 'package:rail_champ/models/railway_model.dart' show Transponder, WifiAntenna, TransponderType;
 import 'dart:async';
 import 'dart:math' as math;

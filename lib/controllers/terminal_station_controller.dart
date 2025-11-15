@@ -1616,11 +1616,41 @@ class TerminalStationController extends ChangeNotifier {
   void _handleCollision(List<String> trainIds, String location) {
     final collisionId = 'COL-${DateTime.now().millisecondsSinceEpoch}';
 
-    for (var id in trainIds) {
-      final train = trains.firstWhere((t) => t.id == id);
-      train.speed = 0;
-      train.targetSpeed = 0;
-      train.emergencyBrake = true;
+    // Separate trains by 400 units if possible
+    if (trainIds.length == 2) {
+      final train1 = trains.firstWhere((t) => t.id == trainIds[0]);
+      final train2 = trains.firstWhere((t) => t.id == trainIds[1]);
+
+      // Calculate midpoint between trains
+      final midX = (train1.x + train2.x) / 2;
+
+      // Move each train 200 units away from midpoint (total 400 units apart)
+      // Check if we have space to move them apart
+      final newTrain1X = midX - 200;
+      final newTrain2X = midX + 200;
+
+      // Only move if positions are valid (within track bounds)
+      if (newTrain1X >= 0 && newTrain2X <= 1600) {
+        train1.x = newTrain1X;
+        train2.x = newTrain2X;
+        _logEvent('🔧 Trains separated by 400 units for collision recovery');
+      }
+
+      train1.speed = 0;
+      train1.targetSpeed = 0;
+      train1.emergencyBrake = true;
+
+      train2.speed = 0;
+      train2.targetSpeed = 0;
+      train2.emergencyBrake = true;
+    } else {
+      // For more than 2 trains or single train, use emergency stop
+      for (var id in trainIds) {
+        final train = trains.firstWhere((t) => t.id == id);
+        train.speed = 0;
+        train.targetSpeed = 0;
+        train.emergencyBrake = true;
+      }
     }
 
     final recoveryPlan = _generateRecoveryPlan(trainIds, location, collisionId);

@@ -256,6 +256,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrainStops(canvas);
     _drawAxleCounters(canvas);
     _drawABOccupations(canvas);
+    _drawCbtcInfrastructure(canvas); // Draw CBTC infrastructure (WiFi antennas and transponders)
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
@@ -1169,6 +1170,191 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         const Radius.circular(3),
       );
       canvas.drawRRect(glowRect, glowPaint);
+    }
+  }
+
+  void _drawCbtcInfrastructure(Canvas canvas) {
+    // Only draw if CBTC is enabled
+    if (!controller.cbtcEnabled) return;
+
+    // Draw WiFi antenna coverage zones first (behind transponders)
+    for (var antenna in controller.wifiAntennas) {
+      // Draw coverage circle
+      final coveragePaint = Paint()
+        ..color = Colors.cyan.withOpacity(0.1)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(
+        Offset(antenna.x, antenna.y),
+        antenna.coverageRadius,
+        coveragePaint,
+      );
+
+      // Draw coverage circle border
+      final borderPaint = Paint()
+        ..color = Colors.cyan.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      canvas.drawCircle(
+        Offset(antenna.x, antenna.y),
+        antenna.coverageRadius,
+        borderPaint,
+      );
+
+      // Draw antenna tower
+      final towerPaint = Paint()
+        ..color = antenna.isActive ? Colors.cyan[700]! : Colors.grey
+        ..style = PaintingStyle.fill;
+
+      // Antenna base
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset(antenna.x, antenna.y),
+          width: 12,
+          height: 20,
+        ),
+        towerPaint,
+      );
+
+      // Antenna top triangle
+      final trianglePath = Path();
+      trianglePath.moveTo(antenna.x, antenna.y - 10);
+      trianglePath.lineTo(antenna.x - 8, antenna.y + 2);
+      trianglePath.lineTo(antenna.x + 8, antenna.y + 2);
+      trianglePath.close();
+      canvas.drawPath(trianglePath, towerPaint);
+
+      // Signal waves (if active)
+      if (antenna.isActive) {
+        final wavePaint = Paint()
+          ..color = Colors.cyan.withOpacity(0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2;
+
+        for (int i = 1; i <= 3; i++) {
+          canvas.drawCircle(
+            Offset(antenna.x, antenna.y),
+            15.0 * i,
+            wavePaint,
+          );
+        }
+      }
+
+      // Draw label
+      final labelPainter = TextPainter(
+        text: TextSpan(
+          text: antenna.id,
+          style: TextStyle(
+            color: Colors.cyan[900],
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            backgroundColor: Colors.white.withOpacity(0.9),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      labelPainter.layout();
+      labelPainter.paint(
+        canvas,
+        Offset(antenna.x - labelPainter.width / 2, antenna.y + 15),
+      );
+    }
+
+    // Draw transponders
+    for (var transponder in controller.transponders) {
+      Color transponderColor;
+      IconData transponderIcon;
+
+      switch (transponder.type) {
+        case TransponderType.t1:
+          transponderColor = Colors.orange;
+          transponderIcon = Icons.merge_type;
+          break;
+        case TransponderType.t2:
+          transponderColor = Colors.blue;
+          transponderIcon = Icons.border_vertical;
+          break;
+        case TransponderType.t3:
+          transponderColor = Colors.red;
+          transponderIcon = Icons.speed;
+          break;
+        case TransponderType.t6:
+          transponderColor = Colors.green;
+          transponderIcon = Icons.location_on;
+          break;
+      }
+
+      // Draw transponder background circle
+      final bgPaint = Paint()
+        ..color = transponderColor.withOpacity(0.3)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(
+        Offset(transponder.x, transponder.y),
+        12,
+        bgPaint,
+      );
+
+      // Draw transponder border
+      final borderPaint = Paint()
+        ..color = transponderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      canvas.drawCircle(
+        Offset(transponder.x, transponder.y),
+        12,
+        borderPaint,
+      );
+
+      // Draw transponder center dot
+      final centerPaint = Paint()
+        ..color = transponderColor
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(
+        Offset(transponder.x, transponder.y),
+        4,
+        centerPaint,
+      );
+
+      // Draw type label
+      final typePainter = TextPainter(
+        text: TextSpan(
+          text: transponder.type.name.toUpperCase(),
+          style: TextStyle(
+            color: transponderColor,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+            backgroundColor: Colors.white.withOpacity(0.9),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      typePainter.layout();
+      typePainter.paint(
+        canvas,
+        Offset(transponder.x - typePainter.width / 2, transponder.y - 25),
+      );
+
+      // Draw description
+      final descPainter = TextPainter(
+        text: TextSpan(
+          text: transponder.description,
+          style: TextStyle(
+            color: Colors.grey[700],
+            fontSize: 7,
+            backgroundColor: Colors.white.withOpacity(0.8),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      descPainter.layout();
+      descPainter.paint(
+        canvas,
+        Offset(transponder.x - descPainter.width / 2, transponder.y + 15),
+      );
     }
   }
 

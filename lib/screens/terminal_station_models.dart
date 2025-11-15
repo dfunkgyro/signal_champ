@@ -217,6 +217,40 @@ class TrainStop {
   });
 }
 
+enum TransponderType { t1, t2, t3, t6 }
+
+class Transponder {
+  final String id;
+  final TransponderType type;
+  final double x;
+  final double y;
+  final String description;
+
+  Transponder({
+    required this.id,
+    required this.type,
+    required this.x,
+    required this.y,
+    required this.description,
+  });
+}
+
+class WifiAntenna {
+  final String id;
+  final double x;
+  final double y;
+  final bool isActive;
+  final double coverageRadius;
+
+  WifiAntenna({
+    required this.id,
+    required this.x,
+    required this.y,
+    this.isActive = true,
+    this.coverageRadius = 200.0,
+  });
+}
+
 class RouteReservation {
   final String id;
   final String signalId;

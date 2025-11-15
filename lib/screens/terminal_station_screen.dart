@@ -2216,6 +2216,30 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
+
+                // CBTC System Status Indicators
+                _buildCbtcSystemStatus(controller),
+                const SizedBox(height: 12),
+
+                // CBTC Train Mode Controls
+                _buildCbtcTrainModeControls(controller),
+                const SizedBox(height: 12),
+
+                // Quick Actions Panel
+                _buildCbtcQuickActions(controller),
+                const SizedBox(height: 12),
+
+                // Safety Monitoring
+                _buildCbtcSafetyMonitoring(controller),
+                const SizedBox(height: 12),
+
+                // Performance Metrics
+                _buildCbtcPerformanceMetrics(controller),
+                const SizedBox(height: 12),
+
+                // CBTC Event Log
+                _buildCbtcEventLog(controller),
+                const SizedBox(height: 12),
               ],
 
               ...controller.signals.entries.map((entry) {
@@ -3681,5 +3705,468 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         ),
       );
     }
+  }
+
+  // ============================================================================
+  // CBTC CONTROL PANELS
+  // ============================================================================
+
+  Color _getCbtcModeColor(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return Colors.cyan;
+      case CbtcMode.pm:
+        return Colors.orange;
+      case CbtcMode.rm:
+        return Colors.brown;
+      case CbtcMode.off:
+        return Colors.white;
+      case CbtcMode.storage:
+        return Colors.green;
+    }
+  }
+
+  Widget _buildCbtcSystemStatus(TerminalStationController controller) {
+    final status = controller.getCbtcSystemStatus();
+    final modeDistribution = status['mode_distribution'] as Map<String, dynamic>;
+
+    return Card(
+      color: Colors.cyan[50],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.assessment, color: Colors.cyan[700], size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'CBTC System Status',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildStatusRow('Total CBTC Trains', '${status['total_cbtc_trains']}', Colors.cyan),
+            _buildStatusRow('Active Trains', '${status['active_trains']}', Colors.green),
+            _buildStatusRow('Transponders', '${status['transponders']}', Colors.orange),
+            _buildStatusRow('WiFi Antennas', '${status['wifi_antennas']}', Colors.blue),
+            const Divider(height: 16),
+            const Text('Mode Distribution:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                _buildModeChip('AUTO', modeDistribution['auto'], Colors.cyan),
+                _buildModeChip('PM', modeDistribution['pm'], Colors.orange),
+                _buildModeChip('RM', modeDistribution['rm'], Colors.brown),
+                _buildModeChip('OFF', modeDistribution['off'], Colors.grey),
+                _buildModeChip('STORAGE', modeDistribution['storage'], Colors.green),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusRow(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[700])),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeChip(String label, int count, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color, width: 1),
+      ),
+      child: Text(
+        '$label: $count',
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+      ),
+    );
+  }
+
+  Widget _buildCbtcTrainModeControls(TerminalStationController controller) {
+    final cbtcTrains = controller.getCbtcTrains();
+
+    if (cbtcTrains.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.settings_remote, color: Colors.blue[700], size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'CBTC Train Modes',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...cbtcTrains.map((train) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: train.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: train.color, width: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      train.name,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: train.color == Colors.white ? Colors.black : train.color,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: CbtcMode.values.map((mode) {
+                        final isActive = train.cbtcMode == mode;
+                        return InkWell(
+                          onTap: () => controller.setCbtcTrainMode(train.id, mode),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? _getCbtcModeColor(mode)
+                                  : _getCbtcModeColor(mode).withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: isActive ? Colors.black : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            child: Text(
+                              mode.name.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                                color: mode == CbtcMode.off ? Colors.black : Colors.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCbtcQuickActions(TerminalStationController controller) {
+    final cbtcTrains = controller.getCbtcTrains();
+
+    if (cbtcTrains.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      color: Colors.orange[50],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.flash_on, color: Colors.orange[700], size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'Quick Actions',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                _buildQuickActionButton(
+                  'Emergency Stop All',
+                  Icons.emergency,
+                  Colors.red,
+                  () => controller.emergencyStopAllCbtcTrains(),
+                ),
+                _buildQuickActionButton(
+                  'All to AUTO',
+                  Icons.auto_awesome,
+                  Colors.cyan,
+                  () => controller.setAllCbtcTrainsToMode(CbtcMode.auto),
+                ),
+                _buildQuickActionButton(
+                  'All to PM',
+                  Icons.shield,
+                  Colors.orange,
+                  () => controller.setAllCbtcTrainsToMode(CbtcMode.pm),
+                ),
+                _buildQuickActionButton(
+                  'All to STORAGE',
+                  Icons.local_parking,
+                  Colors.green,
+                  () => controller.setAllCbtcTrainsToMode(CbtcMode.storage),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color, width: 2),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCbtcSafetyMonitoring(TerminalStationController controller) {
+    final minHeadway = controller.getMinimumHeadway();
+    final cbtcTrains = controller.getCbtcTrains();
+
+    if (cbtcTrains.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      color: minHeadway != null && minHeadway < 200 ? Colors.red[50] : Colors.green[50],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  minHeadway != null && minHeadway < 200 ? Icons.warning : Icons.check_circle,
+                  color: minHeadway != null && minHeadway < 200 ? Colors.red[700] : Colors.green[700],
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Safety Monitoring',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (minHeadway != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Minimum Headway:', style: TextStyle(fontSize: 11)),
+                  Text(
+                    '${minHeadway.toStringAsFixed(0)} units',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: minHeadway < 200 ? Colors.red : Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Safety Distance:', style: TextStyle(fontSize: 11)),
+                  const Text('200 units', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              if (minHeadway < 200) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning, size: 16, color: Colors.red),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'WARNING: Trains too close!',
+                          style: TextStyle(fontSize: 10, color: Colors.red[900], fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ] else
+              const Text(
+                'No active CBTC trains to monitor',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCbtcPerformanceMetrics(TerminalStationController controller) {
+    final status = controller.getCbtcSystemStatus();
+    final cbtcTrains = controller.getCbtcTrains();
+
+    if (cbtcTrains.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final avgSpeed = cbtcTrains.isNotEmpty
+        ? cbtcTrains.map((t) => t.speed).reduce((a, b) => a + b) / cbtcTrains.length
+        : 0.0;
+
+    return Card(
+      color: Colors.blue[50],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.analytics, color: Colors.blue[700], size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'Performance Metrics',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildMetricRow('Avg Speed', '${avgSpeed.toStringAsFixed(1)} u/s'),
+            _buildMetricRow('System Uptime', controller.simulationTime),
+            _buildMetricRow('Infrastructure', '${status['transponders']} T-Ponders, ${status['wifi_antennas']} WiFi'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[700])),
+          Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCbtcEventLog(TerminalStationController controller) {
+    final cbtcEvents = controller.eventLog
+        .where((event) =>
+            event.contains('CBTC') ||
+            event.contains('AUTO') ||
+            event.contains('PM') ||
+            event.contains('RM') ||
+            event.contains('mode') ||
+            event.contains('Movement Authority'))
+        .take(5)
+        .toList();
+
+    if (cbtcEvents.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.list_alt, color: Colors.purple[700], size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'Recent CBTC Events',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...cbtcEvents.map((event) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(
+                  event,
+                  style: TextStyle(fontSize: 9, color: Colors.grey[800]),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -455,6 +455,8 @@ class TerminalStationController extends ChangeNotifier {
   final Map<String, Signal> signals = {};
   final List<Platform> platforms = [];
   final Map<String, TrainStop> trainStops = {};
+  final List<Transponder> transponders = [];
+  final List<WifiAntenna> wifiAntennas = [];
   final List<String> eventLog = [];
   final CollisionAnalysisSystem _collisionSystem = CollisionAnalysisSystem();
   final Map<String, bool> _pendingRouteCancellations = {};
@@ -574,8 +576,213 @@ class TerminalStationController extends ChangeNotifier {
 
   void toggleCBTC() {
     cbtcEnabled = !cbtcEnabled;
-    _logEvent(cbtcEnabled ? '✅ CBTC enabled' : '❌ CBTC disabled');
+
+    if (cbtcEnabled) {
+      _initializeCbtcInfrastructure();
+      _logEvent('✅ CBTC enabled - Infrastructure initialized');
+    } else {
+      transponders.clear();
+      wifiAntennas.clear();
+      _logEvent('❌ CBTC disabled - Infrastructure cleared');
+    }
+
     notifyListeners();
+  }
+
+  void _initializeCbtcInfrastructure() {
+    transponders.clear();
+    wifiAntennas.clear();
+
+    // Eastbound track transponders (y=100)
+    transponders.add(Transponder(
+      id: 'EB_T1_1',
+      type: TransponderType.t1,
+      x: 320,
+      y: 100,
+      description: 'Crossover Tag',
+    ));
+    transponders.add(Transponder(
+      id: 'EB_T2_1',
+      type: TransponderType.t2,
+      x: 640,
+      y: 100,
+      description: 'Block Boundary',
+    ));
+    transponders.add(Transponder(
+      id: 'EB_T3_1',
+      type: TransponderType.t3,
+      x: 960,
+      y: 100,
+      description: 'Speed Limit',
+    ));
+    transponders.add(Transponder(
+      id: 'EB_T6_1',
+      type: TransponderType.t6,
+      x: 1280,
+      y: 100,
+      description: 'Station Tag',
+    ));
+
+    // Westbound track transponders (y=300)
+    transponders.add(Transponder(
+      id: 'WB_T1_1',
+      type: TransponderType.t1,
+      x: 320,
+      y: 300,
+      description: 'Crossover Tag',
+    ));
+    transponders.add(Transponder(
+      id: 'WB_T2_1',
+      type: TransponderType.t2,
+      x: 640,
+      y: 300,
+      description: 'Block Boundary',
+    ));
+    transponders.add(Transponder(
+      id: 'WB_T3_1',
+      type: TransponderType.t3,
+      x: 960,
+      y: 300,
+      description: 'Speed Limit',
+    ));
+    transponders.add(Transponder(
+      id: 'WB_T6_1',
+      type: TransponderType.t6,
+      x: 1280,
+      y: 300,
+      description: 'Station Tag',
+    ));
+
+    // WiFi Antennas for track coverage
+    wifiAntennas.add(WifiAntenna(
+      id: 'WIFI_1',
+      x: 400,
+      y: 200,
+      coverageRadius: 300,
+    ));
+    wifiAntennas.add(WifiAntenna(
+      id: 'WIFI_2',
+      x: 800,
+      y: 200,
+      coverageRadius: 300,
+    ));
+    wifiAntennas.add(WifiAntenna(
+      id: 'WIFI_3',
+      x: 1200,
+      y: 200,
+      coverageRadius: 300,
+    ));
+  }
+
+  // ============================================================================
+  // CBTC TRAIN MODE CONTROLS
+  // ============================================================================
+
+  void setCbtcTrainMode(String trainId, CbtcMode mode) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => trains.first);
+    if (!train.isCbtcEquipped) {
+      _logEvent('❌ Cannot set CBTC mode: ${train.name} is not CBTC equipped');
+      return;
+    }
+
+    final oldMode = train.cbtcMode;
+    train.cbtcMode = mode;
+
+    // Update train color based on mode
+    train.color = _getCbtcModeColor(mode);
+
+    if (oldMode != mode) {
+      _logEvent('🔄 ${train.name} mode: ${oldMode.name.toUpperCase()} → ${mode.name.toUpperCase()}');
+    }
+
+    notifyListeners();
+  }
+
+  Color _getCbtcModeColor(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return Colors.cyan;
+      case CbtcMode.pm:
+        return Colors.orange;
+      case CbtcMode.rm:
+        return Colors.brown;
+      case CbtcMode.off:
+        return Colors.white;
+      case CbtcMode.storage:
+        return Colors.green;
+    }
+  }
+
+  void emergencyStopAllCbtcTrains() {
+    int count = 0;
+    for (var train in trains) {
+      if (train.isCbtcEquipped) {
+        train.emergencyBrake = true;
+        train.targetSpeed = 0;
+        train.speed = 0;
+        count++;
+      }
+    }
+    _logEvent('🛑 Emergency stop applied to $count CBTC trains');
+    notifyListeners();
+  }
+
+  void setAllCbtcTrainsToMode(CbtcMode mode) {
+    int count = 0;
+    for (var train in trains) {
+      if (train.isCbtcEquipped) {
+        train.cbtcMode = mode;
+        train.color = _getCbtcModeColor(mode);
+        count++;
+      }
+    }
+    _logEvent('🔄 Set $count CBTC trains to ${mode.name.toUpperCase()} mode');
+    notifyListeners();
+  }
+
+  List<Train> getCbtcTrains() {
+    return trains.where((t) => t.isCbtcEquipped).toList();
+  }
+
+  Map<String, dynamic> getCbtcSystemStatus() {
+    final cbtcTrains = getCbtcTrains();
+    final activeTrains = cbtcTrains.where((t) =>
+      t.cbtcMode == CbtcMode.auto || t.cbtcMode == CbtcMode.pm || t.cbtcMode == CbtcMode.rm
+    ).toList();
+
+    return {
+      'total_cbtc_trains': cbtcTrains.length,
+      'active_trains': activeTrains.length,
+      'transponders': transponders.length,
+      'wifi_antennas': wifiAntennas.length,
+      'mode_distribution': {
+        'auto': cbtcTrains.where((t) => t.cbtcMode == CbtcMode.auto).length,
+        'pm': cbtcTrains.where((t) => t.cbtcMode == CbtcMode.pm).length,
+        'rm': cbtcTrains.where((t) => t.cbtcMode == CbtcMode.rm).length,
+        'off': cbtcTrains.where((t) => t.cbtcMode == CbtcMode.off).length,
+        'storage': cbtcTrains.where((t) => t.cbtcMode == CbtcMode.storage).length,
+      },
+    };
+  }
+
+  double? getMinimumHeadway() {
+    final cbtcTrains = getCbtcTrains()
+      .where((t) => t.cbtcMode == CbtcMode.auto || t.cbtcMode == CbtcMode.pm)
+      .toList();
+
+    if (cbtcTrains.length < 2) return null;
+
+    double? minDistance;
+    for (int i = 0; i < cbtcTrains.length; i++) {
+      for (int j = i + 1; j < cbtcTrains.length; j++) {
+        final distance = (cbtcTrains[i].x - cbtcTrains[j].x).abs();
+        if (minDistance == null || distance < minDistance) {
+          minDistance = distance;
+        }
+      }
+    }
+
+    return minDistance;
   }
 
   // ============================================================================

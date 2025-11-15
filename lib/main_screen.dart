@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/railway_model.dart';
-import '../controllers/simulation_controller.dart';
-import '../controllers/ai_controller.dart';
-import '../controllers/theme_controller.dart';
-import '../services/supabase_service.dart';
-import '../widgets/railway_canvas.dart' hide Train;
-import '../widgets/control_panel.dart';
-import '../widgets/status_panel.dart';
+import 'models/railway_model.dart';
+import 'controllers/simulation_controller.dart';
+import 'controllers/ai_controller.dart';
+import 'controllers/theme_controller.dart';
+import 'services/supabase_service.dart';
+import 'widgets/railway_canvas.dart' hide Train;
+import 'widgets/control_panel.dart';
+import 'widgets/status_panel.dart';
 import 'history_screen.dart';
 import 'analytics_screen.dart';
 

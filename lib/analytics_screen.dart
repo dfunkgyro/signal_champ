@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../services/supabase_service.dart';
+import 'services/supabase_service.dart';
 import 'diagnostic_ai.dart';
 
 class AnalyticsScreen extends StatefulWidget {

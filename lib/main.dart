@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../controllers/theme_controller.dart';
-import '../services/supabase_service.dart';
+import 'controllers/theme_controller.dart';
+import 'services/supabase_service.dart';
 import 'diagnostic_ai.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
@@ -11,8 +11,8 @@ import 'dashboard_screen.dart';
 import 'analytics_screen.dart';
 import 'history_screen.dart';
 import 'custom_bottom_nav.dart';
-import '../screens/terminal_station_screen.dart';
-import '../controllers/terminal_station_controller.dart';
+import 'screens/terminal_station_screen.dart';
+import 'controllers/terminal_station_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

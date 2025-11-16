@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../controllers/theme_controller.dart';
-import '../services/supabase_service.dart';
-import 'weather_system.dart';
+import 'controllers/theme_controller.dart';
+import 'services/supabase_service.dart';
 import 'achievements_service.dart';
 import 'custom_bottom_nav.dart';
-import '../screens/terminal_station_screen.dart';
-import '../controllers/terminal_station_controller.dart';
+import 'screens/terminal_station_screen.dart';
+import 'controllers/terminal_station_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +39,6 @@ class RailChampApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SupabaseService(Supabase.instance.client),
         ),
-        ChangeNotifierProvider(create: (_) => WeatherSystem()),
         ChangeNotifierProvider(
           create: (_) => AchievementsService(Supabase.instance.client),
         ),
@@ -172,30 +170,6 @@ class SettingsScreen extends StatelessWidget {
                 );
               }).toList(),
             ),
-          ),
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Simulation',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Consumer<WeatherSystem>(
-            builder: (context, weather, _) {
-              return SwitchListTile(
-                title: const Text('Weather Effects'),
-                subtitle: Text('Current: ${weather.getWeatherDescription()}'),
-                value: weather.currentWeather != WeatherCondition.clear,
-                onChanged: (value) {
-                  if (value) {
-                    weather.setWeather(WeatherCondition.rain);
-                  } else {
-                    weather.setWeather(WeatherCondition.clear);
-                  }
-                },
-              );
-            },
           ),
           const Divider(),
           const Padding(

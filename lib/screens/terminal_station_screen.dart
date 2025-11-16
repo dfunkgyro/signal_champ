@@ -2864,6 +2864,336 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // =====================================================
+              // VCC STATUS PANEL
+              // =====================================================
+              Card(
+                color: Colors.green[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.computer, color: Colors.green[700], size: 20),
+                          const SizedBox(width: 8),
+                          Text('VCC Controllers',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green[800])),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ...controller.getVccStatuses().map((vcc) {
+                        final Color statusColor = vcc['isHealthy']
+                            ? Colors.green
+                            : Colors.red;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: statusColor, width: 2),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: statusColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${vcc['id']} (${vcc['area']})',
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      vcc['status'],
+                                      style: TextStyle(
+                                          fontSize: 12, color: statusColor),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Blocks: ${vcc['managedBlocks']} | Signals: ${vcc['managedSignals']} | Trains: ${vcc['trainCount']}',
+                                  style: TextStyle(
+                                      fontSize: 11, color: Colors.grey[700]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // =====================================================
+              // SRS CONTROLS
+              // =====================================================
+              Card(
+                color: controller.srsEnabled ? Colors.cyan[50] : Colors.grey[100],
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            color: controller.srsEnabled ? Colors.cyan[700] : Colors.grey,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text('SRS (Schedule Regulator)',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: controller.srsEnabled
+                                      ? Colors.cyan[800]
+                                      : Colors.grey[800])),
+                          const Spacer(),
+                          Switch(
+                            value: controller.srsEnabled,
+                            onChanged: (value) => controller.toggleSrs(),
+                            activeColor: Colors.cyan,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (controller.srsEnabled) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.train, size: 16, color: Colors.cyan[700]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Ghost Trains: ${controller.srsData.totalGhostTrains}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(width: 12),
+                            Icon(Icons.assignment, size: 16, color: Colors.green[700]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Assigned: ${controller.srsData.assignedTrains}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: controller.srsData.allOnSchedule
+                                ? Colors.green[100]
+                                : Colors.orange[100],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                controller.srsData.allOnSchedule
+                                    ? Icons.check_circle
+                                    : Icons.warning,
+                                size: 16,
+                                color: controller.srsData.allOnSchedule
+                                    ? Colors.green[700]
+                                    : Colors.orange[700],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                controller.srsData.allOnSchedule
+                                    ? 'Timetable OK'
+                                    : 'Delays Detected',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: controller.srsData.allOnSchedule
+                                      ? Colors.green[700]
+                                      : Colors.orange[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else
+                        Text(
+                          'Enable SRS to run ghost trains and timetables',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // =====================================================
+              // TIMETABLE & TRAIN ASSIGNMENT
+              // =====================================================
+              if (controller.srsEnabled)
+                Card(
+                  color: Colors.purple[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.event_note,
+                                color: Colors.purple[700], size: 20),
+                            const SizedBox(width: 8),
+                            Text('Timetables & Assignments',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple[800])),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Timetable list
+                        if (controller.getTimetableList().isEmpty)
+                          Text('No timetables available',
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey[600]))
+                        else
+                          ...controller.getTimetableList().map((timetable) {
+                            final Color statusColor = timetable['isOnTime']
+                                ? Colors.green
+                                : (timetable['delaySeconds'] < 0
+                                    ? Colors.blue
+                                    : Colors.red);
+                            final String delayText = timetable['delaySeconds'] == 0
+                                ? 'On Time'
+                                : (timetable['delaySeconds'] < 0
+                                    ? '${timetable['delaySeconds'].abs()}s early'
+                                    : '${timetable['delaySeconds']}s late');
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: Colors.purple[200]!),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            timetable['routeName'],
+                                            style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(3),
+                                          ),
+                                          child: Text(
+                                            delayText,
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: statusColor,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if (timetable['assignedTrain'] != null)
+                                      Row(
+                                        children: [
+                                          Icon(Icons.train,
+                                              size: 14, color: Colors.green[700]),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              'Assigned: ${timetable['assignedTrain']}',
+                                              style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.green[700]),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.clear, size: 16),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            onPressed: () => controller
+                                                .unassignTrainFromTimetable(
+                                                    timetable['assignedTrain']),
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Ghost: ${timetable['ghostTrainId']}',
+                                            style: TextStyle(
+                                                fontSize: 11, color: Colors.grey[600]),
+                                          ),
+                                          const Spacer(),
+                                          if (controller.getUnassignedTrains().isNotEmpty)
+                                            PopupMenuButton<String>(
+                                              icon: const Icon(Icons.add, size: 16),
+                                              tooltip: 'Assign Train',
+                                              padding: EdgeInsets.zero,
+                                              itemBuilder: (context) {
+                                                return controller
+                                                    .getUnassignedTrains()
+                                                    .map((train) {
+                                                  return PopupMenuItem<String>(
+                                                    value: train.id,
+                                                    child: Text(train.name),
+                                                  );
+                                                }).toList();
+                                              },
+                                              onSelected: (trainId) {
+                                                controller.assignTrainToTimetable(
+                                                    trainId, timetable['id']);
+                                              },
+                                            ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+
               // Simulation Running Time
               Card(
                 color: Colors.blue[50],

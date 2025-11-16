@@ -1430,6 +1430,73 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
+  void toggleSrs() {
+    if (srsEnabled) {
+      disableSrs();
+    } else {
+      enableSrs();
+    }
+  }
+
+  // ========================================================================
+  // VCC STATUS GETTERS
+  // ========================================================================
+
+  List<Map<String, dynamic>> getVccStatuses() {
+    return vccControllers.values.map((vcc) {
+      return {
+        'id': vcc.id,
+        'area': vcc.area.toString().split('.').last.toUpperCase(),
+        'status': vcc.status.toString().split('.').last,
+        'isHealthy': vcc.isHealthy(),
+        'managedBlocks': vcc.managedBlocks.length,
+        'managedSignals': vcc.managedSignals.length,
+        'trainCount': vcc.trainData.length,
+        'lastHandshake': vcc.lastHandshake,
+      };
+    }).toList();
+  }
+
+  String getVccStatusColor(VccStatus status) {
+    switch (status) {
+      case VccStatus.active:
+        return 'green';
+      case VccStatus.standby:
+        return 'yellow';
+      case VccStatus.fault:
+        return 'red';
+      case VccStatus.communicating:
+        return 'blue';
+    }
+  }
+
+  // ========================================================================
+  // TIMETABLE GETTERS
+  // ========================================================================
+
+  List<Map<String, dynamic>> getTimetableList() {
+    return srsData.timetables.values.map((timetable) {
+      return {
+        'id': timetable.id,
+        'routeName': timetable.routeName,
+        'ghostTrainId': timetable.ghostTrainId,
+        'status': timetable.status.toString().split('.').last,
+        'delaySeconds': timetable.delaySeconds,
+        'assignedTrain': timetable.assignedRealTrainId,
+        'stopsCount': timetable.stops.length,
+        'isOnTime': timetable.isOnTime,
+      };
+    }).toList();
+  }
+
+  List<Train> getUnassignedTrains() {
+    return trains.where((t) => !t.runningToTimetable).toList();
+  }
+
+  List<Train> getAssignedTrains() {
+    return trains.where((t) => t.runningToTimetable).toList();
+  }
+
   void _createGhostTrains() {
     // Create 3 ghost trains for the cycle: MA2→MA1→MA3→MA2
     final cycleRoute = [

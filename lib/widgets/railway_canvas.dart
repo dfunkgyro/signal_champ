@@ -348,7 +348,63 @@ class RailwayPainter extends CustomPainter {
       color: theme.colorScheme.onBackground,
       fontSize: 12,
     );
-    
+
+    // Draw station name prominently
+    final stationNameSpan = TextSpan(
+      text: 'Anthill Park Station',
+      style: TextStyle(
+        color: theme.colorScheme.primary,
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    final stationNamePainter = TextPainter(
+      text: stationNameSpan,
+      textDirection: TextDirection.ltr,
+    );
+    stationNamePainter.layout();
+    stationNamePainter.paint(
+      canvas,
+      const Offset(500, 20), // Position at top center of canvas
+    );
+
+    // Draw platform labels
+    final platform1Span = TextSpan(
+      text: 'Platform 1',
+      style: TextStyle(
+        color: theme.colorScheme.primary,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final platform1Painter = TextPainter(
+      text: platform1Span,
+      textDirection: TextDirection.ltr,
+    );
+    platform1Painter.layout();
+    platform1Painter.paint(
+      canvas,
+      const Offset(1050, 130), // Near blocks 110-112 (upper track)
+    );
+
+    final platform2Span = TextSpan(
+      text: 'Platform 2',
+      style: TextStyle(
+        color: theme.colorScheme.primary,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final platform2Painter = TextPainter(
+      text: platform2Span,
+      textDirection: TextDirection.ltr,
+    );
+    platform2Painter.layout();
+    platform2Painter.paint(
+      canvas,
+      const Offset(1050, 330), // Near blocks 109-111 (lower track)
+    );
+
     // Draw block labels
     for (final block in blocks) {
       final textSpan = TextSpan(

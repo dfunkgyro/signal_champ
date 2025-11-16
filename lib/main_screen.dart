@@ -44,7 +44,7 @@ class _MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rail Champ - Advanced Railway Simulation'),
+        title: const Text('Rail Champ - Anthill Park Station'),
         backgroundColor: Colors.blue[800],
         foregroundColor: Colors.white,
         elevation: 4,
@@ -78,9 +78,7 @@ class _MainLayoutState extends State<MainLayout> {
           ),
         ],
       ),
-      body: SizedBox.expand(
-        child: _buildCurrentLayout(),
-      ),
+      body: _buildCurrentLayout(),
       floatingActionButton: _buildFloatingActions(),
       drawer: _buildNavigationDrawer(),
     );

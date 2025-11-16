@@ -403,6 +403,30 @@ class StatusPanel extends StatelessWidget {
                                           ),
                                         ],
                                       ),
+                                    if (train.isCbtcEquipped &&
+                                        (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm))
+                                      Row(
+                                        children: [
+                                          Icon(Icons.navigation, size: 10, color: Colors.blue[700]),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              'Set Destination',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.blue[800],
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            icon: Icon(Icons.edit_location, size: 14, color: Colors.blue[700]),
+                                            onPressed: () => _showDestinationDialog(context, railwayModel, train),
+                                          ),
+                                        ],
+                                      ),
                                   ],
                                 ),
                               ),
@@ -939,5 +963,186 @@ class StatusPanel extends StatelessWidget {
       case CbtcMode.storage:
         return 'Storage';
     }
+  }
+
+  void _showDestinationDialog(BuildContext context, RailwayModel railwayModel, Train train) {
+    String? selectedDestination = train.smcDestination;
+
+    // Available destinations
+    final List<String> destinations = [
+      'Platform 1',
+      'Platform 2',
+      '100', '102', '104', '106', '108', '110', '112', '114', // Upper track blocks
+      '101', '103', '105', '107', '109', '111', // Lower track blocks
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.navigation, color: Colors.blue[700]),
+              const SizedBox(width: 8),
+              Text('Set Destination for ${train.name}'),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select destination for train in ${train.cbtcMode.name.toUpperCase()} mode',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Platforms:',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildDestinationChip(
+                      'Platform 1',
+                      selectedDestination,
+                      (value) => setState(() => selectedDestination = value),
+                      Icons.train,
+                      Colors.blue,
+                    ),
+                    _buildDestinationChip(
+                      'Platform 2',
+                      selectedDestination,
+                      (value) => setState(() => selectedDestination = value),
+                      Icons.train,
+                      Colors.green,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Blocks:',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 150,
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: destinations
+                          .where((d) => !d.contains('Platform'))
+                          .map((destination) => _buildDestinationChip(
+                                destination,
+                                selectedDestination,
+                                (value) => setState(() => selectedDestination = value),
+                                Icons.location_on,
+                                Colors.orange,
+                              ))
+                          .toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (selectedDestination != null)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 14, color: Colors.blue[700]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Selected: $selectedDestination',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[900],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            if (train.smcDestination != null)
+              TextButton(
+                onPressed: () {
+                  railwayModel.smcSetDestination(train.vin, '');
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Destination cleared for ${train.name}'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                },
+                child: const Text('Clear'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: selectedDestination == null
+                  ? null
+                  : () {
+                      railwayModel.smcSetDestination(train.vin, selectedDestination!);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Destination set to $selectedDestination for ${train.name}'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+              child: const Text('Set Destination'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDestinationChip(
+    String destination,
+    String? selectedDestination,
+    ValueChanged<String?> onSelected,
+    IconData icon,
+    Color color,
+  ) {
+    final isSelected = selectedDestination == destination;
+    return FilterChip(
+      selected: isSelected,
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: isSelected ? Colors.white : color),
+          const SizedBox(width: 4),
+          Text(destination),
+        ],
+      ),
+      onSelected: (selected) => onSelected(selected ? destination : null),
+      selectedColor: color,
+      checkmarkColor: Colors.white,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.black,
+        fontSize: 11,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+    );
   }
 }

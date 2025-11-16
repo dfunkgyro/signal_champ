@@ -662,7 +662,11 @@ class RailwayModel extends ChangeNotifier {
       return;
     }
 
-    if (!_isSignalClearForBlock(train, nextBlockId)) {
+    // CBTC trains in auto mode bypass signal checks (signals are ignored in CBTC mode)
+    final isCbtcAutoMode = train.isCbtcEquipped &&
+                           (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm);
+
+    if (!isCbtcAutoMode && !_isSignalClearForBlock(train, nextBlockId)) {
       train.status = TrainStatus.waiting;
       // stopReason is set in _isSignalClearForBlock
       _addEvent('${train.name} stopped at signal in ${train.currentBlock}: ${train.stopReason}');
@@ -890,6 +894,17 @@ class RailwayModel extends ChangeNotifier {
         if (train.isCbtcEquipped && (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm)) {
           _checkAndReleasePointReservations(train);
         }
+
+        // Check if CBTC train in auto mode reached its destination (platform)
+        if (train.isCbtcEquipped &&
+            train.cbtcMode == CbtcMode.auto &&
+            train.smcDestination != null &&
+            _hasReachedDestination(train)) {
+          train.status = TrainStatus.stopped;
+          train.stopReason = 'Arrived at destination: ${train.smcDestination}';
+          _addEvent('${train.name} arrived at ${train.smcDestination}');
+          notifyListeners();
+        }
       } else if (train.status == TrainStatus.stopped) {
         // Check if obstacle is cleared for stopped CBTC trains
         if (train.isCbtcEquipped &&
@@ -905,6 +920,26 @@ class RailwayModel extends ChangeNotifier {
         }
       }
     }
+  }
+
+  bool _hasReachedDestination(Train train) {
+    if (train.smcDestination == null) return false;
+
+    // Check if train is at the destination block
+    if (train.currentBlock == train.smcDestination) {
+      return true;
+    }
+
+    // Check if destination is a platform name
+    if (train.smcDestination == 'Platform1' || train.smcDestination == 'Platform 1') {
+      // Platform 1 is blocks 110-112
+      return train.currentBlock == '110' || train.currentBlock == '111' || train.currentBlock == '112';
+    } else if (train.smcDestination == 'Platform2' || train.smcDestination == 'Platform 2') {
+      // Platform 2 is blocks 109-111
+      return train.currentBlock == '109' || train.currentBlock == '111';
+    }
+
+    return false;
   }
 
   // Calculate movement authority (green arrow visualization) for all CBTC trains
@@ -1492,7 +1527,7 @@ class RailwayModel extends ChangeNotifier {
     }
   }
 
-  // Check if there's an obstacle within 200 units ahead of train
+  // Check if there's an obstacle within 20 units ahead of train
   String? checkObstacleAhead(Train train) {
     if (!train.isCbtcEquipped) return null;
     if (train.cbtcMode != CbtcMode.auto && train.cbtcMode != CbtcMode.pm) {
@@ -1519,7 +1554,7 @@ class RailwayModel extends ChangeNotifier {
         distance = trainPos - otherPos;
       }
 
-      if (isAhead && distance < 200) {
+      if (isAhead && distance < 20) {
         return 'OBSTACLE: CBTC Train ${otherTrain.vin} ahead (${distance.toStringAsFixed(0)} units)';
       }
     }
@@ -1544,7 +1579,7 @@ class RailwayModel extends ChangeNotifier {
         return 'OBSTACLE: On closed track AB ${block.id}';
       }
 
-      if (isAhead && distance < 200) {
+      if (isAhead && distance < 20) {
         return 'OBSTACLE: Closed track AB ${block.id} ahead (${distance.toStringAsFixed(0)} units)';
       }
     }
@@ -1566,7 +1601,7 @@ class RailwayModel extends ChangeNotifier {
         distance = trainPos - blockEnd;
       }
 
-      if (isAhead && distance < 200) {
+      if (isAhead && distance < 20) {
         return 'OBSTACLE: Occupied AB ${block.id} ahead (${distance.toStringAsFixed(0)} units)';
       }
     }

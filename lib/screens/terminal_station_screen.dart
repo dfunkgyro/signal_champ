@@ -1516,6 +1516,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               _buildAddTrainSection(controller),
               const Divider(height: 32),
 
+              // CBTC Train Addition
+              _buildAddCbtcTrainSection(controller),
+              const Divider(height: 32),
+
+              // SMC Control Panel
+              _buildSmcControlPanel(controller),
+              const Divider(height: 32),
+
               // Axle Counter Controls
               _buildAxleCounterControlsSection(controller),
               const Divider(height: 32),
@@ -2474,6 +2482,321 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ),
       ],
     );
+  }
+
+  // CBTC Train Addition Section
+  Widget _buildAddCbtcTrainSection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.train, color: Colors.cyan),
+            const SizedBox(width: 8),
+            const Text('Add CBTC Train',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Card(
+          color: Colors.cyan.shade50,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'CBTC-equipped trains with Movement Authority',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 12),
+                DropdownButton<String>(
+                  isExpanded: true,
+                  hint: const Text('Select Safe Block'),
+                  value: _selectedBlockForTrain,
+                  items: controller.getSafeBlocksForTrainAdd().map((blockId) {
+                    return DropdownMenuItem(
+                      value: blockId,
+                      child: Text('Block $blockId'),
+                    );
+                  }).toList(),
+                  onChanged: (blockId) {
+                    setState(() {
+                      _selectedBlockForTrain = blockId;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: _selectedBlockForTrain != null
+                      ? () {
+                          controller.addCbtcTrainToBlock(_selectedBlockForTrain!, initialMode: CbtcMode.auto);
+                          setState(() {
+                            _selectedBlockForTrain = null;
+                          });
+                        }
+                      : null,
+                  icon: const Icon(Icons.add_circle),
+                  label: const Text('Add CBTC Train'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.cyan,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // SMC Control Panel
+  Widget _buildSmcControlPanel(TerminalStationController controller) {
+    final cbtcTrains = controller.trains.where((t) => t.isCbtcEquipped).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.computer, color: Colors.blue),
+            const SizedBox(width: 8),
+            const Text('SMC (Station Management Computer)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        if (cbtcTrains.isEmpty)
+          Card(
+            color: Colors.orange.shade50,
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'No CBTC trains available. Add a CBTC train first.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ...cbtcTrains.map((train) {
+            final assignment = controller.smcTrainAssignments[train.id];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.cyan,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            train.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _getCbtcModeColor(train.cbtcMode),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            train.cbtcMode.name.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // CBTC Mode Selection
+                    const Text('CBTC Mode:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 4,
+                      children: CbtcMode.values.map((mode) {
+                        return ChoiceChip(
+                          label: Text(mode.name.toUpperCase(), style: const TextStyle(fontSize: 10)),
+                          selected: train.cbtcMode == mode,
+                          selectedColor: _getCbtcModeColor(mode),
+                          onSelected: (selected) {
+                            if (selected) {
+                              controller.setCbtcMode(train.id, mode);
+                            }
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Destination Selection
+                    const Text('Destination:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      hint: const Text('Select Destination', style: TextStyle(fontSize: 11)),
+                      value: assignment?.destinationId,
+                      items: controller.smcDestinations.map((dest) {
+                        return DropdownMenuItem(
+                          value: dest.id,
+                          child: Text(dest.name, style: const TextStyle(fontSize: 11)),
+                        );
+                      }).toList(),
+                      onChanged: (destId) {
+                        if (destId != null) {
+                          _showMaLevelDialog(context, controller, train.id, destId);
+                        }
+                      },
+                    ),
+
+                    if (assignment != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _getMaLevelColor(assignment.authorityLevel).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: _getMaLevelColor(assignment.authorityLevel)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.flag, size: 14, color: _getMaLevelColor(assignment.authorityLevel)),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    'Dest: ${controller.smcDestinations.firstWhere((d) => d.id == assignment.destinationId).name}',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Authority: ${assignment.authorityLevel.name.toUpperCase()}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: _getMaLevelColor(assignment.authorityLevel),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      ElevatedButton.icon(
+                        onPressed: () => controller.clearSmcAssignment(train.id),
+                        icon: const Icon(Icons.clear, size: 14),
+                        label: const Text('Clear Assignment', style: TextStyle(fontSize: 10)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(28),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+      ],
+    );
+  }
+
+  // Helper method to show MA level selection dialog
+  void _showMaLevelDialog(BuildContext context, TerminalStationController controller, String trainId, String destId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Movement Authority Level'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: MovementAuthorityLevel.values.map((level) {
+            return ListTile(
+              leading: Icon(Icons.arrow_forward, color: _getMaLevelColor(level)),
+              title: Text(
+                level.name.toUpperCase(),
+                style: TextStyle(fontWeight: FontWeight.bold, color: _getMaLevelColor(level)),
+              ),
+              subtitle: Text(_getMaLevelDescription(level)),
+              onTap: () {
+                controller.assignSmcDestination(trainId, destId, level);
+                Navigator.of(context).pop();
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Color _getCbtcModeColor(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return Colors.cyan;
+      case CbtcMode.pm:
+        return Colors.orange;
+      case CbtcMode.rm:
+        return Colors.brown;
+      case CbtcMode.off:
+        return Colors.grey;
+      case CbtcMode.storage:
+        return Colors.green;
+    }
+  }
+
+  Color _getMaLevelColor(MovementAuthorityLevel level) {
+    switch (level) {
+      case MovementAuthorityLevel.ma1:
+        return Colors.green;
+      case MovementAuthorityLevel.ma2:
+        return Colors.yellow.shade700;
+      case MovementAuthorityLevel.ma3:
+        return Colors.orange;
+      case MovementAuthorityLevel.none:
+        return Colors.red;
+    }
+  }
+
+  String _getMaLevelDescription(MovementAuthorityLevel level) {
+    switch (level) {
+      case MovementAuthorityLevel.ma1:
+        return 'Full Authority - Maximum speed and distance';
+      case MovementAuthorityLevel.ma2:
+        return 'Limited Authority - Restricted speed (40 km/h)';
+      case MovementAuthorityLevel.ma3:
+        return 'Shunt Authority - Very limited (15 km/h, 200m)';
+      case MovementAuthorityLevel.none:
+        return 'No Movement Authority';
+    }
   }
 
   Widget _buildAxleCounterControlsSection(

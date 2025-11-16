@@ -498,6 +498,13 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // ============================================================================
+  // SMC (STATION MANAGEMENT COMPUTER) - CBTC INTEGRATION
+  // ============================================================================
+  final List<SmcDestination> smcDestinations = [];
+  final Map<String, SmcTrainAssignment> smcTrainAssignments = {};
+  bool smcEnabled = true;
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -930,12 +937,66 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   MovementAuthority _calculateMovementAuthority(Train train) {
-    double maxDistance = 2000.0; // Default max distance
+    // Get MA level from SMC assignment
+    final assignment = smcTrainAssignments[train.id];
+    final maLevel = assignment?.authorityLevel ?? MovementAuthorityLevel.ma1;
+
+    // Set base parameters based on MA level
+    double maxDistance;
+    double maxSpeed;
+    switch (maLevel) {
+      case MovementAuthorityLevel.ma1:
+        maxDistance = 2000.0; // Full authority
+        maxSpeed = 80.0;
+        break;
+      case MovementAuthorityLevel.ma2:
+        maxDistance = 800.0; // Limited authority
+        maxSpeed = 40.0;
+        break;
+      case MovementAuthorityLevel.ma3:
+        maxDistance = 200.0; // Shunt authority
+        maxSpeed = 15.0;
+        break;
+      case MovementAuthorityLevel.none:
+        maxDistance = 0.0;
+        maxSpeed = 0.0;
+        break;
+    }
+
     String? limitReason;
     bool hasDestination = train.smcDestination != null;
 
+    if (maLevel == MovementAuthorityLevel.none) {
+      return MovementAuthority(
+        maxDistance: 0.0,
+        limitReason: 'No movement authority',
+        hasDestination: false,
+        level: maLevel,
+        maxSpeed: 0.0,
+        destination: train.smcDestination,
+      );
+    }
+
     final trainPos = train.x;
     final direction = train.direction;
+
+    // Check for SMC destination
+    if (assignment != null) {
+      final destination = smcDestinations.firstWhere(
+        (d) => d.id == assignment.destinationId,
+        orElse: () => smcDestinations.first,
+      );
+
+      final destDistance = direction > 0
+          ? destination.x - trainPos
+          : trainPos - destination.x;
+
+      if (destDistance > 0 && destDistance < maxDistance) {
+        maxDistance = destDistance;
+        limitReason = 'Destination: ${destination.name}';
+        hasDestination = true;
+      }
+    }
 
     // Check for other CBTC trains ahead
     for (var otherTrain in trains) {
@@ -1038,8 +1099,11 @@ class TerminalStationController extends ChangeNotifier {
 
     return MovementAuthority(
       maxDistance: maxDistance.clamp(0.0, 2000.0),
-      limitReason: limitReason,
+      limitReason: limitReason ?? (maLevel == MovementAuthorityLevel.ma3 ? 'Shunt limit' : null),
       hasDestination: hasDestination,
+      level: maLevel,
+      maxSpeed: maxSpeed,
+      destination: train.smcDestination,
     );
   }
 
@@ -1138,6 +1202,7 @@ class TerminalStationController extends ChangeNotifier {
   TerminalStationController() {
     _initializeLayout();
     _initializeClock();
+    _initializeSmcDestinations();
     ace = AxleCounterEvaluator(axleCounters);
   }
 
@@ -1188,6 +1253,38 @@ class TerminalStationController extends ChangeNotifier {
       _currentTime = DateTime.now();
       notifyListeners();
     });
+  }
+
+  void _initializeSmcDestinations() {
+    // Initialize SMC destinations based on platforms
+    smcDestinations.add(SmcDestination(
+      id: 'DEST_P1',
+      name: 'Platform 1',
+      platformId: 'P1',
+      x: 1110,
+      y: 100,
+    ));
+    smcDestinations.add(SmcDestination(
+      id: 'DEST_P2',
+      name: 'Platform 2 (Bay)',
+      platformId: 'P2',
+      x: 1110,
+      y: 300,
+    ));
+    smcDestinations.add(SmcDestination(
+      id: 'DEST_EXIT_E',
+      name: 'Exit East (Block 114)',
+      platformId: '',
+      x: 1500,
+      y: 100,
+    ));
+    smcDestinations.add(SmcDestination(
+      id: 'DEST_EXIT_W',
+      name: 'Exit West (Block 101)',
+      platformId: '',
+      x: 100,
+      y: 300,
+    ));
   }
 
   void _initializeLayout() {
@@ -1855,6 +1952,119 @@ class TerminalStationController extends ChangeNotifier {
     String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
     _logEvent(
         '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // CBTC TRAIN CREATION
+  // ============================================================================
+
+  void addCbtcTrainToBlock(String blockId, {CbtcMode initialMode = CbtcMode.auto}) {
+    final safeBlocks = getSafeBlocksForTrainAdd();
+    if (!safeBlocks.contains(blockId)) {
+      _logEvent(
+          '❌ Cannot add CBTC train: Block $blockId is not safe for train addition');
+      return;
+    }
+
+    final block = blocks[blockId];
+    if (block == null) return;
+
+    int direction = 1;
+
+    if (blockId == '114' || blockId == '111') {
+      direction = -1;
+    }
+
+    if (block.y == 300 && !['111'].contains(blockId)) {
+      direction = -1;
+    }
+
+    final train = Train(
+      id: 'CBTC$nextTrainNumber',
+      name: 'CBTC Train $nextTrainNumber',
+      vin: _generateVin(nextTrainNumber, true),
+      x: _getInitialXForBlock(blockId),
+      y: block.y,
+      speed: 0,
+      targetSpeed: 0,
+      direction: direction,
+      color: Colors.cyan,
+      controlMode: TrainControlMode.automatic,
+      manualStop: false,
+      isCbtcEquipped: true,
+      cbtcMode: initialMode,
+    );
+
+    trains.add(train);
+    nextTrainNumber++;
+    _updateBlockOccupation();
+
+    String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    _logEvent(
+        '🚆 CBTC Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - ${initialMode.name.toUpperCase()} mode');
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // CBTC MODE CONTROL
+  // ============================================================================
+
+  void setCbtcMode(String trainId, CbtcMode mode) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => throw Exception('Train not found'));
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('❌ Train ${train.name} is not CBTC-equipped');
+      return;
+    }
+
+    train.cbtcMode = mode;
+    _logEvent('🔧 ${train.name} CBTC mode changed to ${mode.name.toUpperCase()}');
+
+    // Update movement authority based on new mode
+    _updateMovementAuthorities();
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // SMC FUNCTIONALITY
+  // ============================================================================
+
+  void assignSmcDestination(String trainId, String destinationId, MovementAuthorityLevel maLevel) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => throw Exception('Train not found'));
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('❌ Train ${train.name} is not CBTC-equipped - cannot assign SMC destination');
+      return;
+    }
+
+    final destination = smcDestinations.firstWhere(
+      (d) => d.id == destinationId,
+      orElse: () => throw Exception('Destination not found'),
+    );
+
+    train.smcDestination = destination.name;
+
+    smcTrainAssignments[trainId] = SmcTrainAssignment(
+      trainId: trainId,
+      destinationId: destinationId,
+      authorityLevel: maLevel,
+      assignedAt: DateTime.now(),
+    );
+
+    _logEvent('📍 SMC assigned ${train.name} to ${destination.name} with ${maLevel.name.toUpperCase()}');
+    _updateMovementAuthorities();
+    notifyListeners();
+  }
+
+  void clearSmcAssignment(String trainId) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => throw Exception('Train not found'));
+
+    train.smcDestination = null;
+    smcTrainAssignments.remove(trainId);
+
+    _logEvent('🗑️ SMC assignment cleared for ${train.name}');
+    _updateMovementAuthorities();
     notifyListeners();
   }
 

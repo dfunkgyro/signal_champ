@@ -1020,12 +1020,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ? trainX + ma.maxDistance
           : trainX - ma.maxDistance;
 
-      // Draw base green path with gradient
+      // Draw base path with gradient based on MA level
+      final maColor = ma.levelColor;
       final gradient = LinearGradient(
         colors: [
-          Colors.green.withOpacity(0.6),
-          Colors.green.withOpacity(0.3),
-          Colors.green.withOpacity(0.1),
+          maColor.withOpacity(0.6),
+          maColor.withOpacity(0.3),
+          maColor.withOpacity(0.1),
         ],
         stops: const [0.0, 0.7, 1.0],
       );
@@ -1063,9 +1064,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         // Fade out arrows near the end
         final opacity = (1.0 - normalizedProgress).clamp(0.3, 1.0);
 
-        // Draw arrow chevron
+        // Draw arrow chevron based on MA level
+        final maColor = ma.levelColor;
         final arrowPaint = Paint()
-          ..color = Colors.green.withOpacity(opacity * 0.8)
+          ..color = maColor.withOpacity(opacity * 0.8)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
           ..strokeCap = StrokeCap.round;
@@ -1149,9 +1151,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         );
       }
 
-      // Draw glow effect around the path for extra visibility
+      // Draw glow effect around the path for extra visibility (MA level color)
+      final maColor = ma.levelColor;
       final glowPaint = Paint()
-        ..color = Colors.green.withOpacity(0.15)
+        ..color = maColor.withOpacity(0.15)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 6
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
@@ -1166,6 +1169,28 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         const Radius.circular(3),
       );
       canvas.drawRRect(glowRect, glowPaint);
+
+      // Draw MA level badge near the start of the authority
+      final badgePainter = TextPainter(
+        text: TextSpan(
+          text: ma.level.name.toUpperCase(),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            backgroundColor: maColor.withOpacity(0.8),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      badgePainter.layout();
+      badgePainter.paint(
+        canvas,
+        Offset(
+          startX + (isEastbound ? 10 : -badgePainter.width - 10),
+          trainY - 45,
+        ),
+      );
     }
   }
 

@@ -31,6 +31,13 @@ enum CbtcMode {
   storage    // Storage mode - green
 }
 
+enum MovementAuthorityLevel {
+  ma1,  // Full authority - train can proceed to destination
+  ma2,  // Limited authority - restricted speed/distance
+  ma3,  // Shunt authority - very limited movement
+  none  // No movement authority
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -39,12 +46,44 @@ class MovementAuthority {
   final double maxDistance; // Maximum distance the green arrow extends
   final String? limitReason; // Why the arrow stopped (obstacle, destination, etc.)
   final bool hasDestination; // Whether train has a destination
+  final MovementAuthorityLevel level; // MA1, MA2, or MA3
+  final double maxSpeed; // Maximum permitted speed (km/h)
+  final String? destination; // Target location
 
   MovementAuthority({
     required this.maxDistance,
     this.limitReason,
     this.hasDestination = false,
+    this.level = MovementAuthorityLevel.ma1,
+    this.maxSpeed = 80.0,
+    this.destination,
   });
+
+  Color get levelColor {
+    switch (level) {
+      case MovementAuthorityLevel.ma1:
+        return Colors.green;
+      case MovementAuthorityLevel.ma2:
+        return Colors.yellow;
+      case MovementAuthorityLevel.ma3:
+        return Colors.orange;
+      case MovementAuthorityLevel.none:
+        return Colors.red;
+    }
+  }
+
+  String get levelName {
+    switch (level) {
+      case MovementAuthorityLevel.ma1:
+        return 'MA1 - Full Authority';
+      case MovementAuthorityLevel.ma2:
+        return 'MA2 - Limited Authority';
+      case MovementAuthorityLevel.ma3:
+        return 'MA3 - Shunt Authority';
+      case MovementAuthorityLevel.none:
+        return 'No Authority';
+    }
+  }
 }
 
 class BlockSection {
@@ -300,4 +339,38 @@ class CollisionRecoveryPlan {
     required this.blocksToClear,
     required this.state,
   }) : detectedAt = DateTime.now();
+}
+
+// ============================================================================
+// SMC (STATION MANAGEMENT COMPUTER) MODELS
+// ============================================================================
+
+class SmcDestination {
+  final String id;
+  final String name;
+  final String platformId;
+  final double x;
+  final double y;
+
+  SmcDestination({
+    required this.id,
+    required this.name,
+    required this.platformId,
+    required this.x,
+    required this.y,
+  });
+}
+
+class SmcTrainAssignment {
+  final String trainId;
+  final String destinationId;
+  final MovementAuthorityLevel authorityLevel;
+  final DateTime assignedAt;
+
+  SmcTrainAssignment({
+    required this.trainId,
+    required this.destinationId,
+    required this.authorityLevel,
+    required this.assignedAt,
+  });
 }

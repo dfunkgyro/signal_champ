@@ -30,11 +30,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   bool _showTopPanel = false;
   String? _selectedBlockForTrain;
 
-  // NEW: Canvas size controls
-  double _canvasWidth = 1600.0; // Default width
-  double _canvasHeight = 400.0; // Default height
-  final double _defaultCanvasWidth = 1600.0;
-  final double _defaultCanvasHeight = 400.0;
+  // NEW: Canvas size controls - Expanded for full loop network
+  double _canvasWidth = 7000.0; // Expanded for closed loop (was 1600.0)
+  double _canvasHeight = 1200.0; // Expanded for return tracks (was 400.0)
+  final double _defaultCanvasWidth = 7000.0;
+  final double _defaultCanvasHeight = 1200.0;
 
   @override
   void initState() {

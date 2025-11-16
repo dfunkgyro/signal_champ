@@ -173,6 +173,11 @@ class Train {
   String? smcDestination; // SMC-assigned destination
   MovementAuthority? movementAuthority; // CBTC movement authority visualization
 
+  // 2-car train support
+  final int numberOfCars;
+  final double carLength;
+  final double couplingLength;
+
   Train({
     required this.id,
     required this.name,
@@ -196,7 +201,36 @@ class Train {
     this.cbtcMode = CbtcMode.off,
     this.smcDestination,
     this.movementAuthority,
+    this.numberOfCars = 2,
+    this.carLength = 60.0,
+    this.couplingLength = 10.0,
   });
+
+  // Computed properties for 2-car trains
+  double get totalLength => (numberOfCars * carLength) + ((numberOfCars - 1) * couplingLength);
+
+  // Get position of each car center
+  List<Offset> get carPositions {
+    List<Offset> positions = [];
+    double currentX = x; // x is the FRONT of the train
+
+    for (int i = 0; i < numberOfCars; i++) {
+      if (direction > 0) {
+        // Moving eastbound (right) - cars trail behind
+        positions.add(Offset(currentX - (i * (carLength + couplingLength)), y));
+      } else {
+        // Moving westbound (left) - cars trail behind
+        positions.add(Offset(currentX + (i * (carLength + couplingLength)), y));
+      }
+    }
+    return positions;
+  }
+
+  // Get front and rear positions for block occupancy
+  double get frontX => x;
+  double get rearX => direction > 0
+      ? x - totalLength
+      : x + totalLength;
 }
 
 class TrainStop {

@@ -1218,9 +1218,9 @@ class TerminalStationController extends ChangeNotifier {
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
     platforms.add(Platform(
-        id: 'P1', name: 'Platform 1', startX: 980, endX: 1240, y: 100));
+        id: 'P1', name: 'Central Terminal - Platform 1', startX: 980, endX: 1240, y: 100));
     platforms.add(Platform(
-        id: 'P2', name: 'Platform 2 (Bay)', startX: 980, endX: 1240, y: 300));
+        id: 'P2', name: 'Central Terminal - Platform 2 (Bay)', startX: 980, endX: 1240, y: 300));
 
     signals['C31'] = Signal(
       id: 'C31',
@@ -1351,8 +1351,220 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 980, y: 340);
     trainStops['T28'] = TrainStop(id: 'T28', signalId: 'C28', x: 380, y: 340);
 
+    // ===== SECTION 2: EAST EXTENSION TO VICTORIA JUNCTION (x: 1600-3200) =====
+    // Upper track continuation
+    blocks['116'] = BlockSection(id: '116', startX: 1600, endX: 1800, y: 100);
+    blocks['118'] = BlockSection(id: '118', startX: 1800, endX: 2000, y: 100);
+    blocks['120'] = BlockSection(id: '120', startX: 2000, endX: 2200, y: 100);
+    blocks['122'] = BlockSection(id: '122', startX: 2200, endX: 2400, y: 100);
+    blocks['124'] = BlockSection(id: '124', startX: 2400, endX: 2600, y: 100);
+    blocks['126'] = BlockSection(id: '126', startX: 2600, endX: 2800, y: 100);
+    blocks['128'] = BlockSection(id: '128', startX: 2800, endX: 3000, y: 100);
+    blocks['130'] = BlockSection(id: '130', startX: 3000, endX: 3200, y: 100);
+
+    // Lower track continuation
+    blocks['117'] = BlockSection(id: '117', startX: 1600, endX: 1800, y: 300);
+    blocks['119'] = BlockSection(id: '119', startX: 1800, endX: 2000, y: 300);
+    blocks['121'] = BlockSection(id: '121', startX: 2000, endX: 2200, y: 300);
+    blocks['123'] = BlockSection(id: '123', startX: 2200, endX: 2400, y: 300);
+    blocks['125'] = BlockSection(id: '125', startX: 2400, endX: 2600, y: 300);
+    blocks['127'] = BlockSection(id: '127', startX: 2600, endX: 2800, y: 300);
+    blocks['129'] = BlockSection(id: '129', startX: 2800, endX: 3000, y: 300);
+    blocks['131'] = BlockSection(id: '131', startX: 3000, endX: 3200, y: 300);
+
+    // Crossover 2 at Victoria Junction (x: 2000-2200)
+    blocks['crossover120'] = BlockSection(id: 'crossover120', startX: 2000, endX: 2100, y: 150);
+    blocks['crossover121'] = BlockSection(id: 'crossover121', startX: 2100, endX: 2200, y: 250);
+    points['80A'] = Point(id: '80A', x: 2000, y: 100);
+    points['80B'] = Point(id: '80B', x: 2200, y: 300);
+
+    // Victoria Junction Station
+    platforms.add(Platform(
+        id: 'P3', name: 'Victoria Junction - Platform 1', startX: 2400, endX: 2800, y: 100));
+    platforms.add(Platform(
+        id: 'P4', name: 'Victoria Junction - Platform 2', startX: 2400, endX: 2800, y: 300));
+
+    // ===== SECTION 3: TO PADDINGTON CENTRAL (x: 3200-4800) =====
+    blocks['132'] = BlockSection(id: '132', startX: 3200, endX: 3400, y: 100);
+    blocks['134'] = BlockSection(id: '134', startX: 3400, endX: 3600, y: 100);
+    blocks['136'] = BlockSection(id: '136', startX: 3600, endX: 3800, y: 100);
+    blocks['138'] = BlockSection(id: '138', startX: 3800, endX: 4000, y: 100);
+    blocks['140'] = BlockSection(id: '140', startX: 4000, endX: 4200, y: 100);
+    blocks['142'] = BlockSection(id: '142', startX: 4200, endX: 4400, y: 100);
+    blocks['144'] = BlockSection(id: '144', startX: 4400, endX: 4600, y: 100);
+    blocks['146'] = BlockSection(id: '146', startX: 4600, endX: 4800, y: 100);
+
+    blocks['133'] = BlockSection(id: '133', startX: 3200, endX: 3400, y: 300);
+    blocks['135'] = BlockSection(id: '135', startX: 3400, endX: 3600, y: 300);
+    blocks['137'] = BlockSection(id: '137', startX: 3600, endX: 3800, y: 300);
+    blocks['139'] = BlockSection(id: '139', startX: 3800, endX: 4000, y: 300);
+    blocks['141'] = BlockSection(id: '141', startX: 4000, endX: 4200, y: 300);
+    blocks['143'] = BlockSection(id: '143', startX: 4200, endX: 4400, y: 300);
+    blocks['145'] = BlockSection(id: '145', startX: 4400, endX: 4600, y: 300);
+    blocks['147'] = BlockSection(id: '147', startX: 4600, endX: 4800, y: 300);
+
+    // Crossover 3 at Paddington (x: 3600-3800)
+    blocks['crossover136'] = BlockSection(id: 'crossover136', startX: 3600, endX: 3700, y: 150);
+    blocks['crossover137'] = BlockSection(id: 'crossover137', startX: 3700, endX: 3800, y: 250);
+    points['82A'] = Point(id: '82A', x: 3600, y: 100);
+    points['82B'] = Point(id: '82B', x: 3800, y: 300);
+
+    // Paddington Central Station
+    platforms.add(Platform(
+        id: 'P5', name: 'Paddington Central - Platform 1', startX: 3800, endX: 4200, y: 100));
+    platforms.add(Platform(
+        id: 'P6', name: 'Paddington Central - Platform 2', startX: 3800, endX: 4200, y: 300));
+
+    // ===== SECTION 4: SOUTHERN CURVE (x: 4800-5600) =====
+    // Upper track curves down from y:100 to y:700
+    blocks['150'] = BlockSection(id: '150', startX: 4800, endX: 5000, y: 200);
+    blocks['152'] = BlockSection(id: '152', startX: 5000, endX: 5200, y: 400);
+    blocks['154'] = BlockSection(id: '154', startX: 5200, endX: 5400, y: 600);
+    blocks['156'] = BlockSection(id: '156', startX: 5400, endX: 5600, y: 700);
+
+    // Lower track curves to y:900
+    blocks['151'] = BlockSection(id: '151', startX: 4800, endX: 5000, y: 400);
+    blocks['153'] = BlockSection(id: '153', startX: 5000, endX: 5200, y: 600);
+    blocks['155'] = BlockSection(id: '155', startX: 5200, endX: 5400, y: 800);
+    blocks['157'] = BlockSection(id: '157', startX: 5400, endX: 5600, y: 900);
+
+    // Crossover 4 in the curve (x: 5000-5200)
+    blocks['crossover152'] = BlockSection(id: 'crossover152', startX: 5000, endX: 5100, y: 500);
+    blocks['crossover153'] = BlockSection(id: 'crossover153', startX: 5100, endX: 5200, y: 600);
+    points['84A'] = Point(id: '84A', x: 5000, y: 400);
+    points['84B'] = Point(id: '84B', x: 5200, y: 600);
+
+    // ===== SECTION 5: SOUTH RETURN LINE (x: 5600-6800 eastbound, then westbound) =====
+    // Continue east to furthest point
+    blocks['158'] = BlockSection(id: '158', startX: 5600, endX: 5800, y: 700);
+    blocks['160'] = BlockSection(id: '160', startX: 5800, endX: 6000, y: 700);
+    blocks['162'] = BlockSection(id: '162', startX: 6000, endX: 6200, y: 700);
+    blocks['164'] = BlockSection(id: '164', startX: 6200, endX: 6400, y: 700);
+    blocks['166'] = BlockSection(id: '166', startX: 6400, endX: 6600, y: 700);
+    blocks['168'] = BlockSection(id: '168', startX: 6600, endX: 6800, y: 700);
+
+    blocks['159'] = BlockSection(id: '159', startX: 5600, endX: 5800, y: 900);
+    blocks['161'] = BlockSection(id: '161', startX: 5800, endX: 6000, y: 900);
+    blocks['163'] = BlockSection(id: '163', startX: 6000, endX: 6200, y: 900);
+    blocks['165'] = BlockSection(id: '165', startX: 6200, endX: 6400, y: 900);
+    blocks['167'] = BlockSection(id: '167', startX: 6400, endX: 6600, y: 900);
+    blocks['169'] = BlockSection(id: '169', startX: 6600, endX: 6800, y: 900);
+
+    // Waterloo Express Platform (on return line)
+    platforms.add(Platform(
+        id: 'P7', name: 'Waterloo Express - Platform 1', startX: 6000, endX: 6400, y: 700));
+
+    // Return line going westbound (startX > endX)
+    blocks['200'] = BlockSection(id: '200', startX: 6800, endX: 6600, y: 700);
+    blocks['202'] = BlockSection(id: '202', startX: 6600, endX: 6400, y: 700);
+    blocks['204'] = BlockSection(id: '204', startX: 6400, endX: 6200, y: 700);
+    blocks['206'] = BlockSection(id: '206', startX: 6200, endX: 6000, y: 700);
+    blocks['208'] = BlockSection(id: '208', startX: 6000, endX: 5800, y: 700);
+    blocks['210'] = BlockSection(id: '210', startX: 5800, endX: 5600, y: 700);
+    blocks['212'] = BlockSection(id: '212', startX: 5600, endX: 5400, y: 700);
+    blocks['214'] = BlockSection(id: '214', startX: 5400, endX: 5200, y: 700);
+    blocks['216'] = BlockSection(id: '216', startX: 5200, endX: 5000, y: 700);
+    blocks['218'] = BlockSection(id: '218', startX: 5000, endX: 4800, y: 700);
+    blocks['220'] = BlockSection(id: '220', startX: 4800, endX: 4600, y: 700);
+    blocks['222'] = BlockSection(id: '222', startX: 4600, endX: 4400, y: 700);
+    blocks['224'] = BlockSection(id: '224', startX: 4400, endX: 4200, y: 700);
+    blocks['226'] = BlockSection(id: '226', startX: 4200, endX: 4000, y: 700);
+    blocks['228'] = BlockSection(id: '228', startX: 4000, endX: 3800, y: 700);
+    blocks['230'] = BlockSection(id: '230', startX: 3800, endX: 3600, y: 700);
+    blocks['232'] = BlockSection(id: '232', startX: 3600, endX: 3400, y: 700);
+    blocks['234'] = BlockSection(id: '234', startX: 3400, endX: 3200, y: 700);
+    blocks['236'] = BlockSection(id: '236', startX: 3200, endX: 3000, y: 700);
+    blocks['238'] = BlockSection(id: '238', startX: 3000, endX: 2800, y: 700);
+    blocks['240'] = BlockSection(id: '240', startX: 2800, endX: 2600, y: 700);
+    blocks['242'] = BlockSection(id: '242', startX: 2600, endX: 2400, y: 700);
+    blocks['244'] = BlockSection(id: '244', startX: 2400, endX: 2200, y: 700);
+    blocks['246'] = BlockSection(id: '246', startX: 2200, endX: 2000, y: 700);
+    blocks['248'] = BlockSection(id: '248', startX: 2000, endX: 1800, y: 700);
+    blocks['250'] = BlockSection(id: '250', startX: 1800, endX: 1600, y: 700);
+    blocks['252'] = BlockSection(id: '252', startX: 1600, endX: 1400, y: 700);
+    blocks['254'] = BlockSection(id: '254', startX: 1400, endX: 1200, y: 700);
+    blocks['256'] = BlockSection(id: '256', startX: 1200, endX: 1000, y: 700);
+    blocks['258'] = BlockSection(id: '258', startX: 1000, endX: 800, y: 700);
+    blocks['260'] = BlockSection(id: '260', startX: 800, endX: 600, y: 700);
+    blocks['262'] = BlockSection(id: '262', startX: 600, endX: 400, y: 700);
+    blocks['264'] = BlockSection(id: '264', startX: 400, endX: 200, y: 700);
+    blocks['266'] = BlockSection(id: '266', startX: 200, endX: 0, y: 700);
+
+    // ===== SECTION 6: WESTERN CURVE (closes the loop back to start) =====
+    // Curve from y:700 back to y:100 at x:0
+    blocks['300'] = BlockSection(id: '300', startX: 0, endX: -200, y: 700);
+    blocks['302'] = BlockSection(id: '302', startX: -200, endX: -400, y: 700);
+    blocks['304'] = BlockSection(id: '304', startX: -400, endX: -600, y: 700);
+    blocks['306'] = BlockSection(id: '306', startX: -600, endX: -800, y: 700);
+
+    // Camden Depot on northwest curve
+    platforms.add(Platform(
+        id: 'P8', name: 'Camden Depot - Platform 1', startX: -800, endX: -400, y: 700));
+
+    // Curve blocks transitioning back north
+    blocks['308'] = BlockSection(id: '308', startX: -800, endX: -800, y: 600);
+    blocks['310'] = BlockSection(id: '310', startX: -800, endX: -800, y: 500);
+    blocks['312'] = BlockSection(id: '312', startX: -800, endX: -800, y: 400);
+    blocks['314'] = BlockSection(id: '314', startX: -800, endX: -600, y: 300);
+    blocks['316'] = BlockSection(id: '316', startX: -600, endX: -400, y: 200);
+    blocks['318'] = BlockSection(id: '318', startX: -400, endX: -200, y: 150);
+    blocks['320'] = BlockSection(id: '320', startX: -200, endX: 0, y: 100);
+
+    // Connection point back to start (completes loop)
+    points['90A'] = Point(id: '90A', x: 0, y: 300);
+    points['90B'] = Point(id: '90B', x: -200, y: 500);
+
+    // Additional signals for new sections (basic coverage)
+    signals['C35'] = Signal(
+      id: 'C35',
+      x: 1790,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C35_R1',
+          name: 'Entry to Victoria Junction',
+          requiredBlocksClear: ['118', '120'],
+          requiredPointPositions: {},
+          pathBlocks: ['116', '118', '120'],
+          protectedBlocks: ['118', '120'],
+        ),
+      ],
+    );
+
+    signals['C37'] = Signal(
+      id: 'C37',
+      x: 2990,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C37_R1',
+          name: 'Exit Victoria to Paddington',
+          requiredBlocksClear: ['130', '132'],
+          requiredPointPositions: {},
+          pathBlocks: ['128', '130', '132'],
+          protectedBlocks: ['130', '132'],
+        ),
+      ],
+    );
+
+    signals['C39'] = Signal(
+      id: 'C39',
+      x: 4390,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C39_R1',
+          name: 'Paddington to Southern Curve',
+          requiredBlocksClear: ['144', '146'],
+          requiredPointPositions: {},
+          pathBlocks: ['142', '144', '146'],
+          protectedBlocks: ['144', '146'],
+        ),
+      ],
+    );
+
     _logEvent(
-        'Station initialized: 2 platforms, 4 signals, 2 points, 4 train stops, 8 axle counters');
+        '🚂 Full Loop Network initialized: 8 platforms across 5 stations, 7 signals, 6 crossovers, 4 train stops');
   }
 
   // ============================================================================
@@ -3011,11 +3223,26 @@ class TerminalStationController extends ChangeNotifier {
     });
 
     for (var train in trains) {
+      // For 2-car trains, check entire train length
+      final frontX = train.frontX;
+      final rearX = train.rearX;
+      final minX = frontX < rearX ? frontX : rearX;
+      final maxX = frontX > rearX ? frontX : rearX;
+
       for (var block in blocks.values) {
-        if (block.containsPosition(train.x, train.y)) {
+        // Check if any part of the train overlaps with the block
+        final trainOverlapsBlock = (minX <= block.endX && maxX >= block.startX) &&
+            (train.y - block.y).abs() < 50;
+
+        if (trainOverlapsBlock) {
           block.occupied = true;
-          block.occupyingTrainId = train.id;
-          train.currentBlockId = block.id;
+          if (block.occupyingTrainId == null) {
+            block.occupyingTrainId = train.id;
+          }
+          // Set currentBlockId to the block where the front of the train is
+          if (block.containsPosition(train.x, train.y)) {
+            train.currentBlockId = block.id;
+          }
         }
       }
     }

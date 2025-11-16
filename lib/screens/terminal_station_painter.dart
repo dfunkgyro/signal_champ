@@ -1171,115 +1171,142 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawTrains(Canvas canvas) {
     for (var train in controller.trains) {
-      canvas.save();
-      if (train.rotation != 0.0) {
-        canvas.translate(train.x, train.y);
-        canvas.rotate(train.rotation);
-        canvas.translate(-train.x, -train.y);
+      // Get positions for all cars in this train
+      final carPositions = train.carPositions;
+
+      // Draw couplings between cars first (so they appear behind cars)
+      for (int i = 0; i < carPositions.length - 1; i++) {
+        final car1 = carPositions[i];
+        final car2 = carPositions[i + 1];
+        _drawCoupling(canvas, car1, car2, train.direction);
       }
 
-      final bodyPaint = Paint()
-        ..color = train.color
-        ..style = PaintingStyle.fill;
+      // Draw each car
+      for (int i = 0; i < carPositions.length; i++) {
+        final carPos = carPositions[i];
+        final isLeadCar = (i == 0);
 
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
-          const Radius.circular(6),
-        ),
-        bodyPaint,
-      );
+        canvas.save();
+        if (train.rotation != 0.0) {
+          canvas.translate(carPos.dx, carPos.dy);
+          canvas.rotate(train.rotation);
+          canvas.translate(-carPos.dx, -carPos.dy);
+        }
 
-      final outlinePaint = Paint()
-        ..color = train.controlMode == TrainControlMode.manual
-            ? Colors.blue
-            : Colors.black
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = train.controlMode == TrainControlMode.manual ? 3 : 2;
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
-          const Radius.circular(6),
-        ),
-        outlinePaint,
-      );
-
-      if (train.doorsOpen) {
-        final doorPaint = Paint()
-          ..color = Colors.black
+        // Draw car body
+        final bodyPaint = Paint()
+          ..color = train.color
           ..style = PaintingStyle.fill;
 
-        final leftDoorRect = Rect.fromLTWH(
-          train.x - 28,
-          train.y - 13,
-          8,
-          26,
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(carPos.dx - 30, carPos.dy - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
         );
 
-        final rightDoorRect = Rect.fromLTWH(
-          train.x + 20,
-          train.y - 13,
-          8,
-          26,
-        );
-
-        canvas.drawRect(leftDoorRect, doorPaint);
-        canvas.drawRect(rightDoorRect, doorPaint);
-
-        final doorOutlinePaint = Paint()
-          ..color = Colors.white
+        final outlinePaint = Paint()
+          ..color = train.controlMode == TrainControlMode.manual
+              ? Colors.blue
+              : Colors.black
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
+          ..strokeWidth = train.controlMode == TrainControlMode.manual ? 3 : 2;
 
-        canvas.drawRect(leftDoorRect, doorOutlinePaint);
-        canvas.drawRect(rightDoorRect, doorOutlinePaint);
-      } else {
-        final windowPaint = Paint()..color = Colors.lightBlue[100]!;
-        canvas.drawRect(
-            Rect.fromLTWH(train.x - 22, train.y - 10, 12, 8), windowPaint);
-        canvas.drawRect(
-            Rect.fromLTWH(train.x - 6, train.y - 10, 12, 8), windowPaint);
-        canvas.drawRect(
-            Rect.fromLTWH(train.x + 10, train.y - 10, 12, 8), windowPaint);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(carPos.dx - 30, carPos.dy - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+
+        // Draw doors or windows
+        if (train.doorsOpen) {
+          final doorPaint = Paint()
+            ..color = Colors.black
+            ..style = PaintingStyle.fill;
+
+          final leftDoorRect = Rect.fromLTWH(
+            carPos.dx - 28,
+            carPos.dy - 13,
+            8,
+            26,
+          );
+
+          final rightDoorRect = Rect.fromLTWH(
+            carPos.dx + 20,
+            carPos.dy - 13,
+            8,
+            26,
+          );
+
+          canvas.drawRect(leftDoorRect, doorPaint);
+          canvas.drawRect(rightDoorRect, doorPaint);
+
+          final doorOutlinePaint = Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5;
+
+          canvas.drawRect(leftDoorRect, doorOutlinePaint);
+          canvas.drawRect(rightDoorRect, doorOutlinePaint);
+        } else {
+          final windowPaint = Paint()..color = Colors.lightBlue[100]!;
+          canvas.drawRect(
+              Rect.fromLTWH(carPos.dx - 22, carPos.dy - 10, 12, 8), windowPaint);
+          canvas.drawRect(
+              Rect.fromLTWH(carPos.dx - 6, carPos.dy - 10, 12, 8), windowPaint);
+          canvas.drawRect(
+              Rect.fromLTWH(carPos.dx + 10, carPos.dy - 10, 12, 8), windowPaint);
+        }
+
+        // Draw wheels
+        final wheelPaint = Paint()..color = Colors.black;
+        canvas.drawCircle(Offset(carPos.dx - 18, carPos.dy + 15), 6, wheelPaint);
+        canvas.drawCircle(Offset(carPos.dx + 18, carPos.dy + 15), 6, wheelPaint);
+
+        // Only draw direction arrow on lead car
+        if (isLeadCar) {
+          final arrowPaint = Paint()
+            ..color = train.direction > 0 ? Colors.green : Colors.orange
+            ..style = PaintingStyle.fill;
+
+          if (train.direction > 0) {
+            final arrowPath = Path()
+              ..moveTo(carPos.dx + 26, carPos.dy)
+              ..lineTo(carPos.dx + 20, carPos.dy - 6)
+              ..lineTo(carPos.dx + 20, carPos.dy + 6)
+              ..close();
+            canvas.drawPath(arrowPath, arrowPaint);
+          } else {
+            final arrowPath = Path()
+              ..moveTo(carPos.dx - 26, carPos.dy)
+              ..lineTo(carPos.dx - 20, carPos.dy - 6)
+              ..lineTo(carPos.dx - 20, carPos.dy + 6)
+              ..close();
+            canvas.drawPath(arrowPath, arrowPaint);
+          }
+        }
+
+        canvas.restore();
       }
 
-      final wheelPaint = Paint()..color = Colors.black;
-      canvas.drawCircle(Offset(train.x - 18, train.y + 15), 6, wheelPaint);
-      canvas.drawCircle(Offset(train.x + 18, train.y + 15), 6, wheelPaint);
-
-      final arrowPaint = Paint()
-        ..color = train.direction > 0 ? Colors.green : Colors.orange
-        ..style = PaintingStyle.fill;
-
-      if (train.direction > 0) {
-        final arrowPath = Path()
-          ..moveTo(train.x + 26, train.y)
-          ..lineTo(train.x + 20, train.y - 6)
-          ..lineTo(train.x + 20, train.y + 6)
-          ..close();
-        canvas.drawPath(arrowPath, arrowPaint);
-      } else {
-        final arrowPath = Path()
-          ..moveTo(train.x - 26, train.y)
-          ..lineTo(train.x - 20, train.y - 6)
-          ..lineTo(train.x - 20, train.y + 6)
-          ..close();
-        canvas.drawPath(arrowPath, arrowPaint);
-      }
+      // Draw status indicators on the lead car only
+      final leadCarPos = carPositions.first;
 
       if (train.manualStop) {
         final stopPaint = Paint()
           ..color = Colors.red
           ..style = PaintingStyle.fill;
-        canvas.drawCircle(Offset(train.x, train.y - 25), 8, stopPaint);
+        canvas.drawCircle(Offset(leadCarPos.dx, leadCarPos.dy - 25), 8, stopPaint);
       }
 
       if (train.emergencyBrake) {
         final emergencyPaint = Paint()
           ..color = Colors.red
           ..style = PaintingStyle.fill;
-        canvas.drawCircle(Offset(train.x, train.y + 25), 8, emergencyPaint);
+        canvas.drawCircle(Offset(leadCarPos.dx, leadCarPos.dy + 25), 8, emergencyPaint);
 
         final textPainter = TextPainter(
           text: const TextSpan(
@@ -1291,14 +1318,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           textDirection: TextDirection.ltr,
         );
         textPainter.layout();
-        textPainter.paint(canvas, Offset(train.x - 4, train.y + 20));
+        textPainter.paint(canvas, Offset(leadCarPos.dx - 4, leadCarPos.dy + 20));
       }
 
       if (train.controlMode == TrainControlMode.manual) {
         final badgePaint = Paint()
           ..color = Colors.blue
           ..style = PaintingStyle.fill;
-        canvas.drawCircle(Offset(train.x, train.y + 25), 8, badgePaint);
+        canvas.drawCircle(Offset(leadCarPos.dx, leadCarPos.dy + 25), 8, badgePaint);
 
         final textPainter = TextPainter(
           text: const TextSpan(
@@ -1310,7 +1337,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           textDirection: TextDirection.ltr,
         );
         textPainter.layout();
-        textPainter.paint(canvas, Offset(train.x - 4, train.y + 20));
+        textPainter.paint(canvas, Offset(leadCarPos.dx - 4, leadCarPos.dy + 20));
       }
 
       if (train.doorsOpen) {
@@ -1318,7 +1345,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ..color = Colors.orange
           ..style = PaintingStyle.fill;
 
-        canvas.drawCircle(Offset(train.x, train.y - 35), 6, doorPaint);
+        canvas.drawCircle(Offset(leadCarPos.dx, leadCarPos.dy - 35), 6, doorPaint);
 
         final textPainter = TextPainter(
           text: const TextSpan(
@@ -1332,11 +1359,22 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           textDirection: TextDirection.ltr,
         );
         textPainter.layout();
-        textPainter.paint(canvas, Offset(train.x - 3, train.y - 38));
+        textPainter.paint(canvas, Offset(leadCarPos.dx - 3, leadCarPos.dy - 38));
       }
-
-      canvas.restore();
     }
+  }
+
+  void _drawCoupling(Canvas canvas, Offset car1, Offset car2, int direction) {
+    final couplingPaint = Paint()
+      ..color = Colors.grey[800]!
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      Offset(car1.dx + (direction > 0 ? -30 : 30), car1.dy),
+      Offset(car2.dx + (direction > 0 ? 30 : -30), car2.dy),
+      couplingPaint,
+    );
   }
 
   void _drawDirectionLabels(Canvas canvas) {

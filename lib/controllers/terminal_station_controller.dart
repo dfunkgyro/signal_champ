@@ -6,60 +6,13 @@ import 'package:rail_champ/screens/terminal_station_models.dart'
 import 'dart:async';
 import 'dart:math' as math;
 
-// ============================================================================
-// AXLE COUNTER MODEL
-// ============================================================================
-class AxleCounter {
-  final String id;
-  final String blockId;
-  final double x;
-  final double y;
-  int count;
-  DateTime? lastDetectionTime;
-  bool d1Active;
-  bool d2Active;
-  String lastDirection;
-  final bool isTwin;
-  final String? twinLabel;
-  String? lastTrainDetected;
-  DateTime? lastTrainDetectionTime;
+// Import modular components
+import 'terminal_station/axle_counter.dart';
+import 'terminal_station/calculation_methods.dart';
 
-  AxleCounter({
-    required this.id,
-    required this.blockId,
-    required this.x,
-    required this.y,
-    this.count = 0,
-    this.lastDetectionTime,
-    this.d1Active = false,
-    this.d2Active = false,
-    this.lastDirection = '',
-    this.isTwin = false,
-    this.twinLabel,
-    this.lastTrainDetected,
-    this.lastTrainDetectionTime,
-  });
-}
-
-// ============================================================================
-// AXLE COUNTER CALCULATION METHOD ENUMS
-// ============================================================================
-
-enum AB109CalculationMethod {
-  simple,
-  flowBalance,
-  exitTracking,
-  fullJunction,
-  conservative,
-}
-
-enum AB104CalculationMethod {
-  simple,
-  flowBalance,
-  exitTracking,
-  fullJunction,
-  conservative,
-}
+// Export for backward compatibility
+export 'terminal_station/axle_counter.dart';
+export 'terminal_station/calculation_methods.dart';
 
 // ============================================================================
 // AXLE COUNTER EVALUATOR (ACE) - LARGE IMBALANCE ALLOWANCE VERSION

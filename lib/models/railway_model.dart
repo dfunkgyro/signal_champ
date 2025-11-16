@@ -2,181 +2,25 @@ import 'package:flutter/foundation.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-enum SignalState { red, green, yellow, blue }
+// Import all railway models
+import 'railway/enums.dart';
+import 'railway/transponder.dart';
+import 'railway/wifi_antenna.dart';
+import 'railway/block_section.dart';
+import 'railway/signal.dart';
+import 'railway/point.dart';
+import 'railway/movement_authority.dart';
+import 'railway/train.dart';
 
-enum PointPosition { normal, reverse }
-
-enum TrainStatus { moving, stopped, waiting, completed, reversing }
-
-enum Direction { east, west }
-
-enum TransponderType { t1, t2, t3, t6 }
-
-enum CbtcMode {
-  auto,      // Automatic mode - cyan
-  pm,        // Protective Manual mode - orange
-  rm,        // Restrictive Manual mode - brown
-  off,       // Off mode - white
-  storage    // Storage mode - green
-}
-
-class Transponder {
-  final String id;
-  final TransponderType type;
-  final double x;
-  final double y;
-  final String description;
-
-  Transponder({
-    required this.id,
-    required this.type,
-    required this.x,
-    required this.y,
-    required this.description,
-  });
-}
-
-class WifiAntenna {
-  final String id;
-  final double x;
-  final double y;
-  final bool isActive;
-
-  WifiAntenna({
-    required this.id,
-    required this.x,
-    required this.y,
-    this.isActive = true,
-  });
-}
-
-class BlockSection {
-  final String id;
-  final double startX;
-  final double endX;
-  final double y;
-  final String? nextBlock;
-  final String? prevBlock;
-  bool occupied;
-  final bool isCrossover;
-  final bool isReversingArea;
-  bool closedBySmc; // SMC track closure status
-
-  BlockSection({
-    required this.id,
-    required this.startX,
-    required this.endX,
-    required this.y,
-    this.nextBlock,
-    this.prevBlock,
-    this.occupied = false,
-    this.isCrossover = false,
-    this.isReversingArea = false,
-    this.closedBySmc = false,
-  });
-}
-
-class Signal {
-  final String id;
-  final double x;
-  final double y;
-  SignalState state;
-  int? route;
-  final List<String> controlledBlocks;
-  final List<String> requiredPointPositions;
-  String lastStateChangeReason;
-
-  Signal({
-    required this.id,
-    required this.x,
-    required this.y,
-    this.state = SignalState.red,
-    this.route,
-    required this.controlledBlocks,
-    this.requiredPointPositions = const [],
-    this.lastStateChangeReason = '',
-  });
-}
-
-class Point {
-  final String id;
-  final double x;
-  final double y;
-  PointPosition position;
-  double animationProgress;
-  String? reservedByVin; // VIN of train that has reserved this point
-  String? reservedDestination; // Destination of reserving train
-
-  Point({
-    required this.id,
-    required this.x,
-    required this.y,
-    this.position = PointPosition.normal,
-    this.animationProgress = 0.0,
-    this.reservedByVin,
-    this.reservedDestination,
-  });
-}
-
-class MovementAuthority {
-  final double maxDistance; // Maximum distance the green arrow extends
-  final String? limitReason; // Why the arrow stopped (obstacle, destination, etc.)
-  final bool hasDestination; // Whether train has a destination
-
-  MovementAuthority({
-    required this.maxDistance,
-    this.limitReason,
-    this.hasDestination = false,
-  });
-}
-
-class Train {
-  final String id;
-  final String name;
-  final String vin; // Vehicle Identification Number
-  double x;
-  double y;
-  double speed;
-  String currentBlock;
-  TrainStatus status;
-  bool isSelected;
-  DateTime? estimatedArrival;
-  Direction direction;
-  double progress;
-  Color color;
-  double angle;
-  List<String> routeHistory;
-  String stopReason;
-  DateTime? lastStatusChange;
-  final bool isCbtcEquipped;
-  CbtcMode cbtcMode;
-  String? smcDestination; // SMC-assigned destination (block ID or platform name)
-  MovementAuthority? movementAuthority; // CBTC movement authority visualization
-
-  Train({
-    required this.id,
-    required this.name,
-    required this.vin,
-    required this.x,
-    required this.y,
-    required this.speed,
-    required this.currentBlock,
-    this.status = TrainStatus.moving,
-    this.isSelected = false,
-    this.estimatedArrival,
-    this.direction = Direction.east,
-    this.progress = 0.0,
-    required this.color,
-    this.angle = 0.0,
-    this.routeHistory = const [],
-    this.stopReason = '',
-    this.lastStatusChange,
-    this.isCbtcEquipped = false,
-    this.cbtcMode = CbtcMode.off,
-    this.smcDestination,
-    this.movementAuthority,
-  });
-}
+// Export all models so they can be imported from this single file
+export 'railway/enums.dart';
+export 'railway/transponder.dart';
+export 'railway/wifi_antenna.dart';
+export 'railway/block_section.dart';
+export 'railway/signal.dart';
+export 'railway/point.dart';
+export 'railway/movement_authority.dart';
+export 'railway/train.dart';
 
 class RailwayModel extends ChangeNotifier {
   final List<String> _eventLog = [];
@@ -386,7 +230,7 @@ class RailwayModel extends ChangeNotifier {
     final signal = signals.firstWhere((s) => s.id == signalId);
     final oldState = signal.state;
     final oldRoute = signal.route;
-    
+
     signal.state = state;
     if (route != null) signal.route = route;
 
@@ -442,7 +286,7 @@ class RailwayModel extends ChangeNotifier {
 
       bool pointsCorrect = true;
       List<String> incorrectPoints = [];
-      
+
       for (final pointReq in signal.requiredPointPositions) {
         final parts = pointReq.split(':');
         final pointId = parts[0];
@@ -460,7 +304,7 @@ class RailwayModel extends ChangeNotifier {
       if (signal.id == 'C31' && signal.route == 2) {
         final point78A = points.firstWhere((p) => p.id == '78A');
         final point78B = points.firstWhere((p) => p.id == '78B');
-        
+
         if (point78A.position != PointPosition.reverse) {
           pointsCorrect = false;
           incorrectPoints.add('78A must be REVERSE for route 2');
@@ -472,7 +316,7 @@ class RailwayModel extends ChangeNotifier {
       }
 
       final previousState = signal.state;
-      
+
       // Update signal state based on point positions and block occupancy
       if (pointsCorrect && _areBlocksClearForSignal(signal)) {
         signal.state = SignalState.green;
@@ -689,7 +533,7 @@ class RailwayModel extends ChangeNotifier {
         // Check if points are correctly set for this signal
         bool pointsCorrect = true;
         List<String> pointIssues = [];
-        
+
         for (final pointReq in signal.requiredPointPositions) {
           final parts = pointReq.split(':');
           final pointId = parts[0];
@@ -708,7 +552,7 @@ class RailwayModel extends ChangeNotifier {
         if (signal.id == 'C31' && signal.route == 2) {
           final point78A = points.firstWhere((p) => p.id == '78A');
           final point78B = points.firstWhere((p) => p.id == '78B');
-          
+
           if (point78A.position != PointPosition.reverse) {
             pointsCorrect = false;
             pointIssues.add('C31 Route 2: 78A must be REVERSE');
@@ -723,7 +567,7 @@ class RailwayModel extends ChangeNotifier {
           train.stopReason = 'Signal ${signal.id} is ${signal.state.name.toUpperCase()}';
           return false;
         }
-        
+
         if (!pointsCorrect) {
           train.stopReason = 'Points not set correctly: ${pointIssues.join(", ")}';
           return false;

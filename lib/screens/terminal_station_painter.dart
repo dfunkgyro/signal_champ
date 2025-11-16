@@ -920,17 +920,36 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       canvas.drawPath(path, headPaint);
     }
 
-    final lightColor =
-        signal.aspect == SignalAspect.green ? Colors.green : Colors.red;
+    // Select light color based on signal aspect
+    Color lightColor;
+    switch (signal.aspect) {
+      case SignalAspect.green:
+        lightColor = Colors.green;
+        break;
+      case SignalAspect.yellow:
+        lightColor = Colors.yellow[700]!;
+        break;
+      case SignalAspect.blue:
+        lightColor = Colors.blue;
+        break;
+      case SignalAspect.red:
+      default:
+        lightColor = Colors.red;
+        break;
+    }
+
     final lightPaint = Paint()
       ..color = lightColor
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 6, lightPaint);
 
-    if (signal.aspect == SignalAspect.green) {
+    // Add glow effect for green, yellow, and blue signals
+    if (signal.aspect == SignalAspect.green ||
+        signal.aspect == SignalAspect.yellow ||
+        signal.aspect == SignalAspect.blue) {
       final glowPaint = Paint()
-        ..color = Colors.green.withOpacity(0.4)
+        ..color = lightColor.withOpacity(0.4)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
 
       canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 12, glowPaint);
@@ -1393,13 +1412,29 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     if (controller.signalsVisible) {
       for (var signal in controller.signals.values) {
+        // Select label color based on signal aspect
+        Color labelColor;
+        switch (signal.aspect) {
+          case SignalAspect.green:
+            labelColor = Colors.green[700]!;
+            break;
+          case SignalAspect.yellow:
+            labelColor = Colors.yellow[900]!;
+            break;
+          case SignalAspect.blue:
+            labelColor = Colors.blue[700]!;
+            break;
+          case SignalAspect.red:
+          default:
+            labelColor = Colors.red[700]!;
+            break;
+        }
+
         final textPainter = TextPainter(
           text: TextSpan(
             text: signal.id,
             style: TextStyle(
-              color: signal.aspect == SignalAspect.green
-                  ? Colors.green[700]
-                  : Colors.red[700],
+              color: labelColor,
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),

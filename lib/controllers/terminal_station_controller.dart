@@ -937,6 +937,35 @@ class TerminalStationController extends ChangeNotifier {
     final trainPos = train.x;
     final direction = train.direction;
 
+    // PRIORITY 1: Check for SMC destination - this takes highest priority
+    if (train.smcDestination != null) {
+      final destination = platforms.firstWhere(
+        (p) => p.id == train.smcDestination,
+        orElse: () => platforms.first, // Fallback
+      );
+
+      final destPos = destination.centerX;
+      double distanceToDestination = 0;
+      bool destinationAhead = false;
+
+      if (direction > 0 && destPos > trainPos) {
+        destinationAhead = true;
+        distanceToDestination = destPos - trainPos;
+      } else if (direction < 0 && destPos < trainPos) {
+        destinationAhead = true;
+        distanceToDestination = trainPos - destPos;
+      }
+
+      if (destinationAhead && distanceToDestination > 0) {
+        // Stop at destination with small offset for platform alignment
+        final limitDistance = distanceToDestination - 30; // Stop 30 units before center
+        if (limitDistance > 0 && limitDistance < maxDistance) {
+          maxDistance = limitDistance;
+          limitReason = 'Destination: ${destination.name}';
+        }
+      }
+    }
+
     // Check for other CBTC trains ahead
     for (var otherTrain in trains) {
       if (otherTrain.id == train.id) continue;
@@ -2327,8 +2356,40 @@ class TerminalStationController extends ChangeNotifier {
       signal.aspect = allClear ? SignalAspect.green : SignalAspect.red;
     }
 
+    // YELLOW REPEATER SIGNAL LOGIC
+    // Update signals to show yellow if next signal ahead is red
+    _updateRepeaterSignals();
+
+    // BLUE SIGNAL LOGIC (for CBTC zones or special conditions)
+    // Can be extended later for specific use cases
+
     // Update train stop states based on signal aspects
     _updateTrainStops();
+  }
+
+  // NEW: Yellow repeater signal logic
+  void _updateRepeaterSignals() {
+    // Define which signals are repeater signals and which signal they repeat
+    final Map<String, String> repeaterSignalMapping = {
+      // Add repeater signals here - format: 'repeater_signal_id': 'main_signal_id'
+      // Example: If C31 is a repeater for C33:
+      // 'C31': 'C33',
+    };
+
+    for (var repeaterId in repeaterSignalMapping.keys) {
+      final mainSignalId = repeaterSignalMapping[repeaterId];
+      final repeaterSignal = signals[repeaterId];
+      final mainSignal = signals[mainSignalId];
+
+      if (repeaterSignal == null || mainSignal == null) continue;
+
+      // If the repeater has a route set and the main signal ahead is red, show yellow
+      if (repeaterSignal.routeState == RouteState.set &&
+          mainSignal.aspect == SignalAspect.red) {
+        repeaterSignal.aspect = SignalAspect.yellow;
+        _logEvent('🟡 ${repeaterId} showing YELLOW (signal ${mainSignalId} ahead is red)');
+      }
+    }
   }
 
   // ========== TRAIN MANAGEMENT ==========
@@ -2598,6 +2659,43 @@ class TerminalStationController extends ChangeNotifier {
         // Manual mode without stop - allow movement at current target speed
         // targetSpeed already set by departTrain() or user control
       } else {
+        // CBTC MODE - Check movement authority first for CBTC-equipped trains
+        if (train.isCbtcEquipped &&
+            (train.cbtcMode == CbtcMode.auto ||
+             train.cbtcMode == CbtcMode.pm ||
+             train.cbtcMode == CbtcMode.rm)) {
+
+          // Check if train is approaching its movement authority limit
+          if (train.movementAuthority != null) {
+            final distanceRemaining = train.movementAuthority!.maxDistance;
+
+            // If we're close to the limit, slow down and stop
+            if (distanceRemaining < 100) {
+              // Gradually reduce speed as we approach the limit
+              final targetSpeedByDistance = (distanceRemaining / 100) * 2.0;
+              train.targetSpeed = targetSpeedByDistance.clamp(0.0, 2.0);
+
+              // Stop if we've reached the destination
+              if (distanceRemaining < 35 && train.smcDestination != null) {
+                train.targetSpeed = 0;
+                train.speed = 0;
+                train.manualStop = true;
+                _logEvent('🎯 ${train.name} arrived at destination ${train.smcDestination}');
+                // Clear destination after arrival
+                train.smcDestination = null;
+                train.movementAuthority = null;
+                continue;
+              }
+            } else {
+              // Far from limit - normal speed
+              train.targetSpeed = 2.0;
+            }
+          } else {
+            // No movement authority calculated yet
+            train.targetSpeed = 0;
+          }
+        }
+
         // Automatic mode - check signals and route reservations
         Signal? signalAhead = _getSignalAhead(train);
 
@@ -2634,10 +2732,25 @@ class TerminalStationController extends ChangeNotifier {
             train.targetSpeed = 0;
             train.hasCommittedToMove = false;
           }
+        } else if (signalAhead.aspect == SignalAspect.yellow &&
+            !hasPassedSignalThreshold &&
+            !hasRouteReservation) {
+          // YELLOW SIGNAL - Slow down and prepare to stop at next signal
+          final distanceToSignal = (signalAhead.x - train.x).abs();
+          if (distanceToSignal < 150) {
+            // Reduce speed approaching yellow signal
+            train.targetSpeed = 1.0; // Half speed
+            if (train.targetSpeed > 1.0) {
+              _logEvent('🟡 ${train.name} slowing for yellow signal ${signalAhead.id}');
+            }
+          } else {
+            train.targetSpeed = 2.0;
+          }
         } else {
           train.targetSpeed = 2.0;
 
           if ((signalAhead.aspect == SignalAspect.green ||
+                  signalAhead.aspect == SignalAspect.blue ||
                   hasRouteReservation) &&
               !train.hasCommittedToMove) {
             final hasPassed = train.direction > 0

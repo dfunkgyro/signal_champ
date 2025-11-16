@@ -301,3 +301,167 @@ class CollisionRecoveryPlan {
     required this.state,
   }) : detectedAt = DateTime.now();
 }
+
+// ============================================================================
+// TIMETABLE MODELS
+// ============================================================================
+
+/// Represents a scheduled stop at a platform
+class TimetableStop {
+  final String platformId;
+  final String platformName;
+  final DateTime scheduledArrival;
+  final DateTime scheduledDeparture;
+  final int dwellTimeSeconds; // How long to wait at the platform
+
+  DateTime? actualArrival;
+  DateTime? actualDeparture;
+  bool doorsOpened = false;
+  bool departed = false;
+
+  TimetableStop({
+    required this.platformId,
+    required this.platformName,
+    required this.scheduledArrival,
+    required this.scheduledDeparture,
+    required this.dwellTimeSeconds,
+    this.actualArrival,
+    this.actualDeparture,
+    this.doorsOpened = false,
+    this.departed = false,
+  });
+
+  /// How many seconds late/early the train is (negative = early, positive = late)
+  int get arrivalDelaySeconds {
+    if (actualArrival == null) {
+      return DateTime.now().difference(scheduledArrival).inSeconds;
+    }
+    return actualArrival!.difference(scheduledArrival).inSeconds;
+  }
+
+  int get departureDelaySeconds {
+    if (actualDeparture == null) {
+      return DateTime.now().difference(scheduledDeparture).inSeconds;
+    }
+    return actualDeparture!.difference(scheduledDeparture).inSeconds;
+  }
+
+  /// Time remaining until scheduled departure
+  int get secondsUntilDeparture {
+    return scheduledDeparture.difference(DateTime.now()).inSeconds;
+  }
+
+  /// Whether the train should have already departed
+  bool get shouldHaveDeparted {
+    return DateTime.now().isAfter(scheduledDeparture);
+  }
+}
+
+/// Represents a complete timetabled journey for a train
+class TimetableEntry {
+  final String id;
+  final String trainId;
+  final String serviceName; // e.g., "Service 101"
+  final List<TimetableStop> stops;
+  final DateTime startTime;
+  final DateTime endTime;
+  bool active;
+  bool completed;
+  int currentStopIndex;
+
+  TimetableEntry({
+    required this.id,
+    required this.trainId,
+    required this.serviceName,
+    required this.stops,
+    required this.startTime,
+    required this.endTime,
+    this.active = false,
+    this.completed = false,
+    this.currentStopIndex = 0,
+  });
+
+  TimetableStop? get currentStop {
+    if (currentStopIndex < stops.length) {
+      return stops[currentStopIndex];
+    }
+    return null;
+  }
+
+  TimetableStop? get nextStop {
+    if (currentStopIndex + 1 < stops.length) {
+      return stops[currentStopIndex + 1];
+    }
+    return null;
+  }
+
+  /// Overall delay in seconds (based on current or last stop)
+  int get overallDelaySeconds {
+    final stop = currentStop;
+    if (stop != null) {
+      return stop.arrivalDelaySeconds;
+    }
+    return 0;
+  }
+
+  /// Whether the timetable should be running now
+  bool get shouldBeActive {
+    final now = DateTime.now();
+    return now.isAfter(startTime) && now.isBefore(endTime);
+  }
+
+  /// Progress through the timetable (0.0 to 1.0)
+  double get progress {
+    if (stops.isEmpty) return 0.0;
+    return currentStopIndex / stops.length;
+  }
+}
+
+/// Settings for timetable mode operation
+class TimetableSettings {
+  bool autoCloseDoors; // Whether doors close automatically after dwell time
+  bool autoOpenDoors; // Whether doors open automatically at platforms
+  int doorWarningTimeSeconds; // Time before warning user to close doors
+  bool enableSpeedAdjustment; // Whether train adjusts speed to catch up
+  double maxSpeedAdjustment; // Maximum speed multiplier when catching up (e.g., 1.2 = 120%)
+  bool showLatenessDisplay; // Whether to show lateness on screen
+  bool strictTiming; // Whether to enforce strict timetable adherence
+
+  TimetableSettings({
+    this.autoCloseDoors = false,
+    this.autoOpenDoors = true,
+    this.doorWarningTimeSeconds = 20,
+    this.enableSpeedAdjustment = true,
+    this.maxSpeedAdjustment = 1.2,
+    this.showLatenessDisplay = true,
+    this.strictTiming = false,
+  });
+}
+
+/// Overall timetable schedule containing all timetabled services
+class TimetableSchedule {
+  final List<TimetableEntry> entries;
+  TimetableSettings settings;
+  bool enabled;
+
+  TimetableSchedule({
+    required this.entries,
+    required this.settings,
+    this.enabled = false,
+  });
+
+  /// Get active timetable for a specific train
+  TimetableEntry? getActiveEntryForTrain(String trainId) {
+    for (final entry in entries) {
+      if (entry.trainId == trainId && entry.active && !entry.completed) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
+  /// Get all active timetables
+  List<TimetableEntry> get activeEntries {
+    return entries.where((e) => e.active && !e.completed).toList();
+  }
+}

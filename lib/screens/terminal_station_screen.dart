@@ -1384,6 +1384,39 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
               child: const Text('Reset Canvas', style: TextStyle(fontSize: 10)),
             ),
+            // NEW: Timetable Mode Controls
+            ElevatedButton(
+              onPressed: () => controller.toggleTimetableMode(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: (controller.timetableSchedule?.enabled ?? false)
+                    ? Colors.purple
+                    : Colors.grey,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 30),
+              ),
+              child: Text(
+                'Timetable: ${(controller.timetableSchedule?.enabled ?? false) ? 'ON' : 'OFF'}',
+                style: const TextStyle(fontSize: 10),
+              ),
+            ),
+            // Auto-Close Doors Toggle (only show if timetable active)
+            if (controller.timetableSchedule != null)
+              ElevatedButton(
+                onPressed: () => controller.toggleAutoCloseDoors(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: (controller.timetableSchedule?.settings.autoCloseDoors ?? false)
+                      ? Colors.teal
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 30),
+                ),
+                child: Text(
+                  'Auto-Close: ${(controller.timetableSchedule?.settings.autoCloseDoors ?? false) ? 'ON' : 'OFF'}',
+                  style: const TextStyle(fontSize: 10),
+                ),
+              ),
           ],
         ),
       ],

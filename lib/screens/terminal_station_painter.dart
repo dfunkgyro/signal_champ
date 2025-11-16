@@ -550,16 +550,27 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawBlockReservation(Canvas canvas, BlockSection block, Color color) {
+    // Enhanced visualization with glow effect and animation
+    final glowPaint = Paint()
+      ..color = color.withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
     final reservationPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
+      ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
 
+    // Animated dash offset based on animation tick
+    final animatedOffset = (animationTick % 30) * 0.5;
+
     final dashPath = Path();
-    double currentX = block.startX;
-    const dashLength = 10.0;
-    const gapLength = 5.0;
+    double currentX = block.startX + animatedOffset;
+    const dashLength = 12.0;
+    const gapLength = 6.0;
 
     while (currentX < block.endX) {
       dashPath.moveTo(currentX, block.y);
@@ -567,7 +578,25 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       currentX += dashLength + gapLength;
     }
 
+    // Draw glow first, then main line
+    canvas.drawPath(dashPath, glowPaint);
     canvas.drawPath(dashPath, reservationPaint);
+
+    // Add small direction arrows along the route
+    if (color == Colors.yellow) {
+      final arrowPaint = Paint()
+        ..color = Colors.yellow
+        ..style = PaintingStyle.fill;
+
+      for (double x = block.startX + 30; x < block.endX - 30; x += 60) {
+        final arrowPath = Path()
+          ..moveTo(x, block.y)
+          ..lineTo(x - 4, block.y - 4)
+          ..lineTo(x - 4, block.y + 4)
+          ..close();
+        canvas.drawPath(arrowPath, arrowPaint);
+      }
+    }
   }
 
   void _drawTracks(Canvas canvas) {
@@ -1020,11 +1049,42 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ? trainX + ma.maxDistance
           : trainX - ma.maxDistance;
 
+      // Enhanced CBTC visualization with pulsing effect
+      final pulseOpacity = 0.4 + (math.sin(animationTick * 0.1) * 0.2);
+
+      // Draw outer glow for CBTC authority
+      final glowGradient = LinearGradient(
+        colors: [
+          Colors.green.withOpacity(pulseOpacity),
+          Colors.green.withOpacity(pulseOpacity * 0.5),
+          Colors.green.withOpacity(0.0),
+        ],
+        stops: const [0.0, 0.7, 1.0],
+      );
+
+      final glowPaint = Paint()
+        ..shader = glowGradient.createShader(Rect.fromPoints(
+          Offset(startX, trainY - 30),
+          Offset(endX, trainY - 30),
+        ))
+        ..style = PaintingStyle.fill;
+
+      final glowRect = RRect.fromRectAndRadius(
+        Rect.fromLTRB(
+          isEastbound ? startX : endX,
+          trainY - 30,
+          isEastbound ? endX : startX,
+          trainY - 10,
+        ),
+        const Radius.circular(5),
+      );
+      canvas.drawRRect(glowRect, glowPaint);
+
       // Draw base green path with gradient
       final gradient = LinearGradient(
         colors: [
-          Colors.green.withOpacity(0.6),
-          Colors.green.withOpacity(0.3),
+          Colors.green.withOpacity(0.7),
+          Colors.green.withOpacity(0.4),
           Colors.green.withOpacity(0.1),
         ],
         stops: const [0.0, 0.7, 1.0],
@@ -1336,6 +1396,161 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
 
       canvas.restore();
+    }
+
+    // Draw timetable information overlay
+    _drawTimetableInfo(canvas);
+  }
+
+  void _drawTimetableInfo(Canvas canvas) {
+    if (controller.timetableSchedule == null ||
+        !controller.timetableSchedule!.enabled) return;
+
+    for (var train in controller.trains) {
+      final timetableInfo = controller.getTimetableInfo(train.id);
+      if (timetableInfo == null) continue;
+
+      final delaySeconds = timetableInfo['delaySeconds'] as int;
+      final timeToLeave = timetableInfo['timeToLeave'] as int;
+      final currentStop = timetableInfo['currentStop'] as String;
+      final nextStop = timetableInfo['nextStop'] as String?;
+      final serviceName = timetableInfo['serviceName'] as String;
+
+      // Draw timetable info box above train
+      final boxX = train.x - 80;
+      final boxY = train.y - 80;
+      final boxWidth = 160.0;
+      final boxHeight = 60.0;
+
+      // Background box
+      final boxPaint = Paint()
+        ..color = Colors.black.withOpacity(0.8)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(boxX, boxY, boxWidth, boxHeight),
+          const Radius.circular(8),
+        ),
+        boxPaint,
+      );
+
+      // Border
+      final borderPaint = Paint()
+        ..color = delaySeconds > 10
+            ? Colors.red
+            : delaySeconds > 5
+                ? Colors.orange
+                : Colors.green
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(boxX, boxY, boxWidth, boxHeight),
+          const Radius.circular(8),
+        ),
+        borderPaint,
+      );
+
+      // Service name
+      final serviceText = TextPainter(
+        text: TextSpan(
+          text: serviceName,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      serviceText.layout();
+      serviceText.paint(canvas, Offset(boxX + 5, boxY + 5));
+
+      // Current stop
+      final stopText = TextPainter(
+        text: TextSpan(
+          text: 'At: $currentStop',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 9,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      stopText.layout();
+      stopText.paint(canvas, Offset(boxX + 5, boxY + 18));
+
+      // Lateness display
+      final delayColor = delaySeconds > 10
+          ? Colors.red
+          : delaySeconds > 5
+              ? Colors.orange
+              : delaySeconds < -5
+                  ? Colors.lightGreen
+                  : Colors.white;
+
+      final delayStr = delaySeconds > 0
+          ? 'Late: ${delaySeconds}s'
+          : delaySeconds < 0
+              ? 'Early: ${-delaySeconds}s'
+              : 'On Time';
+
+      final delayText = TextPainter(
+        text: TextSpan(
+          text: delayStr,
+          style: TextStyle(
+            color: delayColor,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      delayText.layout();
+      delayText.paint(canvas, Offset(boxX + 5, boxY + 31));
+
+      // Time to departure
+      final timeStr = timeToLeave > 0
+          ? 'Depart: ${timeToLeave}s'
+          : 'READY TO DEPART';
+
+      final timeColor = timeToLeave > 0 && timeToLeave < 10
+          ? Colors.yellow
+          : timeToLeave <= 0
+              ? Colors.red
+              : Colors.white;
+
+      final timeText = TextPainter(
+        text: TextSpan(
+          text: timeStr,
+          style: TextStyle(
+            color: timeColor,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      timeText.layout();
+      timeText.paint(canvas, Offset(boxX + 5, boxY + 44));
+
+      // Next stop indicator (if any)
+      if (nextStop != null) {
+        final nextStopText = TextPainter(
+          text: TextSpan(
+            text: 'Next: $nextStop',
+            style: const TextStyle(
+              color: Colors.cyan,
+              fontSize: 8,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        nextStopText.layout();
+        nextStopText.paint(canvas, Offset(boxX + boxWidth - nextStopText.width - 5, boxY + 5));
+      }
     }
   }
 

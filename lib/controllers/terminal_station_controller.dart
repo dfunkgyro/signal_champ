@@ -498,6 +498,14 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // ============================================================================
+  // TIMETABLE MODE
+  // ============================================================================
+
+  TimetableSchedule? timetableSchedule;
+  final Map<String, DateTime> _doorOpenWarnings = {}; // Track when to warn about doors
+  final Map<String, bool> _doorWarningShown = {}; // Track if warning was shown
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -1587,6 +1595,259 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   // ============================================================================
+  // TIMETABLE MODE METHODS
+  // ============================================================================
+
+  /// Initialize a sample timetable for testing
+  void initializeSampleTimetable() {
+    final now = DateTime.now();
+
+    // Create sample timetable for T1
+    final stops = <TimetableStop>[
+      TimetableStop(
+        platformId: 'P1',
+        platformName: 'Platform 1',
+        scheduledArrival: now.add(const Duration(seconds: 30)),
+        scheduledDeparture: now.add(const Duration(seconds: 50)),
+        dwellTimeSeconds: 20,
+      ),
+      TimetableStop(
+        platformId: 'P2',
+        platformName: 'Platform 2 (Bay)',
+        scheduledArrival: now.add(const Duration(seconds: 120)),
+        scheduledDeparture: now.add(const Duration(seconds: 140)),
+        dwellTimeSeconds: 20,
+      ),
+    ];
+
+    final entry = TimetableEntry(
+      id: 'TT1',
+      trainId: 'T1',
+      serviceName: 'Service 101',
+      stops: stops,
+      startTime: now,
+      endTime: now.add(const Duration(minutes: 10)),
+      active: true,
+    );
+
+    timetableSchedule = TimetableSchedule(
+      entries: [entry],
+      settings: TimetableSettings(
+        autoCloseDoors: false,
+        autoOpenDoors: true,
+        doorWarningTimeSeconds: 20,
+        enableSpeedAdjustment: true,
+        maxSpeedAdjustment: 1.2,
+        showLatenessDisplay: true,
+      ),
+      enabled: true,
+    );
+
+    _logEvent('📅 Timetable mode ENABLED for ${entry.serviceName}');
+    notifyListeners();
+  }
+
+  /// Toggle timetable mode on/off
+  void toggleTimetableMode() {
+    if (timetableSchedule == null) {
+      initializeSampleTimetable();
+    } else {
+      timetableSchedule!.enabled = !timetableSchedule!.enabled;
+      _logEvent(timetableSchedule!.enabled
+          ? '📅 Timetable mode ENABLED'
+          : '📅 Timetable mode DISABLED');
+      notifyListeners();
+    }
+  }
+
+  /// Toggle auto-close doors setting
+  void toggleAutoCloseDoors() {
+    if (timetableSchedule != null) {
+      timetableSchedule!.settings.autoCloseDoors =
+          !timetableSchedule!.settings.autoCloseDoors;
+      _logEvent(timetableSchedule!.settings.autoCloseDoors
+          ? '🚪 Auto-close doors ENABLED'
+          : '🚪 Auto-close doors DISABLED');
+      notifyListeners();
+    }
+  }
+
+  /// Update timetable state - called every simulation tick
+  void _updateTimetableMode() {
+    if (timetableSchedule == null || !timetableSchedule!.enabled) return;
+
+    for (final train in trains) {
+      final entry = timetableSchedule!.getActiveEntryForTrain(train.id);
+      if (entry == null) continue;
+
+      final currentStop = entry.currentStop;
+      if (currentStop == null) continue;
+
+      _checkTrainArrivalAtPlatform(train, entry, currentStop);
+      _checkDoorWarnings(train, entry, currentStop);
+      _checkDoorAutoCloseForTimetable(train, entry, currentStop);
+      _adjustSpeedForTimetable(train, entry, currentStop);
+      _checkDepartureTime(train, entry, currentStop);
+    }
+  }
+
+  /// Check if train has arrived at scheduled platform
+  void _checkTrainArrivalAtPlatform(Train train, TimetableEntry entry, TimetableStop stop) {
+    if (stop.doorsOpened || stop.departed) return;
+
+    final platformId = _getPlatformForTrain(train);
+    if (platformId == stop.platformId && train.speed < 0.5) {
+      // Train has arrived at the correct platform
+      stop.actualArrival = DateTime.now();
+
+      // Auto-open doors if enabled
+      if (timetableSchedule!.settings.autoOpenDoors && !train.doorsOpen) {
+        train.doorsOpen = true;
+        train.doorsOpenedAt = DateTime.now();
+        train.targetSpeed = 0;
+        train.speed = 0;
+        train.manualStop = true;
+        stop.doorsOpened = true;
+
+        final delaySeconds = stop.arrivalDelaySeconds;
+        final delayStr = delaySeconds > 0
+            ? '${delaySeconds}s late'
+            : delaySeconds < 0
+                ? '${-delaySeconds}s early'
+                : 'on time';
+
+        _logEvent('🚪 ${train.name} arrived at ${stop.platformName} ($delayStr) - doors OPENED');
+        _doorWarningShown[train.id] = false;
+      }
+
+      notifyListeners();
+    }
+  }
+
+  /// Check if we need to warn user about closing doors
+  void _checkDoorWarnings(Train train, TimetableEntry entry, TimetableStop stop) {
+    if (!train.doorsOpen || stop.departed) return;
+    if (timetableSchedule!.settings.autoCloseDoors) return; // No warnings needed in auto mode
+
+    final now = DateTime.now();
+    final doorsOpenedAt = train.doorsOpenedAt;
+    if (doorsOpenedAt == null) return;
+
+    final secondsOpen = now.difference(doorsOpenedAt).inSeconds;
+    final warningTime = timetableSchedule!.settings.doorWarningTimeSeconds;
+
+    if (secondsOpen >= warningTime && !(_doorWarningShown[train.id] ?? false)) {
+      final timeToLeave = stop.secondsUntilDeparture;
+      _logEvent('⚠️ WARNING: ${train.name} - Close doors! Departing in ${timeToLeave}s');
+      _doorWarningShown[train.id] = true;
+      notifyListeners();
+    }
+  }
+
+  /// Auto-close doors based on timetable if enabled
+  void _checkDoorAutoCloseForTimetable(Train train, TimetableEntry entry, TimetableStop stop) {
+    if (!train.doorsOpen || stop.departed) return;
+    if (!timetableSchedule!.settings.autoCloseDoors) return;
+
+    final doorsOpenedAt = train.doorsOpenedAt;
+    if (doorsOpenedAt == null) return;
+
+    final now = DateTime.now();
+    final secondsOpen = now.difference(doorsOpenedAt).inSeconds;
+
+    // Auto-close after dwell time
+    if (secondsOpen >= stop.dwellTimeSeconds) {
+      train.doorsOpen = false;
+      train.doorsOpenedAt = null;
+      train.manualStop = false;
+      _logEvent('🚪 ${train.name} doors auto-closed after ${stop.dwellTimeSeconds}s');
+      notifyListeners();
+    }
+  }
+
+  /// Adjust train speed to catch up if running late
+  void _adjustSpeedForTimetable(Train train, TimetableEntry entry, TimetableStop stop) {
+    if (!timetableSchedule!.settings.enableSpeedAdjustment) return;
+    if (train.doorsOpen || train.manualStop) return;
+    if (train.controlMode != TrainControlMode.automatic) return;
+
+    final delaySeconds = entry.overallDelaySeconds;
+
+    // Only adjust if running late (more than 5 seconds)
+    if (delaySeconds > 5) {
+      // Calculate speed multiplier based on delay (gradually increase speed)
+      // Max 20% speed increase when more than 30 seconds late
+      final delayFactor = (delaySeconds - 5) / 25.0; // 0 to 1 range for 5-30 second delay
+      final speedMultiplier = 1.0 + (delayFactor.clamp(0.0, 1.0) * (timetableSchedule!.settings.maxSpeedAdjustment - 1.0));
+
+      // Gradually increase target speed
+      final adjustedSpeed = train.targetSpeed * speedMultiplier;
+      if (adjustedSpeed > train.targetSpeed) {
+        train.targetSpeed = adjustedSpeed.clamp(0.0, 10.0);
+      }
+    } else if (delaySeconds < -5) {
+      // Running early - slow down slightly
+      train.targetSpeed = (train.targetSpeed * 0.95).clamp(0.0, 10.0);
+    }
+  }
+
+  /// Check if train should depart
+  void _checkDepartureTime(Train train, TimetableEntry entry, TimetableStop stop) {
+    if (stop.departed) return;
+    if (train.doorsOpen) return; // Can't depart with doors open
+
+    final now = DateTime.now();
+
+    // Check if we're past scheduled departure time
+    if (now.isAfter(stop.scheduledDeparture) && !train.doorsOpen) {
+      stop.actualDeparture = now;
+      stop.departed = true;
+      entry.currentStopIndex++;
+
+      final delaySeconds = stop.departureDelaySeconds;
+      final delayStr = delaySeconds > 0
+          ? '${delaySeconds}s late'
+          : delaySeconds < 0
+              ? '${-delaySeconds}s early'
+              : 'on time';
+
+      _logEvent('🚂 ${train.name} departed ${stop.platformName} ($delayStr)');
+
+      // Check if timetable is complete
+      if (entry.currentStopIndex >= entry.stops.length) {
+        entry.completed = true;
+        entry.active = false;
+        _logEvent('✅ ${train.name} completed timetable ${entry.serviceName}');
+      }
+
+      notifyListeners();
+    }
+  }
+
+  /// Get timetable information for a train (for display)
+  Map<String, dynamic>? getTimetableInfo(String trainId) {
+    if (timetableSchedule == null || !timetableSchedule!.enabled) return null;
+
+    final entry = timetableSchedule!.getActiveEntryForTrain(trainId);
+    if (entry == null) return null;
+
+    final currentStop = entry.currentStop;
+    if (currentStop == null) return null;
+
+    return {
+      'serviceName': entry.serviceName,
+      'currentStop': currentStop.platformName,
+      'scheduledDeparture': currentStop.scheduledDeparture,
+      'timeToLeave': currentStop.secondsUntilDeparture,
+      'delaySeconds': entry.overallDelaySeconds,
+      'nextStop': entry.nextStop?.platformName,
+      'progress': entry.progress,
+      'doorsOpened': currentStop.doorsOpened,
+      'departed': currentStop.departed,
+    };
+  }
+
+  // ============================================================================
   // COLLISION SYSTEM METHODS
   // ============================================================================
 
@@ -2546,6 +2807,7 @@ class TerminalStationController extends ChangeNotifier {
     tickCount++;
     _clearExpiredReservations();
     _checkDoorAutoClose();
+    _updateTimetableMode(); // Update timetable mode
 
     // Check AB-based point deadlocks every simulation tick
     _arePointsDeadlocked();

@@ -126,6 +126,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
             tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
           ),
+          Consumer<TerminalStationController>(
+            builder: (context, controller, _) {
+              return IconButton(
+                icon: const Icon(Icons.table_chart),
+                onPressed: () => _showControlTable(context, controller),
+                tooltip: 'View Control Table',
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () => _showInfo(context),
@@ -3484,6 +3493,435 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       return 'P2';
     }
     return null;
+  }
+
+  void _showControlTable(BuildContext context, TerminalStationController controller) {
+    final controlTable = controller.generateControlTable();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.table_chart, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Signaling Control Table'),
+          ],
+        ),
+        content: SizedBox(
+          width: 800,
+          height: 600,
+          child: DefaultTabController(
+            length: 3,
+            child: Column(
+              children: [
+                // System State Summary
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'System State Summary',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 8,
+                        children: [
+                          _buildSystemStateBadge('Trains', controlTable.systemState['totalTrains'] ?? '0'),
+                          _buildSystemStateBadge('Signals', controlTable.systemState['totalSignals'] ?? '0'),
+                          _buildSystemStateBadge('Points', controlTable.systemState['totalPoints'] ?? '0'),
+                          _buildSystemStateBadge('Blocks', controlTable.systemState['totalBlocks'] ?? '0'),
+                          _buildSystemStateBadge('Active Routes', controlTable.systemState['activeRoutes'] ?? '0', Colors.green),
+                          _buildSystemStateBadge('Green Signals', controlTable.systemState['greenSignals'] ?? '0', Colors.green),
+                          _buildSystemStateBadge('Locked Points', controlTable.systemState['lockedPoints'] ?? '0', Colors.orange),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Tab Bar
+                const TabBar(
+                  tabs: [
+                    Tab(text: 'Signaling Rules'),
+                    Tab(text: 'Interlocking Rules'),
+                    Tab(text: 'System State'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Tab Views
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      // Signaling Rules Tab
+                      _buildSignalingRulesTab(controlTable),
+
+                      // Interlocking Rules Tab
+                      _buildInterlockingRulesTab(controlTable),
+
+                      // System State Tab
+                      _buildSystemStateTab(controlTable),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.download),
+            label: const Text('Export XML'),
+            onPressed: () {
+              Navigator.pop(context);
+              _exportControlTable(controller);
+            },
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSystemStateBadge(String label, String value, [Color? color]) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color?.withOpacity(0.2) ?? Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color ?? Colors.grey[400]!),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color ?? Colors.grey[800],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: color ?? Colors.grey[400],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignalingRulesTab(ControlTable controlTable) {
+    // Group rules by type
+    final groupedRules = <String, List<SignalingRule>>{};
+    for (var rule in controlTable.signalingRules) {
+      groupedRules.putIfAbsent(rule.ruleType, () => []).add(rule);
+    }
+
+    return ListView(
+      children: groupedRules.entries.map((entry) {
+        final ruleType = entry.key;
+        final rules = entry.value;
+        final activeCount = rules.where((r) => r.isActive).length;
+
+        return ExpansionTile(
+          title: Text(
+            '$ruleType Rules (${rules.length})',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text('$activeCount active'),
+          leading: Icon(
+            _getRuleTypeIcon(ruleType),
+            color: activeCount > 0 ? Colors.green : Colors.grey,
+          ),
+          children: rules.map((rule) {
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              color: rule.isActive ? Colors.green[50] : null,
+              child: ListTile(
+                dense: true,
+                leading: Icon(
+                  rule.isActive ? Icons.check_circle : Icons.circle_outlined,
+                  color: rule.isActive ? Colors.green : Colors.grey,
+                  size: 16,
+                ),
+                title: Text(
+                  rule.description,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ID: ${rule.id}', style: const TextStyle(fontSize: 10)),
+                    Text('Priority: ${rule.priority}', style: const TextStyle(fontSize: 10)),
+                  ],
+                ),
+                trailing: rule.isActive
+                    ? const Chip(
+                        label: Text('ACTIVE', style: TextStyle(fontSize: 10)),
+                        backgroundColor: Colors.green,
+                        labelStyle: TextStyle(color: Colors.white),
+                      )
+                    : null,
+              ),
+            );
+          }).toList(),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildInterlockingRulesTab(ControlTable controlTable) {
+    return ListView.builder(
+      itemCount: controlTable.interlockingRules.length,
+      itemBuilder: (context, index) {
+        final rule = controlTable.interlockingRules[index];
+        return Card(
+          margin: const EdgeInsets.all(8),
+          color: rule.isViolated ? Colors.red[50] : null,
+          child: ExpansionTile(
+            leading: Icon(
+              rule.isViolated ? Icons.warning : Icons.lock,
+              color: rule.isViolated ? Colors.red : Colors.blue,
+            ),
+            title: Text(
+              rule.name,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            subtitle: Text(
+              rule.conflictDescription,
+              style: const TextStyle(fontSize: 11),
+            ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (rule.protectedSignals.isNotEmpty)
+                      _buildProtectedList('Signals', rule.protectedSignals, Icons.traffic),
+                    if (rule.protectedPoints.isNotEmpty)
+                      _buildProtectedList('Points', rule.protectedPoints, Icons.alt_route),
+                    if (rule.protectedBlocks.isNotEmpty)
+                      _buildProtectedList('Blocks', rule.protectedBlocks, Icons.view_module),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProtectedList(String label, List<String> items, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: Colors.grey[700]),
+              const SizedBox(width: 6),
+              Text(
+                'Protected $label:',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: items.map((item) {
+              return Chip(
+                label: Text(item, style: const TextStyle(fontSize: 10)),
+                backgroundColor: Colors.blue[100],
+                padding: const EdgeInsets.all(4),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSystemStateTab(ControlTable controlTable) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: controlTable.systemState.entries.map((entry) {
+        return Card(
+          child: ListTile(
+            leading: Icon(
+              _getSystemStateIcon(entry.key),
+              color: Colors.blue,
+            ),
+            title: Text(
+              entry.key.replaceAllMapped(
+                RegExp(r'[A-Z]'),
+                (match) => ' ${match.group(0)}',
+              ).trim(),
+              style: const TextStyle(fontSize: 13),
+            ),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                entry.value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  IconData _getRuleTypeIcon(String ruleType) {
+    switch (ruleType) {
+      case 'ROUTE':
+        return Icons.route;
+      case 'POINT':
+        return Icons.alt_route;
+      case 'SIGNAL':
+        return Icons.traffic;
+      case 'BLOCK':
+        return Icons.view_module;
+      case 'AXLE_COUNTER':
+        return Icons.sensors;
+      case 'TRAIN_STOP':
+        return Icons.not_listed_location;
+      default:
+        return Icons.rule;
+    }
+  }
+
+  IconData _getSystemStateIcon(String key) {
+    if (key.contains('Train')) return Icons.train;
+    if (key.contains('Signal')) return Icons.traffic;
+    if (key.contains('Point')) return Icons.alt_route;
+    if (key.contains('Block')) return Icons.view_module;
+    if (key.contains('Route')) return Icons.route;
+    if (key.contains('collision') || key.contains('alarm')) return Icons.warning;
+    return Icons.info;
+  }
+
+  void _exportControlTable(TerminalStationController controller) {
+    try {
+      final xmlContent = controller.exportControlTableToXML();
+      final bytes = utf8.encode(xmlContent);
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Control Table Exported')
+          ]),
+          content: SizedBox(
+            width: 600,
+            height: 400,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('XML control table has been generated successfully!',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                const Text('Preview:'),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        xmlContent,
+                        style: const TextStyle(
+                            fontFamily: 'monospace', fontSize: 11),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text('Size: ${(bytes.length / 1024).toStringAsFixed(2)} KB',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content:
+                          Text('Copy feature requires clipboard permission')),
+                );
+              },
+              child: const Text('Copy XML'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.error, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Export Failed')
+          ]),
+          content: Text('Error exporting control table: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _exportLayout(TerminalStationController controller) {

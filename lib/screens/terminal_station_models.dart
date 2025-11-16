@@ -301,3 +301,97 @@ class CollisionRecoveryPlan {
     required this.state,
   }) : detectedAt = DateTime.now();
 }
+
+// ============================================================================
+// CONTROL TABLE MODELS
+// ============================================================================
+
+/// Represents a signaling rule in the control table
+class SignalingRule {
+  final String id;
+  final String description;
+  final String ruleType; // ROUTE, POINT, SIGNAL, BLOCK, INTERLOCK
+  final Map<String, dynamic> conditions;
+  final Map<String, dynamic> actions;
+  final bool isActive;
+  final DateTime? lastActivated;
+  final int priority;
+
+  SignalingRule({
+    required this.id,
+    required this.description,
+    required this.ruleType,
+    required this.conditions,
+    required this.actions,
+    this.isActive = false,
+    this.lastActivated,
+    this.priority = 0,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'description': description,
+        'ruleType': ruleType,
+        'conditions': conditions,
+        'actions': actions,
+        'isActive': isActive,
+        'lastActivated': lastActivated?.toIso8601String(),
+        'priority': priority,
+      };
+}
+
+/// Represents an interlocking rule
+class InterlockingRule {
+  final String id;
+  final String name;
+  final List<String> protectedSignals;
+  final List<String> protectedPoints;
+  final List<String> protectedBlocks;
+  final String conflictDescription;
+  final bool isViolated;
+
+  InterlockingRule({
+    required this.id,
+    required this.name,
+    required this.protectedSignals,
+    required this.protectedPoints,
+    required this.protectedBlocks,
+    required this.conflictDescription,
+    this.isViolated = false,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'protectedSignals': protectedSignals,
+        'protectedPoints': protectedPoints,
+        'protectedBlocks': protectedBlocks,
+        'conflictDescription': conflictDescription,
+        'isViolated': isViolated,
+      };
+}
+
+/// Complete control table containing all signaling rules
+class ControlTable {
+  final List<SignalingRule> signalingRules;
+  final List<InterlockingRule> interlockingRules;
+  final Map<String, String> systemState;
+  final DateTime generatedAt;
+  final String version;
+
+  ControlTable({
+    required this.signalingRules,
+    required this.interlockingRules,
+    required this.systemState,
+    DateTime? generatedAt,
+    this.version = '1.0.0',
+  }) : generatedAt = generatedAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'version': version,
+        'generatedAt': generatedAt.toIso8601String(),
+        'systemState': systemState,
+        'signalingRules': signalingRules.map((r) => r.toJson()).toList(),
+        'interlockingRules': interlockingRules.map((r) => r.toJson()).toList(),
+      };
+}

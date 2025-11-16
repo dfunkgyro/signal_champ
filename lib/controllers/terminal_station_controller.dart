@@ -3304,6 +3304,349 @@ class TerminalStationController extends ChangeNotifier {
     return buffer.toString();
   }
 
+  // ========================================================================
+  // CONTROL TABLE GENERATION
+  // ========================================================================
+
+  /// Generates the complete control table with all signaling rules
+  ControlTable generateControlTable() {
+    final signalingRules = <SignalingRule>[];
+    final interlockingRules = <InterlockingRule>[];
+
+    // Generate route signaling rules
+    for (var signal in signals.values) {
+      for (var route in signal.routes) {
+        signalingRules.add(SignalingRule(
+          id: 'ROUTE_${signal.id}_${route.id}',
+          description: 'Route ${route.name} from signal ${signal.id}',
+          ruleType: 'ROUTE',
+          conditions: {
+            'signal': signal.id,
+            'route': route.id,
+            'blocksRequired': route.requiredBlocksClear,
+            'pointsRequired': route.requiredPointPositions,
+          },
+          actions: {
+            'setSignal': signal.id == signal.id && signal.activeRouteId == route.id
+                ? 'GREEN' : 'RED',
+            'lockPoints': route.requiredPointPositions.keys.toList(),
+            'reserveBlocks': route.pathBlocks,
+          },
+          isActive: signal.activeRouteId == route.id,
+          lastActivated: signal.activeRouteId == route.id ? DateTime.now() : null,
+          priority: 100,
+        ));
+
+        // Create interlocking rules for conflicting routes
+        for (var conflictingRouteId in route.conflictingRoutes) {
+          interlockingRules.add(InterlockingRule(
+            id: 'INTERLOCK_${signal.id}_${route.id}_vs_$conflictingRouteId',
+            name: 'Route conflict: ${route.name} vs $conflictingRouteId',
+            protectedSignals: [signal.id],
+            protectedPoints: route.requiredPointPositions.keys.toList(),
+            protectedBlocks: route.pathBlocks,
+            conflictDescription:
+                'Route ${route.name} conflicts with $conflictingRouteId',
+            isViolated: false,
+          ));
+        }
+      }
+    }
+
+    // Generate point protection rules
+    for (var point in points.values) {
+      signalingRules.add(SignalingRule(
+        id: 'POINT_${point.id}',
+        description: 'Point ${point.id} position and locking',
+        ruleType: 'POINT',
+        conditions: {
+          'pointId': point.id,
+          'position': point.position.name,
+          'locked': point.locked,
+          'lockedByAB': point.lockedByAB,
+        },
+        actions: {
+          'position': point.position.name,
+          'allowMovement': !point.locked && !point.lockedByAB,
+        },
+        isActive: point.locked || point.lockedByAB,
+        priority: 150,
+      ));
+
+      // Point locking interlocking
+      if (point.locked || point.lockedByAB) {
+        interlockingRules.add(InterlockingRule(
+          id: 'INTERLOCK_POINT_${point.id}',
+          name: 'Point ${point.id} movement protection',
+          protectedSignals: signals.values
+              .where((s) => s.routes.any((r) =>
+                  r.requiredPointPositions.containsKey(point.id)))
+              .map((s) => s.id)
+              .toList(),
+          protectedPoints: [point.id],
+          protectedBlocks: [],
+          conflictDescription:
+              'Point ${point.id} is locked and cannot be moved',
+          isViolated: false,
+        ));
+      }
+    }
+
+    // Generate block occupation rules
+    for (var block in blocks.values) {
+      signalingRules.add(SignalingRule(
+        id: 'BLOCK_${block.id}',
+        description: 'Block ${block.id} occupation detection',
+        ruleType: 'BLOCK',
+        conditions: {
+          'blockId': block.id,
+          'occupied': block.occupied,
+          'occupyingTrain': block.occupyingTrainId ?? 'none',
+        },
+        actions: {
+          'preventRoutes': block.occupied,
+          'showOccupation': block.occupied,
+        },
+        isActive: block.occupied,
+        priority: 200,
+      ));
+    }
+
+    // Generate axle counter rules
+    for (var counter in axleCounters.values) {
+      signalingRules.add(SignalingRule(
+        id: 'AC_${counter.id}',
+        description: 'Axle Counter ${counter.id} detection',
+        ruleType: 'AXLE_COUNTER',
+        conditions: {
+          'counterId': counter.id,
+          'count': counter.count,
+          'd1Active': counter.d1Active,
+          'd2Active': counter.d2Active,
+        },
+        actions: {
+          'updateBlockOccupation': counter.blockId,
+          'detectDirection': counter.lastDirection,
+        },
+        isActive: counter.count % 2 != 0,
+        lastActivated: counter.lastDetectionTime,
+        priority: 180,
+      ));
+    }
+
+    // Generate signal aspect rules
+    for (var signal in signals.values) {
+      signalingRules.add(SignalingRule(
+        id: 'SIGNAL_${signal.id}',
+        description: 'Signal ${signal.id} aspect control',
+        ruleType: 'SIGNAL',
+        conditions: {
+          'signalId': signal.id,
+          'hasActiveRoute': signal.activeRouteId != null,
+          'routeState': signal.routeState.name,
+        },
+        actions: {
+          'aspect': signal.aspect.name,
+          'allowProceed': signal.aspect == SignalAspect.green,
+        },
+        isActive: signal.aspect == SignalAspect.green,
+        priority: 120,
+      ));
+    }
+
+    // Generate train stop rules
+    for (var trainStop in trainStops.values) {
+      if (trainStop.enabled) {
+        signalingRules.add(SignalingRule(
+          id: 'TRAINSTOP_${trainStop.id}',
+          description: 'Train Stop ${trainStop.id} at signal ${trainStop.signalId}',
+          ruleType: 'TRAIN_STOP',
+          conditions: {
+            'trainStopId': trainStop.id,
+            'enabled': trainStop.enabled,
+            'active': trainStop.active,
+          },
+          actions: {
+            'stopTrains': trainStop.active,
+          },
+          isActive: trainStop.active,
+          priority: 250,
+        ));
+      }
+    }
+
+    // Generate AB occupation interlocking rules
+    for (var abId in ace.abResults.keys) {
+      final isOccupied = ace.isABOccupied(abId);
+      if (isOccupied) {
+        interlockingRules.add(InterlockingRule(
+          id: 'INTERLOCK_AB_$abId',
+          name: 'AB Section $abId occupation protection',
+          protectedSignals: signals.values
+              .where((s) => s.routes.any((r) =>
+                  r.pathBlocks.any((b) => _isBlockInAB(b, abId))))
+              .map((s) => s.id)
+              .toList(),
+          protectedPoints: [],
+          protectedBlocks: _getBlocksInAB(abId),
+          conflictDescription: 'AB section $abId is occupied',
+          isViolated: false,
+        ));
+      }
+    }
+
+    // Generate system state
+    final systemState = <String, String>{
+      'totalTrains': trains.length.toString(),
+      'totalSignals': signals.length.toString(),
+      'totalPoints': points.length.toString(),
+      'totalBlocks': blocks.length.toString(),
+      'activeRoutes': signals.values.where((s) => s.activeRouteId != null).length.toString(),
+      'occupiedBlocks': blocks.values.where((b) => b.occupied).length.toString(),
+      'greenSignals': signals.values.where((s) => s.aspect == SignalAspect.green).length.toString(),
+      'lockedPoints': points.values.where((p) => p.locked || p.lockedByAB).length.toString(),
+      'collisionAlarmActive': collisionAlarmActive.toString(),
+      'signalsVisible': signalsVisible.toString(),
+      'trainStopsEnabled': trainStopsEnabled.toString(),
+      'axleCountersVisible': axleCountersVisible.toString(),
+    };
+
+    return ControlTable(
+      signalingRules: signalingRules,
+      interlockingRules: interlockingRules,
+      systemState: systemState,
+    );
+  }
+
+  /// Helper: Check if a block is in an AB section
+  bool _isBlockInAB(String blockId, String abId) {
+    switch (abId) {
+      case 'AB100':
+        return ['100', '102', '104'].contains(blockId);
+      case 'AB104':
+        return ['104', '106'].contains(blockId);
+      case 'AB105':
+        return ['101', '103', '105'].contains(blockId);
+      case 'AB106':
+        return ['crossover106', 'crossover109'].contains(blockId);
+      case 'AB108':
+        return ['108', '110', '112', '114'].contains(blockId);
+      case 'AB109':
+        return ['107', '109'].contains(blockId);
+      case 'AB111':
+        return ['109', '111'].contains(blockId);
+      default:
+        return false;
+    }
+  }
+
+  /// Helper: Get all blocks in an AB section
+  List<String> _getBlocksInAB(String abId) {
+    switch (abId) {
+      case 'AB100':
+        return ['100', '102', '104'];
+      case 'AB104':
+        return ['104', '106'];
+      case 'AB105':
+        return ['101', '103', '105'];
+      case 'AB106':
+        return ['crossover106', 'crossover109'];
+      case 'AB108':
+        return ['108', '110', '112', '114'];
+      case 'AB109':
+        return ['107', '109'];
+      case 'AB111':
+        return ['109', '111'];
+      default:
+        return [];
+    }
+  }
+
+  /// Export control table to XML format
+  String exportControlTableToXML() {
+    final controlTable = generateControlTable();
+    final buffer = StringBuffer();
+
+    buffer.writeln('<?xml version="1.0" encoding="UTF-8"?>');
+    buffer.writeln('<ControlTable version="${controlTable.version}" '
+        'generatedAt="${controlTable.generatedAt.toIso8601String()}">');
+
+    // Export System State
+    buffer.writeln('  <SystemState>');
+    controlTable.systemState.forEach((key, value) {
+      buffer.writeln('    <Parameter name="$key" value="$value" />');
+    });
+    buffer.writeln('  </SystemState>');
+
+    // Export Signaling Rules
+    buffer.writeln('  <SignalingRules count="${controlTable.signalingRules.length}">');
+    for (var rule in controlTable.signalingRules) {
+      buffer.writeln('    <Rule id="${rule.id}" type="${rule.ruleType}" '
+          'priority="${rule.priority}" isActive="${rule.isActive}">');
+      buffer.writeln('      <Description>${_xmlEscape(rule.description)}</Description>');
+
+      buffer.writeln('      <Conditions>');
+      rule.conditions.forEach((key, value) {
+        final valueStr = value is List ? value.join(', ') : value.toString();
+        buffer.writeln('        <Condition name="$key" value="${_xmlEscape(valueStr)}" />');
+      });
+      buffer.writeln('      </Conditions>');
+
+      buffer.writeln('      <Actions>');
+      rule.actions.forEach((key, value) {
+        final valueStr = value is List ? value.join(', ') : value.toString();
+        buffer.writeln('        <Action name="$key" value="${_xmlEscape(valueStr)}" />');
+      });
+      buffer.writeln('      </Actions>');
+
+      if (rule.lastActivated != null) {
+        buffer.writeln('      <LastActivated>${rule.lastActivated!.toIso8601String()}</LastActivated>');
+      }
+
+      buffer.writeln('    </Rule>');
+    }
+    buffer.writeln('  </SignalingRules>');
+
+    // Export Interlocking Rules
+    buffer.writeln('  <InterlockingRules count="${controlTable.interlockingRules.length}">');
+    for (var rule in controlTable.interlockingRules) {
+      buffer.writeln('    <InterlockRule id="${rule.id}" isViolated="${rule.isViolated}">');
+      buffer.writeln('      <Name>${_xmlEscape(rule.name)}</Name>');
+      buffer.writeln('      <ConflictDescription>${_xmlEscape(rule.conflictDescription)}</ConflictDescription>');
+
+      if (rule.protectedSignals.isNotEmpty) {
+        buffer.writeln('      <ProtectedSignals>${rule.protectedSignals.join(', ')}</ProtectedSignals>');
+      }
+      if (rule.protectedPoints.isNotEmpty) {
+        buffer.writeln('      <ProtectedPoints>${rule.protectedPoints.join(', ')}</ProtectedPoints>');
+      }
+      if (rule.protectedBlocks.isNotEmpty) {
+        buffer.writeln('      <ProtectedBlocks>${rule.protectedBlocks.join(', ')}</ProtectedBlocks>');
+      }
+
+      buffer.writeln('    </InterlockRule>');
+    }
+    buffer.writeln('  </InterlockingRules>');
+
+    buffer.writeln('</ControlTable>');
+
+    _logEvent('📋 Control Table exported to XML '
+        '(${controlTable.signalingRules.length} rules, '
+        '${controlTable.interlockingRules.length} interlocks)');
+
+    return buffer.toString();
+  }
+
+  /// Helper: Escape XML special characters
+  String _xmlEscape(String text) {
+    return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&apos;');
+  }
+
   @override
   void dispose() {
     _clockTimer?.cancel();

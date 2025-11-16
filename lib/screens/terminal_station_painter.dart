@@ -1338,13 +1338,15 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
 
       // Draw CBTC mode indicator
-      if (train.cbtcMode != CBTCMode.disabled) {
+      if (train.isCbtcEquipped && train.cbtcMode != CbtcMode.off) {
         final cbtcPaint = Paint()
-          ..color = train.cbtcMode == CBTCMode.fullSupervision
-              ? Colors.green
-              : train.cbtcMode == CBTCMode.limitedSupervision
-                  ? Colors.yellow[700]!
-                  : Colors.grey
+          ..color = train.cbtcMode == CbtcMode.auto
+              ? Colors.cyan
+              : train.cbtcMode == CbtcMode.pm
+                  ? Colors.orange
+                  : train.cbtcMode == CbtcMode.rm
+                      ? Colors.brown
+                      : Colors.green  // storage
           ..style = PaintingStyle.fill;
 
         // Draw CBTC badge on the left side of train
@@ -1376,21 +1378,25 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         );
 
         // Draw CBTC mode name below badge
-        String modeText = train.cbtcMode == CBTCMode.fullSupervision
-            ? 'FS'
-            : train.cbtcMode == CBTCMode.limitedSupervision
-                ? 'LS'
-                : 'OS';
+        String modeText = train.cbtcMode == CbtcMode.auto
+            ? 'AUTO'
+            : train.cbtcMode == CbtcMode.pm
+                ? 'PM'
+                : train.cbtcMode == CbtcMode.rm
+                    ? 'RM'
+                    : 'STR';  // storage
 
         final modeTextPainter = TextPainter(
           text: TextSpan(
             text: modeText,
             style: TextStyle(
-              color: train.cbtcMode == CBTCMode.fullSupervision
-                  ? Colors.green[700]
-                  : train.cbtcMode == CBTCMode.limitedSupervision
-                      ? Colors.yellow[900]
-                      : Colors.grey[700],
+              color: train.cbtcMode == CbtcMode.auto
+                  ? Colors.cyan[700]
+                  : train.cbtcMode == CbtcMode.pm
+                      ? Colors.orange[900]
+                      : train.cbtcMode == CbtcMode.rm
+                          ? Colors.brown[900]
+                          : Colors.green[700],
               fontSize: 8,
               fontWeight: FontWeight.bold,
             ),

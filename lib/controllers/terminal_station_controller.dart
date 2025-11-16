@@ -2465,6 +2465,46 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Toggle CBTC equipment on/off for a train
+  void toggleCbtcEquipment(String trainId) {
+    final train = trains.where((t) => t.id == trainId).firstOrNull;
+    if (train == null) return;
+
+    train.isCbtcEquipped = !train.isCbtcEquipped;
+
+    if (train.isCbtcEquipped) {
+      train.cbtcMode = CbtcMode.auto;  // Default to auto when enabling
+      _logEvent('🔵 ${train.name} → CBTC ENABLED (AUTO mode)');
+    } else {
+      train.cbtcMode = CbtcMode.off;
+      _logEvent('⚪ ${train.name} → CBTC DISABLED');
+    }
+
+    notifyListeners();
+  }
+
+  /// Set CBTC mode for a train
+  void setCbtcMode(String trainId, CbtcMode mode) {
+    final train = trains.where((t) => t.id == trainId).firstOrNull;
+    if (train == null) return;
+
+    if (!train.isCbtcEquipped && mode != CbtcMode.off) {
+      _logEvent('⚠️ Cannot set CBTC mode: ${train.name} is not CBTC equipped');
+      return;
+    }
+
+    train.cbtcMode = mode;
+
+    String modeText = mode == CbtcMode.auto ? 'AUTO (Cyan)'
+        : mode == CbtcMode.pm ? 'PM (Orange)'
+        : mode == CbtcMode.rm ? 'RM (Brown)'
+        : mode == CbtcMode.storage ? 'STORAGE (Green)'
+        : 'OFF';
+
+    _logEvent('🔵 ${train.name} → CBTC Mode: $modeText');
+    notifyListeners();
+  }
+
   void removeTrain(String id) {
     // Clear any route reservations for this train
     routeReservations

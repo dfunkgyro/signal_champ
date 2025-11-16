@@ -36,6 +36,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   final double _defaultCanvasWidth = 1600.0;
   final double _defaultCanvasHeight = 400.0;
 
+  // NEW: Theme control
+  ThemeMode _themeMode = ThemeMode.light;
+  bool get _isDarkMode => _themeMode == ThemeMode.dark;
+
+  void _toggleTheme() {
+    setState(() {
+      _themeMode = _isDarkMode ? ThemeMode.light : ThemeMode.dark;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -114,47 +124,76 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Railway Simulator'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: 30,
+    return Theme(
+      data: _isDarkMode
+          ? ThemeData.dark(useMaterial3: true).copyWith(
+              colorScheme: const ColorScheme.dark(
+                primary: Colors.cyan,
+                secondary: Colors.orange,
+                surface: Color(0xFF1E1E1E),
+                background: Color(0xFF121212),
+              ),
+            )
+          : ThemeData.light(useMaterial3: true).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: Colors.blue,
+                secondary: Colors.green,
+                surface: Colors.grey[50]!,
+                background: Colors.white,
+              ),
             ),
-            onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
-            tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showInfo(context),
-          ),
-        ],
-      ),
+      child: Scaffold(
+        backgroundColor: _isDarkMode ? const Color(0xFF121212) : Colors.grey[200],
+        appBar: AppBar(
+          title: const Text('Railway Simulator'),
+          actions: [
+            // Theme Toggle Button
+            IconButton(
+              icon: Icon(
+                _isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              ),
+              onPressed: _toggleTheme,
+              tooltip: _isDarkMode ? 'Light Mode' : 'Dark Mode',
+            ),
+            IconButton(
+              icon: Icon(
+                _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                size: 30,
+              ),
+              onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
+              tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
+            ),
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: () => _showInfo(context),
+            ),
+          ],
+        ),
       body: Column(
         children: [
-          // SPAD Alarm - make it smaller and positioned at top
-          Container(
-            height: 80,
-            child: Consumer<TerminalStationController>(
-              builder: (context, controller, _) {
-                return CollisionAlarmWidget(
+          // SPAD Alarm - compact and only shown when active
+          Consumer<TerminalStationController>(
+            builder: (context, controller, _) {
+              if (!controller.spadAlarmActive) return const SizedBox.shrink();
+              return Container(
+                height: 50,
+                child: CollisionAlarmWidget(
                   isActive: controller.spadAlarmActive,
                   currentIncident: controller.currentSpadIncident,
                   onDismiss: () => controller.acknowledgeSPADAlarm(),
                   isSPAD: true,
                   trainStopId: controller.spadTrainStopId,
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
-          // Collision Alarm - make it smaller
-          Container(
-            height: 80,
-            child: Consumer<TerminalStationController>(
-              builder: (context, controller, _) {
-                return CollisionAlarmWidget(
+          // Collision Alarm - compact and only shown when active
+          Consumer<TerminalStationController>(
+            builder: (context, controller, _) {
+              if (!controller.collisionAlarmActive) return const SizedBox.shrink();
+              return Container(
+                height: 50,
+                child: CollisionAlarmWidget(
                   isActive: controller.collisionAlarmActive,
                   currentIncident: controller.currentCollisionIncident,
                   onDismiss: () => controller.acknowledgeCollisionAlarm(),
@@ -179,9 +218,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     );
                   },
                   onForceResolve: () => controller.forceCollisionResolution(),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
 
           // Top Control Panel
@@ -342,6 +381,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -1994,7 +2034,145 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ),
                           const SizedBox(height: 8),
 
-                          // Control Buttons - Row 3: Delete
+                          // Control Buttons - Row 3: CBTC Controls
+                          Row(
+                            children: [
+                              // CBTC Enable/Disable Toggle
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () =>
+                                      controller.toggleCbtcEquipment(train.id),
+                                  icon: Icon(
+                                    train.isCbtcEquipped
+                                        ? Icons.sensors
+                                        : Icons.sensors_off,
+                                    size: 14,
+                                  ),
+                                  label: Text(
+                                    train.isCbtcEquipped ? 'CBTC ON' : 'CBTC OFF',
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: train.isCbtcEquipped
+                                        ? Colors.cyan
+                                        : Colors.grey,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 6),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+
+                              // CBTC Mode Selector
+                              if (train.isCbtcEquipped)
+                                Expanded(
+                                  flex: 2,
+                                  child: PopupMenuButton<CbtcMode>(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: train.cbtcMode == CbtcMode.auto
+                                            ? Colors.cyan
+                                            : train.cbtcMode == CbtcMode.pm
+                                                ? Colors.orange
+                                                : train.cbtcMode == CbtcMode.rm
+                                                    ? Colors.brown
+                                                    : train.cbtcMode == CbtcMode.storage
+                                                        ? Colors.green
+                                                        : Colors.grey,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.speed, size: 14, color: Colors.white),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            train.cbtcMode == CbtcMode.auto
+                                                ? 'AUTO'
+                                                : train.cbtcMode == CbtcMode.pm
+                                                    ? 'PM'
+                                                    : train.cbtcMode == CbtcMode.rm
+                                                        ? 'RM'
+                                                        : train.cbtcMode == CbtcMode.storage
+                                                            ? 'STR'
+                                                            : 'OFF',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const Icon(Icons.arrow_drop_down, size: 16, color: Colors.white),
+                                        ],
+                                      ),
+                                    ),
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: CbtcMode.auto,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.auto_awesome, size: 16, color: Colors.cyan),
+                                            SizedBox(width: 8),
+                                            Text('AUTO (Automatic)'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: CbtcMode.pm,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.shield, size: 16, color: Colors.orange),
+                                            SizedBox(width: 8),
+                                            Text('PM (Protective Manual)'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: CbtcMode.rm,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.warning, size: 16, color: Colors.brown),
+                                            SizedBox(width: 8),
+                                            Text('RM (Restrictive Manual)'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: CbtcMode.storage,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.garage, size: 16, color: Colors.green),
+                                            SizedBox(width: 8),
+                                            Text('STORAGE'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: CbtcMode.off,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.power_settings_new, size: 16, color: Colors.grey),
+                                            SizedBox(width: 8),
+                                            Text('OFF'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                    onSelected: (mode) =>
+                                        controller.setCbtcMode(train.id, mode),
+                                  ),
+                                )
+                              else
+                                const Expanded(flex: 2, child: SizedBox()),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Control Buttons - Row 4: Delete
                           Row(
                             children: [
                               Expanded(

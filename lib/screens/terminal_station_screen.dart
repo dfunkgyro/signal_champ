@@ -2825,68 +2825,68 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              StatusCardWidget('Trains', '${stats['trains']}', Colors.blue),
-              StatusCardWidget('Occupied Blocks', '${stats['occupied_blocks']}',
-                  Colors.orange),
+              StatusCardWidget(label: 'Trains', value: '${stats['trains']}', color: Colors.blue),
+              StatusCardWidget(label: 'Occupied Blocks', value: '${stats['occupied_blocks']}',
+                  color: Colors.orange),
               // Release Status
               StatusCardWidget(
-                  'Pending Cancellations',
-                  '${stats['pending_cancellations']}',
-                  stats['pending_cancellations'] > 0
+                  label: 'Pending Cancellations',
+                  value: '${stats['pending_cancellations']}',
+                  color: stats['pending_cancellations'] > 0
                       ? Colors.orange
                       : Colors.grey),
               StatusCardWidget(
-                  'Release State',
-                  '${stats['release_state']}',
-                  stats['release_state'] == 'counting'
+                  label: 'Release State',
+                  value: '${stats['release_state']}',
+                  color: stats['release_state'] == 'counting'
                       ? Colors.orange
                       : stats['release_state'] == 'completed'
                           ? Colors.green
                           : Colors.grey),
               if (stats['release_countdown'] > 0)
-                StatusCardWidget('Release Countdown',
-                    '${stats['release_countdown']}s', Colors.orange),
+                StatusCardWidget(label: 'Release Countdown',
+                    value: '${stats['release_countdown']}s', color: Colors.orange),
               StatusCardWidget(
-                  'Active Routes', '${stats['active_routes']}', Colors.green),
-              StatusCardWidget('Route Reservations',
-                  '${stats['route_reservations']}', Colors.teal),
+                  label: 'Active Routes', value: '${stats['active_routes']}', color: Colors.green),
+              StatusCardWidget(label: 'Route Reservations',
+                  value: '${stats['route_reservations']}', color: Colors.teal),
               StatusCardWidget(
-                  'Self-normalizing',
-                  stats['self_normalizing_points'] ? 'ON' : 'OFF',
-                  stats['self_normalizing_points']
+                  label: 'Self-normalizing',
+                  value: stats['self_normalizing_points'] ? 'ON' : 'OFF',
+                  color: stats['self_normalizing_points']
                       ? Colors.green
                       : Colors.grey),
               StatusCardWidget(
-                  'Train Stops',
-                  stats['train_stops_enabled'] ? 'ENABLED' : 'DISABLED',
-                  stats['train_stops_enabled'] ? Colors.red : Colors.grey),
-              StatusCardWidget('Active Train Stops',
-                  '${stats['active_train_stops']}', Colors.orange),
+                  label: 'Train Stops',
+                  value: stats['train_stops_enabled'] ? 'ENABLED' : 'DISABLED',
+                  color: stats['train_stops_enabled'] ? Colors.red : Colors.grey),
+              StatusCardWidget(label: 'Active Train Stops',
+                  value: '${stats['active_train_stops']}', color: Colors.orange),
               StatusCardWidget(
-                  'Signals',
-                  stats['signals_visible'] ? 'VISIBLE' : 'HIDDEN',
-                  stats['signals_visible'] ? Colors.green : Colors.grey),
+                  label: 'Signals',
+                  value: stats['signals_visible'] ? 'VISIBLE' : 'HIDDEN',
+                  color: stats['signals_visible'] ? Colors.green : Colors.grey),
               // AB Deadlock Status
               StatusCardWidget(
-                  'Point 78A Deadlocked',
-                  stats['point_78a_deadlocked'] ? 'YES' : 'NO',
-                  stats['point_78a_deadlocked'] ? Colors.red : Colors.green),
+                  label: 'Point 78A Deadlocked',
+                  value: stats['point_78a_deadlocked'] ? 'YES' : 'NO',
+                  color: stats['point_78a_deadlocked'] ? Colors.red : Colors.green),
               StatusCardWidget(
-                  'Point 78B Deadlocked',
-                  stats['point_78b_deadlocked'] ? 'YES' : 'NO',
-                  stats['point_78b_deadlocked'] ? Colors.red : Colors.green),
+                  label: 'Point 78B Deadlocked',
+                  value: stats['point_78b_deadlocked'] ? 'YES' : 'NO',
+                  color: stats['point_78b_deadlocked'] ? Colors.red : Colors.green),
               StatusCardWidget(
-                  'AB104 Occupied',
-                  stats['ab104_occupied'] ? 'YES' : 'NO',
-                  stats['ab104_occupied'] ? Colors.orange : Colors.green),
+                  label: 'AB104 Occupied',
+                  value: stats['ab104_occupied'] ? 'YES' : 'NO',
+                  color: stats['ab104_occupied'] ? Colors.orange : Colors.green),
               StatusCardWidget(
-                  'AB106 Occupied',
-                  stats['ab106_occupied'] ? 'YES' : 'NO',
-                  stats['ab106_occupied'] ? Colors.deepOrange : Colors.green),
+                  label: 'AB106 Occupied',
+                  value: stats['ab106_occupied'] ? 'YES' : 'NO',
+                  color: stats['ab106_occupied'] ? Colors.deepOrange : Colors.green),
               StatusCardWidget(
-                  'AB109 Occupied',
-                  stats['ab109_occupied'] ? 'YES' : 'NO',
-                  stats['ab109_occupied'] ? Colors.orange : Colors.green),
+                  label: 'AB109 Occupied',
+                  value: stats['ab109_occupied'] ? 'YES' : 'NO',
+                  color: stats['ab109_occupied'] ? Colors.orange : Colors.green),
               const Divider(height: 32),
 
               // Points Status

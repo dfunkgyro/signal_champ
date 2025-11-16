@@ -114,231 +114,252 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Get the height of the AppBar including status bar
+    final double appBarHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Railway Simulator'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: 30,
-            ),
-            onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
-            tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showInfo(context),
-          ),
-        ],
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          // SPAD Alarm - make it smaller and positioned at top
-          Container(
-            height: 80,
-            child: Consumer<TerminalStationController>(
-              builder: (context, controller, _) {
-                return CollisionAlarmWidget(
-                  isActive: controller.spadAlarmActive,
-                  currentIncident: controller.currentSpadIncident,
-                  onDismiss: () => controller.acknowledgeSPADAlarm(),
-                  isSPAD: true,
-                  trainStopId: controller.spadTrainStopId,
-                );
-              },
-            ),
-          ),
-          // Collision Alarm - make it smaller
-          Container(
-            height: 80,
-            child: Consumer<TerminalStationController>(
-              builder: (context, controller, _) {
-                return CollisionAlarmWidget(
-                  isActive: controller.collisionAlarmActive,
-                  currentIncident: controller.currentCollisionIncident,
-                  onDismiss: () => controller.acknowledgeCollisionAlarm(),
-                  onAutoRecover: () {
-                    controller.startAutomaticCollisionRecovery();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🤖 Automatic recovery started'),
-                        backgroundColor: Colors.blue,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  onManualRecover: () {
-                    controller.startManualCollisionRecovery();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🎮 Manual recovery enabled'),
-                        backgroundColor: Colors.orange,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  onForceResolve: () => controller.forceCollisionResolution(),
-                );
-              },
-            ),
+          // Layer 1: Railway Canvas (full screen, bottom layer)
+          _buildStationCanvas(),
+
+          // Layer 2: Floating Zoom Controls
+          Positioned(
+            right: 20,
+            bottom: 20,
+            child: _buildFloatingZoomControls(),
           ),
 
-          // Top Control Panel
-          if (_showTopPanel) _buildTopControlPanel(),
-
-          Expanded(
-            child: Stack(
-              children: [
-                // Layer 1: Railway Canvas (bottom layer)
-                _buildStationCanvas(),
-
-                // Layer 2: Floating Zoom Controls (NEW)
-                Positioned(
-                  right: 20,
-                  bottom: 20,
-                  child: _buildFloatingZoomControls(),
+          // Layer 3: Left Sidebar (full-height, reaches top of screen)
+          if (_showLeftPanel)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 320,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    right: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                      width: 2,
+                    ),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                      offset: const Offset(2, 0),
+                    ),
+                  ],
                 ),
+                child: _buildControlPanel(),
+              ),
+            ),
 
-                // Layer 3: Left Sidebar (higher z-order)
-                if (_showLeftPanel)
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 320,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        border: Border(
-                          right: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                            width: 2,
-                          ),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                            offset: const Offset(2, 0),
-                          ),
-                        ],
-                      ),
-                      child: _buildControlPanel(),
+          // Layer 4: Right Sidebar (full-height, reaches top of screen)
+          if (_showRightPanel)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 320,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    left: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                      width: 2,
                     ),
                   ),
-
-                // Layer 4: Right Sidebar (higher z-order)
-                if (_showRightPanel)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 320,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        border: Border(
-                          left: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                            width: 2,
-                          ),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                            offset: const Offset(-2, 0),
-                          ),
-                        ],
-                      ),
-                      child: _buildStatusPanel(),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                      offset: const Offset(-2, 0),
                     ),
-                  ),
+                  ],
+                ),
+                child: _buildStatusPanel(),
+              ),
+            ),
 
-                // Layer 5: Toggle buttons (highest z-order)
-                // Left panel toggle button
-                Positioned(
-                  left: _showLeftPanel ? 320 : 0,
-                  top: 10,
-                  child: Material(
-                    elevation: 8,
+          // Layer 5: AppBar at the top (on top of everything)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AppBar(
+              title: const Text('Railway Simulator'),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    size: 30,
+                  ),
+                  onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
+                  tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  onPressed: () => _showInfo(context),
+                ),
+              ],
+            ),
+          ),
+
+          // Layer 6: SPAD Alarm below AppBar
+          Positioned(
+            top: appBarHeight,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 80,
+              child: Consumer<TerminalStationController>(
+                builder: (context, controller, _) {
+                  return CollisionAlarmWidget(
+                    isActive: controller.spadAlarmActive,
+                    currentIncident: controller.currentSpadIncident,
+                    onDismiss: () => controller.acknowledgeSPADAlarm(),
+                    isSPAD: true,
+                    trainStopId: controller.spadTrainStopId,
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // Layer 7: Collision Alarm below SPAD Alarm
+          Positioned(
+            top: appBarHeight + 80,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 80,
+              child: Consumer<TerminalStationController>(
+                builder: (context, controller, _) {
+                  return CollisionAlarmWidget(
+                    isActive: controller.collisionAlarmActive,
+                    currentIncident: controller.currentCollisionIncident,
+                    onDismiss: () => controller.acknowledgeCollisionAlarm(),
+                    onAutoRecover: () {
+                      controller.startAutomaticCollisionRecovery();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('🤖 Automatic recovery started'),
+                          backgroundColor: Colors.blue,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    onManualRecover: () {
+                      controller.startManualCollisionRecovery();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('🎮 Manual recovery enabled'),
+                          backgroundColor: Colors.orange,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    onForceResolve: () => controller.forceCollisionResolution(),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // Layer 8: Top Control Panel (if shown)
+          if (_showTopPanel)
+            Positioned(
+              top: appBarHeight + 160,
+              left: 0,
+              right: 0,
+              child: _buildTopControlPanel(),
+            ),
+
+          // Layer 9: Toggle buttons (highest z-order)
+          // Left panel toggle button
+          Positioned(
+            left: _showLeftPanel ? 320 : 0,
+            top: appBarHeight + 10,
+            child: Material(
+              elevation: 8,
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              child: InkWell(
+                onTap: () =>
+                    setState(() => _showLeftPanel = !_showLeftPanel),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(8),
                       bottomRight: Radius.circular(8),
                     ),
-                    child: InkWell(
-                      onTap: () =>
-                          setState(() => _showLeftPanel = !_showLeftPanel),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          _showLeftPanel
-                              ? Icons.chevron_left
-                              : Icons.chevron_right,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 4,
+                        spreadRadius: 1,
                       ),
-                    ),
+                    ],
+                  ),
+                  child: Icon(
+                    _showLeftPanel
+                        ? Icons.chevron_left
+                        : Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
+              ),
+            ),
+          ),
 
-                // Right panel toggle button
-                Positioned(
-                  right: _showRightPanel ? 320 : 0,
-                  top: 10,
-                  child: Material(
-                    elevation: 8,
+          // Right panel toggle button
+          Positioned(
+            right: _showRightPanel ? 320 : 0,
+            top: appBarHeight + 10,
+            child: Material(
+              elevation: 8,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                bottomLeft: Radius.circular(8),
+              ),
+              child: InkWell(
+                onTap: () =>
+                    setState(() => _showRightPanel = !_showRightPanel),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(8),
                       bottomLeft: Radius.circular(8),
                     ),
-                    child: InkWell(
-                      onTap: () =>
-                          setState(() => _showRightPanel = !_showRightPanel),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          _showRightPanel
-                              ? Icons.chevron_right
-                              : Icons.chevron_left,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 4,
+                        spreadRadius: 1,
                       ),
-                    ),
+                    ],
+                  ),
+                  child: Icon(
+                    _showRightPanel
+                        ? Icons.chevron_right
+                        : Icons.chevron_left,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ],

@@ -754,12 +754,33 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       ..color = Colors.red
       ..style = PaintingStyle.fill;
 
-    canvas.drawRect(const Rect.fromLTWH(1190, 285, 20, 30), bufferPaint);
-
     final stripePaint = Paint()
       ..color = Colors.yellow
       ..strokeWidth = 2;
 
+    // Buffer Stop 1: Eastbound road - EAST END (right side, y ~115)
+    canvas.drawRect(const Rect.fromLTWH(1300, 100, 20, 30), bufferPaint);
+    for (int i = 0; i < 5; i++) {
+      canvas.drawLine(
+        Offset(1300 + (i * 5), 100),
+        Offset(1305 + (i * 5), 130),
+        stripePaint,
+      );
+    }
+
+    // Buffer Stop 2: Eastbound road - WEST END (left side, y ~115)
+    canvas.drawRect(const Rect.fromLTWH(80, 100, 20, 30), bufferPaint);
+    for (int i = 0; i < 5; i++) {
+      canvas.drawLine(
+        Offset(80 + (i * 5), 100),
+        Offset(85 + (i * 5), 130),
+        stripePaint,
+      );
+    }
+
+    // Buffer Stop 3: Westbound road - EAST END (right side, y ~315)
+    // This is the original buffer stop
+    canvas.drawRect(const Rect.fromLTWH(1190, 285, 20, 30), bufferPaint);
     for (int i = 0; i < 5; i++) {
       canvas.drawLine(
         Offset(1190 + (i * 5), 285),
@@ -767,6 +788,42 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         stripePaint,
       );
     }
+
+    // Buffer Stop 4: Westbound road - WEST END (left side, y ~315)
+    canvas.drawRect(const Rect.fromLTWH(80, 285, 20, 30), bufferPaint);
+    for (int i = 0; i < 5; i++) {
+      canvas.drawLine(
+        Offset(80 + (i * 5), 285),
+        Offset(85 + (i * 5), 315),
+        stripePaint,
+      );
+    }
+
+    // Draw buffer stop labels for clarity
+    final labelPaint = TextPainter(
+      textDirection: TextDirection.ltr,
+    );
+
+    // Label 1
+    labelPaint.text = const TextSpan(
+      text: 'BUFFER',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 8,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    labelPaint.layout();
+    labelPaint.paint(canvas, const Offset(1295, 132));
+
+    // Label 2
+    labelPaint.paint(canvas, const Offset(75, 132));
+
+    // Label 3
+    labelPaint.paint(canvas, const Offset(1185, 317));
+
+    // Label 4
+    labelPaint.paint(canvas, const Offset(75, 317));
   }
 
   void _drawPoints(Canvas canvas) {

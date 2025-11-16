@@ -498,6 +498,12 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // ========== TIMETABLE SYSTEM ==========
+  final List<TimetableEntry> timetableEntries = [];
+  final List<ServicePattern> servicePatterns = [];
+  bool timetableEnabled = true;
+  Timer? _timetableUpdateTimer;
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -519,6 +525,10 @@ class TerminalStationController extends ChangeNotifier {
     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$hours:$minutes:$seconds';
+  }
+
+  DateTime getCurrentTime() {
+    return _currentTime;
   }
 
   void updateTrainAxleCounters(Train train) {
@@ -1138,6 +1148,7 @@ class TerminalStationController extends ChangeNotifier {
   TerminalStationController() {
     _initializeLayout();
     _initializeClock();
+    _initializeTimetable();
     ace = AxleCounterEvaluator(axleCounters);
   }
 
@@ -1188,6 +1199,122 @@ class TerminalStationController extends ChangeNotifier {
       _currentTime = DateTime.now();
       notifyListeners();
     });
+  }
+
+  void _initializeTimetable() {
+    // Initialize default service patterns
+    servicePatterns.add(ServicePattern(
+      serviceNumber: 'EB1',
+      callingPoints: ['Platform 1'],
+      intervalMinutes: 15,
+      origin: 'West Terminal',
+      destination: 'East Terminal',
+      direction: 1,
+    ));
+
+    servicePatterns.add(ServicePattern(
+      serviceNumber: 'WB1',
+      callingPoints: ['Platform 2'],
+      intervalMinutes: 15,
+      origin: 'East Terminal',
+      destination: 'West Terminal',
+      direction: -1,
+    ));
+
+    // Generate initial timetable entries for the next 2 hours
+    _generateTimetableEntries();
+
+    // Start timetable update timer
+    _timetableUpdateTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _updateTimetableStatus();
+    });
+  }
+
+  void _generateTimetableEntries() {
+    final now = _currentTime;
+    final startTime = DateTime(now.year, now.month, now.day, now.hour, 0);
+
+    for (final pattern in servicePatterns) {
+      for (int i = 0; i < 8; i++) {
+        final arrivalTime = startTime.add(Duration(minutes: i * pattern.intervalMinutes));
+        final departureTime = arrivalTime.add(const Duration(minutes: 2));
+
+        final entry = TimetableEntry(
+          id: '${pattern.serviceNumber}-${i}',
+          serviceNumber: pattern.serviceNumber,
+          platformId: pattern.callingPoints.first,
+          scheduledArrival: arrivalTime,
+          scheduledDeparture: departureTime,
+          destination: pattern.destination,
+          origin: pattern.origin,
+          direction: pattern.direction,
+        );
+
+        timetableEntries.add(entry);
+      }
+    }
+
+    // Sort by scheduled arrival
+    timetableEntries.sort((a, b) => a.scheduledArrival.compareTo(b.scheduledArrival));
+  }
+
+  void _updateTimetableStatus() {
+    final now = _currentTime;
+
+    for (final entry in timetableEntries) {
+      if (entry.status == TimetableEntryStatus.scheduled) {
+        // Check if a train is assigned and has departed
+        if (entry.assignedTrainId != null) {
+          final train = trains.where((t) => t.id == entry.assignedTrainId).firstOrNull;
+          if (train != null && train.speed > 0) {
+            entry.status = TimetableEntryStatus.departed;
+            entry.actualDeparture = now;
+          }
+        }
+
+        // Auto-mark as delayed if past scheduled departure + 3 minutes
+        if (now.isAfter(entry.scheduledDeparture.add(const Duration(minutes: 3)))) {
+          entry.status = TimetableEntryStatus.delayed;
+        }
+      }
+    }
+
+    notifyListeners();
+  }
+
+  List<TimetableEntry> getUpcomingDepartures({int limit = 10}) {
+    final now = _currentTime;
+    return timetableEntries
+        .where((entry) =>
+            entry.status == TimetableEntryStatus.scheduled &&
+            entry.scheduledDeparture.isAfter(now))
+        .take(limit)
+        .toList();
+  }
+
+  List<TimetableEntry> getTimetableForPlatform(String platformId) {
+    return timetableEntries
+        .where((entry) => entry.platformId == platformId)
+        .toList();
+  }
+
+  void assignTrainToTimetableEntry(String trainId, String entryId) {
+    final entry = timetableEntries.where((e) => e.id == entryId).firstOrNull;
+    if (entry != null) {
+      entry.assignedTrainId = trainId;
+      entry.actualArrival = _currentTime;
+      _logEvent('🚂 Train $trainId assigned to service ${entry.serviceNumber}');
+      notifyListeners();
+    }
+  }
+
+  void markTimetableEntryDeparted(String entryId) {
+    final entry = timetableEntries.where((e) => e.id == entryId).firstOrNull;
+    if (entry != null) {
+      entry.status = TimetableEntryStatus.departed;
+      entry.actualDeparture = _currentTime;
+      notifyListeners();
+    }
   }
 
   void _initializeLayout() {
@@ -1723,6 +1850,43 @@ class TerminalStationController extends ChangeNotifier {
     currentCollisionIncident = incident;
     collisionAlarmActive = true;
     _logEvent('💥 ${train.name} HIT BUFFER STOPS - Recovery available');
+
+    notifyListeners();
+  }
+
+  void _handleBufferCollisionWest(String trainId) {
+    final collisionId = 'BUF-WEST-${DateTime.now().millisecondsSinceEpoch}';
+    final train = trains.firstWhere((t) => t.id == trainId);
+
+    train.x = 100;
+    train.speed = 0;
+    train.targetSpeed = 0;
+    train.emergencyBrake = true;
+
+    final recoveryPlan = CollisionRecoveryPlan(
+      collisionId: collisionId,
+      trainsInvolved: [trainId],
+      reverseInstructions: {trainId: train.y < 150 ? '100' : '101'},
+      blocksToClear: [train.currentBlockId ?? '100'],
+      state: CollisionRecoveryState.detected,
+    );
+    _activeCollisionRecoveries[collisionId] = recoveryPlan;
+
+    final incident = _collisionSystem.analyzeCollision(
+      trainsInvolved: [trainId],
+      location: 'Buffer Stop - West End',
+      currentSystemState: {
+        'isBufferCollision': true,
+        'location': 'Buffer Stop - West End',
+        'trains': {
+          trainId: {'speed': train.speed}
+        }
+      },
+    );
+
+    currentCollisionIncident = incident;
+    collisionAlarmActive = true;
+    _logEvent('💥 ${train.name} HIT WEST END BUFFER STOPS - Recovery available');
 
     notifyListeners();
   }
@@ -2767,29 +2931,47 @@ class TerminalStationController extends ChangeNotifier {
           }
         }
 
-        // Check for west end limit (westbound trains)
-        if (train.direction < 0 && train.x <= 0) {
-          train.x = 0;
-          train.speed = 0;
-          train.targetSpeed = 0;
-          _logEvent('🛑 ${train.name} reached west end');
+        // BUFFER STOP PROTECTION - ALL EXTREME ENDS
+        // These buffer stops prevent train teleportation and protect track ends
+
+        // Buffer stop 1: Eastbound road - EAST END (right side, y ~100)
+        if (train.direction > 0 && train.y < 150 && train.x >= 1300) {
+          if (train.controlMode == TrainControlMode.manual) {
+            _handleBufferCollision(train.id);
+          } else {
+            train.x = 1300;
+            train.speed = 0;
+            train.targetSpeed = 0;
+            train.emergencyBrake = true;
+            _logEvent('🛑 ${train.name} reached EASTBOUND ROAD EAST buffer stop (safety)');
+          }
         }
-      }
 
-      // Wrap around at track end (eastbound)
-      if (train.direction > 0 && train.x > 1600) {
-        train.x = 50;
-        train.y = 100;
-        train.hasCommittedToMove = false;
-        train.lastPassedSignalId = null;
-      }
+        // Buffer stop 2: Eastbound road - WEST END (left side, y ~100)
+        if (train.direction < 0 && train.y < 150 && train.x <= 100) {
+          if (train.controlMode == TrainControlMode.manual) {
+            _handleBufferCollisionWest(train.id);
+          } else {
+            train.x = 100;
+            train.speed = 0;
+            train.targetSpeed = 0;
+            train.emergencyBrake = true;
+            _logEvent('🛑 ${train.name} reached EASTBOUND ROAD WEST buffer stop (safety)');
+          }
+        }
 
-      // Wrap around at track start (westbound)
-      if (train.direction < 0 && train.x < 0) {
-        train.x = 1550;
-        train.y = 100;
-        train.hasCommittedToMove = false;
-        train.lastPassedSignalId = null;
+        // Buffer stop 3: Westbound road - WEST END (left side, y > 250)
+        if (train.direction < 0 && train.y > 250 && train.x <= 100) {
+          if (train.controlMode == TrainControlMode.manual) {
+            _handleBufferCollisionWest(train.id);
+          } else {
+            train.x = 100;
+            train.speed = 0;
+            train.targetSpeed = 0;
+            train.emergencyBrake = true;
+            _logEvent('🛑 ${train.name} reached WESTBOUND ROAD WEST buffer stop (safety)');
+          }
+        }
       }
     }
 
@@ -3309,6 +3491,8 @@ class TerminalStationController extends ChangeNotifier {
     _clockTimer?.cancel();
     _cancellationTimer?.cancel();
     _simulationTimer?.cancel();
+    _timetableUpdateTimer?.cancel();
+    _recoveryProgressTimer?.cancel();
     super.dispose();
   }
 }

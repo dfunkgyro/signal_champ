@@ -301,3 +301,90 @@ class CollisionRecoveryPlan {
     required this.state,
   }) : detectedAt = DateTime.now();
 }
+
+// ============================================================================
+// TIMETABLE MODELS
+// ============================================================================
+
+enum TimetableEntryStatus {
+  scheduled,
+  departed,
+  arrived,
+  cancelled,
+  delayed
+}
+
+class TimetableEntry {
+  final String id;
+  final String serviceNumber;
+  final String platformId;
+  final DateTime scheduledArrival;
+  final DateTime scheduledDeparture;
+  DateTime? actualArrival;
+  DateTime? actualDeparture;
+  TimetableEntryStatus status;
+  final String destination;
+  final String origin;
+  final int direction; // 1 for eastbound, -1 for westbound
+  String? assignedTrainId;
+
+  TimetableEntry({
+    required this.id,
+    required this.serviceNumber,
+    required this.platformId,
+    required this.scheduledArrival,
+    required this.scheduledDeparture,
+    this.actualArrival,
+    this.actualDeparture,
+    this.status = TimetableEntryStatus.scheduled,
+    required this.destination,
+    required this.origin,
+    required this.direction,
+    this.assignedTrainId,
+  });
+
+  Duration? get delay {
+    if (actualDeparture != null) {
+      return actualDeparture!.difference(scheduledDeparture);
+    }
+    return null;
+  }
+
+  bool get isDelayed {
+    final delayDuration = delay;
+    return delayDuration != null && delayDuration.inMinutes > 2;
+  }
+
+  String get statusText {
+    switch (status) {
+      case TimetableEntryStatus.scheduled:
+        return 'On Time';
+      case TimetableEntryStatus.departed:
+        return 'Departed';
+      case TimetableEntryStatus.arrived:
+        return 'Arrived';
+      case TimetableEntryStatus.cancelled:
+        return 'Cancelled';
+      case TimetableEntryStatus.delayed:
+        return 'Delayed';
+    }
+  }
+}
+
+class ServicePattern {
+  final String serviceNumber;
+  final List<String> callingPoints;
+  final int intervalMinutes;
+  final String origin;
+  final String destination;
+  final int direction;
+
+  ServicePattern({
+    required this.serviceNumber,
+    required this.callingPoints,
+    required this.intervalMinutes,
+    required this.origin,
+    required this.destination,
+    required this.direction,
+  });
+}

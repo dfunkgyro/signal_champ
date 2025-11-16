@@ -2876,6 +2876,123 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
               const SizedBox(height: 16),
 
+              // Timetable Section
+              Card(
+                color: Colors.green[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.schedule, size: 20, color: Colors.green[800]),
+                          const SizedBox(width: 8),
+                          Text('Timetable',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green[800])),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text('Upcoming Departures:',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      ...controller.getUpcomingDepartures(limit: 5).map((entry) {
+                        final timeUntil = entry.scheduledDeparture.difference(controller.getCurrentTime());
+                        final minutesUntil = timeUntil.inMinutes;
+                        final isImmediate = minutesUntil <= 2;
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          color: isImmediate ? Colors.amber[50] : Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: entry.direction > 0 ? Colors.green : Colors.blue,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        entry.serviceNumber,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        entry.destination,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.access_time, size: 12, color: Colors.grey[600]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${entry.scheduledDeparture.hour.toString().padLeft(2, '0')}:${entry.scheduledDeparture.minute.toString().padLeft(2, '0')}',
+                                      style: TextStyle(fontSize: 10, color: Colors.grey[800]),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: isImmediate ? Colors.orange : Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Text(
+                                        minutesUntil <= 0 ? 'Now' : '${minutesUntil}min',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: isImmediate ? Colors.white : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      if (controller.getUpcomingDepartures(limit: 5).isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(
+                            'No upcoming departures',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
               Text('Status',
                   style: Theme.of(context)
                       .textTheme

@@ -455,6 +455,8 @@ class TerminalStationController extends ChangeNotifier {
   final Map<String, Signal> signals = {};
   final List<Platform> platforms = [];
   final Map<String, TrainStop> trainStops = {};
+  final Map<String, WiFiAntenna> wifiAntennas = {}; // CBTC WiFi antennas (SMC, VCC1, VCC2)
+  final Map<String, TransponderTag> transponderTags = {}; // CBTC transponder tags
   final List<String> eventLog = [];
   final CollisionAnalysisSystem _collisionSystem = CollisionAnalysisSystem();
   final Map<String, bool> _pendingRouteCancellations = {};
@@ -1352,8 +1354,163 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 980, y: 340);
     trainStops['T28'] = TrainStop(id: 'T28', signalId: 'C28', x: 380, y: 340);
 
+    // Initialize CBTC infrastructure
+    _initializeCbtcInfrastructure();
+
     _logEvent(
         'Station initialized: 2 platforms, 4 signals, 2 points, 4 train stops, 8 axle counters');
+  }
+
+  // Initialize CBTC WiFi Antennas and Transponder Tags
+  void _initializeCbtcInfrastructure() {
+    // WiFi Antennas - 3 antennas spread evenly along the railway (SMC, VCC1, VCC2)
+    wifiAntennas['SMC'] = WiFiAntenna(
+      id: 'SMC',
+      name: 'SMC',
+      x: 500, // Position 1/3 along the track
+      y: 200, // Centered between tracks
+    );
+
+    wifiAntennas['VCC1'] = WiFiAntenna(
+      id: 'VCC1',
+      name: 'VCC1',
+      x: 900, // Position 2/3 along the track
+      y: 200,
+    );
+
+    wifiAntennas['VCC2'] = WiFiAntenna(
+      id: 'VCC2',
+      name: 'VCC2',
+      x: 1300, // Position at far end
+      y: 200,
+    );
+
+    // Transponder Tags - Pattern: T1, T1, T2, T3, T3, T2, T1
+    // Upper track (y=100)
+    transponderTags['T1_U1'] = TransponderTag(
+      id: 'T1_U1',
+      type: TransponderType.t1,
+      x: 100,
+      y: 100,
+      blockId: '100',
+    );
+
+    transponderTags['T1_U2'] = TransponderTag(
+      id: 'T1_U2',
+      type: TransponderType.t1,
+      x: 300,
+      y: 100,
+      blockId: '102',
+    );
+
+    transponderTags['T2_U1'] = TransponderTag(
+      id: 'T2_U1',
+      type: TransponderType.t2,
+      x: 500,
+      y: 100,
+      blockId: '104',
+    );
+
+    transponderTags['T3_U1'] = TransponderTag(
+      id: 'T3_U1',
+      type: TransponderType.t3,
+      x: 700,
+      y: 100,
+      blockId: '106',
+    );
+
+    transponderTags['T3_U2'] = TransponderTag(
+      id: 'T3_U2',
+      type: TransponderType.t3,
+      x: 900,
+      y: 100,
+      blockId: '108',
+    );
+
+    transponderTags['T2_U2'] = TransponderTag(
+      id: 'T2_U2',
+      type: TransponderType.t2,
+      x: 1100,
+      y: 100,
+      blockId: '110',
+    );
+
+    transponderTags['T1_U3'] = TransponderTag(
+      id: 'T1_U3',
+      type: TransponderType.t1,
+      x: 1300,
+      y: 100,
+      blockId: '112',
+    );
+
+    // T6 tags at platforms (20 units from end)
+    transponderTags['T6_P1'] = TransponderTag(
+      id: 'T6_P1',
+      type: TransponderType.t6,
+      x: 1220, // 20 units before end of platform at 1240
+      y: 100,
+      platformId: 'P1',
+      blockId: '112',
+    );
+
+    // Lower track (y=300)
+    transponderTags['T1_L1'] = TransponderTag(
+      id: 'T1_L1',
+      type: TransponderType.t1,
+      x: 100,
+      y: 300,
+      blockId: '101',
+    );
+
+    transponderTags['T1_L2'] = TransponderTag(
+      id: 'T1_L2',
+      type: TransponderType.t1,
+      x: 300,
+      y: 300,
+      blockId: '103',
+    );
+
+    transponderTags['T2_L1'] = TransponderTag(
+      id: 'T2_L1',
+      type: TransponderType.t2,
+      x: 500,
+      y: 300,
+      blockId: '105',
+    );
+
+    transponderTags['T3_L1'] = TransponderTag(
+      id: 'T3_L1',
+      type: TransponderType.t3,
+      x: 700,
+      y: 300,
+      blockId: '107',
+    );
+
+    transponderTags['T3_L2'] = TransponderTag(
+      id: 'T3_L2',
+      type: TransponderType.t3,
+      x: 900,
+      y: 300,
+      blockId: '109',
+    );
+
+    transponderTags['T2_L2'] = TransponderTag(
+      id: 'T2_L2',
+      type: TransponderType.t2,
+      x: 1100,
+      y: 300,
+      blockId: '111',
+    );
+
+    // T6 tag at Platform 2 (Bay)
+    transponderTags['T6_P2'] = TransponderTag(
+      id: 'T6_P2',
+      type: TransponderType.t6,
+      x: 1220, // 20 units before end of platform at 1240
+      y: 300,
+      platformId: 'P2',
+      blockId: '111',
+    );
   }
 
   // ============================================================================

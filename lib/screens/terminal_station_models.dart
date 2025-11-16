@@ -232,6 +232,74 @@ class TrainStop {
   });
 }
 
+// CBTC Transponder Tag Types
+enum TransponderType {
+  t1, // Most common type - general track positioning
+  t2, // Secondary positioning marker
+  t3, // Tertiary positioning marker
+  t6; // Platform stop marker (20 units from platform end)
+
+  String get name {
+    switch (this) {
+      case TransponderType.t1:
+        return 'T1';
+      case TransponderType.t2:
+        return 'T2';
+      case TransponderType.t3:
+        return 'T3';
+      case TransponderType.t6:
+        return 'T6';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case TransponderType.t1:
+        return Colors.blue;
+      case TransponderType.t2:
+        return Colors.green;
+      case TransponderType.t3:
+        return Colors.orange;
+      case TransponderType.t6:
+        return Colors.purple;
+    }
+  }
+}
+
+class TransponderTag {
+  final String id;
+  final TransponderType type;
+  final double x;
+  final double y;
+  final String? platformId; // For T6 tags - which platform they serve
+  final String? blockId; // Which block the tag is in
+
+  TransponderTag({
+    required this.id,
+    required this.type,
+    required this.x,
+    required this.y,
+    this.platformId,
+    this.blockId,
+  });
+}
+
+class WiFiAntenna {
+  final String id;
+  final String name; // SMC, VCC1, or VCC2
+  final double x;
+  final double y;
+  bool active;
+
+  WiFiAntenna({
+    required this.id,
+    required this.name,
+    required this.x,
+    required this.y,
+    this.active = true,
+  });
+}
+
 class RouteReservation {
   final String id;
   final String signalId;

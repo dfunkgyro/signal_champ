@@ -1,0 +1,463 @@
+{
+  "app_name": "Rail Champ - Signal Champion",
+  "version": "2.1.0",
+  "description": "Advanced Railway Terminal Station Simulation with AI Control",
+  "last_updated": "2025-11-16",
+
+  "system_overview": {
+    "description": "This is a railway terminal station simulation system with MA1 (Movement Authority) visualization, CBTC signaling, collision detection, and AI-powered control.",
+    "key_features": [
+      "Terminal station layout with crossovers",
+      "Automatic and manual train control",
+      "Signal and point (switch) control",
+      "Collision detection and recovery",
+      "Axle counter system (ACE)",
+      "CBTC movement authority visualization",
+      "Sound effects for operations",
+      "AI natural language control"
+    ]
+  },
+
+  "layout_structure": {
+    "description": "The railway layout is a terminal station with two main running lines (Eastbound and Westbound) connected by crossovers",
+    "tracks": {
+      "eastbound": {
+        "description": "Upper track running left to right",
+        "blocks": ["100", "102", "104", "106", "108", "110", "112", "114"],
+        "platforms": ["Platform 1"],
+        "direction": "eastward (left to right)"
+      },
+      "westbound": {
+        "description": "Lower track running right to left",
+        "blocks": ["101", "103", "105", "107", "109", "111"],
+        "platforms": ["Platform 2"],
+        "direction": "westward (right to left)"
+      },
+      "crossovers": {
+        "description": "Diagonal connections between eastbound and westbound tracks",
+        "sections": ["crossover106", "crossover109"],
+        "purpose": "Allow trains to transfer between tracks"
+      }
+    },
+    "signals": {
+      "C28": {
+        "location": "Eastbound entry",
+        "routes": ["Route to Platform 1"],
+        "purpose": "Controls entry to eastbound platform"
+      },
+      "C30": {
+        "location": "Westbound exit",
+        "routes": ["Route 1: Direct exit", "Route 2: Via crossover"],
+        "purpose": "Controls exit from westbound platform"
+      },
+      "C31": {
+        "location": "Eastbound exit",
+        "routes": ["Route 1: Direct exit", "Route 2: Via crossover to westbound"],
+        "purpose": "Controls exit from eastbound platform"
+      },
+      "C33": {
+        "location": "Westbound entry",
+        "routes": ["Route to Platform 2"],
+        "purpose": "Controls entry to westbound platform"
+      }
+    },
+    "points": {
+      "78A": {
+        "location": "Eastbound crossover entry",
+        "positions": ["normal (straight)", "reverse (crossover)"],
+        "controls": "Entry to crossover from eastbound"
+      },
+      "78B": {
+        "location": "Westbound crossover entry",
+        "positions": ["normal (straight)", "reverse (crossover)"],
+        "controls": "Entry to crossover from westbound"
+      }
+    }
+  },
+
+  "movement_authority_ma1": {
+    "description": "Movement Authority (MA1) is the visual green arrow system that shows how far a CBTC-equipped train is authorized to travel",
+    "visualization": {
+      "green_arrow": "Shows authorized travel distance ahead of train",
+      "animated_chevrons": "Flowing arrows indicating permitted direction",
+      "end_markers": {
+        "blue": "Destination point (train will stop here)",
+        "orange": "Obstacle or temporary limit (signal, other train, etc.)"
+      }
+    },
+    "calculation": "MA is calculated based on signal aspect, block occupancy, train destinations, and safe braking distance",
+    "modes": {
+      "auto": "Full automatic control with MA visualization (cyan indicators)",
+      "pm": "Protective Manual - driver controls speed within MA limits (orange indicators)",
+      "rm": "Restrictive Manual - limited MA, reduced speed (brown indicators)",
+      "off": "CBTC disabled, traditional signal control only",
+      "storage": "Train parked/out of service"
+    },
+    "keep_ma1_as_is": true,
+    "note": "MA1 visualization is a key feature and should remain unchanged"
+  },
+
+  "train_operations": {
+    "control_modes": {
+      "automatic": {
+        "description": "Train automatically follows signals and MA",
+        "behavior": "Accelerates, brakes, and stops automatically",
+        "indicator": "No special outline"
+      },
+      "manual": {
+        "description": "Driver controls train manually",
+        "behavior": "Responds to manual speed controls",
+        "indicator": "Blue outline and 'M' badge"
+      }
+    },
+    "cbtc_modes": {
+      "auto": "Automatic CBTC operation (cyan)",
+      "pm": "Protective Manual (orange)",
+      "rm": "Restrictive Manual (brown)",
+      "off": "CBTC off (white)",
+      "storage": "Storage mode (green)"
+    },
+    "door_control": {
+      "open_doors": "Opens train doors at platforms",
+      "close_doors": "Closes train doors before departure",
+      "indicator": "Orange 'D' badge when open"
+    },
+    "emergency_controls": {
+      "emergency_brake": "Immediately stops train",
+      "manual_stop": "Driver-initiated stop"
+    }
+  },
+
+  "train_movement_logic": {
+    "description": "How trains move without teleporting",
+    "movement_rules": [
+      "Trains move smoothly based on speed and direction",
+      "Speed accelerates/decelerates gradually (no instant changes)",
+      "Position updates every simulation tick based on velocity",
+      "Trains cannot jump between blocks",
+      "Block occupation updates as train physically enters/exits",
+      "Collision detection prevents trains from occupying same space"
+    ],
+    "anti_teleport_measures": [
+      "Continuous position tracking (x, y coordinates)",
+      "Velocity-based movement (pixels per tick)",
+      "Block entry/exit threshold detection",
+      "Collision prediction and prevention",
+      "Path validation before movement"
+    ],
+    "improvement_recommendations": [
+      "Add position interpolation for smoother movement",
+      "Implement lookahead collision detection",
+      "Add speed limits per block section",
+      "Validate route before allowing train movement",
+      "Add movement history tracking for debugging"
+    ]
+  },
+
+  "control_table": {
+    "description": "Data structure for controlling all railway elements",
+    "elements": {
+      "trains": {
+        "properties": ["id", "name", "vin", "position (x,y)", "speed", "direction", "controlMode", "cbtcMode", "doorsOpen", "emergencyBrake"],
+        "controls": ["Set speed", "Change direction", "Open/close doors", "Set CBTC mode", "Emergency brake", "Set destination"]
+      },
+      "signals": {
+        "properties": ["id", "aspect (red/green)", "activeRoute", "routeState"],
+        "controls": ["Clear signal (set route)", "Return signal to red (cancel route)"]
+      },
+      "points": {
+        "properties": ["id", "position (normal/reverse)", "locked", "lockedByAB"],
+        "controls": ["Switch position", "Lock/unlock", "AB deadlock detection"]
+      },
+      "blocks": {
+        "properties": ["id", "occupied", "occupyingTrainId", "startX", "endX"],
+        "monitoring": ["Track occupation", "Axle counter integration", "Route reservation"]
+      }
+    }
+  },
+
+  "ai_control_capabilities": {
+    "description": "Natural language commands the AI can execute",
+    "train_commands": [
+      {
+        "intent": "spawn_train",
+        "examples": ["Add a train", "Create a new train on the eastbound track", "Spawn train T5"],
+        "parameters": ["train_name (optional)", "block_id (optional)", "color (optional)"],
+        "action": "Creates a new train instance and places it in specified or default block"
+      },
+      {
+        "intent": "remove_train",
+        "examples": ["Remove train T1", "Delete the train on platform 1"],
+        "parameters": ["train_id or position"],
+        "action": "Removes specified train from simulation"
+      },
+      {
+        "intent": "move_train",
+        "examples": ["Move train T1 to platform 2", "Send train T2 eastbound"],
+        "parameters": ["train_id", "destination or direction"],
+        "action": "Sets train destination and initiates movement"
+      },
+      {
+        "intent": "change_train_speed",
+        "examples": ["Speed up train T1", "Slow down train T2", "Set train T1 speed to 5"],
+        "parameters": ["train_id", "speed_value or direction (faster/slower)"],
+        "action": "Adjusts train target speed"
+      },
+      {
+        "intent": "stop_train",
+        "examples": ["Stop train T1", "Emergency brake on T2"],
+        "parameters": ["train_id", "stop_type (normal/emergency)"],
+        "action": "Applies brakes to train"
+      },
+      {
+        "intent": "open_close_doors",
+        "examples": ["Open doors on train T1", "Close all train doors"],
+        "parameters": ["train_id (optional)", "action (open/close)"],
+        "action": "Controls train door state"
+      },
+      {
+        "intent": "change_cbtc_mode",
+        "examples": ["Set train T1 to auto mode", "Switch T2 to protective manual"],
+        "parameters": ["train_id", "cbtc_mode"],
+        "action": "Changes train CBTC operating mode"
+      }
+    ],
+    "signal_commands": [
+      {
+        "intent": "clear_signal",
+        "examples": ["Clear signal C28", "Set route C31 route 1", "Green signal C33"],
+        "parameters": ["signal_id", "route_id (optional)"],
+        "action": "Clears signal and sets route"
+      },
+      {
+        "intent": "return_signal",
+        "examples": ["Return signal C28 to red", "Cancel route C31"],
+        "parameters": ["signal_id"],
+        "action": "Returns signal to danger and releases route"
+      },
+      {
+        "intent": "show_signal_status",
+        "examples": ["What's the status of signal C28?", "Show all signals"],
+        "parameters": ["signal_id (optional)"],
+        "action": "Displays signal aspect and route information"
+      }
+    ],
+    "point_commands": [
+      {
+        "intent": "switch_point",
+        "examples": ["Switch point 78A", "Set point 78B to reverse", "Point 78A normal"],
+        "parameters": ["point_id", "position (optional)"],
+        "action": "Changes point position if not locked"
+      },
+      {
+        "intent": "lock_unlock_point",
+        "examples": ["Lock point 78A", "Unlock point 78B"],
+        "parameters": ["point_id", "action (lock/unlock)"],
+        "action": "Manually locks or unlocks point"
+      },
+      {
+        "intent": "show_point_status",
+        "examples": ["Status of point 78A?", "Show all points"],
+        "parameters": ["point_id (optional)"],
+        "action": "Displays point position and lock state"
+      }
+    ],
+    "system_commands": [
+      {
+        "intent": "show_layout_info",
+        "examples": ["Explain the layout", "How does this station work?", "Show me the track plan"],
+        "parameters": [],
+        "action": "Provides information about the railway layout"
+      },
+      {
+        "intent": "collision_recovery",
+        "examples": ["Recover from collision", "Clear the collision"],
+        "parameters": [],
+        "action": "Initiates collision recovery procedures"
+      },
+      {
+        "intent": "reset_simulation",
+        "examples": ["Reset everything", "Start over", "Clear all trains"],
+        "parameters": [],
+        "action": "Resets simulation to initial state"
+      },
+      {
+        "intent": "toggle_visibility",
+        "examples": ["Show signals", "Hide axle counters", "Toggle train stops"],
+        "parameters": ["element_type", "action (show/hide)"],
+        "action": "Controls visibility of different UI elements"
+      },
+      {
+        "intent": "sound_control",
+        "examples": ["Enable sounds", "Mute alarms", "Set volume to 50%"],
+        "parameters": ["sound_type (optional)", "action", "volume (optional)"],
+        "action": "Controls sound settings"
+      }
+    ],
+    "query_commands": [
+      {
+        "intent": "train_location",
+        "examples": ["Where is train T1?", "Which block is T2 in?"],
+        "parameters": ["train_id"],
+        "action": "Reports current train position and block"
+      },
+      {
+        "intent": "block_status",
+        "examples": ["Is block 105 occupied?", "Show block status"],
+        "parameters": ["block_id (optional)"],
+        "action": "Reports block occupation status"
+      },
+      {
+        "intent": "route_status",
+        "examples": ["What routes are set?", "Show active routes"],
+        "parameters": [],
+        "action": "Lists all active route reservations"
+      }
+    ]
+  },
+
+  "common_issues_and_solutions": {
+    "train_teleporting": {
+      "symptoms": ["Train jumps between positions", "Instant block changes", "Visual glitches"],
+      "causes": [
+        "Direct position assignment instead of velocity-based movement",
+        "Missing collision detection",
+        "Improper block transition logic"
+      ],
+      "solutions": [
+        "Use continuous velocity-based position updates",
+        "Add interpolation between positions",
+        "Validate all position changes",
+        "Implement proper block entry/exit detection"
+      ]
+    },
+    "collision_detection": {
+      "description": "System detects when trains occupy same space",
+      "prevention": [
+        "Block occupation tracking",
+        "Signal interlocking",
+        "Route reservations",
+        "Minimum separation distance"
+      ],
+      "recovery": [
+        "Automatic collision detection",
+        "Recovery plan generation",
+        "Guided reversal to safe positions",
+        "System state restoration"
+      ]
+    },
+    "signal_interlocking": {
+      "description": "Prevents conflicting routes from being set",
+      "rules": [
+        "Only one route per signal at a time",
+        "Conflicting routes cannot be active simultaneously",
+        "Points must be in correct position",
+        "All blocks in route must be clear"
+      ]
+    }
+  },
+
+  "improvement_suggestions": {
+    "layout_enhancements": [
+      "Add more platform tracks for increased capacity",
+      "Implement bidirectional running on single tracks",
+      "Add storage sidings for train parking",
+      "Include depot connections for maintenance",
+      "Add more crossover points for flexibility"
+    ],
+    "operational_improvements": [
+      "Automatic timetable following",
+      "Platform assignment optimization",
+      "Conflict prediction and resolution",
+      "Energy-efficient speed profiles",
+      "Passenger demand simulation"
+    ],
+    "ai_features": [
+      "Voice command recognition",
+      "Predictive conflict detection",
+      "Automatic schedule optimization",
+      "Learning from operator patterns",
+      "Intelligent route selection"
+    ],
+    "visualization_enhancements": [
+      "3D track view option",
+      "Train interior camera view",
+      "Real-time performance metrics",
+      "Historical playback",
+      "Split-screen monitoring"
+    ]
+  },
+
+  "technical_architecture": {
+    "controllers": {
+      "TerminalStationController": {
+        "file": "lib/controllers/terminal_station_controller.dart",
+        "purpose": "Main simulation logic and state management",
+        "key_methods": [
+          "updateSimulation() - Main game loop",
+          "createTrain() - Spawns new trains",
+          "clearSignal() - Sets routes and clears signals",
+          "switchPoint() - Changes point positions",
+          "updateTrainPosition() - Handles train movement"
+        ]
+      }
+    },
+    "models": {
+      "TerminalStationModels": {
+        "file": "lib/screens/terminal_station_models.dart",
+        "classes": ["Train", "Signal", "Point", "BlockSection", "Platform", "SignalRoute"]
+      }
+    },
+    "rendering": {
+      "TerminalStationPainter": {
+        "file": "lib/screens/terminal_station_painter.dart",
+        "purpose": "Custom canvas painting for railway visualization",
+        "draws": ["Tracks", "Trains", "Signals", "Points", "Platforms", "Movement Authority arrows"]
+      }
+    },
+    "services": {
+      "SoundService": {
+        "file": "lib/services/sound_service.dart",
+        "purpose": "Manages all sound effects, alarms, and alerts",
+        "features": ["FX sounds", "Alarm loops", "Volume control", "Sound categories"]
+      }
+    }
+  },
+
+  "api_integration": {
+    "description": "How external AI systems can interact with this app",
+    "methods": {
+      "direct_controller_access": {
+        "description": "AI can directly call controller methods",
+        "example": "controller.createTrain(name: 'T5', blockId: '100')"
+      },
+      "natural_language_parsing": {
+        "description": "Parse user requests and map to controller actions",
+        "flow": [
+          "1. Receive natural language input",
+          "2. Extract intent and parameters",
+          "3. Map to controller method",
+          "4. Execute action",
+          "5. Return result to user"
+        ]
+      },
+      "state_queries": {
+        "description": "AI can query current system state",
+        "available_data": ["All trains", "All signals", "All blocks", "Active routes", "Collisions"]
+      }
+    }
+  },
+
+  "glossary": {
+    "MA": "Movement Authority - permission for a train to move to a specific location",
+    "CBTC": "Communications-Based Train Control - modern signaling system",
+    "ACE": "Axle Counter Evaluator - track circuit equivalent using axle counters",
+    "AB": "Axle Counter Block section (e.g., AB100, AB105)",
+    "Point": "Railroad switch/turnout that allows trains to change tracks",
+    "Signal Aspect": "Color/indication shown by a signal (Red = Stop, Green = Proceed)",
+    "Route": "Predefined path through the railway protected by signals and points",
+    "Block Section": "Length of track between signals or axle counters",
+    "Interlocking": "Safety system preventing conflicting train movements",
+    "VIN": "Vehicle Identification Number - unique train identifier"
+  }
+}

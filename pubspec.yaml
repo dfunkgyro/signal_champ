@@ -43,6 +43,9 @@ dependencies:
   # Mobile Features
   share_plus: ^12.0.1
   flutter_launcher_icons: ^0.14.4
+
+  # Sound Effects
+  audioplayers: ^6.1.0
   
 dev_dependencies:
   flutter_test:
@@ -56,6 +59,8 @@ flutter:
     - assets/
     - assets/.env
     - assets/icon/
+    - assets/json/
+    - assets/sounds/
 
 # App icon configuration
 flutter_launcher_icons:

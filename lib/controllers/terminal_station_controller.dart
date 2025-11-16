@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
+import 'package:rail_champ/services/sound_service.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -457,6 +458,7 @@ class TerminalStationController extends ChangeNotifier {
   final Map<String, TrainStop> trainStops = {};
   final List<String> eventLog = [];
   final CollisionAnalysisSystem _collisionSystem = CollisionAnalysisSystem();
+  final SoundService _soundService = SoundService();
   final Map<String, bool> _pendingRouteCancellations = {};
   final Map<String, DateTime> _pendingCancellationTimers = {};
   ReleaseState releaseState = ReleaseState.inactive;
@@ -1139,6 +1141,7 @@ class TerminalStationController extends ChangeNotifier {
     _initializeLayout();
     _initializeClock();
     ace = AxleCounterEvaluator(axleCounters);
+    _soundService.initialize();
   }
 
   void _initializeAxleCounters() {
@@ -1543,6 +1546,7 @@ class TerminalStationController extends ChangeNotifier {
     train.speed = 0;
     train.manualStop = true;
 
+    _soundService.play(SoundType.doorOpen); // Sound effect
     _logEvent('🚪 ${train.name} doors OPENED at $platformId');
     notifyListeners();
   }
@@ -1559,6 +1563,7 @@ class TerminalStationController extends ChangeNotifier {
     train.doorsOpenedAt = null;
     train.manualStop = false;
 
+    _soundService.play(SoundType.doorClose); // Sound effect
     _logEvent('🚪 ${train.name} doors CLOSED');
     notifyListeners();
   }
@@ -1634,6 +1639,7 @@ class TerminalStationController extends ChangeNotifier {
 
     currentCollisionIncident = incident;
     collisionAlarmActive = true;
+    _soundService.playAlarmLoop(SoundType.collision); // Collision alarm
 
     _logEvent(
         '💥 COLLISION: ${trainIds.join(" & ")} at $location - Recovery available');
@@ -2010,6 +2016,7 @@ class TerminalStationController extends ChangeNotifier {
         if (point.locked || selfNormalizingPoints) {
           point.position = position;
           point.locked = true;
+          _soundService.play(SoundType.pointSwitch); // Sound effect
           _logEvent('🔧 Point $pointId set to ${position.name.toUpperCase()}');
         }
       }
@@ -2032,6 +2039,7 @@ class TerminalStationController extends ChangeNotifier {
     Future.delayed(const Duration(milliseconds: 500), () {
       signal.routeState = RouteState.set;
       _updateSignalAspects();
+      _soundService.play(SoundType.routeSet); // Sound effect
       _logEvent('✅ Route set: ${route.name}');
       notifyListeners();
     });
@@ -2407,12 +2415,14 @@ class TerminalStationController extends ChangeNotifier {
       train.targetSpeed = 2.0;
       train.speed =
           0.5; // Give initial speed boost for manual mode to ensure immediate movement
+      _soundService.play(SoundType.trainDepart); // Sound effect
       _logEvent('🚦 ${train.name} MANUAL DEPART - go');
     } else {
       // Auto mode - just release the manual stop if it was engaged
       train.manualStop = false;
       train.emergencyBrake = false;
       train.targetSpeed = 2.0;
+      _soundService.play(SoundType.trainDepart); // Sound effect
       _logEvent('🚦 ${train.name} AUTO DEPART - released');
     }
     notifyListeners();
@@ -2776,20 +2786,24 @@ class TerminalStationController extends ChangeNotifier {
         }
       }
 
-      // Wrap around at track end (eastbound)
+      // ANTI-TELEPORT: Disabled wrap-around to prevent teleporting
+      // Instead, trains stop at track boundaries
       if (train.direction > 0 && train.x > 1600) {
-        train.x = 50;
-        train.y = 100;
-        train.hasCommittedToMove = false;
-        train.lastPassedSignalId = null;
+        train.x = 1600;
+        train.speed = 0;
+        train.targetSpeed = 0;
+        train.manualStop = true;
+        _logEvent('🛑 ${train.name} reached east end of layout');
+        // TODO: Implement proper track end handling or train removal
       }
 
-      // Wrap around at track start (westbound)
-      if (train.direction < 0 && train.x < 0) {
-        train.x = 1550;
-        train.y = 100;
-        train.hasCommittedToMove = false;
-        train.lastPassedSignalId = null;
+      // West boundary - stop instead of wrap
+      if (train.direction < 0 && train.x < 50) {
+        train.x = 50;
+        train.speed = 0;
+        train.targetSpeed = 0;
+        train.manualStop = true;
+        _logEvent('🛑 ${train.name} reached west end of layout');
       }
     }
 
@@ -2967,40 +2981,54 @@ class TerminalStationController extends ChangeNotifier {
     final point78A = points['78A'];
     final point78B = points['78B'];
 
+    // Calculate target Y position based on track
+    double targetY;
+    double targetRotation = 0.0;
+
     if (train.x < 600) {
-      if (train.y > 200) {
-        train.y = 300;
-      } else {
-        train.y = 100;
-      }
-      train.rotation = 0.0;
+      // Before crossover - use current track
+      targetY = train.y > 200 ? 300 : 100;
+      targetRotation = 0.0;
     } else if (train.x >= 600 && train.x < 800) {
+      // In crossover zone
       if (point78A?.position == PointPosition.reverse &&
           point78B?.position == PointPosition.reverse) {
+        // Crossover is active - smooth diagonal transition
         if (train.x < 700) {
           double progress = (train.x - 600) / 100;
-          train.y = 100 + (100 * progress);
-          train.rotation = 0.785398;
+          targetY = 100 + (100 * progress);
+          targetRotation = 0.785398; // 45 degrees
         } else {
           double progress = (train.x - 700) / 100;
-          train.y = 200 + (100 * progress);
-          train.rotation = 0.785398;
+          targetY = 200 + (100 * progress);
+          targetRotation = 0.785398;
         }
       } else {
-        if (train.y < 200) {
-          train.y = 100;
-        } else {
-          train.y = 300;
-        }
-        train.rotation = 0.0;
+        // Crossover not active - stay on current track
+        targetY = train.y < 200 ? 100 : 300;
+        targetRotation = 0.0;
       }
     } else {
-      if (train.y > 200) {
-        train.y = 300;
-      } else {
-        train.y = 100;
-      }
-      train.rotation = 0.0;
+      // After crossover - use current track
+      targetY = train.y > 200 ? 300 : 100;
+      targetRotation = 0.0;
+    }
+
+    // ANTI-TELEPORT: Smooth Y position transition instead of instant snap
+    final yDiff = targetY - train.y;
+    if (yDiff.abs() > 0.5) {
+      // Gradually move toward target Y (max 2 pixels per tick)
+      train.y += yDiff.sign * math.min(yDiff.abs(), 2.0);
+    } else {
+      train.y = targetY; // Close enough, snap to target
+    }
+
+    // Smooth rotation transition
+    final rotDiff = targetRotation - train.rotation;
+    if (rotDiff.abs() > 0.01) {
+      train.rotation += rotDiff.sign * math.min(rotDiff.abs(), 0.05);
+    } else {
+      train.rotation = targetRotation;
     }
   }
 

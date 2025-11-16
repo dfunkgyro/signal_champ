@@ -1319,8 +1319,58 @@ class TerminalStationController extends ChangeNotifier {
         continue;
       }
 
+      // Check for T6 tag stopping
+      _checkT6TagStopping(train);
+
       // Calculate maximum distance for green arrow
       train.movementAuthority = _calculateMovementAuthority(train);
+    }
+  }
+
+  void _checkT6TagStopping(Train train) {
+    // Only check for trains in AUTO or PM mode with a platform destination
+    if (train.cbtcMode != CbtcMode.auto && train.cbtcMode != CbtcMode.pm) return;
+    if (train.smcDestination == null) return;
+    if (!train.smcDestination!.startsWith('P')) return; // Only platforms
+
+    // Find the appropriate T6 tag based on destination and track
+    Transponder? targetT6;
+
+    if (train.smcDestination == 'P1' && train.y < 200) {
+      // Eastbound to Platform 1
+      targetT6 = transponders.firstWhere(
+        (t) => t.id == 'EB_T6_P1',
+        orElse: () => transponders.first,
+      );
+    } else if (train.smcDestination == 'P2' && train.y > 200) {
+      // Westbound to Platform 2
+      targetT6 = transponders.firstWhere(
+        (t) => t.id == 'WB_T6_P2',
+        orElse: () => transponders.first,
+      );
+    }
+
+    if (targetT6 == null) return;
+
+    // Check if train is approaching or at the T6 tag
+    final distanceToT6 = (train.x - targetT6.x).abs();
+    final isOnSameTrack = (train.y - targetT6.y).abs() < 50;
+
+    if (isOnSameTrack && distanceToT6 < 15) {
+      // Train is at the T6 tag - stop it
+      if (train.speed > 0 || train.targetSpeed > 0) {
+        train.targetSpeed = 0;
+        train.speed = 0;
+        train.manualStop = true;
+        _logEvent('🎯 ${train.name} ATO STOP at ${targetT6.id} (${train.smcDestination})');
+
+        // Optionally open doors after a brief delay
+        Future.delayed(const Duration(seconds: 1), () {
+          if (train.smcDestination != null) {
+            openTrainDoors(train.id);
+          }
+        });
+      }
     }
   }
 

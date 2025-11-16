@@ -1207,26 +1207,64 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void _initializeAxleCounters() {
-    axleCounters['ac100'] =
-        AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
-    axleCounters['ac104'] =
-        AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
-    axleCounters['ac108'] =
-        AxleCounter(id: 'ac108', blockId: '108', x: 700, y: 120);
-    axleCounters['ac112'] =
-        AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
+    // ========================================================================
+    // MA2 AXLE COUNTERS (Left Railway) - descending
+    // ========================================================================
 
-    axleCounters['ac101'] =
-        AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
-    axleCounters['ac105'] =
-        AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
-    axleCounters['ac109'] =
-        AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
+    // MA2 Upper Track (even, descending)
+    axleCounters['ac98'] = AxleCounter(id: 'ac98', blockId: '98', x: -1500, y: 120);
+    axleCounters['ac96'] = AxleCounter(id: 'ac96', blockId: '96', x: -1300, y: 120);
+    axleCounters['ac94'] = AxleCounter(id: 'ac94', blockId: '94', x: -1100, y: 120);
+    axleCounters['ac92'] = AxleCounter(id: 'ac92', blockId: '92', x: -900, y: 120);
+    axleCounters['ac90'] = AxleCounter(id: 'ac90', blockId: '90', x: -700, y: 120);
+    axleCounters['ac88'] = AxleCounter(id: 'ac88', blockId: '88', x: -500, y: 120);
+    axleCounters['ac86'] = AxleCounter(id: 'ac86', blockId: '86', x: -300, y: 120);
+    axleCounters['ac84'] = AxleCounter(id: 'ac84', blockId: '84', x: -100, y: 120);
 
-    axleCounters['ac111'] =
-        AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
+    // MA2 Lower Track (odd, descending)
+    axleCounters['ac99'] = AxleCounter(id: 'ac99', blockId: '99', x: -1100, y: 320);
+    axleCounters['ac97'] = AxleCounter(id: 'ac97', blockId: '97', x: -900, y: 320);
+    axleCounters['ac95'] = AxleCounter(id: 'ac95', blockId: '95', x: -700, y: 320);
+    axleCounters['ac93'] = AxleCounter(id: 'ac93', blockId: '93', x: -500, y: 320);
+    axleCounters['ac91'] = AxleCounter(id: 'ac91', blockId: '91', x: -300, y: 320);
+    axleCounters['ac89'] = AxleCounter(id: 'ac89', blockId: '89', x: -100, y: 320);
+    axleCounters['ac87'] = AxleCounter(id: 'ac87', blockId: '87', x: -50, y: 320);
 
-    // UPDATED: AC106 positioned as additional entry/exit for AB104
+    // MA2 Crossover counters
+    axleCounters['ac90c'] = AxleCounter(
+      id: 'ac90c',
+      blockId: 'crossover90',
+      x: -650,
+      y: 150,
+      isTwin: false,
+      twinLabel: 'ac90c',
+    );
+    axleCounters['ac93c'] = AxleCounter(
+      id: 'ac93c',
+      blockId: 'crossover93',
+      x: -750,
+      y: 250,
+      isTwin: false,
+      twinLabel: 'ac93c',
+    );
+
+    // ========================================================================
+    // MA1 AXLE COUNTERS (Center Railway) - existing/ascending
+    // ========================================================================
+
+    // MA1 Upper Track (even, ascending)
+    axleCounters['ac100'] = AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
+    axleCounters['ac104'] = AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
+    axleCounters['ac108'] = AxleCounter(id: 'ac108', blockId: '108', x: 700, y: 120);
+    axleCounters['ac112'] = AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
+
+    // MA1 Lower Track (odd, ascending)
+    axleCounters['ac101'] = AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
+    axleCounters['ac105'] = AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
+    axleCounters['ac109'] = AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
+    axleCounters['ac111'] = AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
+
+    // MA1 Crossover counters
     axleCounters['ac106'] = AxleCounter(
       id: 'ac106',
       blockId: 'crossover106',
@@ -1235,8 +1273,6 @@ class TerminalStationController extends ChangeNotifier {
       isTwin: false,
       twinLabel: 'ac106',
     );
-
-    // UPDATED: AC107 positioned as additional entry/exit for AB109
     axleCounters['ac107'] = AxleCounter(
       id: 'ac107',
       blockId: 'crossover109',
@@ -1245,6 +1281,43 @@ class TerminalStationController extends ChangeNotifier {
       isTwin: false,
       twinLabel: 'ac107',
     );
+
+    // ========================================================================
+    // MA3 AXLE COUNTERS (Right Railway) - ascending
+    // ========================================================================
+
+    // MA3 Upper Track (even, ascending)
+    axleCounters['ac116'] = AxleCounter(id: 'ac116', blockId: '116', x: 1700, y: 120);
+    axleCounters['ac120'] = AxleCounter(id: 'ac120', blockId: '120', x: 2100, y: 120);
+    axleCounters['ac124'] = AxleCounter(id: 'ac124', blockId: '124', x: 2500, y: 120);
+    axleCounters['ac128'] = AxleCounter(id: 'ac128', blockId: '128', x: 2900, y: 120);
+
+    // MA3 Lower Track (odd, ascending)
+    axleCounters['ac113'] = AxleCounter(id: 'ac113', blockId: '113', x: 1700, y: 320);
+    axleCounters['ac117'] = AxleCounter(id: 'ac117', blockId: '117', x: 2100, y: 320);
+    axleCounters['ac121'] = AxleCounter(id: 'ac121', blockId: '121', x: 2500, y: 320);
+    axleCounters['ac123'] = AxleCounter(id: 'ac123', blockId: '123', x: 2700, y: 320);
+
+    // MA3 Crossover counters
+    axleCounters['ac120c'] = AxleCounter(
+      id: 'ac120c',
+      blockId: 'crossover120',
+      x: 2050,
+      y: 150,
+      isTwin: false,
+      twinLabel: 'ac120c',
+    );
+    axleCounters['ac119c'] = AxleCounter(
+      id: 'ac119c',
+      blockId: 'crossover119',
+      x: 2150,
+      y: 250,
+      isTwin: false,
+      twinLabel: 'ac119c',
+    );
+
+    _logEvent(
+        '✅ Initialized ${axleCounters.length} axle counters across 3 railway areas (MA2: 17, MA1: 10, MA3: 10)');
   }
 
   void _initializeClock() {
@@ -1629,25 +1702,126 @@ class TerminalStationController extends ChangeNotifier {
     platforms.add(Platform(
         id: 'P4', name: 'Platform 4 (Bay)', startX: 2380, endX: 2640, y: 300, area: RailwayArea.ma3));
 
-    signals['C31'] = Signal(
-      id: 'C31',
-      x: 390,
+    // ========================================================================
+    // MA2 SIGNALS (Left Railway) - b-series descending
+    // ========================================================================
+
+    signals['b1'] = Signal(
+      id: 'b1',
+      x: -1210,
       y: 80,
+      area: RailwayArea.ma2,
       routes: [
         SignalRoute(
-          id: 'C31_R1',
-          name: 'Route 1 (Main → Platform 1)',
+          id: 'b1_R1',
+          name: 'Exit Platform 5 to MA1',
+          requiredBlocksClear: ['92', '90', '88', '86', '84'],
+          requiredPointPositions: {},
+          pathBlocks: ['94', '92', '90', '88', '86', '84'],
+          protectedBlocks: ['92', '90', '88'],
+        ),
+      ],
+    );
+
+    signals['b3'] = Signal(
+      id: 'b3',
+      x: -1010,
+      y: 320,
+      area: RailwayArea.ma2,
+      routes: [
+        SignalRoute(
+          id: 'b3_R1',
+          name: 'Exit Platform 6 to MA1',
+          requiredBlocksClear: ['95', '93', '91', '89', '87'],
+          requiredPointPositions: {},
+          pathBlocks: ['97', '95', '93', '91', '89', '87'],
+          protectedBlocks: ['95', '93', '91'],
+        ),
+      ],
+    );
+
+    signals['b4'] = Signal(
+      id: 'b4',
+      x: -590,
+      y: 320,
+      area: RailwayArea.ma2,
+      routes: [
+        SignalRoute(
+          id: 'b4_R1',
+          name: 'Entry to Platform 6',
+          requiredBlocksClear: ['97', '99'],
+          requiredPointPositions: {'38b': PointPosition.normal},
+          pathBlocks: ['93', '95', '97', '99'],
+          protectedBlocks: ['95', '97', '99'],
+        ),
+        SignalRoute(
+          id: 'b4_R2',
+          name: 'Entry to Platform 5 via crossover',
+          requiredBlocksClear: ['crossover93', 'crossover90', '92', '94'],
+          requiredPointPositions: {
+            '38b': PointPosition.reverse,
+            '38a': PointPosition.reverse
+          },
+          conflictingRoutes: ['b6_R1'],
+          pathBlocks: ['93', 'crossover93', 'crossover90', '90', '92', '94'],
+          protectedBlocks: ['crossover93', 'crossover90', '90', '92'],
+        ),
+      ],
+    );
+
+    signals['b6'] = Signal(
+      id: 'b6',
+      x: -210,
+      y: 80,
+      area: RailwayArea.ma2,
+      routes: [
+        SignalRoute(
+          id: 'b6_R1',
+          name: 'Entry to Platform 5 via normal route',
+          requiredBlocksClear: ['88', '90', '92', '94'],
+          requiredPointPositions: {'38a': PointPosition.normal},
+          pathBlocks: ['86', '88', '90', '92', '94'],
+          protectedBlocks: ['88', '90', '92', '94'],
+        ),
+        SignalRoute(
+          id: 'b6_R2',
+          name: 'Entry to Platform 6 via crossover',
+          requiredBlocksClear: ['crossover90', 'crossover93', '93', '95', '97'],
+          requiredPointPositions: {
+            '38a': PointPosition.reverse,
+            '38b': PointPosition.reverse
+          },
+          conflictingRoutes: ['b4_R1'],
+          pathBlocks: ['86', '88', 'crossover90', 'crossover93', '93', '95', '97'],
+          protectedBlocks: ['crossover90', 'crossover93', '93', '95'],
+        ),
+      ],
+    );
+
+    // ========================================================================
+    // MA1 SIGNALS (Center Railway) - b-series ascending (renamed from C-series)
+    // ========================================================================
+
+    signals['b11'] = Signal(
+      id: 'b11',
+      x: 390,
+      y: 80,
+      area: RailwayArea.ma1,
+      routes: [
+        SignalRoute(
+          id: 'b11_R1',
+          name: 'Main to Platform 1',
           requiredBlocksClear: ['106', '108', '110'],
           requiredPointPositions: {
-            '78A': PointPosition.normal,
-            '78B': PointPosition.normal
+            '48a': PointPosition.normal,
+            '48b': PointPosition.normal
           },
           pathBlocks: ['104', '106', '108', '110', '112'],
           protectedBlocks: ['106', '108', '110'],
         ),
         SignalRoute(
-          id: 'C31_R2',
-          name: 'Route 2 (Main → Bay Platform 2)',
+          id: 'b11_R2',
+          name: 'Via crossover to Platform 2',
           requiredBlocksClear: [
             '106',
             'crossover106',
@@ -1656,10 +1830,10 @@ class TerminalStationController extends ChangeNotifier {
             '111'
           ],
           requiredPointPositions: {
-            '78A': PointPosition.reverse,
-            '78B': PointPosition.reverse
+            '48a': PointPosition.reverse,
+            '48b': PointPosition.reverse
           },
-          conflictingRoutes: ['C30_R1', 'C30_R2'],
+          conflictingRoutes: ['b10_R1', 'b10_R2'],
           pathBlocks: [
             '104',
             '106',
@@ -1680,14 +1854,15 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
-    signals['C33'] = Signal(
-      id: 'C33',
+    signals['b13'] = Signal(
+      id: 'b13',
       x: 1200,
       y: 80,
+      area: RailwayArea.ma1,
       routes: [
         SignalRoute(
-          id: 'C33_R1',
-          name: 'Platform 1 Departure',
+          id: 'b13_R1',
+          name: 'Platform 1 to MA3',
           requiredBlocksClear: ['112', '114'],
           requiredPointPositions: {},
           pathBlocks: ['112', '114'],
@@ -1696,22 +1871,23 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
-    signals['C30'] = Signal(
-      id: 'C30',
+    signals['b10'] = Signal(
+      id: 'b10',
       x: 980,
       y: 320,
+      area: RailwayArea.ma1,
       routes: [
         SignalRoute(
-          id: 'C30_R1',
-          name: 'C30 Route 1 (Towards C28)',
+          id: 'b10_R1',
+          name: 'Platform 2 to eastbound',
           requiredBlocksClear: ['107', '105', '103'],
-          requiredPointPositions: {'78B': PointPosition.normal},
+          requiredPointPositions: {'48b': PointPosition.normal},
           pathBlocks: ['109', '107', '105', '103', '101'],
           protectedBlocks: ['109', '107', '105'],
         ),
         SignalRoute(
-          id: 'C30_R2',
-          name: 'C30 Route 2 (Via Crossover)',
+          id: 'b10_R2',
+          name: 'Platform 2 to crossover',
           requiredBlocksClear: [
             'crossover109',
             'crossover106',
@@ -1720,10 +1896,10 @@ class TerminalStationController extends ChangeNotifier {
             '110'
           ],
           requiredPointPositions: {
-            '78B': PointPosition.reverse,
-            '78A': PointPosition.reverse
+            '48b': PointPosition.reverse,
+            '48a': PointPosition.reverse
           },
-          conflictingRoutes: ['C31_R1', 'C31_R2'],
+          conflictingRoutes: ['b11_R1', 'b11_R2'],
           pathBlocks: [
             '109',
             'crossover109',
@@ -1737,14 +1913,15 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
-    signals['C28'] = Signal(
-      id: 'C28',
+    signals['b8'] = Signal(
+      id: 'b8',
       x: 400,
       y: 320,
+      area: RailwayArea.ma1,
       routes: [
         SignalRoute(
-          id: 'C28_R1',
-          name: 'Bay Exit (Westbound)',
+          id: 'b8_R1',
+          name: 'Main to MA2',
           requiredBlocksClear: ['103', '101'],
           requiredPointPositions: {},
           pathBlocks: ['105', '103', '101'],
@@ -1753,13 +1930,140 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
-    trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
-    trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1220, y: 120);
-    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 980, y: 340);
-    trainStops['T28'] = TrainStop(id: 'T28', signalId: 'C28', x: 380, y: 340);
+    // ========================================================================
+    // MA3 SIGNALS (Right Railway) - d-series ascending
+    // ========================================================================
+
+    signals['d48'] = Signal(
+      id: 'd48',
+      x: 1610,
+      y: 320,
+      area: RailwayArea.ma3,
+      routes: [
+        SignalRoute(
+          id: 'd48_R1',
+          name: 'Entry from MA1 to Platform 4',
+          requiredBlocksClear: ['115', '117'],
+          requiredPointPositions: {},
+          pathBlocks: ['113', '115', '117'],
+          protectedBlocks: ['115', '117'],
+        ),
+      ],
+    );
+
+    signals['d50'] = Signal(
+      id: 'd50',
+      x: 2010,
+      y: 320,
+      area: RailwayArea.ma3,
+      routes: [
+        SignalRoute(
+          id: 'd50_R1',
+          name: 'Platform 4 exit',
+          requiredBlocksClear: ['119', '121', '123'],
+          requiredPointPositions: {'108b': PointPosition.normal},
+          pathBlocks: ['117', '119', '121', '123'],
+          protectedBlocks: ['119', '121', '123'],
+        ),
+        SignalRoute(
+          id: 'd50_R2',
+          name: 'Platform 4 to crossover',
+          requiredBlocksClear: ['crossover119', 'crossover120', '120', '122'],
+          requiredPointPositions: {
+            '108b': PointPosition.reverse,
+            '108a': PointPosition.reverse
+          },
+          conflictingRoutes: ['d51_R1'],
+          pathBlocks: ['117', 'crossover119', 'crossover120', '120', '122', '124'],
+          protectedBlocks: ['crossover119', 'crossover120', '120', '122'],
+        ),
+      ],
+    );
+
+    signals['d51'] = Signal(
+      id: 'd51',
+      x: 2010,
+      y: 80,
+      area: RailwayArea.ma3,
+      routes: [
+        SignalRoute(
+          id: 'd51_R1',
+          name: 'Platform 3 exit',
+          requiredBlocksClear: ['122', '124', '126'],
+          requiredPointPositions: {'108a': PointPosition.normal},
+          pathBlocks: ['120', '122', '124', '126'],
+          protectedBlocks: ['122', '124', '126'],
+        ),
+        SignalRoute(
+          id: 'd51_R2',
+          name: 'Platform 3 to crossover',
+          requiredBlocksClear: ['crossover120', 'crossover119', '119', '121'],
+          requiredPointPositions: {
+            '108a': PointPosition.reverse,
+            '108b': PointPosition.reverse
+          },
+          conflictingRoutes: ['d50_R1'],
+          pathBlocks: ['120', 'crossover120', 'crossover119', '119', '121', '123'],
+          protectedBlocks: ['crossover120', 'crossover119', '119', '121'],
+        ),
+      ],
+    );
+
+    signals['d53'] = Signal(
+      id: 'd53',
+      x: 2810,
+      y: 80,
+      area: RailwayArea.ma3,
+      routes: [
+        SignalRoute(
+          id: 'd53_R1',
+          name: 'Exit MA3 (terminal)',
+          requiredBlocksClear: ['128', '130'],
+          requiredPointPositions: {},
+          pathBlocks: ['126', '128', '130'],
+          protectedBlocks: ['128', '130'],
+        ),
+      ],
+    );
+
+    // ========================================================================
+    // BACKWARD COMPATIBILITY - Keep old C-series signal references
+    // ========================================================================
+    signals['C31'] = signals['b11']!; // For backward compatibility
+    signals['C33'] = signals['b13']!;
+    signals['C30'] = signals['b10']!;
+    signals['C28'] = signals['b8']!;
+
+    // ========================================================================
+    // TRAIN STOPS - All 3 railway areas
+    // ========================================================================
+
+    // MA2 Train Stops
+    trainStops['Tb1'] = TrainStop(id: 'Tb1', signalId: 'b1', x: -1210, y: 100);
+    trainStops['Tb3'] = TrainStop(id: 'Tb3', signalId: 'b3', x: -1010, y: 340);
+    trainStops['Tb4'] = TrainStop(id: 'Tb4', signalId: 'b4', x: -590, y: 340);
+    trainStops['Tb6'] = TrainStop(id: 'Tb6', signalId: 'b6', x: -210, y: 100);
+
+    // MA1 Train Stops (using new b-series IDs)
+    trainStops['Tb11'] = TrainStop(id: 'Tb11', signalId: 'b11', x: 400, y: 100);
+    trainStops['Tb13'] = TrainStop(id: 'Tb13', signalId: 'b13', x: 1220, y: 100);
+    trainStops['Tb10'] = TrainStop(id: 'Tb10', signalId: 'b10', x: 980, y: 340);
+    trainStops['Tb8'] = TrainStop(id: 'Tb8', signalId: 'b8', x: 380, y: 340);
+
+    // MA3 Train Stops
+    trainStops['Td48'] = TrainStop(id: 'Td48', signalId: 'd48', x: 1610, y: 340);
+    trainStops['Td50'] = TrainStop(id: 'Td50', signalId: 'd50', x: 2010, y: 340);
+    trainStops['Td51'] = TrainStop(id: 'Td51', signalId: 'd51', x: 2010, y: 100);
+    trainStops['Td53'] = TrainStop(id: 'Td53', signalId: 'd53', x: 2810, y: 100);
+
+    // Backward compatibility - Old C-series train stops
+    trainStops['T31'] = trainStops['Tb11']!;
+    trainStops['T33'] = trainStops['Tb13']!;
+    trainStops['T30'] = trainStops['Tb10']!;
+    trainStops['T28'] = trainStops['Tb8']!;
 
     _logEvent(
-        'Station initialized: 2 platforms, 4 signals, 2 points, 4 train stops, 8 axle counters');
+        '✅ Station initialized: 6 platforms, 13 signals (MA2:4, MA1:4, MA3:5), 6 points, 12 train stops');
   }
 
   // ============================================================================
@@ -3127,6 +3431,9 @@ class TerminalStationController extends ChangeNotifier {
         // Move is valid - proceed
         train.x = nextX;
 
+        // Check for area transitions and VCC handoffs
+        _checkAreaTransitions(train);
+
         // Update Y position based on track
         _updateTrainYPosition(train);
 
@@ -3174,29 +3481,9 @@ class TerminalStationController extends ChangeNotifier {
           }
         }
 
-        // Check for west end limit (westbound trains)
-        if (train.direction < 0 && train.x <= 0) {
-          train.x = 0;
-          train.speed = 0;
-          train.targetSpeed = 0;
-          _logEvent('🛑 ${train.name} reached west end');
-        }
-      }
-
-      // Wrap around at track end (eastbound)
-      if (train.direction > 0 && train.x > 1600) {
-        train.x = 50;
-        train.y = 100;
-        train.hasCommittedToMove = false;
-        train.lastPassedSignalId = null;
-      }
-
-      // Wrap around at track start (westbound)
-      if (train.direction < 0 && train.x < 0) {
-        train.x = 1550;
-        train.y = 100;
-        train.hasCommittedToMove = false;
-        train.lastPassedSignalId = null;
+        // NOTE: Old boundary limits removed - trains can now seamlessly travel
+        // across all 3 railway areas (MA2: -1600 to 0, MA1: 0 to 1600, MA3: 1600 to 3200)
+        // with VCC handoffs managed by _checkAreaTransitions()
       }
     }
 
@@ -3366,6 +3653,92 @@ class TerminalStationController extends ChangeNotifier {
       'ab106_occupied': ace.isABOccupied('AB106'),
       'ab109_occupied': ace.isABOccupied('AB109'),
     };
+  }
+
+  // ========== AREA TRANSITION LOGIC ==========
+
+  /// Detects and handles train transitions between railway areas (MA2 ↔ MA1 ↔ MA3)
+  /// Triggers VCC handoffs when trains cross area boundaries
+  void _checkAreaTransitions(Train train) {
+    final oldArea = train.currentArea;
+    RailwayArea? newArea;
+
+    // Determine new area based on train position
+    if (train.x < 0) {
+      newArea = RailwayArea.ma2;
+    } else if (train.x >= 0 && train.x < 1600) {
+      newArea = RailwayArea.ma1;
+    } else {
+      newArea = RailwayArea.ma3;
+    }
+
+    // If area changed, perform VCC handoff
+    if (newArea != oldArea) {
+      train.currentArea = newArea;
+
+      // Determine source and destination VCCs
+      String sourceVcc = 'vcc1';
+      String destVcc = 'vcc1';
+
+      switch (oldArea) {
+        case RailwayArea.ma2:
+          sourceVcc = 'vcc2';
+          break;
+        case RailwayArea.ma1:
+          sourceVcc = 'vcc1';
+          break;
+        case RailwayArea.ma3:
+          sourceVcc = 'vcc3';
+          break;
+      }
+
+      switch (newArea) {
+        case RailwayArea.ma2:
+          destVcc = 'vcc2';
+          break;
+        case RailwayArea.ma1:
+          destVcc = 'vcc1';
+          break;
+        case RailwayArea.ma3:
+          destVcc = 'vcc3';
+          break;
+      }
+
+      // Perform VCC handoff
+      final sourceVccController = vccControllers[sourceVcc];
+      final destVccController = vccControllers[destVcc];
+
+      if (sourceVccController != null && destVccController != null) {
+        // Transfer train data from source to destination VCC
+        final trainData = {
+          'id': train.id,
+          'name': train.name,
+          'x': train.x,
+          'y': train.y,
+          'speed': train.speed,
+          'direction': train.direction,
+          'destination': train.smcDestination,
+          'cbtcMode': train.cbtcMode.toString(),
+        };
+
+        sourceVccController.trainData.remove(train.id);
+        destVccController.trainData[train.id] = trainData;
+
+        _logEvent(
+            '🔄 ${train.name} handed off: ${_getAreaName(oldArea)} ($sourceVcc) → ${_getAreaName(newArea)} ($destVcc) at X=${train.x.toStringAsFixed(0)}');
+      }
+    }
+  }
+
+  String _getAreaName(RailwayArea area) {
+    switch (area) {
+      case RailwayArea.ma2:
+        return 'MA2';
+      case RailwayArea.ma1:
+        return 'MA1';
+      case RailwayArea.ma3:
+        return 'MA3';
+    }
   }
 
   // ========== EXISTING METHODS ==========

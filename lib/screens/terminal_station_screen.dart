@@ -116,7 +116,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Railway Simulator'),
+        title: const Text('Anthill Park Station'),
         actions: [
           IconButton(
             icon: Icon(
@@ -1459,6 +1459,55 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
               const SizedBox(height: 12),
 
+              // CBTC Devices Toggle
+              Card(
+                color: controller.cbtcDevicesEnabled ? Colors.cyan[50] : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.cbtcDevicesEnabled
+                            ? Icons.sensors
+                            : Icons.sensors_off,
+                        color: controller.cbtcDevicesEnabled
+                            ? Colors.cyan
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'CBTC Devices',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.cbtcDevicesEnabled ? 'Enabled' : 'Disabled',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.cbtcDevicesEnabled,
+                        onChanged: (value) =>
+                            controller.toggleCBTCDevices(),
+                        activeColor: Colors.cyan,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               Row(
                 children: [
                   Expanded(
@@ -1993,6 +2042,129 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                             ],
                           ),
                           const SizedBox(height: 8),
+
+                          // CBTC Controls (if CBTC equipped)
+                          if (train.isCbtcEquipped) ...[
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.cyan[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.cyan),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.sensors, size: 14, color: Colors.cyan[700]),
+                                      const SizedBox(width: 6),
+                                      const Text('CBTC Mode', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                      const Spacer(),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: _getCbtcModeColor(train.cbtcMode),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          train.cbtcMode.name.toUpperCase(),
+                                          style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 4,
+                                    runSpacing: 4,
+                                    children: CbtcMode.values.map((mode) {
+                                      return InkWell(
+                                        onTap: controller.cbtcDevicesEnabled
+                                          ? () => controller.setTrainCbtcMode(train.id, mode)
+                                          : null,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: train.cbtcMode == mode ? _getCbtcModeColor(mode) : Colors.white,
+                                            border: Border.all(color: _getCbtcModeColor(mode)),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            mode.name.toUpperCase(),
+                                            style: TextStyle(
+                                              fontSize: 8,
+                                              color: train.cbtcMode == mode ? Colors.white : Colors.black,
+                                              fontWeight: train.cbtcMode == mode ? FontWeight.bold : FontWeight.normal,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+
+                                  // Destination selector for AUTO/PM modes
+                                  if (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm) ...[
+                                    const SizedBox(height: 8),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.flag, size: 12, color: Colors.green[700]),
+                                        const SizedBox(width: 6),
+                                        const Text('Destination:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: () => controller.setTrainDestination(train.vin, 'Platform 1'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: train.smcDestination == 'Platform 1' || train.smcDestination == 'Platform1'
+                                                ? Colors.blue
+                                                : Colors.grey[300],
+                                              foregroundColor: train.smcDestination == 'Platform 1' || train.smcDestination == 'Platform1'
+                                                ? Colors.white
+                                                : Colors.black,
+                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                                            ),
+                                            child: const Text('Plat 1', style: TextStyle(fontSize: 9)),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: () => controller.setTrainDestination(train.vin, 'Platform 2'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: train.smcDestination == 'Platform 2' || train.smcDestination == 'Platform2'
+                                                ? Colors.green
+                                                : Colors.grey[300],
+                                              foregroundColor: train.smcDestination == 'Platform 2' || train.smcDestination == 'Platform2'
+                                                ? Colors.white
+                                                : Colors.black,
+                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                                            ),
+                                            child: const Text('Plat 2', style: TextStyle(fontSize: 9)),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        IconButton(
+                                          onPressed: () => controller.setTrainDestination(train.vin, ''),
+                                          icon: const Icon(Icons.clear, size: 16),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          tooltip: 'Clear destination',
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
 
                           // Control Buttons - Row 3: Delete
                           Row(
@@ -3472,6 +3644,22 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   // ============================================================================
   // === HELPER METHODS ===
   // ============================================================================
+
+  /// Helper method to get CBTC mode color
+  Color _getCbtcModeColor(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return Colors.cyan;
+      case CbtcMode.pm:
+        return Colors.orange;
+      case CbtcMode.rm:
+        return Colors.brown;
+      case CbtcMode.off:
+        return Colors.grey;
+      case CbtcMode.storage:
+        return Colors.green;
+    }
+  }
 
   /// Add helper method to check if train is at platform
   String? _getPlatformForTrain(Train train) {

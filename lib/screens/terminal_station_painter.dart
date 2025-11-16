@@ -1370,6 +1370,24 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawLabels(Canvas canvas) {
+    // Draw station name prominently at the top
+    final stationNamePainter = TextPainter(
+      text: const TextSpan(
+        text: 'Anthill Park Station',
+        style: TextStyle(
+          color: Colors.black87,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    stationNamePainter.layout();
+    stationNamePainter.paint(
+      canvas,
+      Offset(400, -150), // Position at top center
+    );
+
     for (var block in controller.blocks.values) {
       if (!block.id.startsWith('crossover')) {
         final textPainter = TextPainter(

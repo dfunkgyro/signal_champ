@@ -470,6 +470,7 @@ class TerminalStationController extends ChangeNotifier {
   late AxleCounterEvaluator ace;
   bool axleCountersVisible = true;
   bool signalsVisible = true;
+  bool cbtcDevicesEnabled = false; // CBTC devices OFF by default
 
   Duration _simulationRunningTime = Duration.zero;
   Timer? _simulationTimer;
@@ -565,6 +566,47 @@ class TerminalStationController extends ChangeNotifier {
     signalsVisible = !signalsVisible;
     _logEvent(signalsVisible ? '✅ Signals enabled' : '❌ Signals disabled');
     notifyListeners();
+  }
+
+  // ============================================================================
+  // CBTC DEVICES TOGGLE
+  // ============================================================================
+
+  void toggleCBTCDevices() {
+    cbtcDevicesEnabled = !cbtcDevicesEnabled;
+    _logEvent(cbtcDevicesEnabled ? '✅ CBTC devices enabled' : '❌ CBTC devices disabled');
+    // When CBTC is enabled, switch all CBTC trains to OFF mode
+    // When disabled, ensure trains revert to normal operation
+    for (var train in trains) {
+      if (train.isCbtcEquipped) {
+        if (!cbtcDevicesEnabled) {
+          train.cbtcMode = CbtcMode.off;
+        }
+      }
+    }
+    notifyListeners();
+  }
+
+  // Method to set train CBTC mode
+  void setTrainCbtcMode(String trainId, CbtcMode mode) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => trains.first);
+    if (train.isCbtcEquipped && cbtcDevicesEnabled) {
+      train.cbtcMode = mode;
+      _logEvent('🚄 ${train.name} CBTC mode set to ${mode.name.toUpperCase()}');
+      notifyListeners();
+    }
+  }
+
+  // Method to set train destination (SMC function)
+  void setTrainDestination(String vin, String destination) {
+    try {
+      final train = trains.firstWhere((t) => t.vin == vin);
+      train.smcDestination = destination.isEmpty ? null : destination;
+      _logEvent('📍 ${train.name} destination set to: $destination');
+      notifyListeners();
+    } catch (e) {
+      _logEvent('❌ Could not set destination for VIN $vin');
+    }
   }
 
   // ============================================================================
@@ -955,8 +997,8 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       if (isAhead) {
-        // Stop 200 units before the other train
-        final limitDistance = distance - 200;
+        // Stop 20 units before the other train
+        final limitDistance = distance - 20;
         if (limitDistance > 0 && limitDistance < maxDistance) {
           maxDistance = limitDistance;
           limitReason = 'CBTC Train ahead';
@@ -974,7 +1016,7 @@ class TerminalStationController extends ChangeNotifier {
             : trainPos - otherMaEnd;
 
         if (distanceToOtherMa > 0) {
-          final limitDistance = distanceToOtherMa - 200;
+          final limitDistance = distanceToOtherMa - 20;
           if (limitDistance > 0 && limitDistance < maxDistance) {
             maxDistance = limitDistance;
             limitReason = 'Other train MA';
@@ -1001,8 +1043,8 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       if (isAhead) {
-        // Stop 200 units before occupied block
-        final limitDistance = distance - 200;
+        // Stop 20 units before occupied block
+        final limitDistance = distance - 20;
         if (limitDistance > 0 && limitDistance < maxDistance) {
           maxDistance = limitDistance;
           limitReason = 'Occupied AB ${block.id}';
@@ -1032,6 +1074,32 @@ class TerminalStationController extends ChangeNotifier {
         if (limitDistance > 0 && limitDistance < maxDistance) {
           maxDistance = limitDistance;
           limitReason = 'Signal ${signal.id} at danger';
+        }
+      }
+    }
+
+    // Check for platform destinations
+    if (train.smcDestination != null) {
+      // Check if destination is a platform name
+      if (train.smcDestination == 'Platform 1' || train.smcDestination == 'Platform1') {
+        // Platform 1 is on the upper track (around blocks 110-112)
+        final platform1X = 1000.0; // Approximate X position of Platform 1
+        if ((direction > 0 && platform1X > trainPos) || (direction < 0 && platform1X < trainPos)) {
+          final distance = (platform1X - trainPos).abs();
+          if (distance < maxDistance) {
+            maxDistance = distance;
+            limitReason = 'Destination: Platform 1';
+          }
+        }
+      } else if (train.smcDestination == 'Platform 2' || train.smcDestination == 'Platform2') {
+        // Platform 2 is on the lower track (around blocks 109-111)
+        final platform2X = 1000.0; // Approximate X position of Platform 2
+        if ((direction > 0 && platform2X > trainPos) || (direction < 0 && platform2X < trainPos)) {
+          final distance = (platform2X - trainPos).abs();
+          if (distance < maxDistance) {
+            maxDistance = distance;
+            limitReason = 'Destination: Platform 2';
+          }
         }
       }
     }
@@ -2621,11 +2689,18 @@ class TerminalStationController extends ChangeNotifier {
               reservation.reservedBlocks.contains(nextBlock));
         }
 
+        // Check if train should bypass signals
+        final bool bypassSignals = !signalsVisible ||
+                                    (train.isCbtcEquipped &&
+                                     cbtcDevicesEnabled &&
+                                     (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm));
+
         if (signalAhead == null) {
           train.targetSpeed = 2.0;
-        } else if (signalAhead.aspect == SignalAspect.red &&
-            !hasPassedSignalThreshold &&
-            !hasRouteReservation) {
+        } else if (!bypassSignals &&
+                   signalAhead.aspect == SignalAspect.red &&
+                   !hasPassedSignalThreshold &&
+                   !hasRouteReservation) {
           final distanceToSignal = (signalAhead.x - train.x).abs();
           if (distanceToSignal < 100 && distanceToSignal > 0) {
             if (train.targetSpeed > 0) {
@@ -2638,7 +2713,8 @@ class TerminalStationController extends ChangeNotifier {
           train.targetSpeed = 2.0;
 
           if ((signalAhead.aspect == SignalAspect.green ||
-                  hasRouteReservation) &&
+                  hasRouteReservation ||
+                  bypassSignals) &&
               !train.hasCommittedToMove) {
             final hasPassed = train.direction > 0
                 ? train.x >= signalAhead.x
@@ -2647,8 +2723,10 @@ class TerminalStationController extends ChangeNotifier {
             if (hasPassed) {
               train.lastPassedSignalId = signalAhead.id;
               train.hasCommittedToMove = true;
-              _logEvent(
-                  '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+              if (!bypassSignals) {
+                _logEvent(
+                    '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+              }
             }
           }
         }

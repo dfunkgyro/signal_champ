@@ -473,6 +473,7 @@ class TerminalStationController extends ChangeNotifier {
   bool axleCountersVisible = true;
   bool signalsVisible = true;
   bool cbtcEnabled = true;
+  bool permissiveSignalMode = false; // Blue signal mode - trains can proceed past all signals
 
   Duration _simulationRunningTime = Duration.zero;
   Timer? _simulationTimer;
@@ -594,84 +595,150 @@ class TerminalStationController extends ChangeNotifier {
     wifiAntennas.clear();
 
     // Eastbound track transponders (y=100)
-    transponders.add(Transponder(
-      id: 'EB_T1_1',
-      type: TransponderType.t1,
-      x: 320,
-      y: 100,
-      description: 'Crossover Tag',
-    ));
-    transponders.add(Transponder(
-      id: 'EB_T2_1',
-      type: TransponderType.t2,
-      x: 640,
-      y: 100,
-      description: 'Block Boundary',
-    ));
+    // T3 - Speed limit at start
     transponders.add(Transponder(
       id: 'EB_T3_1',
       type: TransponderType.t3,
-      x: 960,
+      x: 200,
       y: 100,
-      description: 'Speed Limit',
+      description: 'Speed Limit 80',
     ));
+
+    // T2 - Block boundary
     transponders.add(Transponder(
-      id: 'EB_T6_1',
-      type: TransponderType.t6,
-      x: 1280,
+      id: 'EB_T2_1',
+      type: TransponderType.t2,
+      x: 400,
       y: 100,
-      description: 'Station Tag',
+      description: 'Block 102 Entry',
+    ));
+
+    // T1 - General location markers (most common)
+    transponders.add(Transponder(
+      id: 'EB_T1_1',
+      type: TransponderType.t1,
+      x: 550,
+      y: 100,
+      description: 'Location Marker',
+    ));
+
+    transponders.add(Transponder(
+      id: 'EB_T1_2',
+      type: TransponderType.t1,
+      x: 700,
+      y: 100,
+      description: 'Location Marker',
+    ));
+
+    transponders.add(Transponder(
+      id: 'EB_T1_3',
+      type: TransponderType.t1,
+      x: 850,
+      y: 100,
+      description: 'Crossover Area',
+    ));
+
+    // T6 - Platform stop position (50 units from end of P1: endX=1240, so 1240-50=1190)
+    transponders.add(Transponder(
+      id: 'EB_T6_P1',
+      type: TransponderType.t6,
+      x: 1190,
+      y: 100,
+      description: 'Platform 1 Stop',
     ));
 
     // Westbound track transponders (y=300)
-    transponders.add(Transponder(
-      id: 'WB_T1_1',
-      type: TransponderType.t1,
-      x: 320,
-      y: 300,
-      description: 'Crossover Tag',
-    ));
-    transponders.add(Transponder(
-      id: 'WB_T2_1',
-      type: TransponderType.t2,
-      x: 640,
-      y: 300,
-      description: 'Block Boundary',
-    ));
+    // T3 - Speed limit
     transponders.add(Transponder(
       id: 'WB_T3_1',
       type: TransponderType.t3,
-      x: 960,
+      x: 200,
       y: 300,
-      description: 'Speed Limit',
-    ));
-    transponders.add(Transponder(
-      id: 'WB_T6_1',
-      type: TransponderType.t6,
-      x: 1280,
-      y: 300,
-      description: 'Station Tag',
+      description: 'Speed Limit 80',
     ));
 
-    // WiFi Antennas for track coverage
+    // T2 - Block boundary
+    transponders.add(Transponder(
+      id: 'WB_T2_1',
+      type: TransponderType.t2,
+      x: 400,
+      y: 300,
+      description: 'Block 111 Entry',
+    ));
+
+    // T1 - General location markers (most common)
+    transponders.add(Transponder(
+      id: 'WB_T1_1',
+      type: TransponderType.t1,
+      x: 550,
+      y: 300,
+      description: 'Location Marker',
+    ));
+
+    transponders.add(Transponder(
+      id: 'WB_T1_2',
+      type: TransponderType.t1,
+      x: 700,
+      y: 300,
+      description: 'Location Marker',
+    ));
+
+    transponders.add(Transponder(
+      id: 'WB_T1_3',
+      type: TransponderType.t1,
+      x: 850,
+      y: 300,
+      description: 'Crossover Area',
+    ));
+
+    // T6 - Platform stop position (50 units from end of P2: endX=1240, so 1240-50=1190)
+    transponders.add(Transponder(
+      id: 'WB_T6_P2',
+      type: TransponderType.t6,
+      x: 1190,
+      y: 300,
+      description: 'Platform 2 Stop',
+    ));
+
+    // WiFi Antennas for track coverage - renamed to ANT105, ANT109, ANT111
     wifiAntennas.add(WifiAntenna(
-      id: 'WIFI_1',
+      id: 'ANT105',
       x: 400,
       y: 200,
       coverageRadius: 300,
     ));
     wifiAntennas.add(WifiAntenna(
-      id: 'WIFI_2',
+      id: 'ANT109',
       x: 800,
       y: 200,
       coverageRadius: 300,
     ));
     wifiAntennas.add(WifiAntenna(
-      id: 'WIFI_3',
+      id: 'ANT111',
       x: 1200,
       y: 200,
       coverageRadius: 300,
     ));
+  }
+
+  // ============================================================================
+  // PERMISSIVE SIGNAL MODE (BLUE SIGNALS)
+  // ============================================================================
+
+  void togglePermissiveSignalMode() {
+    permissiveSignalMode = !permissiveSignalMode;
+
+    if (permissiveSignalMode) {
+      // Turn all signals blue (green in our system)
+      for (var signal in signals.values) {
+        signal.aspect = SignalAspect.green;
+      }
+      _logEvent('🔵 Permissive Signal Mode ENABLED - All signals blue, trains can proceed');
+    } else {
+      _logEvent('🔴 Permissive Signal Mode DISABLED - Normal signal operation');
+    }
+
+    notifyListeners();
   }
 
   // ============================================================================
@@ -781,6 +848,73 @@ class TerminalStationController extends ChangeNotifier {
     destinations.addAll(['100', '102', '105', '107', '108', '110', '111', '112', '114']);
 
     return destinations;
+  }
+
+  void cbtcGoDepart(String trainId) {
+    final train = trains.firstWhere((t) => t.id == trainId, orElse: () => trains.first);
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('❌ Cannot depart: ${train.name} is not CBTC equipped');
+      return;
+    }
+
+    if (train.cbtcMode != CbtcMode.auto && train.cbtcMode != CbtcMode.pm) {
+      _logEvent('❌ Cannot depart: ${train.name} must be in AUTO or PM mode');
+      return;
+    }
+
+    if (train.smcDestination == null) {
+      _logEvent('❌ Cannot depart: ${train.name} has no destination set');
+      return;
+    }
+
+    // Automatically reserve and set points for the destination
+    _autoReservePointsForDestination(train);
+
+    // Start the train
+    train.targetSpeed = 60.0;
+    train.manualStop = false;
+    train.emergencyBrake = false;
+
+    _logEvent('🚀 ${train.name} DEPARTING to ${train.smcDestination} - ATO engaged');
+    notifyListeners();
+  }
+
+  void _autoReservePointsForDestination(Train train) {
+    if (train.smcDestination == null) return;
+
+    final destination = train.smcDestination!;
+
+    // Determine required point positions based on destination
+    // Platform P1 (y=100, eastbound) - points need to be normal
+    // Platform P2 (y=300, westbound) - points need to be reverse for crossover
+
+    if (destination == 'P1') {
+      // Eastbound to P1 - set points to normal
+      if (points.containsKey('78A')) {
+        points['78A']!.position = PointPosition.normal;
+        _logEvent('🔧 Point 78A set to NORMAL for P1 route');
+      }
+      if (points.containsKey('78B')) {
+        points['78B']!.position = PointPosition.normal;
+        _logEvent('🔧 Point 78B set to NORMAL for P1 route');
+      }
+    } else if (destination == 'P2') {
+      // To P2 (Bay platform) - may need reverse depending on current location
+      if (train.y < 200) {
+        // Coming from eastbound, need to cross over
+        if (points.containsKey('78A')) {
+          points['78A']!.position = PointPosition.reverse;
+          _logEvent('🔧 Point 78A set to REVERSE for P2 crossover');
+        }
+      }
+      if (points.containsKey('78B')) {
+        points['78B']!.position = PointPosition.normal;
+        _logEvent('🔧 Point 78B set to NORMAL for P2 route');
+      }
+    }
+
+    _logEvent('✅ Points automatically reserved for ${train.name} → ${destination}');
   }
 
   List<Train> getCbtcTrains() {

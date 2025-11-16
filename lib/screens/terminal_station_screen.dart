@@ -2229,6 +2229,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 _buildCbtcDestinationManagement(controller),
                 const SizedBox(height: 12),
 
+                // Blue Signal Permissive Mode
+                _buildBlueSignalModeToggle(controller),
+                const SizedBox(height: 12),
+
                 // Quick Actions Panel
                 _buildCbtcQuickActions(controller),
                 const SizedBox(height: 12),
@@ -4011,6 +4015,17 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ],
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: () => controller.cbtcGoDepart(train.id),
+                        icon: const Icon(Icons.play_arrow, size: 16),
+                        label: const Text('GO / DEPART', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[700],
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 36),
+                        ),
+                      ),
                     ] else ...[
                       DropdownButton<String>(
                         isExpanded: true,
@@ -4033,6 +4048,91 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 ),
               );
             }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlueSignalModeToggle(TerminalStationController controller) {
+    return Card(
+      color: controller.permissiveSignalMode ? Colors.blue[50] : Colors.grey[100],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  controller.permissiveSignalMode ? Icons.traffic : Icons.traffic_outlined,
+                  color: controller.permissiveSignalMode ? Colors.blue[700] : Colors.grey[600],
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Blue Signal Mode',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              controller.permissiveSignalMode
+                  ? 'ACTIVE - All signals blue, trains can proceed'
+                  : 'INACTIVE - Normal signal operation',
+              style: TextStyle(
+                fontSize: 10,
+                color: controller.permissiveSignalMode ? Colors.blue[900] : Colors.grey[700],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => controller.togglePermissiveSignalMode(),
+                    icon: Icon(
+                      controller.permissiveSignalMode ? Icons.stop : Icons.play_arrow,
+                      size: 16,
+                    ),
+                    label: Text(
+                      controller.permissiveSignalMode ? 'CANCEL BLUE MODE' : 'ENABLE BLUE MODE',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: controller.permissiveSignalMode ? Colors.red[600] : Colors.blue[700],
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 40),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (controller.permissiveSignalMode) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.blue, width: 2),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info, size: 14, color: Colors.blue[800]),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Signals remain blue until manually cancelled',
+                        style: TextStyle(fontSize: 10, color: Colors.blue[900], fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

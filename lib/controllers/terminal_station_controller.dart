@@ -1198,9 +1198,12 @@ class TerminalStationController extends ChangeNotifier {
   // ============================================================================
 
   TerminalStationController() {
+    _initializeVccControllers();
+    _initializeSrs();
     _initializeLayout();
     _initializeClock();
     ace = AxleCounterEvaluator(axleCounters);
+    _startVccHandshaking();
   }
 
   void _initializeAxleCounters() {
@@ -1252,6 +1255,272 @@ class TerminalStationController extends ChangeNotifier {
     });
   }
 
+  // ============================================================================
+  // VCC INITIALIZATION
+  // ============================================================================
+
+  void _initializeVccControllers() {
+    // VCC1 - MA1 (Center)
+    vccControllers['vcc1'] = VccController(
+      id: 'vcc1',
+      area: RailwayArea.ma1,
+      managedBlocks: ['100', '102', '104', '106', '108', '110', '112', '114',
+                      '101', '103', '105', '107', '109', '111',
+                      'crossover106', 'crossover109'],
+      managedSignals: ['b8', 'b10', 'b11', 'b13'],
+    );
+
+    // VCC2 - MA2 (Left)
+    vccControllers['vcc2'] = VccController(
+      id: 'vcc2',
+      area: RailwayArea.ma2,
+      managedBlocks: ['84', '86', '88', '90', '92', '94', '96', '98',
+                      '87', '89', '91', '93', '95', '97', '99',
+                      'crossover90', 'crossover93'],
+      managedSignals: ['b1', 'b3', 'b4', 'b6'],
+    );
+
+    // VCC3 - MA3 (Right)
+    vccControllers['vcc3'] = VccController(
+      id: 'vcc3',
+      area: RailwayArea.ma3,
+      managedBlocks: ['116', '118', '120', '122', '124', '126', '128', '130',
+                      '113', '115', '117', '119', '121', '123',
+                      'crossover120', 'crossover119'],
+      managedSignals: ['d48', 'd50', 'd51', 'd53'],
+    );
+
+    print('✅ VCC Controllers initialized: VCC1, VCC2, VCC3');
+  }
+
+  void _startVccHandshaking() {
+    _vccHandshakeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _performVccHandshake();
+    });
+  }
+
+  void _performVccHandshake() {
+    for (var vcc in vccControllers.values) {
+      vcc.updateHandshake();
+
+      // Share train data between VCCs
+      for (var train in trains) {
+        vcc.trainData[train.id] = {
+          'x': train.x,
+          'y': train.y,
+          'area': train.currentArea.toString(),
+          'destination': train.smcDestination,
+          'speed': train.speed,
+        };
+      }
+    }
+
+    // Check VCC health
+    for (var vcc in vccControllers.values) {
+      if (!vcc.isHealthy()) {
+        print('⚠️  ${vcc.id} health warning!');
+      }
+    }
+  }
+
+  // ============================================================================
+  // SRS INITIALIZATION
+  // ============================================================================
+
+  void _initializeSrs() {
+    srsData = SrsData(
+      id: 'srs1',
+      isActive: false,
+    );
+    print('✅ SRS (Schedule Regulator Subsystem) initialized');
+  }
+
+  void enableSrs() {
+    if (!srsEnabled) {
+      srsEnabled = true;
+      _createGhostTrains();
+      _generateTimetables();
+      _startSrsUpdates();
+      print('🚂 SRS Enabled - Ghost trains running');
+      notifyListeners();
+    }
+  }
+
+  void disableSrs() {
+    if (srsEnabled) {
+      srsEnabled = false;
+      _srsUpdateTimer?.cancel();
+      srsData.ghostTrains.clear();
+      srsData.timetables.clear();
+      print('🛑 SRS Disabled');
+      notifyListeners();
+    }
+  }
+
+  void _createGhostTrains() {
+    // Create 3 ghost trains for the cycle: MA2→MA1→MA3→MA2
+    final cycleRoute = [
+      // MA2 Platform 6 → MA1
+      '99', '91', 'crossover93', '94', '92', '90', '88', '86', '84',
+      '100', '102', '104', '106', '108', '110', // MA1 Platform 1
+      // MA1 → MA3
+      '112', '114', '116', '118', '120', '122', '124', '126', // MA3 Platform 3
+      // MA3 → MA2 (via lower track)
+      '123', '121', '119', '117', '115', '113', '111', '109', 'crossover109',
+      '107', '105', '103', '101', '89', '87', // Back to MA2
+    ];
+
+    for (int i = 0; i < 3; i++) {
+      final ghostId = 'ghost_${i + 1}';
+      final startIndex = (i * (cycleRoute.length ~/ 3));
+
+      srsData.ghostTrains[ghostId] = GhostTrain(
+        id: ghostId,
+        routeId: 'cycle_$i',
+        x: -1000.0 + (i * 1000),  // Spread them out
+        y: 100.0,
+        direction: 1,
+        plannedRoute: cycleRoute,
+        currentRouteIndex: startIndex,
+        currentArea: RailwayArea.ma2,
+      );
+    }
+
+    print('👻 Created ${srsData.ghostTrains.length} ghost trains');
+  }
+
+  void _generateTimetables() {
+    final now = DateTime.now();
+
+    for (var entry in srsData.ghostTrains.entries) {
+      final ghostId = entry.key;
+      final timetableId = 'tt_$ghostId';
+
+      final stops = <TimetableStop>[
+        TimetableStop(
+          blockId: '99',
+          platformId: 'P6',
+          area: RailwayArea.ma2,
+          scheduledArrival: now.add(const Duration(minutes: 5)),
+          scheduledDeparture: now.add(const Duration(minutes: 6)),
+          dwellTimeSeconds: 60,
+        ),
+        TimetableStop(
+          blockId: '110',
+          platformId: 'P1',
+          area: RailwayArea.ma1,
+          scheduledArrival: now.add(const Duration(minutes: 12)),
+          scheduledDeparture: now.add(const Duration(minutes: 13)),
+          dwellTimeSeconds: 60,
+        ),
+        TimetableStop(
+          blockId: '126',
+          platformId: 'P3',
+          area: RailwayArea.ma3,
+          scheduledArrival: now.add(const Duration(minutes: 19)),
+          scheduledDeparture: now.add(const Duration(minutes: 20)),
+          dwellTimeSeconds: 60,
+        ),
+      ];
+
+      srsData.timetables[timetableId] = TimetableEntry(
+        id: timetableId,
+        ghostTrainId: ghostId,
+        routeName: 'MA2→MA1→MA3 Cycle',
+        stops: stops,
+        startTime: now,
+        status: TimetableStatus.onTime,
+      );
+    }
+
+    print('📅 Generated ${srsData.timetables.length} timetables');
+  }
+
+  void _startSrsUpdates() {
+    _srsUpdateTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (srsEnabled) {
+        _updateGhostTrains();
+        _updateTimetableStatus();
+      }
+    });
+  }
+
+  void _updateGhostTrains() {
+    for (var ghost in srsData.ghostTrains.values) {
+      // Move ghost trains along their routes (invisible)
+      ghost.x += ghost.speed * ghost.direction * 0.016; // ~60fps
+
+      // Update area based on position
+      if (ghost.x < 0) {
+        ghost.currentArea = RailwayArea.ma2;
+      } else if (ghost.x >= 0 && ghost.x < 1600) {
+        ghost.currentArea = RailwayArea.ma1;
+      } else {
+        ghost.currentArea = RailwayArea.ma3;
+      }
+    }
+  }
+
+  void _updateTimetableStatus() {
+    for (var timetable in srsData.timetables.values) {
+      if (timetable.assignedRealTrainId != null) {
+        // Find assigned real train and update delay
+        final train = trains.where((t) => t.id == timetable.assignedRealTrainId).firstOrNull;
+        if (train != null) {
+          // Calculate delay based on current position vs scheduled position
+          // This is simplified - real implementation would compare to ghost train
+          timetable.delaySeconds = 0; // Placeholder
+
+          if (timetable.delaySeconds.abs() <= 30) {
+            timetable.status = TimetableStatus.onTime;
+          } else if (timetable.delaySeconds < 0) {
+            timetable.status = TimetableStatus.early;
+          } else {
+            timetable.status = TimetableStatus.late;
+          }
+        }
+      }
+    }
+  }
+
+  void assignTrainToTimetable(String trainId, String timetableId) {
+    final timetable = srsData.timetables[timetableId];
+    if (timetable != null) {
+      timetable.assignedRealTrainId = trainId;
+
+      final train = trains.where((t) => t.id == trainId).firstOrNull;
+      if (train != null) {
+        train.assignedTimetableId = timetableId;
+        train.runningToTimetable = true;
+      }
+
+      print('✅ Assigned train $trainId to timetable $timetableId');
+      notifyListeners();
+    }
+  }
+
+  void unassignTrainFromTimetable(String trainId) {
+    final train = trains.where((t) => t.id == trainId).firstOrNull;
+    if (train != null && train.assignedTimetableId != null) {
+      final timetableId = train.assignedTimetableId!;
+      final timetable = srsData.timetables[timetableId];
+
+      if (timetable != null) {
+        timetable.assignedRealTrainId = null;
+      }
+
+      train.assignedTimetableId = null;
+      train.runningToTimetable = false;
+
+      print('🔓 Unassigned train $trainId from timetable');
+      notifyListeners();
+    }
+  }
+
+  // ============================================================================
+  // LAYOUT INITIALIZATION
+  // ============================================================================
+
   void _initializeLayout() {
     _initializeAxleCounters();
 
@@ -1272,17 +1541,93 @@ class TerminalStationController extends ChangeNotifier {
     blocks['111'] = BlockSection(id: '111', startX: 1000, endX: 1200, y: 300);
 
     blocks['crossover106'] =
-        BlockSection(id: 'crossover106', startX: 600, endX: 700, y: 150);
+        BlockSection(id: 'crossover106', startX: 600, endX: 700, y: 150, area: RailwayArea.ma1);
     blocks['crossover109'] =
-        BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
+        BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250, area: RailwayArea.ma1);
 
-    points['78A'] = Point(id: '78A', x: 600, y: 100);
-    points['78B'] = Point(id: '78B', x: 800, y: 300);
+    // ========== MA2 (LEFT RAILWAY) ==========
+    // Upper track (even, descending)
+    blocks['98'] = BlockSection(id: '98', startX: -1600, endX: -1400, y: 100, area: RailwayArea.ma2);
+    blocks['96'] = BlockSection(id: '96', startX: -1400, endX: -1200, y: 100, area: RailwayArea.ma2);
+    blocks['94'] = BlockSection(id: '94', startX: -1200, endX: -1000, y: 100, area: RailwayArea.ma2);
+    blocks['92'] = BlockSection(id: '92', startX: -1000, endX: -800, y: 100, area: RailwayArea.ma2);
+    blocks['90'] = BlockSection(id: '90', startX: -800, endX: -600, y: 100, area: RailwayArea.ma2);
+    blocks['88'] = BlockSection(id: '88', startX: -600, endX: -400, y: 100, area: RailwayArea.ma2);
+    blocks['86'] = BlockSection(id: '86', startX: -400, endX: -200, y: 100, area: RailwayArea.ma2);
+    blocks['84'] = BlockSection(id: '84', startX: -200, endX: 0, y: 100, area: RailwayArea.ma2);
 
+    // Lower track (odd, descending)
+    blocks['99'] = BlockSection(id: '99', startX: -1200, endX: -1000, y: 300, area: RailwayArea.ma2);
+    blocks['97'] = BlockSection(id: '97', startX: -1000, endX: -800, y: 300, area: RailwayArea.ma2);
+    blocks['95'] = BlockSection(id: '95', startX: -800, endX: -600, y: 300, area: RailwayArea.ma2);
+    blocks['93'] = BlockSection(id: '93', startX: -600, endX: -400, y: 300, area: RailwayArea.ma2);
+    blocks['91'] = BlockSection(id: '91', startX: -400, endX: -200, y: 300, area: RailwayArea.ma2);
+    blocks['89'] = BlockSection(id: '89', startX: -200, endX: 0, y: 300, area: RailwayArea.ma2);
+    blocks['87'] = BlockSection(id: '87', startX: 0, endX: 200, y: 300, area: RailwayArea.ma2);
+
+    blocks['crossover90'] =
+        BlockSection(id: 'crossover90', startX: -700, endX: -600, y: 150, area: RailwayArea.ma2);
+    blocks['crossover93'] =
+        BlockSection(id: 'crossover93', startX: -800, endX: -700, y: 250, area: RailwayArea.ma2);
+
+    // ========== MA3 (RIGHT RAILWAY) ==========
+    // Upper track (even, ascending)
+    blocks['116'] = BlockSection(id: '116', startX: 1600, endX: 1800, y: 100, area: RailwayArea.ma3);
+    blocks['118'] = BlockSection(id: '118', startX: 1800, endX: 2000, y: 100, area: RailwayArea.ma3);
+    blocks['120'] = BlockSection(id: '120', startX: 2000, endX: 2200, y: 100, area: RailwayArea.ma3);
+    blocks['122'] = BlockSection(id: '122', startX: 2200, endX: 2400, y: 100, area: RailwayArea.ma3);
+    blocks['124'] = BlockSection(id: '124', startX: 2400, endX: 2600, y: 100, area: RailwayArea.ma3);
+    blocks['126'] = BlockSection(id: '126', startX: 2600, endX: 2800, y: 100, area: RailwayArea.ma3);
+    blocks['128'] = BlockSection(id: '128', startX: 2800, endX: 3000, y: 100, area: RailwayArea.ma3);
+    blocks['130'] = BlockSection(id: '130', startX: 3000, endX: 3200, y: 100, area: RailwayArea.ma3);
+
+    // Lower track (odd, ascending)
+    blocks['113'] = BlockSection(id: '113', startX: 1600, endX: 1800, y: 300, area: RailwayArea.ma3);
+    blocks['115'] = BlockSection(id: '115', startX: 1800, endX: 2000, y: 300, area: RailwayArea.ma3);
+    blocks['117'] = BlockSection(id: '117', startX: 2000, endX: 2200, y: 300, area: RailwayArea.ma3);
+    blocks['119'] = BlockSection(id: '119', startX: 2200, endX: 2400, y: 300, area: RailwayArea.ma3);
+    blocks['121'] = BlockSection(id: '121', startX: 2400, endX: 2600, y: 300, area: RailwayArea.ma3);
+    blocks['123'] = BlockSection(id: '123', startX: 2600, endX: 2800, y: 300, area: RailwayArea.ma3);
+
+    blocks['crossover120'] =
+        BlockSection(id: 'crossover120', startX: 2000, endX: 2100, y: 150, area: RailwayArea.ma3);
+    blocks['crossover119'] =
+        BlockSection(id: 'crossover119', startX: 2100, endX: 2200, y: 250, area: RailwayArea.ma3);
+
+    // ========== POINTS ==========
+    // MA2 points
+    points['38a'] = Point(id: '38a', x: -600, y: 100, area: RailwayArea.ma2);
+    points['38b'] = Point(id: '38b', x: -800, y: 300, area: RailwayArea.ma2);
+
+    // MA1 points (rename from 78 to 48)
+    points['48a'] = Point(id: '48a', x: 600, y: 100, area: RailwayArea.ma1);
+    points['48b'] = Point(id: '48b', x: 800, y: 300, area: RailwayArea.ma1);
+
+    // Keep old names for backward compatibility (temporary)
+    points['78A'] = Point(id: '78A', x: 600, y: 100, area: RailwayArea.ma1);
+    points['78B'] = Point(id: '78B', x: 800, y: 300, area: RailwayArea.ma1);
+
+    // MA3 points
+    points['108a'] = Point(id: '108a', x: 2000, y: 100, area: RailwayArea.ma3);
+    points['108b'] = Point(id: '108b', x: 2400, y: 300, area: RailwayArea.ma3);
+
+    // MA2 Platforms
     platforms.add(Platform(
-        id: 'P1', name: 'Platform 1', startX: 980, endX: 1240, y: 100));
+        id: 'P5', name: 'Platform 5', startX: -1240, endX: -980, y: 100, area: RailwayArea.ma2));
     platforms.add(Platform(
-        id: 'P2', name: 'Platform 2 (Bay)', startX: 980, endX: 1240, y: 300));
+        id: 'P6', name: 'Platform 6 (Bay)', startX: -1240, endX: -980, y: 300, area: RailwayArea.ma2));
+
+    // MA1 Platforms
+    platforms.add(Platform(
+        id: 'P1', name: 'Platform 1', startX: 980, endX: 1240, y: 100, area: RailwayArea.ma1));
+    platforms.add(Platform(
+        id: 'P2', name: 'Platform 2 (Bay)', startX: 980, endX: 1240, y: 300, area: RailwayArea.ma1));
+
+    // MA3 Platforms
+    platforms.add(Platform(
+        id: 'P3', name: 'Platform 3', startX: 2380, endX: 2640, y: 100, area: RailwayArea.ma3));
+    platforms.add(Platform(
+        id: 'P4', name: 'Platform 4 (Bay)', startX: 2380, endX: 2640, y: 300, area: RailwayArea.ma3));
 
     signals['C31'] = Signal(
       id: 'C31',

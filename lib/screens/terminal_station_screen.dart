@@ -1957,6 +1957,78 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                             const SizedBox(height: 8),
                           ],
 
+                          // CBTC Destination Selector and Go Button (shows when CBTC enabled and train is CBTC-equipped)
+                          if (controller.cbtcEnabled && train.isCbtcEquipped) ...[
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.green),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'DESTINATION',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  // Destination dropdown
+                                  DropdownButton<String>(
+                                    value: train.smcDestination,
+                                    hint: const Text('Select destination',
+                                        style: TextStyle(fontSize: 11)),
+                                    isExpanded: true,
+                                    items: [
+                                      const DropdownMenuItem(
+                                          value: 'P1', child: Text('Platform 1')),
+                                      const DropdownMenuItem(
+                                          value: 'P2',
+                                          child: Text('Platform 2 (Bay)')),
+                                      const DropdownMenuItem(
+                                          value: '100', child: Text('Block 100')),
+                                      const DropdownMenuItem(
+                                          value: '112', child: Text('Block 112')),
+                                      const DropdownMenuItem(
+                                          value: '111', child: Text('Block 111')),
+                                    ],
+                                    onChanged: (value) {
+                                      if (value != null) {
+                                        controller.setTrainDestination(
+                                            train.id, value);
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(height: 6),
+                                  // CBTC Go button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: train.smcDestination != null
+                                          ? () => controller.cbtcGo(train.id)
+                                          : null,
+                                      icon: const Icon(Icons.navigation, size: 14),
+                                      label: const Text('CBTC GO',
+                                          style: TextStyle(fontSize: 11)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 6),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+
                           // Control Buttons - Row 1: Mode and Movement
                           Row(
                             children: [
@@ -2921,6 +2993,39 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
+  // Helper method to build tag count badge
+  Widget _buildTagCount(String label, int count, Color color) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: color),
+          ),
+          child: Text(
+            count.toString(),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
   // Helper method to build CBTC mode buttons
   Widget _buildCbtcModeButton(
     TerminalStationController controller,
@@ -3015,6 +3120,110 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 ),
               ),
               const SizedBox(height: 16),
+
+              // Relay Rack Section (CBTC Infrastructure)
+              if (controller.cbtcEnabled) ...[
+                Card(
+                  color: Colors.cyan[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.developer_board,
+                                color: Colors.cyan[700], size: 20),
+                            const SizedBox(width: 8),
+                            Text('Relay Rack',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.cyan[900])),
+                          ],
+                        ),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        // WiFi Antennas Status
+                        const Text('Communication Systems:',
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        ...controller.wifiAntennas.values.map((antenna) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: antenna.active
+                                        ? Colors.green
+                                        : Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(antenna.name,
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold)),
+                                const Spacer(),
+                                Text(antenna.active ? 'ACTIVE' : 'OFFLINE',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: antenna.active
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    )),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        // Transponder Tag Summary
+                        const Text('Track Transponders:',
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildTagCount(
+                                'T1',
+                                controller.transponderTags.values
+                                    .where((t) => t.type == TransponderType.t1)
+                                    .length,
+                                Colors.blue),
+                            _buildTagCount(
+                                'T2',
+                                controller.transponderTags.values
+                                    .where((t) => t.type == TransponderType.t2)
+                                    .length,
+                                Colors.green),
+                            _buildTagCount(
+                                'T3',
+                                controller.transponderTags.values
+                                    .where((t) => t.type == TransponderType.t3)
+                                    .length,
+                                Colors.orange),
+                            _buildTagCount(
+                                'T6',
+                                controller.transponderTags.values
+                                    .where((t) => t.type == TransponderType.t6)
+                                    .length,
+                                Colors.purple),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Axle Counter Evaluator (ACE) Section
               Card(

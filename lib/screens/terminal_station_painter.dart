@@ -256,6 +256,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrainStops(canvas);
     _drawAxleCounters(canvas);
     _drawABOccupations(canvas);
+
+    // CBTC Infrastructure (only when CBTC enabled)
+    if (controller.cbtcEnabled) {
+      _drawTransponderTags(canvas);
+      _drawWiFiAntennas(canvas);
+      _drawAIAssistantMessage(canvas);
+    }
+
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
@@ -1461,6 +1469,226 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       textPainter.paint(
           canvas, Offset(train.x - textPainter.width / 2, train.y - 30));
     }
+  }
+
+  // CBTC: Draw Transponder Tags
+  void _drawTransponderTags(Canvas canvas) {
+    for (var tag in controller.transponderTags.values) {
+      // Draw tag base
+      final tagPaint = Paint()
+        ..color = tag.type.color
+        ..style = PaintingStyle.fill;
+
+      // Draw diamond shape for tag
+      final path = Path()
+        ..moveTo(tag.x, tag.y - 6) // Top
+        ..lineTo(tag.x + 4, tag.y) // Right
+        ..lineTo(tag.x, tag.y + 6) // Bottom
+        ..lineTo(tag.x - 4, tag.y) // Left
+        ..close();
+
+      canvas.drawPath(path, tagPaint);
+
+      // Draw white border
+      final borderPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      canvas.drawPath(path, borderPaint);
+
+      // Draw tag label
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: tag.type.name,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(tag.x - textPainter.width / 2, tag.y + 8),
+      );
+    }
+  }
+
+  // CBTC: Draw WiFi Antennas (SMC, VCC1, VCC2)
+  void _drawWiFiAntennas(Canvas canvas) {
+    for (var antenna in controller.wifiAntennas.values) {
+      // Draw antenna tower
+      final towerPaint = Paint()
+        ..color = antenna.active ? Colors.cyan : Colors.grey
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3;
+
+      // Vertical line
+      canvas.drawLine(
+        Offset(antenna.x, antenna.y - 20),
+        Offset(antenna.x, antenna.y + 20),
+        towerPaint,
+      );
+
+      // Draw signal waves (3 concentric arcs)
+      final wavePaint = Paint()
+        ..color = antenna.active
+            ? Colors.cyan.withOpacity(0.6)
+            : Colors.grey.withOpacity(0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      for (int i = 1; i <= 3; i++) {
+        final radius = i * 8.0;
+        // Left arc
+        canvas.drawArc(
+          Rect.fromCircle(
+            center: Offset(antenna.x, antenna.y - 20),
+            radius: radius,
+          ),
+          3.14 * 0.75, // Start angle
+          3.14 * 0.5, // Sweep angle
+          false,
+          wavePaint,
+        );
+        // Right arc
+        canvas.drawArc(
+          Rect.fromCircle(
+            center: Offset(antenna.x, antenna.y - 20),
+            radius: radius,
+          ),
+          -3.14 * 0.25, // Start angle
+          3.14 * 0.5, // Sweep angle
+          false,
+          wavePaint,
+        );
+      }
+
+      // Draw antenna base box
+      final boxPaint = Paint()
+        ..color = antenna.active ? Colors.cyan.shade700 : Colors.grey.shade700
+        ..style = PaintingStyle.fill;
+
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset(antenna.x, antenna.y + 20),
+          width: 30,
+          height: 15,
+        ),
+        boxPaint,
+      );
+
+      // Draw antenna name label
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: antenna.name,
+          style: TextStyle(
+            color: antenna.active ? Colors.cyan.shade900 : Colors.grey.shade900,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(antenna.x - textPainter.width / 2, antenna.y + 13),
+      );
+
+      // Draw status indicator
+      final statusPaint = Paint()
+        ..color = antenna.active ? Colors.green : Colors.red
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(
+        Offset(antenna.x, antenna.y - 25),
+        3,
+        statusPaint,
+      );
+    }
+  }
+
+  // CBTC: Draw AI Assistant Message
+  void _drawAIAssistantMessage(Canvas canvas) {
+    // Only show if there are CBTC trains
+    final cbtcTrains = controller.trains.where((train) =>
+        train.isCbtcEquipped &&
+        (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm));
+
+    if (cbtcTrains.isEmpty) return;
+
+    // Draw message box at top center
+    final boxPaint = Paint()
+      ..color = Colors.cyan.shade50.withOpacity(0.95)
+      ..style = PaintingStyle.fill;
+
+    final borderPaint = Paint()
+      ..color = Colors.cyan
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    final messageBox = Rect.fromCenter(
+      center: const Offset(0, -180),
+      width: 400,
+      height: 50,
+    );
+
+    // Draw rounded rectangle
+    final rrect = RRect.fromRectAndRadius(
+      messageBox,
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(rrect, boxPaint);
+    canvas.drawRRect(rrect, borderPaint);
+
+    // Draw AI icon
+    final iconPainter = TextPainter(
+      text: const TextSpan(
+        text: '🤖',
+        style: TextStyle(fontSize: 16),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    iconPainter.layout();
+    iconPainter.paint(canvas, const Offset(-190, -195));
+
+    // Draw message text
+    final messagePainter = TextPainter(
+      text: TextSpan(
+        text: 'CBTC Active: ${cbtcTrains.length} train(s) under automatic control',
+        style: TextStyle(
+          color: Colors.cyan.shade900,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    messagePainter.layout();
+    messagePainter.paint(
+      canvas,
+      Offset(-messagePainter.width / 2, -195),
+    );
+
+    // Draw helper text
+    final helperPainter = TextPainter(
+      text: TextSpan(
+        text: 'Set destination & press CBTC Go for automatic routing',
+        style: TextStyle(
+          color: Colors.cyan.shade700,
+          fontSize: 10,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    helperPainter.layout();
+    helperPainter.paint(
+      canvas,
+      Offset(-helperPainter.width / 2, -180),
+    );
   }
 
   @override

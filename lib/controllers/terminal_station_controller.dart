@@ -1621,6 +1621,106 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // CBTC: Set train destination
+  void setTrainDestination(String trainId, String destination) {
+    final train = trains.firstWhere((t) => t.id == trainId);
+    train.smcDestination = destination;
+    _logEvent('🎯 ${train.name} destination set to $destination');
+    notifyListeners();
+  }
+
+  // CBTC: Automatic Go - finds route, reserves it, sets points, starts train
+  void cbtcGo(String trainId) {
+    final train = trains.firstWhere((t) => t.id == trainId);
+
+    if (!cbtcEnabled) {
+      _logEvent('⚠️  CBTC System is disabled');
+      return;
+    }
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('⚠️  ${train.name} is not CBTC equipped');
+      return;
+    }
+
+    if (train.smcDestination == null) {
+      _logEvent('⚠️  ${train.name} has no destination set');
+      return;
+    }
+
+    _logEvent('🚀 CBTC GO: ${train.name} → ${train.smcDestination}');
+
+    // Find appropriate signal and route based on current position and destination
+    final routeInfo = _findRouteForDestination(train, train.smcDestination!);
+
+    if (routeInfo == null) {
+      _logEvent(
+          '⚠️  No route found for ${train.name} to ${train.smcDestination}');
+      return;
+    }
+
+    final signalId = routeInfo['signalId'] as String;
+    final routeId = routeInfo['routeId'] as String;
+
+    // Automatically set the route
+    setRoute(signalId, routeId);
+
+    // Release any manual stops/brakes
+    train.manualStop = false;
+    train.emergencyBrake = false;
+    train.targetSpeed = 2.0;
+
+    _logEvent(
+        '✅ CBTC: Route set (${signalId}→${routeId}), ${train.name} departing');
+    notifyListeners();
+  }
+
+  // Find appropriate route for a destination
+  Map<String, String>? _findRouteForDestination(
+      Train train, String destination) {
+    // Determine which signal to use based on train position
+    for (var signalEntry in signals.entries) {
+      final signal = signalEntry.value;
+      final signalId = signalEntry.key;
+
+      // Check if signal is ahead of train
+      final isAhead = train.direction > 0
+          ? signal.x > train.x
+          : signal.x < train.x;
+
+      if (!isAhead) continue;
+
+      // Check if signal has a route to the destination
+      for (var route in signal.routes) {
+        // Check if route leads to destination
+        bool routeLeadsToDestination = false;
+
+        if (destination.startsWith('P')) {
+          // Platform destination - check if route path includes platform blocks
+          if (destination == 'P1' &&
+              (route.pathBlocks.contains('112') ||
+                  route.pathBlocks.contains('110'))) {
+            routeLeadsToDestination = true;
+          } else if (destination == 'P2' &&
+              route.pathBlocks.contains('111')) {
+            routeLeadsToDestination = true;
+          }
+        } else {
+          // Block destination - check if route path includes that block
+          if (route.pathBlocks.contains(destination)) {
+            routeLeadsToDestination = true;
+          }
+        }
+
+        if (routeLeadsToDestination) {
+          return {'signalId': signalId, 'routeId': route.id};
+        }
+      }
+    }
+
+    return null;
+  }
+
   void _updateTrainStops() {
     for (var trainStop in trainStops.values) {
       final signal = signals[trainStop.signalId];
@@ -3006,6 +3106,30 @@ class TerminalStationController extends ChangeNotifier {
           _logEvent(
               '🛑 ${train.name} stopped: Auto mode cannot travel from ${train.currentBlockId} to ${_getNextBlockForTrain(train)}');
           continue;
+        }
+      }
+
+      // CBTC: Check for T6 tag stopping (ATO platform stop)
+      if (cbtcEnabled &&
+          train.isCbtcEquipped &&
+          train.smcDestination != null &&
+          train.smcDestination!.startsWith('P')) {
+        // Check if train is near a T6 tag for its destination platform
+        for (var tag in transponderTags.values) {
+          if (tag.type == TransponderType.t6 &&
+              tag.platformId == train.smcDestination) {
+            final distanceToTag = (tag.x - train.x).abs();
+            // Stop if within 5 units of the T6 tag
+            if (distanceToTag < 5 && train.speed > 0) {
+              train.targetSpeed = 0;
+              train.speed = 0;
+              train.x = tag.x; // Position exactly at tag
+              train.manualStop = true;
+              _logEvent(
+                  '🎯 ATO: ${train.name} stopped at T6 tag (${train.smcDestination})');
+              break;
+            }
+          }
         }
       }
 

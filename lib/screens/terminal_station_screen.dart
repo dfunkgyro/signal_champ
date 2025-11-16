@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
+import '../widgets/terminal_station/floating_zoom_controls.dart';
+import '../widgets/terminal_station/status_card_widget.dart';
 import 'dart:math' as math;
 
 // ============================================================================
@@ -197,7 +199,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 Positioned(
                   right: 20,
                   bottom: 20,
-                  child: _buildFloatingZoomControls(),
+                  child: FloatingZoomControls(
+                    zoom: _zoom,
+                    onZoomIn: _zoomIn,
+                    onZoomOut: _zoomOut,
+                    onResetZoom: _resetZoom,
+                  ),
                 ),
 
                 // Layer 3: Left Sidebar (higher z-order)
@@ -346,70 +353,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
-  // NEW: Floating zoom controls
-  Widget _buildFloatingZoomControls() {
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Zoom label
-            Text(
-              'Zoom: ${(_zoom * 100).toInt()}%',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Zoom in button
-            FloatingActionButton.small(
-              onPressed: _zoomIn,
-              heroTag: 'zoom_in',
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              child: const Icon(Icons.zoom_in),
-            ),
-            const SizedBox(height: 8),
-            // Zoom reset button
-            FloatingActionButton.small(
-              onPressed: _resetZoom,
-              heroTag: 'zoom_reset',
-              backgroundColor: Colors.grey,
-              foregroundColor: Colors.white,
-              child: const Icon(Icons.refresh),
-            ),
-            const SizedBox(height: 8),
-            // Zoom out button
-            FloatingActionButton.small(
-              onPressed: _zoomOut,
-              heroTag: 'zoom_out',
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              child: const Icon(Icons.zoom_out),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildTrainStopControls(TerminalStationController controller) {
     return Column(
@@ -2882,17 +2825,17 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildStatusCard('Trains', '${stats['trains']}', Colors.blue),
-              _buildStatusCard('Occupied Blocks', '${stats['occupied_blocks']}',
+              StatusCardWidget('Trains', '${stats['trains']}', Colors.blue),
+              StatusCardWidget('Occupied Blocks', '${stats['occupied_blocks']}',
                   Colors.orange),
               // Release Status
-              _buildStatusCard(
+              StatusCardWidget(
                   'Pending Cancellations',
                   '${stats['pending_cancellations']}',
                   stats['pending_cancellations'] > 0
                       ? Colors.orange
                       : Colors.grey),
-              _buildStatusCard(
+              StatusCardWidget(
                   'Release State',
                   '${stats['release_state']}',
                   stats['release_state'] == 'counting'
@@ -2901,46 +2844,46 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ? Colors.green
                           : Colors.grey),
               if (stats['release_countdown'] > 0)
-                _buildStatusCard('Release Countdown',
+                StatusCardWidget('Release Countdown',
                     '${stats['release_countdown']}s', Colors.orange),
-              _buildStatusCard(
+              StatusCardWidget(
                   'Active Routes', '${stats['active_routes']}', Colors.green),
-              _buildStatusCard('Route Reservations',
+              StatusCardWidget('Route Reservations',
                   '${stats['route_reservations']}', Colors.teal),
-              _buildStatusCard(
+              StatusCardWidget(
                   'Self-normalizing',
                   stats['self_normalizing_points'] ? 'ON' : 'OFF',
                   stats['self_normalizing_points']
                       ? Colors.green
                       : Colors.grey),
-              _buildStatusCard(
+              StatusCardWidget(
                   'Train Stops',
                   stats['train_stops_enabled'] ? 'ENABLED' : 'DISABLED',
                   stats['train_stops_enabled'] ? Colors.red : Colors.grey),
-              _buildStatusCard('Active Train Stops',
+              StatusCardWidget('Active Train Stops',
                   '${stats['active_train_stops']}', Colors.orange),
-              _buildStatusCard(
+              StatusCardWidget(
                   'Signals',
                   stats['signals_visible'] ? 'VISIBLE' : 'HIDDEN',
                   stats['signals_visible'] ? Colors.green : Colors.grey),
               // AB Deadlock Status
-              _buildStatusCard(
+              StatusCardWidget(
                   'Point 78A Deadlocked',
                   stats['point_78a_deadlocked'] ? 'YES' : 'NO',
                   stats['point_78a_deadlocked'] ? Colors.red : Colors.green),
-              _buildStatusCard(
+              StatusCardWidget(
                   'Point 78B Deadlocked',
                   stats['point_78b_deadlocked'] ? 'YES' : 'NO',
                   stats['point_78b_deadlocked'] ? Colors.red : Colors.green),
-              _buildStatusCard(
+              StatusCardWidget(
                   'AB104 Occupied',
                   stats['ab104_occupied'] ? 'YES' : 'NO',
                   stats['ab104_occupied'] ? Colors.orange : Colors.green),
-              _buildStatusCard(
+              StatusCardWidget(
                   'AB106 Occupied',
                   stats['ab106_occupied'] ? 'YES' : 'NO',
                   stats['ab106_occupied'] ? Colors.deepOrange : Colors.green),
-              _buildStatusCard(
+              StatusCardWidget(
                   'AB109 Occupied',
                   stats['ab109_occupied'] ? 'YES' : 'NO',
                   stats['ab109_occupied'] ? Colors.orange : Colors.green),
@@ -3347,23 +3290,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
-  Widget _buildStatusCard(String label, String value, Color color) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _showInfo(BuildContext context) {
     showDialog(

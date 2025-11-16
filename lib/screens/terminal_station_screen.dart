@@ -24,6 +24,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   late AnimationController _animationController;
   int _animationTick = 0;
   double _cameraOffsetX = 0;
+  double _cameraOffsetY = 0;  // FIXED: Add Y-axis panning support
   double _zoom = 0.8;
   bool _showLeftPanel = true;
   bool _showRightPanel = true;
@@ -89,6 +90,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       _canvasWidth = _defaultCanvasWidth;
       _canvasHeight = _defaultCanvasHeight;
       _cameraOffsetX = 0;
+      _cameraOffsetY = 0;  // FIXED: Reset Y offset too
       _zoom = 0.8;
     });
   }
@@ -1506,6 +1508,106 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+
+              // FIXED: CBTC Controls Section
+              Text('CBTC (Communications-Based Train Control)',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      // CBTC Device toggle
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.radio,
+                            color: controller.cbtcDevicesEnabled
+                                ? Colors.blue
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'CBTC Devices',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  controller.cbtcDevicesEnabled
+                                      ? 'Enabled (Transponders + WiFi)'
+                                      : 'Disabled',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: controller.cbtcDevicesEnabled,
+                            onChanged: (value) =>
+                                controller.toggleCbtcDevices(value),
+                            activeColor: Colors.blue,
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      // CBTC Mode toggle
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.settings_input_antenna,
+                            color: controller.cbtcModeActive
+                                ? Colors.green
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'CBTC Mode (Moving Block)',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  controller.cbtcModeActive
+                                      ? 'Active - Signals Blue'
+                                      : 'Inactive - Fixed Block',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: controller.cbtcModeActive,
+                            onChanged: controller.cbtcDevicesEnabled
+                                ? (value) => controller.toggleCbtcMode(value)
+                                : null,
+                            activeColor: Colors.green,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               const Divider(height: 32),
 
               // NEW: Canvas Controls Section
@@ -2692,13 +2794,17 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         builder: (context, controller, _) {
           return GestureDetector(
             onPanUpdate: (details) {
-              setState(() => _cameraOffsetX += details.delta.dx / _zoom);
+              setState(() {
+                _cameraOffsetX += details.delta.dx / _zoom;
+                _cameraOffsetY += details.delta.dy / _zoom;  // FIXED: Add Y-axis panning
+              });
             },
             child: CustomPaint(
               size: Size(_canvasWidth, _canvasHeight),
               painter: TerminalStationPainter(
                 controller: controller,
                 cameraOffsetX: _cameraOffsetX,
+                cameraOffsetY: _cameraOffsetY,  // FIXED: Pass Y offset to painter
                 zoom: _zoom,
                 animationTick: _animationTick,
                 canvasWidth: _canvasWidth,

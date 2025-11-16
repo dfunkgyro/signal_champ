@@ -490,6 +490,10 @@ class TerminalStationController extends ChangeNotifier {
   final Map<String, RouteReservation> routeReservations = {};
   bool selfNormalizingPoints = true;
 
+  // FIXED: CBTC system properties
+  bool cbtcDevicesEnabled = false;
+  bool cbtcModeActive = false;
+
   bool _spadAlarmActive = false;
   CollisionIncident? _currentSpadIncident;
   String? _spadTrainStopId;
@@ -564,6 +568,30 @@ class TerminalStationController extends ChangeNotifier {
   void toggleSignalsVisibility() {
     signalsVisible = !signalsVisible;
     _logEvent(signalsVisible ? '✅ Signals enabled' : '❌ Signals disabled');
+    notifyListeners();
+  }
+
+  // FIXED: CBTC toggle methods
+  void toggleCbtcDevices(bool enabled) {
+    cbtcDevicesEnabled = enabled;
+    if (!enabled) {
+      cbtcModeActive = false;  // Disable mode if devices are disabled
+    }
+    _logEvent(enabled
+        ? '📡 CBTC devices ENABLED (Transponders + WiFi)'
+        : '📡 CBTC devices DISABLED');
+    notifyListeners();
+  }
+
+  void toggleCbtcMode(bool active) {
+    if (!cbtcDevicesEnabled) {
+      _logEvent('⚠️ Cannot activate CBTC mode: Devices not enabled');
+      return;
+    }
+    cbtcModeActive = active;
+    _logEvent(active
+        ? '🚄 CBTC Mode ACTIVATED - Moving block signaling enabled'
+        : '🚄 CBTC Mode DEACTIVATED - Fixed block signaling');
     notifyListeners();
   }
 

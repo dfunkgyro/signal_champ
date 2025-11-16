@@ -226,6 +226,7 @@ mixin CollisionVisualEffects {
 class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   final TerminalStationController controller;
   final double cameraOffsetX;
+  final double cameraOffsetY;  // FIXED: Add Y offset parameter
   final double zoom;
   final int animationTick;
   final double canvasWidth;
@@ -234,6 +235,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   TerminalStationPainter({
     required this.controller,
     required this.cameraOffsetX,
+    required this.cameraOffsetY,  // FIXED: Add Y offset parameter
     required this.zoom,
     required this.animationTick,
     required this.canvasWidth,
@@ -245,7 +247,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
     canvas.scale(zoom);
-    canvas.translate(cameraOffsetX, -100);
+    canvas.translate(cameraOffsetX, cameraOffsetY);  // FIXED: Use Y offset for panning
 
     _drawTracks(canvas);
     _drawRouteReservations(canvas);
@@ -996,6 +998,75 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
+  // FIXED: Draw bellows (flexible connectors) between adjacent trains
+  void _drawTrainBellows(Canvas canvas) {
+    final trains = controller.trains;
+    if (trains.length < 2) return;
+
+    for (int i = 0; i < trains.length - 1; i++) {
+      final train1 = trains[i];
+      final train2 = trains[i + 1];
+
+      // Only draw bellow if trains are close enough (within 80 units)
+      final distance = (train1.x - train2.x).abs();
+      if (distance > 80) continue;
+
+      // Check if trains are on the same track (similar Y positions)
+      if ((train1.y - train2.y).abs() > 20) continue;
+
+      // Determine the bellow connection points
+      final train1EndX = train1.direction > 0 ? train1.x + 30 : train1.x - 30;
+      final train2EndX = train2.direction > 0 ? train2.x - 30 : train2.x + 30;
+
+      // Draw bellow as a flexible connector
+      final bellowPaint = Paint()
+        ..color = Colors.grey[800]!
+        ..style = PaintingStyle.fill;
+
+      // Draw accordion-style bellow
+      final path = Path();
+      final segments = 4;
+      final segmentWidth = (train2EndX - train1EndX) / segments;
+
+      for (int j = 0; j < segments; j++) {
+        final x1 = train1EndX + (j * segmentWidth);
+        final x2 = train1EndX + ((j + 1) * segmentWidth);
+        final amplitude = j % 2 == 0 ? 3.0 : -3.0;
+
+        if (j == 0) {
+          path.moveTo(x1, train1.y - 8);
+        }
+
+        path.lineTo(x1, train1.y - 8 + amplitude);
+        path.lineTo(x2, train1.y - 8 - amplitude);
+      }
+
+      path.lineTo(train2EndX, train2.y - 8);
+      path.lineTo(train2EndX, train2.y + 8);
+
+      for (int j = segments - 1; j >= 0; j--) {
+        final x1 = train1EndX + (j * segmentWidth);
+        final x2 = train1EndX + ((j + 1) * segmentWidth);
+        final amplitude = j % 2 == 0 ? 3.0 : -3.0;
+
+        path.lineTo(x2, train2.y + 8 - amplitude);
+        path.lineTo(x1, train2.y + 8 + amplitude);
+      }
+
+      path.lineTo(train1EndX, train1.y + 8);
+      path.close();
+
+      canvas.drawPath(path, bellowPaint);
+
+      // Draw bellow outline
+      final outlinePaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      canvas.drawPath(path, outlinePaint);
+    }
+  }
+
   void _drawMovementAuthorities(Canvas canvas) {
     // Get current time for animation
     final animationOffset = (DateTime.now().millisecondsSinceEpoch % 2000) / 2000.0;
@@ -1170,6 +1241,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawTrains(Canvas canvas) {
+    // FIXED: Draw bellows between adjacent trains first
+    _drawTrainBellows(canvas);
+
     for (var train in controller.trains) {
       canvas.save();
       if (train.rotation != 0.0) {
@@ -1448,6 +1522,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   bool shouldRepaint(TerminalStationPainter oldDelegate) {
     return oldDelegate.controller != controller ||
         oldDelegate.cameraOffsetX != cameraOffsetX ||
+        oldDelegate.cameraOffsetY != cameraOffsetY ||  // FIXED: Check Y offset for repaint
         oldDelegate.zoom != zoom ||
         oldDelegate.animationTick != animationTick ||
         oldDelegate.canvasWidth != canvasWidth ||

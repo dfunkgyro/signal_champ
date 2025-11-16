@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
+import 'package:rail_champ/controllers/timetable_controller.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -497,6 +498,9 @@ class TerminalStationController extends ChangeNotifier {
   bool get spadAlarmActive => _spadAlarmActive;
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
+
+  // Timetable system for automatic train routing
+  final TimetableController timetableController = TimetableController();
 
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
@@ -1139,6 +1143,9 @@ class TerminalStationController extends ChangeNotifier {
     _initializeLayout();
     _initializeClock();
     ace = AxleCounterEvaluator(axleCounters);
+
+    // Initialize default timetable for MA1 → MA2 → MA3
+    timetableController.createDefaultTimetable();
   }
 
   void _initializeAxleCounters() {
@@ -1218,9 +1225,9 @@ class TerminalStationController extends ChangeNotifier {
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
     platforms.add(Platform(
-        id: 'P1', name: 'Platform 1', startX: 980, endX: 1240, y: 100));
+        id: 'P1', name: 'MA1/MA3 - Mainline Stations', startX: 980, endX: 1240, y: 100));
     platforms.add(Platform(
-        id: 'P2', name: 'Platform 2 (Bay)', startX: 980, endX: 1240, y: 300));
+        id: 'P2', name: 'MA2 - Bay Station', startX: 980, endX: 1240, y: 300));
 
     signals['C31'] = Signal(
       id: 'C31',
@@ -2457,6 +2464,52 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Assigns a timetable to a train
+  /// Creates a ghost train and links it to the real train
+  void assignTimetableToTrain(String trainId, String timetableId) {
+    final train = trains.where((t) => t.id == trainId).firstOrNull;
+    if (train == null) {
+      _logEvent('⚠️ Cannot assign timetable: Train $trainId not found');
+      return;
+    }
+
+    final timetable = timetableController.timetableManager.getTimetable(timetableId);
+    if (timetable == null) {
+      _logEvent('⚠️ Cannot assign timetable: Timetable $timetableId not found');
+      return;
+    }
+
+    // Check if train already has a timetable assigned
+    final existing = timetableController.timetableManager.getGhostTrainByRealTrain(trainId);
+    if (existing != null) {
+      _logEvent('⚠️ ${train.name} already has timetable assigned (${existing.serviceNumber})');
+      return;
+    }
+
+    // Create ghost train and assign to real train
+    final ghostTrain = timetableController.timetableManager.createGhostTrain(timetableId);
+    if (ghostTrain == null) {
+      _logEvent('⚠️ Failed to create ghost train for timetable $timetableId');
+      return;
+    }
+
+    timetableController.timetableManager.assignGhostTrainToReal(ghostTrain.id, trainId);
+    _logEvent('📋 Timetable ${timetable.trainServiceNumber} assigned to ${train.name}');
+    _logEvent('   Route: ${timetable.originStation} → ${timetable.terminusStation}');
+
+    notifyListeners();
+  }
+
+  /// Unassigns timetable from a train
+  void unassignTimetableFromTrain(String trainId) {
+    final ghostTrain = timetableController.timetableManager.getGhostTrainByRealTrain(trainId);
+    if (ghostTrain == null) return;
+
+    timetableController.timetableManager.unassignGhostTrain(ghostTrain.id);
+    _logEvent('📋 Timetable unassigned from train $trainId');
+    notifyListeners();
+  }
+
   void startSimulation() {
     isRunning = true;
     _startSimulationTimer();
@@ -2554,6 +2607,7 @@ class TerminalStationController extends ChangeNotifier {
     _checkAutoSignals();
     _updateAxleCounters();
     _updateMovementAuthorities();
+    _updateTimetableRouting(); // Automatic routing for timetabled trains
 
     for (var train in trains) {
       // ========== EARLY EXIT CONDITIONS ==========
@@ -3141,6 +3195,85 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     return nearest;
+  }
+
+  /// Automatically sets routes for trains following timetables
+  /// Called during simulation update to handle timetable-based routing
+  void _updateTimetableRouting() {
+    for (var train in trains) {
+      // Only handle auto mode trains with assigned timetables
+      if (train.controlMode != TrainControlMode.automatic) continue;
+
+      // Check if train has an assigned timetable
+      final ghostTrain = timetableController.timetableManager.getGhostTrainByRealTrain(train.id);
+      if (ghostTrain == null) continue;
+
+      // Update ghost train progress
+      timetableController.updateGhostTrainProgress(train);
+
+      // Check if train should depart (dwell time complete)
+      if (timetableController.shouldDepartStation(train)) {
+        // Get next destination
+        final nextStop = timetableController.getNextStop(train);
+        if (nextStop == null) {
+          // At terminus
+          if (!train.doorsOpen) {
+            // Open doors at terminus
+            train.doorsOpen = true;
+            train.doorsOpenedAt = DateTime.now();
+            final currentStation = timetableController.getTrainCurrentStation(train);
+            _logEvent('🚪 ${train.name} doors opened at terminus $currentStation');
+          }
+          continue;
+        }
+
+        // Get current station
+        final currentStation = ghostTrain.currentStationId;
+        if (currentStation == null) continue;
+
+        // Get route to next station
+        final route = timetableController.getRouteForJourney(currentStation, nextStop.stationId);
+        if (route == null) {
+          _logEvent('⚠️ No route found from $currentStation to ${nextStop.stationId}');
+          continue;
+        }
+
+        // Automatically set the route
+        final signal = signals[route.signalId];
+        if (signal == null) continue;
+
+        // Find the route in the signal's routes
+        final signalRoute = signal.routes.where((r) => r.id == route.routeId).firstOrNull;
+        if (signalRoute == null) continue;
+
+        // Check if route already set
+        if (signal.routeState == RouteState.set && signal.activeRouteId == route.routeId) {
+          // Route already set - close doors and allow departure
+          if (train.doorsOpen) {
+            train.doorsOpen = false;
+            train.doorsOpenedAt = null;
+            train.manualStop = false;
+            _logEvent('🚪 ${train.name} doors closed - departing to ${nextStop.stationId}');
+          }
+          continue;
+        }
+
+        // Try to set the route
+        if (signal.routeState == RouteState.unset) {
+          setRoute(route.signalId, route.routeId);
+          _logEvent('🤖 TIMETABLE: Auto-set route ${signalRoute.name} for ${train.name} → ${nextStop.stationId}');
+        }
+      } else {
+        // Check if train just arrived at a station
+        final currentStation = timetableController.getTrainCurrentStation(train);
+        if (currentStation != null && !train.doorsOpen && train.speed < 0.1) {
+          // Train at station, stopped, doors closed - open doors
+          train.doorsOpen = true;
+          train.doorsOpenedAt = DateTime.now();
+          _logEvent('🚪 ${train.name} doors opened at $currentStation');
+        }
+      }
+    }
   }
 
   void _logEvent(String message) {

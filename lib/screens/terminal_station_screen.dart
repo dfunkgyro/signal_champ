@@ -629,6 +629,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
                         // Quick Actions Section
                         _buildTopQuickActions(controller),
+
+                        const VerticalDivider(width: 16),
+
+                        // MA1, MA2, MA3 - ATP/SMC Section
+                        _buildMATPSMCSection(controller),
                       ],
                     ),
                   ),
@@ -637,6 +642,80 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ],
           );
         },
+      ),
+    );
+  }
+
+  // MA1, MA2, MA3 - ATP/SMC Control Section
+  Widget _buildMATPSMCSection(TerminalStationController controller) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.security, size: 14, color: Colors.blue),
+              const SizedBox(width: 4),
+              const Text(
+                'ATP & SMC',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              // ATP Toggle
+              ElevatedButton.icon(
+                icon: Icon(
+                  controller.atpEnabled ? Icons.lock : Icons.lock_open,
+                  size: 14,
+                ),
+                label: Text(
+                  controller.atpEnabled ? 'ATP ON' : 'ATP OFF',
+                  style: const TextStyle(fontSize: 10),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: controller.atpEnabled
+                      ? Colors.green.shade700
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(80, 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                onPressed: () => controller.toggleATP(),
+              ),
+              const SizedBox(width: 8),
+              // SMC Toggle
+              ElevatedButton.icon(
+                icon: Icon(
+                  controller.smcEnabled ? Icons.my_location : Icons.location_off,
+                  size: 14,
+                ),
+                label: Text(
+                  controller.smcEnabled ? 'SMC ON' : 'SMC OFF',
+                  style: const TextStyle(fontSize: 10),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: controller.smcEnabled
+                      ? Colors.blue.shade700
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(80, 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                onPressed: () => controller.toggleSMC(),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

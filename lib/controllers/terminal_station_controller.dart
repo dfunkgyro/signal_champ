@@ -498,6 +498,13 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // MA1, MA2, MA3 - Enhanced Features
+  final Map<String, SMCDestination> smcDestinations = {}; // Train ID -> SMC Destination
+  final List<SpeedRestriction> speedRestrictions = [];
+  final List<TrackGrade> trackGrades = [];
+  bool atpEnabled = true; // ATP system master switch
+  bool smcEnabled = true; // SMC system master switch
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -929,15 +936,142 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
+  // MA1, MA2, MA3 - Enhanced Movement Authority Calculation
   MovementAuthority _calculateMovementAuthority(Train train) {
-    double maxDistance = 2000.0; // Default max distance
+    // Calculate all three MA levels
+    train.ma1 = _calculateMA1(train);
+    train.ma2 = _calculateMA2(train);
+    train.ma3 = _calculateMA3(train);
+
+    // Return the primary MA (MA1) for visualization
+    return train.ma1!;
+  }
+
+  // MA1 - Primary Movement Authority (Full ATP protection)
+  MovementAuthority _calculateMA1(Train train) {
+    double maxDistance = 2000.0;
     String? limitReason;
-    bool hasDestination = train.smcDestination != null;
+    bool hasDestination = smcDestinations.containsKey(train.id);
 
     final trainPos = train.x;
     final direction = train.direction;
+    final brakingDistance = _calculateBrakingDistance(train, train.maxAllowedSpeed);
+
+    // Apply SMC destination if available
+    if (smcEnabled && smcDestinations.containsKey(train.id)) {
+      final smcDest = smcDestinations[train.id]!;
+      final platform = platforms.firstWhere((p) => p.id == smcDest.platformId);
+      final destDistance = (direction > 0
+          ? platform.centerX - trainPos
+          : trainPos - platform.centerX).abs();
+
+      if (destDistance < maxDistance) {
+        maxDistance = destDistance;
+        limitReason = 'Destination: ${platform.name}';
+      }
+    }
 
     // Check for other CBTC trains ahead
+    maxDistance = _checkTrainsAhead(train, maxDistance, trainPos, direction,
+        brakingDistance, (reason) => limitReason = reason);
+
+    // Check for occupied blocks ahead
+    maxDistance = _checkBlocksAhead(train, maxDistance, trainPos, direction,
+        brakingDistance, (reason) => limitReason = reason);
+
+    // Check for signals at danger
+    maxDistance = _checkSignalsAhead(train, maxDistance, trainPos, direction,
+        brakingDistance, (reason) => limitReason = reason);
+
+    // Build speed profile with grade compensation
+    final speedProfile = _buildSpeedProfile(train, maxDistance);
+
+    return MovementAuthority(
+      maxDistance: maxDistance.clamp(0.0, 2000.0),
+      limitReason: limitReason,
+      hasDestination: hasDestination,
+      level: MALevel.ma1,
+      targetSpeed: 0.0,
+      brakingDistance: brakingDistance,
+      speedProfile: speedProfile,
+      gradientCompensation: _getGradeAtPosition(trainPos),
+      atpEnforced: atpEnabled,
+    );
+  }
+
+  // MA2 - Secondary Movement Authority (Reduced speed with warning)
+  MovementAuthority _calculateMA2(Train train) {
+    final ma1 = train.ma1 ?? _calculateMA1(train);
+
+    // MA2 is 70% of MA1 distance with reduced speed
+    final reducedDistance = ma1.maxDistance * 0.7;
+    final reducedSpeed = train.maxAllowedSpeed * 0.6;
+
+    return MovementAuthority(
+      maxDistance: reducedDistance,
+      limitReason: ma1.limitReason != null ? 'Warning: ${ma1.limitReason}' : null,
+      hasDestination: ma1.hasDestination,
+      level: MALevel.ma2,
+      targetSpeed: reducedSpeed,
+      brakingDistance: _calculateBrakingDistance(train, reducedSpeed),
+      speedProfile: _buildSpeedProfile(train, reducedDistance, maxSpeed: reducedSpeed),
+      gradientCompensation: ma1.gradientCompensation,
+      atpEnforced: atpEnabled,
+    );
+  }
+
+  // MA3 - Emergency Movement Authority (Minimal safe distance)
+  MovementAuthority _calculateMA3(Train train) {
+    final ma1 = train.ma1 ?? _calculateMA1(train);
+
+    // MA3 is 40% of MA1 distance with minimal speed
+    final emergencyDistance = ma1.maxDistance * 0.4;
+    final emergencySpeed = train.maxAllowedSpeed * 0.3;
+
+    return MovementAuthority(
+      maxDistance: emergencyDistance,
+      limitReason: ma1.limitReason != null ? 'EMERGENCY: ${ma1.limitReason}' : null,
+      hasDestination: ma1.hasDestination,
+      level: MALevel.ma3,
+      targetSpeed: emergencySpeed,
+      brakingDistance: _calculateBrakingDistance(train, emergencySpeed),
+      speedProfile: _buildSpeedProfile(train, emergencyDistance, maxSpeed: emergencySpeed),
+      gradientCompensation: ma1.gradientCompensation,
+      atpEnforced: true, // MA3 always enforced
+    );
+  }
+
+  // Helper: Calculate braking distance based on speed and grade
+  double _calculateBrakingDistance(Train train, double speed) {
+    const baseDeceleration = 1.2; // m/s² base deceleration
+    final gradeComp = train.gradePercentage * 0.1; // Grade compensation
+    final effectiveDecel = baseDeceleration - gradeComp;
+
+    // d = v² / (2 * a)
+    final distance = (speed * speed) / (2 * effectiveDecel.abs().clamp(0.5, 2.0));
+    return distance.clamp(50.0, 500.0);
+  }
+
+  // Helper: Build speed profile with ramp-down
+  Map<double, double> _buildSpeedProfile(Train train, double maxDist, {double? maxSpeed}) {
+    final targetSpeed = maxSpeed ?? train.maxAllowedSpeed;
+    final profile = <double, double>{};
+
+    // Create 5-point speed profile
+    for (int i = 0; i <= 5; i++) {
+      final distPercent = i / 5.0;
+      final distance = maxDist * distPercent;
+      final speedPercent = 1.0 - (distPercent * 0.8); // Ramp down to 20% at limit
+      final speed = targetSpeed * speedPercent;
+      profile[distance] = speed;
+    }
+
+    return profile;
+  }
+
+  // Helper: Check trains ahead
+  double _checkTrainsAhead(Train train, double maxDistance, double trainPos,
+      int direction, double brakingDistance, Function(String) setReason) {
     for (var otherTrain in trains) {
       if (otherTrain.id == train.id) continue;
       if (!otherTrain.isCbtcEquipped) continue;
@@ -955,35 +1089,19 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       if (isAhead) {
-        // Stop 200 units before the other train
-        final limitDistance = distance - 200;
+        final limitDistance = distance - brakingDistance;
         if (limitDistance > 0 && limitDistance < maxDistance) {
           maxDistance = limitDistance;
-          limitReason = 'CBTC Train ahead';
-        }
-      }
-
-      // Also check if we need to stop before another train's movement authority
-      if (otherTrain.movementAuthority != null && isAhead) {
-        final otherMaEnd = direction > 0
-            ? otherPos + otherTrain.movementAuthority!.maxDistance
-            : otherPos - otherTrain.movementAuthority!.maxDistance;
-
-        final distanceToOtherMa = direction > 0
-            ? otherMaEnd - trainPos
-            : trainPos - otherMaEnd;
-
-        if (distanceToOtherMa > 0) {
-          final limitDistance = distanceToOtherMa - 200;
-          if (limitDistance > 0 && limitDistance < maxDistance) {
-            maxDistance = limitDistance;
-            limitReason = 'Other train MA';
-          }
+          setReason('CBTC Train ${otherTrain.name}');
         }
       }
     }
+    return maxDistance;
+  }
 
-    // Check for occupied blocks ahead
+  // Helper: Check occupied blocks ahead
+  double _checkBlocksAhead(Train train, double maxDistance, double trainPos,
+      int direction, double brakingDistance, Function(String) setReason) {
     for (var block in blocks.values) {
       if (!block.occupied || block.occupyingTrainId == train.id) continue;
 
@@ -1001,16 +1119,19 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       if (isAhead) {
-        // Stop 200 units before occupied block
-        final limitDistance = distance - 200;
+        final limitDistance = distance - brakingDistance;
         if (limitDistance > 0 && limitDistance < maxDistance) {
           maxDistance = limitDistance;
-          limitReason = 'Occupied AB ${block.id}';
+          setReason('Occupied AB ${block.id}');
         }
       }
     }
+    return maxDistance;
+  }
 
-    // Check for signals at danger
+  // Helper: Check signals ahead
+  double _checkSignalsAhead(Train train, double maxDistance, double trainPos,
+      int direction, double brakingDistance, Function(String) setReason) {
     for (var signal in signals.values) {
       if (signal.aspect != SignalAspect.red) continue;
 
@@ -1027,20 +1148,24 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       if (isAhead) {
-        // Stop 50 units before red signal
         final limitDistance = distance - 50;
         if (limitDistance > 0 && limitDistance < maxDistance) {
           maxDistance = limitDistance;
-          limitReason = 'Signal ${signal.id} at danger';
+          setReason('Signal ${signal.id} at danger');
         }
       }
     }
+    return maxDistance;
+  }
 
-    return MovementAuthority(
-      maxDistance: maxDistance.clamp(0.0, 2000.0),
-      limitReason: limitReason,
-      hasDestination: hasDestination,
-    );
+  // Helper: Get grade at position
+  double _getGradeAtPosition(double x) {
+    for (var grade in trackGrades) {
+      if (grade.appliesToPosition(x)) {
+        return grade.gradePercentage;
+      }
+    }
+    return 0.0;
   }
 
   // ============================================================================
@@ -2556,6 +2681,12 @@ class TerminalStationController extends ChangeNotifier {
     _updateMovementAuthorities();
 
     for (var train in trains) {
+      // MA1, MA2, MA3 - Update grade and enforce ATP
+      updateTrainGrade(train);
+      if (train.isCbtcEquipped) {
+        enforceATP(train);
+      }
+
       // ========== EARLY EXIT CONDITIONS ==========
 
       // 1. Door override - train cannot move with open doors
@@ -3302,6 +3433,169 @@ class TerminalStationController extends ChangeNotifier {
 
     _logEvent('📄 Layout exported to XML (${buffer.length} bytes)');
     return buffer.toString();
+  }
+
+  // ============================================================================
+  // ATP (Automatic Train Protection) Enforcement
+  // ============================================================================
+
+  void enforceATP(Train train) {
+    if (!atpEnabled || !train.isCbtcEquipped) return;
+
+    final ma = train.movementAuthority;
+    if (ma == null) return;
+
+    // Calculate distance to MA limit
+    final distanceToLimit = train.direction > 0
+        ? (train.x + ma.maxDistance) - train.x
+        : train.x - (train.x - ma.maxDistance);
+
+    // Check if speed is safe based on current MA level
+    if (train.ma1 != null && !train.ma1!.isSpeedSafe(train.speed, distanceToLimit)) {
+      // Exceeded MA1 - escalate to MA2
+      if (train.ma2 != null && !train.ma2!.isSpeedSafe(train.speed, distanceToLimit)) {
+        // Exceeded MA2 - escalate to MA3 (emergency)
+        if (train.ma3 != null && !train.ma3!.isSpeedSafe(train.speed, distanceToLimit)) {
+          // Exceeded MA3 - emergency brake!
+          train.atpState = ATPState.emergency;
+          train.emergencyBrake = true;
+          train.targetSpeed = 0;
+          _logEvent('🚨 ATP EMERGENCY: ${train.name} exceeded MA3 limit!');
+        } else {
+          // Within MA3 - apply strong intervention
+          train.atpState = ATPState.intervention;
+          train.targetSpeed = train.ma3!.targetSpeed;
+          _logEvent('⚠️ ATP INTERVENTION: ${train.name} using MA3');
+        }
+      } else {
+        // Within MA2 - warning state
+        train.atpState = ATPState.warning;
+        train.targetSpeed = math.min(train.targetSpeed, train.ma2!.targetSpeed);
+        _logEvent('⚡ ATP WARNING: ${train.name} using MA2');
+      }
+    } else {
+      // Normal operation within MA1
+      if (train.atpState != ATPState.normal) {
+        train.atpState = ATPState.normal;
+        _logEvent('✅ ATP NORMAL: ${train.name} within MA1');
+      }
+    }
+  }
+
+  // ============================================================================
+  // SMC (Station Management Computer) Functions
+  // ============================================================================
+
+  void assignSMCDestination(String trainId, String platformId) {
+    if (!smcEnabled) return;
+
+    final platform = platforms.firstWhere((p) => p.id == platformId);
+    final train = trains.firstWhere((t) => t.id == trainId);
+
+    // Calculate route path (simplified - just direct route for now)
+    final routePath = _calculateRoutePath(train, platform);
+    final distance = (platform.centerX - train.x).abs();
+
+    final destination = SMCDestination(
+      destinationId: 'SMC_${trainId}_${DateTime.now().millisecondsSinceEpoch}',
+      platformId: platformId,
+      routePath: routePath,
+      estimatedDistance: distance,
+      recommendedSpeed: 2.0,
+      assignedAt: DateTime.now(),
+    );
+
+    smcDestinations[trainId] = destination;
+    train.smcDestination = platformId;
+
+    _logEvent('🎯 SMC: ${train.name} assigned to ${platform.name}');
+    notifyListeners();
+  }
+
+  void clearSMCDestination(String trainId) {
+    if (smcDestinations.containsKey(trainId)) {
+      smcDestinations.remove(trainId);
+      final train = trains.firstWhere((t) => t.id == trainId);
+      train.smcDestination = null;
+      _logEvent('🎯 SMC: ${train.name} destination cleared');
+      notifyListeners();
+    }
+  }
+
+  List<String> _calculateRoutePath(Train train, Platform platform) {
+    // Simplified path calculation - collect blocks between train and platform
+    final path = <String>[];
+    final startX = train.x;
+    final endX = platform.centerX;
+
+    for (var block in blocks.values) {
+      if (block.id.startsWith('crossover')) continue;
+
+      final blockCenter = (block.startX + block.endX) / 2;
+      if ((startX < blockCenter && blockCenter < endX) ||
+          (endX < blockCenter && blockCenter < startX)) {
+        path.add(block.id);
+      }
+    }
+
+    return path;
+  }
+
+  // Add speed restriction
+  void addSpeedRestriction(String id, double startX, double endX, double maxSpeed, String reason) {
+    speedRestrictions.add(SpeedRestriction(
+      id: id,
+      startX: startX,
+      endX: endX,
+      maxSpeed: maxSpeed,
+      reason: reason,
+    ));
+    _logEvent('🚧 Speed restriction added: $reason ($maxSpeed km/h from $startX to $endX)');
+    notifyListeners();
+  }
+
+  // Remove speed restriction
+  void removeSpeedRestriction(String id) {
+    speedRestrictions.removeWhere((sr) => sr.id == id);
+    _logEvent('✅ Speed restriction removed: $id');
+    notifyListeners();
+  }
+
+  // Add track grade
+  void addTrackGrade(double startX, double endX, double gradePercentage) {
+    trackGrades.add(TrackGrade(
+      startX: startX,
+      endX: endX,
+      gradePercentage: gradePercentage,
+    ));
+    _logEvent('⛰️ Track grade added: ${gradePercentage}% from $startX to $endX');
+    notifyListeners();
+  }
+
+  // Update train grade based on position
+  void updateTrainGrade(Train train) {
+    final grade = _getGradeAtPosition(train.x);
+    train.gradePercentage = grade;
+  }
+
+  // Toggle ATP system
+  void toggleATP() {
+    atpEnabled = !atpEnabled;
+    _logEvent(atpEnabled ? '🔒 ATP Enabled' : '🔓 ATP Disabled');
+    notifyListeners();
+  }
+
+  // Toggle SMC system
+  void toggleSMC() {
+    smcEnabled = !smcEnabled;
+    if (!smcEnabled) {
+      smcDestinations.clear();
+      for (var train in trains) {
+        train.smcDestination = null;
+      }
+    }
+    _logEvent(smcEnabled ? '🎯 SMC Enabled' : '🎯 SMC Disabled');
+    notifyListeners();
   }
 
   @override

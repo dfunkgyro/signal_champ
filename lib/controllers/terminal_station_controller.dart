@@ -547,6 +547,19 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
+  // VCC (Vital Computer Controller) System
+  final Map<String, VccController> vccControllers = {};
+  Timer? _vccHandshakeTimer;
+
+  // SRS (Schedule Regulator Subsystem) System
+  late SrsData srsData;
+  Timer? _srsUpdateTimer;
+  bool srsEnabled = false;
+
+  // Ghost infrastructure
+  final Map<String, GhostSignal> ghostSignals = {};
+  final Map<String, GhostPoint> ghostPoints = {};
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right

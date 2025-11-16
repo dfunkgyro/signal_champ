@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/railway_model.dart';
+import '../controllers/terminal_station_controller.dart';
+import '../screens/terminal_station_models.dart';
 
 class RelayRackPanel extends StatelessWidget {
   const RelayRackPanel({super.key});
@@ -37,7 +38,7 @@ class RelayRackPanel extends StatelessWidget {
   }
 
   Widget _buildSignalRelaysSection(BuildContext context) {
-    final railwayModel = context.watch<RailwayModel>();
+    final controller = context.watch<TerminalStationController>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,9 +70,10 @@ class RelayRackPanel extends StatelessWidget {
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: railwayModel.signals.map((signal) {
+            children: controller.signals.entries.map((entry) {
+              final signal = entry.value;
               final relayName = _getSignalRelayName(signal.id);
-              final isUp = signal.state == SignalState.green;
+              final isUp = signal.aspect == SignalAspect.green;
               return _buildRelayIndicator(relayName, isUp);
             }).toList(),
           ),
@@ -81,7 +83,7 @@ class RelayRackPanel extends StatelessWidget {
   }
 
   Widget _buildPointsRelaysSection(BuildContext context) {
-    final railwayModel = context.watch<RailwayModel>();
+    final controller = context.watch<TerminalStationController>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +115,8 @@ class RelayRackPanel extends StatelessWidget {
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: railwayModel.points.map((point) {
+            children: controller.points.entries.map((entry) {
+              final point = entry.value;
               final relayName = _getPointRelayName(point.id);
               final position = _getPointRelayPosition(point);
               return _buildPointRelayIndicator(relayName, position);
@@ -125,7 +128,7 @@ class RelayRackPanel extends StatelessWidget {
   }
 
   Widget _buildTrackRelaysSection(BuildContext context) {
-    final railwayModel = context.watch<RailwayModel>();
+    final controller = context.watch<TerminalStationController>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,9 +160,8 @@ class RelayRackPanel extends StatelessWidget {
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: railwayModel.blocks
-                .where((block) => !block.isCrossover)
-                .map((block) {
+            children: controller.blocks.entries.map((entry) {
+              final block = entry.value;
               final relayName = _getBlockRelayName(block.id);
               final isUp = !block.occupied;
               return _buildRelayIndicator(relayName, isUp);
@@ -237,9 +239,9 @@ class RelayRackPanel extends StatelessWidget {
   }
 
   String _getPointRelayPosition(Point point) {
-    // Determine relay position based on animation progress
-    // Mid position occurs during animation (animationProgress > 0 and < 1)
-    if (point.animationProgress > 0 && point.animationProgress < 1) {
+    // For terminal station controller, we don't have animationProgress
+    // so we just check locked state to determine if it's moving
+    if (point.locked) {
       return 'mid';
     }
     // Otherwise return the actual position

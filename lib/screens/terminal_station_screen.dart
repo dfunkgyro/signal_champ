@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
+import '../widgets/relay_rack_panel.dart';
 import 'dart:math' as math;
 
 // ============================================================================
@@ -32,9 +33,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   // NEW: Canvas size controls
   double _canvasWidth = 1600.0; // Default width
-  double _canvasHeight = 400.0; // Default height
+  double _canvasHeight = 800.0; // Default height - increased for better visibility
   final double _defaultCanvasWidth = 1600.0;
-  final double _defaultCanvasHeight = 400.0;
+  final double _defaultCanvasHeight = 800.0;
 
   @override
   void initState() {
@@ -3338,6 +3339,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ),
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              // Relay Rack Panel - always visible
+              const RelayRackPanel(),
 
               const SizedBox(height: 16),
             ],

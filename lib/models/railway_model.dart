@@ -193,6 +193,15 @@ class RailwayModel extends ChangeNotifier {
   List<Transponder> get transponders => _transponders;
   List<WifiAntenna> get wifiAntennas => _wifiAntennas;
 
+  // Signals visibility
+  bool _signalsVisible = true;
+  bool get signalsVisible => _signalsVisible;
+
+  void setSignalsVisible(bool visible) {
+    _signalsVisible = visible;
+    notifyListeners();
+  }
+
   List<BlockSection> blocks = [
     BlockSection(
         id: '100',
@@ -684,12 +693,17 @@ class RailwayModel extends ChangeNotifier {
   }
 
   bool _isSignalClearForBlock(Train train, String blockId) {
+    // If signals are hidden, trains can proceed as if signals aren't there
+    if (!_signalsVisible) {
+      return true;
+    }
+
     for (final signal in signals) {
       if (signal.controlledBlocks.contains(blockId)) {
         // Check if points are correctly set for this signal
         bool pointsCorrect = true;
         List<String> pointIssues = [];
-        
+
         for (final pointReq in signal.requiredPointPositions) {
           final parts = pointReq.split(':');
           final pointId = parts[0];
@@ -708,7 +722,7 @@ class RailwayModel extends ChangeNotifier {
         if (signal.id == 'C31' && signal.route == 2) {
           final point78A = points.firstWhere((p) => p.id == '78A');
           final point78B = points.firstWhere((p) => p.id == '78B');
-          
+
           if (point78A.position != PointPosition.reverse) {
             pointsCorrect = false;
             pointIssues.add('C31 Route 2: 78A must be REVERSE');
@@ -723,7 +737,7 @@ class RailwayModel extends ChangeNotifier {
           train.stopReason = 'Signal ${signal.id} is ${signal.state.name.toUpperCase()}';
           return false;
         }
-        
+
         if (!pointsCorrect) {
           train.stopReason = 'Points not set correctly: ${pointIssues.join(", ")}';
           return false;

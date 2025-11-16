@@ -1010,28 +1010,30 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
 
-    // Check for signals at danger
-    for (var signal in signals.values) {
-      if (signal.aspect != SignalAspect.red) continue;
+    // Check for signals at danger (only if signals are visible)
+    if (signalsVisible) {
+      for (var signal in signals.values) {
+        if (signal.aspect != SignalAspect.red) continue;
 
-      final signalPos = signal.x;
-      bool isAhead = false;
-      double distance = 0;
+        final signalPos = signal.x;
+        bool isAhead = false;
+        double distance = 0;
 
-      if (direction > 0 && signalPos > trainPos) {
-        isAhead = true;
-        distance = signalPos - trainPos;
-      } else if (direction < 0 && signalPos < trainPos) {
-        isAhead = true;
-        distance = trainPos - signalPos;
-      }
+        if (direction > 0 && signalPos > trainPos) {
+          isAhead = true;
+          distance = signalPos - trainPos;
+        } else if (direction < 0 && signalPos < trainPos) {
+          isAhead = true;
+          distance = trainPos - signalPos;
+        }
 
-      if (isAhead) {
-        // Stop 50 units before red signal
-        final limitDistance = distance - 50;
-        if (limitDistance > 0 && limitDistance < maxDistance) {
-          maxDistance = limitDistance;
-          limitReason = 'Signal ${signal.id} at danger';
+        if (isAhead) {
+          // Stop 50 units before red signal
+          final limitDistance = distance - 50;
+          if (limitDistance > 0 && limitDistance < maxDistance) {
+            maxDistance = limitDistance;
+            limitReason = 'Signal ${signal.id} at danger';
+          }
         }
       }
     }
@@ -1396,7 +1398,8 @@ class TerminalStationController extends ChangeNotifier {
     for (var trainStop in trainStops.values) {
       final signal = signals[trainStop.signalId];
       if (signal != null) {
-        trainStop.active = signal.aspect == SignalAspect.red;
+        // Only activate train stops if signals are visible
+        trainStop.active = signalsVisible && signal.aspect == SignalAspect.red;
       }
     }
   }

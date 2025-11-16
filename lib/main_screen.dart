@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/railway_model.dart';
 import '../controllers/simulation_controller.dart';
-import '../controllers/ai_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../services/supabase_service.dart';
 import '../widgets/railway_canvas.dart' hide Train;
 import '../widgets/control_panel.dart';
 import '../widgets/status_panel.dart';
-import 'history_screen.dart';
-import 'analytics_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -51,19 +48,6 @@ class _MainLayoutState extends State<MainLayout> {
         actions: [
           _buildLayoutSelector(),
           _buildConnectionStatus(),
-          IconButton(
-            icon: const Icon(Icons.analytics),
-            onPressed: _showAIAnalysis,
-            tooltip: 'AI Analysis',
-          ),
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const HistoryScreen()),
-            ),
-            tooltip: 'History',
-          ),
           IconButton(
             icon: const Icon(Icons.brightness_6),
             onPressed: () =>
@@ -277,29 +261,6 @@ class _MainLayoutState extends State<MainLayout> {
               ],
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('AI Analytics'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const AnalyticsScreen()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('Simulation History'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HistoryScreen()),
-              );
-            },
-          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.help),
@@ -323,23 +284,11 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   Widget _buildConnectionStatus() {
-    return Consumer2<AIController, SupabaseService>(
-      builder: (context, aiController, supabaseService, child) {
+    return Consumer<SupabaseService>(
+      builder: (context, supabaseService, child) {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Tooltip(
-              message: 'AI: ${aiController.connectionStatus}',
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: aiController.isConnected ? Colors.green : Colors.red,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
             Tooltip(
               message: 'Cloud: ${supabaseService.connectionStatus}',
               child: Container(
@@ -356,73 +305,6 @@ class _MainLayoutState extends State<MainLayout> {
           ],
         );
       },
-    );
-  }
-
-  void _showAIAnalysis() {
-    final aiController = Provider.of<AIController>(context, listen: false);
-    final railwayModel = Provider.of<RailwayModel>(context, listen: false);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.analytics, color: Colors.blue),
-            SizedBox(width: 8),
-            Text('AI Operations Analysis'),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: FutureBuilder<String>(
-            future: aiController.analyzeRailwayOperation(
-                'Current railway state: ${railwayModel.trains.length} trains active, '
-                '${railwayModel.blocks.where((b) => b.occupied).length} occupied blocks, '
-                'Signals: ${railwayModel.signals.map((s) => '${s.id}:${s.state.name}').join(', ')}. '
-                'Points: ${railwayModel.points.map((p) => '${p.id}:${p.position.name}').join(', ')}. '
-                'Provide operational analysis and suggestions.'),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('AI is analyzing railway operations...'),
-                  ],
-                );
-              }
-              return SingleChildScrollView(
-                child: Text(snapshot.data ?? 'No analysis available'),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-          if (aiController.connectionStatus.isNotEmpty)
-            TextButton(
-              onPressed: () {
-                // Save analysis to cloud
-                final supabaseService =
-                    Provider.of<SupabaseService>(context, listen: false);
-                supabaseService.saveSimulationState({
-                  'analysis': aiController.connectionStatus,
-                  'timestamp': DateTime.now().toIso8601String(),
-                  'type': 'ai_analysis',
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Analysis saved to cloud')),
-                );
-              },
-              child: const Text('Save to Cloud'),
-            ),
-        ],
-      ),
     );
   }
 
@@ -510,8 +392,6 @@ class _MainLayoutState extends State<MainLayout> {
                   'Use the Point Control to switch tracks. Points determine which route trains will take.'),
               _buildHelpSection('Train Management',
                   'Select a train to control its speed, direction, and status. Watch the Status Panel for train stop reasons.'),
-              _buildHelpSection('AI Analysis',
-                  'Get intelligent insights and optimization suggestions from the AI system (requires OpenAI API key in .env file).'),
               _buildHelpSection('Cloud Storage',
                   'Save your simulation states to the cloud for later analysis (requires Supabase credentials in .env file).'),
             ],
@@ -562,7 +442,6 @@ class _MainLayoutState extends State<MainLayout> {
             Text('• Real-time train movement with stop reasons'),
             Text('• Advanced signaling system with detailed logic'),
             Text('• Comprehensive event logging'),
-            Text('• AI-powered analytics (OpenAI integration)'),
             Text('• Cloud synchronization (Supabase)'),
             Text('• Multiple layout options'),
             Text('• User-controlled simulation start'),

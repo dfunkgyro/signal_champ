@@ -98,41 +98,6 @@ class SupabaseService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveSimulationState(Map<String, dynamic> stateData) async {
-    if (_currentUserId == null) return;
-
-    try {
-      await _supabase.from('simulation_states').insert({
-        'user_id': _currentUserId,
-        'state_data': stateData,
-        'train_count': stateData['trains']?.length ?? 0,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-    } catch (e) {
-      debugPrint('Error saving simulation state: $e');
-      rethrow;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> loadSimulationStates(
-      {int limit = 10}) async {
-    if (_currentUserId == null) return [];
-
-    try {
-      final response = await _supabase
-          .from('simulation_states')
-          .select()
-          .eq('user_id', _currentUserId!)
-          .order('created_at', ascending: false)
-          .limit(limit);
-
-      return List<Map<String, dynamic>>.from(response as List);
-    } catch (e) {
-      debugPrint('Error loading simulation states: $e');
-      return [];
-    }
-  }
-
   Future<void> recordMetric(String metricName, double value) async {
     if (_currentUserId == null) return;
 
@@ -165,19 +130,6 @@ class SupabaseService extends ChangeNotifier {
       debugPrint('Error getting metric stats: $e');
       return {};
     }
-  }
-
-  Stream<List<Map<String, dynamic>>> streamSimulationStates() {
-    if (_currentUserId == null) {
-      return Stream.value([]);
-    }
-
-    return _supabase
-        .from('simulation_states')
-        .stream(primaryKey: ['id'])
-        .eq('user_id', _currentUserId!)
-        .order('created_at', ascending: false)
-        .limit(10);
   }
 
   Future<void> dispose() async {

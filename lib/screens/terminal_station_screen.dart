@@ -114,10 +114,63 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<TerminalStationController>();
+    final layoutConfig = controller.currentLayoutConfig;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Railway Simulator'),
         actions: [
+          // Layout selector dropdown
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: DropdownButton<LayoutStyle>(
+              value: controller.currentLayoutStyle,
+              icon: const Icon(Icons.dashboard_customize, color: Colors.white),
+              dropdownColor: Theme.of(context).primaryColor,
+              underline: Container(),
+              items: [
+                DropdownMenuItem(
+                  value: LayoutStyle.compact,
+                  child: Row(
+                    children: const [
+                      Icon(Icons.compress, size: 16, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Compact', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: LayoutStyle.standard,
+                  child: Row(
+                    children: const [
+                      Icon(Icons.dashboard, size: 16, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Standard', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: LayoutStyle.expanded,
+                  child: Row(
+                    children: const [
+                      Icon(Icons.expand, size: 16, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Expanded', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                ),
+              ],
+              onChanged: (LayoutStyle? style) {
+                if (style != null) {
+                  controller.setLayoutStyle(style);
+                  setState(() {
+                    _zoom = layoutConfig.defaultZoom;
+                  });
+                }
+              },
+            ),
+          ),
           IconButton(
             icon: Icon(
               _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
@@ -184,8 +237,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ),
           ),
 
+          // Layout Info Banner
+          _buildLayoutInfoBanner(controller, layoutConfig),
+
           // Top Control Panel
-          if (_showTopPanel) _buildTopControlPanel(),
+          if (_showTopPanel) _buildTopControlPanel(layoutConfig),
 
           Expanded(
             child: Stack(
@@ -207,7 +263,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     top: 0,
                     bottom: 0,
                     child: Container(
-                      width: 320,
+                      width: layoutConfig.leftPanelWidth,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
                         border: Border(
@@ -225,7 +281,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ),
                         ],
                       ),
-                      child: _buildControlPanel(),
+                      child: _buildControlPanel(layoutConfig),
                     ),
                   ),
 
@@ -236,7 +292,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     top: 0,
                     bottom: 0,
                     child: Container(
-                      width: 320,
+                      width: layoutConfig.rightPanelWidth,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
                         border: Border(
@@ -254,14 +310,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ),
                         ],
                       ),
-                      child: _buildStatusPanel(),
+                      child: _buildStatusPanel(layoutConfig),
                     ),
                   ),
 
                 // Layer 5: Toggle buttons (highest z-order)
                 // Left panel toggle button
                 Positioned(
-                  left: _showLeftPanel ? 320 : 0,
+                  left: _showLeftPanel ? layoutConfig.leftPanelWidth : 0,
                   top: 10,
                   child: Material(
                     elevation: 8,
@@ -301,7 +357,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
                 // Right panel toggle button
                 Positioned(
-                  right: _showRightPanel ? 320 : 0,
+                  right: _showRightPanel ? layoutConfig.rightPanelWidth : 0,
                   top: 10,
                   child: Material(
                     elevation: 8,
@@ -346,68 +402,88 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
-  // NEW: Floating zoom controls
+  // Floating zoom controls
   Widget _buildFloatingZoomControls() {
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              spreadRadius: 2,
+    return Consumer<TerminalStationController>(
+      builder: (context, controller, _) {
+        final layoutConfig = controller.currentLayoutConfig;
+        final buttonSize = layoutConfig.zoomControlSize;
+        final isCompact = layoutConfig.compactControls;
+
+        return Card(
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Container(
+            padding: EdgeInsets.all(isCompact ? 6 : 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Zoom label
-            Text(
-              'Zoom: ${(_zoom * 100).toInt()}%',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Zoom label
+                Text(
+                  'Zoom: ${(_zoom * 100).toInt()}%',
+                  style: TextStyle(
+                    fontSize: layoutConfig.labelFontSize * 0.9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: isCompact ? 4 : 8),
+                // Zoom in button
+                SizedBox(
+                  width: buttonSize,
+                  height: buttonSize,
+                  child: FloatingActionButton(
+                    onPressed: _zoomIn,
+                    heroTag: 'zoom_in',
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    child: Icon(Icons.zoom_in, size: buttonSize * 0.5),
+                  ),
+                ),
+                SizedBox(height: isCompact ? 4 : 8),
+                // Zoom reset button
+                SizedBox(
+                  width: buttonSize,
+                  height: buttonSize,
+                  child: FloatingActionButton(
+                    onPressed: _resetZoom,
+                    heroTag: 'zoom_reset',
+                    backgroundColor: Colors.grey,
+                    foregroundColor: Colors.white,
+                    child: Icon(Icons.refresh, size: buttonSize * 0.5),
+                  ),
+                ),
+                SizedBox(height: isCompact ? 4 : 8),
+                // Zoom out button
+                SizedBox(
+                  width: buttonSize,
+                  height: buttonSize,
+                  child: FloatingActionButton(
+                    onPressed: _zoomOut,
+                    heroTag: 'zoom_out',
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    child: Icon(Icons.zoom_out, size: buttonSize * 0.5),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            // Zoom in button
-            FloatingActionButton.small(
-              onPressed: _zoomIn,
-              heroTag: 'zoom_in',
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              child: const Icon(Icons.zoom_in),
-            ),
-            const SizedBox(height: 8),
-            // Zoom reset button
-            FloatingActionButton.small(
-              onPressed: _resetZoom,
-              heroTag: 'zoom_reset',
-              backgroundColor: Colors.grey,
-              foregroundColor: Colors.white,
-              child: const Icon(Icons.refresh),
-            ),
-            const SizedBox(height: 8),
-            // Zoom out button
-            FloatingActionButton.small(
-              onPressed: _zoomOut,
-              heroTag: 'zoom_out',
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              child: const Icon(Icons.zoom_out),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -543,10 +619,72 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
-  // Top Control Panel Method
-  Widget _buildTopControlPanel() {
+  // Layout Info Banner
+  Widget _buildLayoutInfoBanner(TerminalStationController controller, LayoutConfiguration layoutConfig) {
     return Container(
-      height: 120,
+      height: 32,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _getLayoutColor(layoutConfig.style).withOpacity(0.2),
+            _getLayoutColor(layoutConfig.style).withOpacity(0.1),
+          ],
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: _getLayoutColor(layoutConfig.style),
+            width: 2,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _getLayoutIcon(layoutConfig.style),
+            size: 18,
+            color: _getLayoutColor(layoutConfig.style),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Layout: ${controller.getLayoutStyleName()} - ${controller.getLayoutStyleDescription()}',
+            style: TextStyle(
+              fontSize: layoutConfig.controlFontSize - 1,
+              fontWeight: FontWeight.w600,
+              color: _getLayoutColor(layoutConfig.style),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getLayoutColor(LayoutStyle style) {
+    switch (style) {
+      case LayoutStyle.compact:
+        return Colors.purple;
+      case LayoutStyle.standard:
+        return Colors.blue;
+      case LayoutStyle.expanded:
+        return Colors.green;
+    }
+  }
+
+  IconData _getLayoutIcon(LayoutStyle style) {
+    switch (style) {
+      case LayoutStyle.compact:
+        return Icons.compress;
+      case LayoutStyle.standard:
+        return Icons.dashboard;
+      case LayoutStyle.expanded:
+        return Icons.expand;
+    }
+  }
+
+  // Top Control Panel Method
+  Widget _buildTopControlPanel(LayoutConfiguration layoutConfig) {
+    return Container(
+      height: layoutConfig.topPanelHeight,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -1390,9 +1528,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
-  Widget _buildControlPanel() {
+  Widget _buildControlPanel(LayoutConfiguration layoutConfig) {
     return Container(
-      width: 320,
+      width: layoutConfig.leftPanelWidth,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -2703,6 +2841,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 animationTick: _animationTick,
                 canvasWidth: _canvasWidth,
                 canvasHeight: _canvasHeight,
+                layoutConfig: controller.currentLayoutConfig,
               ),
             ),
           );
@@ -2711,9 +2850,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
-  Widget _buildStatusPanel() {
+  Widget _buildStatusPanel(LayoutConfiguration layoutConfig) {
     return Container(
-      width: 320,
+      width: layoutConfig.rightPanelWidth,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(

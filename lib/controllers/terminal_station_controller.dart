@@ -498,6 +498,55 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // Layout management
+  LayoutStyle _currentLayoutStyle = LayoutStyle.standard;
+  LayoutConfiguration _currentLayoutConfig = LayoutConfiguration.standard;
+
+  LayoutStyle get currentLayoutStyle => _currentLayoutStyle;
+  LayoutConfiguration get currentLayoutConfig => _currentLayoutConfig;
+
+  void setLayoutStyle(LayoutStyle style) {
+    _currentLayoutStyle = style;
+    _currentLayoutConfig = LayoutConfiguration.fromStyle(style);
+    notifyListeners();
+  }
+
+  void cycleLayoutStyle() {
+    switch (_currentLayoutStyle) {
+      case LayoutStyle.compact:
+        setLayoutStyle(LayoutStyle.standard);
+        break;
+      case LayoutStyle.standard:
+        setLayoutStyle(LayoutStyle.expanded);
+        break;
+      case LayoutStyle.expanded:
+        setLayoutStyle(LayoutStyle.compact);
+        break;
+    }
+  }
+
+  String getLayoutStyleName() {
+    switch (_currentLayoutStyle) {
+      case LayoutStyle.compact:
+        return 'Compact';
+      case LayoutStyle.standard:
+        return 'Standard';
+      case LayoutStyle.expanded:
+        return 'Expanded';
+    }
+  }
+
+  String getLayoutStyleDescription() {
+    switch (_currentLayoutStyle) {
+      case LayoutStyle.compact:
+        return 'Minimal UI, maximum canvas space';
+      case LayoutStyle.standard:
+        return 'Balanced layout with all features';
+      case LayoutStyle.expanded:
+        return 'Maximum information display';
+    }
+  }
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right

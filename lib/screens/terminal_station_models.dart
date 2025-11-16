@@ -31,6 +31,97 @@ enum CbtcMode {
   storage    // Storage mode - green
 }
 
+enum LayoutStyle {
+  compact,   // Minimal UI, maximum canvas - for focused simulation viewing
+  standard,  // Balanced layout - default professional view
+  expanded   // Maximum information - for power users and detailed analysis
+}
+
+// ============================================================================
+// LAYOUT CONFIGURATION
+// ============================================================================
+
+class LayoutConfiguration {
+  final LayoutStyle style;
+  final double leftPanelWidth;
+  final double rightPanelWidth;
+  final double topPanelHeight;
+  final double controlFontSize;
+  final double labelFontSize;
+  final bool showDetailedInfo;
+  final bool showAdvancedControls;
+  final bool compactControls;
+  final double zoomControlSize;
+  final double defaultZoom;
+
+  const LayoutConfiguration({
+    required this.style,
+    required this.leftPanelWidth,
+    required this.rightPanelWidth,
+    required this.topPanelHeight,
+    required this.controlFontSize,
+    required this.labelFontSize,
+    required this.showDetailedInfo,
+    required this.showAdvancedControls,
+    required this.compactControls,
+    required this.zoomControlSize,
+    required this.defaultZoom,
+  });
+
+  static const LayoutConfiguration compact = LayoutConfiguration(
+    style: LayoutStyle.compact,
+    leftPanelWidth: 240.0,
+    rightPanelWidth: 240.0,
+    topPanelHeight: 60.0,
+    controlFontSize: 11.0,
+    labelFontSize: 10.0,
+    showDetailedInfo: false,
+    showAdvancedControls: false,
+    compactControls: true,
+    zoomControlSize: 36.0,
+    defaultZoom: 0.7,
+  );
+
+  static const LayoutConfiguration standard = LayoutConfiguration(
+    style: LayoutStyle.standard,
+    leftPanelWidth: 320.0,
+    rightPanelWidth: 320.0,
+    topPanelHeight: 80.0,
+    controlFontSize: 13.0,
+    labelFontSize: 12.0,
+    showDetailedInfo: true,
+    showAdvancedControls: true,
+    compactControls: false,
+    zoomControlSize: 48.0,
+    defaultZoom: 0.8,
+  );
+
+  static const LayoutConfiguration expanded = LayoutConfiguration(
+    style: LayoutStyle.expanded,
+    leftPanelWidth: 380.0,
+    rightPanelWidth: 380.0,
+    topPanelHeight: 100.0,
+    controlFontSize: 14.0,
+    labelFontSize: 13.0,
+    showDetailedInfo: true,
+    showAdvancedControls: true,
+    compactControls: false,
+    zoomControlSize: 56.0,
+    defaultZoom: 0.9,
+  );
+
+  static LayoutConfiguration fromStyle(LayoutStyle style) {
+    switch (style) {
+      case LayoutStyle.compact:
+        return compact;
+      case LayoutStyle.standard:
+        return standard;
+      case LayoutStyle.expanded:
+        return expanded;
+    }
+  }
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================

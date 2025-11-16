@@ -230,6 +230,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   final int animationTick;
   final double canvasWidth;
   final double canvasHeight;
+  final LayoutConfiguration layoutConfig;
 
   TerminalStationPainter({
     required this.controller,
@@ -238,6 +239,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     required this.animationTick,
     required this.canvasWidth,
     required this.canvasHeight,
+    required this.layoutConfig,
   });
 
   @override
@@ -289,9 +291,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final textPainter = TextPainter(
         text: TextSpan(
           text: displayLabel,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.black,
-            fontSize: 8,
+            fontSize: layoutConfig.labelFontSize * 0.7,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -325,7 +327,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           text: abId,
           style: TextStyle(
             color: isOccupied ? Colors.purple : Colors.grey[600],
-            fontSize: 10,
+            fontSize: layoutConfig.labelFontSize * 0.85,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -1340,12 +1342,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawDirectionLabels(Canvas canvas) {
+    final labelSize = layoutConfig.labelFontSize + 3;
     final eastboundText = TextPainter(
-      text: const TextSpan(
+      text: TextSpan(
         text: 'EASTBOUND ROAD',
         style: TextStyle(
           color: Colors.green,
-          fontSize: 16,
+          fontSize: labelSize,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -1355,11 +1358,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     eastboundText.paint(canvas, const Offset(600, 50));
 
     final westboundText = TextPainter(
-      text: const TextSpan(
+      text: TextSpan(
         text: 'WESTBOUND ROAD',
         style: TextStyle(
           color: Colors.blue,
-          fontSize: 16,
+          fontSize: labelSize,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -1370,6 +1373,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawLabels(Canvas canvas) {
+    final blockLabelSize = layoutConfig.labelFontSize * 0.92;
+    final signalLabelSize = layoutConfig.labelFontSize * 0.92;
+    final platformLabelSize = layoutConfig.labelFontSize + 1;
+    final trainLabelSize = layoutConfig.labelFontSize * 0.92;
+
     for (var block in controller.blocks.values) {
       if (!block.id.startsWith('crossover')) {
         final textPainter = TextPainter(
@@ -1377,7 +1385,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             text: block.id,
             style: TextStyle(
               color: block.occupied ? Colors.purple[700] : Colors.grey[700],
-              fontSize: 11,
+              fontSize: blockLabelSize,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1400,7 +1408,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
               color: signal.aspect == SignalAspect.green
                   ? Colors.green[700]
                   : Colors.red[700],
-              fontSize: 11,
+              fontSize: signalLabelSize,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1417,8 +1425,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final textPainter = TextPainter(
         text: TextSpan(
           text: platform.name,
-          style: const TextStyle(
-              color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Colors.black87, fontSize: platformLabelSize, fontWeight: FontWeight.bold),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -1433,8 +1441,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final textPainter = TextPainter(
         text: TextSpan(
           text: train.name,
-          style: const TextStyle(
-              color: Colors.black87, fontSize: 11, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Colors.black87, fontSize: trainLabelSize, fontWeight: FontWeight.bold),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -1451,6 +1459,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         oldDelegate.zoom != zoom ||
         oldDelegate.animationTick != animationTick ||
         oldDelegate.canvasWidth != canvasWidth ||
-        oldDelegate.canvasHeight != canvasHeight;
+        oldDelegate.canvasHeight != canvasHeight ||
+        oldDelegate.layoutConfig.style != layoutConfig.style;
   }
 }

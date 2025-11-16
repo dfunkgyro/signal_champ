@@ -250,6 +250,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTracks(canvas);
     _drawRouteReservations(canvas);
     _drawPlatforms(canvas);
+    _drawStationMarkers(canvas); // NEW: Draw station markers (MA1, MA2, MA3)
     _drawBufferStop(canvas);
     _drawPoints(canvas);
     _drawSignals(canvas);
@@ -258,6 +259,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawABOccupations(canvas);
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
+    _drawGhostTrains(canvas); // NEW: Draw ghost train indicators
     _drawDirectionLabels(canvas);
     _drawLabels(canvas);
 
@@ -1335,6 +1337,158 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         textPainter.paint(canvas, Offset(train.x - 3, train.y - 38));
       }
 
+      // Draw CBTC mode indicator
+      if (train.cbtcMode != CBTCMode.disabled) {
+        final cbtcPaint = Paint()
+          ..color = train.cbtcMode == CBTCMode.fullSupervision
+              ? Colors.green
+              : train.cbtcMode == CBTCMode.limitedSupervision
+                  ? Colors.yellow[700]!
+                  : Colors.grey
+          ..style = PaintingStyle.fill;
+
+        // Draw CBTC badge on the left side of train
+        canvas.drawCircle(Offset(train.x - 40, train.y), 10, cbtcPaint);
+
+        // Draw border
+        final borderPaint = Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0;
+        canvas.drawCircle(Offset(train.x - 40, train.y), 10, borderPaint);
+
+        // Draw CBTC text
+        final cbtcTextPainter = TextPainter(
+          text: const TextSpan(
+            text: 'C',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        cbtcTextPainter.layout();
+        cbtcTextPainter.paint(
+          canvas,
+          Offset(train.x - 40 - cbtcTextPainter.width / 2, train.y - cbtcTextPainter.height / 2),
+        );
+
+        // Draw CBTC mode name below badge
+        String modeText = train.cbtcMode == CBTCMode.fullSupervision
+            ? 'FS'
+            : train.cbtcMode == CBTCMode.limitedSupervision
+                ? 'LS'
+                : 'OS';
+
+        final modeTextPainter = TextPainter(
+          text: TextSpan(
+            text: modeText,
+            style: TextStyle(
+              color: train.cbtcMode == CBTCMode.fullSupervision
+                  ? Colors.green[700]
+                  : train.cbtcMode == CBTCMode.limitedSupervision
+                      ? Colors.yellow[900]
+                      : Colors.grey[700],
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        modeTextPainter.layout();
+        modeTextPainter.paint(
+          canvas,
+          Offset(train.x - 40 - modeTextPainter.width / 2, train.y + 12),
+        );
+      }
+
+      // Draw timetable indicator (if train has timetable assigned)
+      final ghostTrain = controller.ghostTrains.where((g) => g.realTrainId == train.id && g.assignedToRealTrain).firstOrNull;
+      if (ghostTrain != null) {
+        final timetable = controller.timetables.where((t) => t.id == ghostTrain.timetableId).firstOrNull;
+        if (timetable != null) {
+          // Draw timetable badge on the right side of train
+          final ttPaint = Paint()
+            ..color = Colors.purple
+            ..style = PaintingStyle.fill;
+
+          canvas.drawCircle(Offset(train.x + 40, train.y), 10, ttPaint);
+
+          // Draw border
+          final borderPaint = Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0;
+          canvas.drawCircle(Offset(train.x + 40, train.y), 10, borderPaint);
+
+          // Draw 'T' for timetable
+          final ttTextPainter = TextPainter(
+            text: const TextSpan(
+              text: 'T',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          );
+          ttTextPainter.layout();
+          ttTextPainter.paint(
+            canvas,
+            Offset(train.x + 40 - ttTextPainter.width / 2, train.y - ttTextPainter.height / 2),
+          );
+
+          // Draw timetable service number below badge
+          final serviceTextPainter = TextPainter(
+            text: TextSpan(
+              text: ghostTrain.serviceNumber,
+              style: const TextStyle(
+                color: Colors.purple,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          );
+          serviceTextPainter.layout();
+          serviceTextPainter.paint(
+            canvas,
+            Offset(train.x + 40 - serviceTextPainter.width / 2, train.y + 12),
+          );
+
+          // Draw current station and next stop info above train
+          if (ghostTrain.currentStationId != null) {
+            final currentStation = controller.stations.where((s) => s.id == ghostTrain.currentStationId).firstOrNull;
+            final nextStop = timetable.getNextStop(ghostTrain.currentStationId!);
+
+            if (currentStation != null && nextStop != null) {
+              final nextStation = controller.stations.where((s) => s.id == nextStop.stationId).firstOrNull;
+              if (nextStation != null) {
+                final routeInfoPainter = TextPainter(
+                  text: TextSpan(
+                    text: '${currentStation.id} → ${nextStation.id}',
+                    style: const TextStyle(
+                      color: Colors.purple,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  textDirection: TextDirection.ltr,
+                );
+                routeInfoPainter.layout();
+                routeInfoPainter.paint(
+                  canvas,
+                  Offset(train.x - routeInfoPainter.width / 2, train.y - 50),
+                );
+              }
+            }
+          }
+        }
+      }
+
       canvas.restore();
     }
   }
@@ -1442,6 +1596,175 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       textPainter.paint(
           canvas, Offset(train.x - textPainter.width / 2, train.y - 30));
     }
+  }
+
+  /// Draw station markers for MA1, MA2, MA3
+  void _drawStationMarkers(Canvas canvas) {
+    for (var station in controller.stations) {
+      // Draw station marker circle
+      final markerPaint = Paint()
+        ..color = station.occupied ? Colors.red.withOpacity(0.3) : Colors.blue.withOpacity(0.2)
+        ..style = PaintingStyle.fill;
+
+      final borderPaint = Paint()
+        ..color = station.occupied ? Colors.red : Colors.blue
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+
+      // Draw marker circle
+      canvas.drawCircle(Offset(station.x, station.y), 15, markerPaint);
+      canvas.drawCircle(Offset(station.x, station.y), 15, borderPaint);
+
+      // Draw station ID text
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: station.id,
+          style: TextStyle(
+            color: station.occupied ? Colors.red[900] : Colors.blue[900],
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(station.x - textPainter.width / 2, station.y - textPainter.height / 2),
+      );
+
+      // Draw station name below marker
+      final namePainter = TextPainter(
+        text: TextSpan(
+          text: station.name,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      namePainter.layout();
+      namePainter.paint(
+        canvas,
+        Offset(station.x - namePainter.width / 2, station.y + 20),
+      );
+    }
+  }
+
+  /// Draw ghost train indicators for timetabled trains
+  void _drawGhostTrains(Canvas canvas) {
+    for (var ghostTrain in controller.ghostTrains) {
+      if (!ghostTrain.assignedToRealTrain) continue;
+
+      // Find the associated real train
+      final realTrain = controller.trains.where((t) => t.id == ghostTrain.realTrainId).firstOrNull;
+      if (realTrain == null) continue;
+
+      // Get timetable information
+      final timetable = controller.timetables.where((t) => t.id == ghostTrain.timetableId).firstOrNull;
+      if (timetable == null) continue;
+
+      // Draw ghost train indicator (a glowing aura around the train)
+      final glowPaint = Paint()
+        ..color = Colors.purple.withOpacity(0.3)
+        ..style = PaintingStyle.fill;
+
+      final pulseRadius = 30.0 + math.sin(animationTick * 0.1) * 5.0;
+      canvas.drawCircle(Offset(realTrain.x, realTrain.y), pulseRadius, glowPaint);
+
+      // Draw timetable ID badge
+      final badgePaint = Paint()
+        ..color = Colors.purple
+        ..style = PaintingStyle.fill;
+
+      final badgeX = realTrain.x + 20;
+      final badgeY = realTrain.y - 20;
+
+      canvas.drawCircle(Offset(badgeX, badgeY), 12, badgePaint);
+
+      // Draw timetable service number
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: ghostTrain.serviceNumber,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(badgeX - textPainter.width / 2, badgeY - textPainter.height / 2),
+      );
+
+      // Draw progress indicator (current station)
+      if (ghostTrain.currentStationId != null) {
+        final station = controller.stations.where((s) => s.id == ghostTrain.currentStationId).firstOrNull;
+        if (station != null) {
+          // Draw line connecting train to current station
+          final linePaint = Paint()
+            ..color = Colors.purple.withOpacity(0.5)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0
+            ..strokeCap = StrokeCap.round;
+
+          canvas.drawLine(
+            Offset(realTrain.x, realTrain.y),
+            Offset(station.x, station.y),
+            linePaint,
+          );
+        }
+      }
+
+      // Draw next stop indicator
+      if (ghostTrain.currentStationId != null) {
+        final nextStop = timetable.getNextStop(ghostTrain.currentStationId!);
+        if (nextStop != null) {
+          final nextStation = controller.stations.where((s) => s.id == nextStop.stationId).firstOrNull;
+          if (nextStation != null) {
+            // Draw dashed line to next station
+            final dashedPaint = Paint()
+              ..color = Colors.purple.withOpacity(0.3)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.5;
+
+            _drawDashedLine(
+              canvas,
+              Offset(realTrain.x, realTrain.y),
+              Offset(nextStation.x, nextStation.y),
+              dashedPaint,
+              dashWidth: 5.0,
+              dashSpace: 3.0,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  /// Helper method to draw dashed lines
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint, {double dashWidth = 5.0, double dashSpace = 3.0}) {
+    final path = Path();
+    final distance = (end - start).distance;
+    final dashCount = (distance / (dashWidth + dashSpace)).floor();
+
+    for (int i = 0; i < dashCount; i++) {
+      final t1 = (i * (dashWidth + dashSpace)) / distance;
+      final t2 = ((i * (dashWidth + dashSpace)) + dashWidth) / distance;
+
+      final p1 = Offset.lerp(start, end, t1)!;
+      final p2 = Offset.lerp(start, end, t2)!;
+
+      path.moveTo(p1.dx, p1.dy);
+      path.lineTo(p2.dx, p2.dy);
+    }
+
+    canvas.drawPath(path, paint);
   }
 
   @override

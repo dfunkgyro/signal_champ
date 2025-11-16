@@ -3340,6 +3340,427 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
 
               const SizedBox(height: 16),
+
+              // ================================================================
+              // TIMETABLE CONTROL PANEL
+              // ================================================================
+              Card(
+                color: Colors.purple[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.schedule, color: Colors.purple, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Timetable System',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Available Timetables
+                      const Text(
+                        'Available Timetables:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      ...controller.timetables.map((tt) {
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          color: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      tt.id,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.purple,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Service ${tt.trainServiceNumber}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${tt.originStation} → ${tt.terminusStation}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                Text(
+                                  '${tt.stops.length} stops',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+
+                      const SizedBox(height: 12),
+
+                      // Ghost Trains (Timetable Assignments)
+                      const Text(
+                        'Active Timetable Assignments:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      if (controller.ghostTrains.isEmpty)
+                        Text(
+                          'No timetables assigned to trains',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                        )
+                      else
+                        ...controller.ghostTrains.map((ghost) {
+                          if (!ghost.assignedToRealTrain) return const SizedBox.shrink();
+
+                          final train = controller.trains.where((t) => t.id == ghost.realTrainId).firstOrNull;
+                          final timetable = controller.timetables.where((tt) => tt.id == ghost.timetableId).firstOrNull;
+
+                          if (train == null || timetable == null) return const SizedBox.shrink();
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            color: Colors.purple[100],
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              train.name,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              'Service ${ghost.serviceNumber}',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[700],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.close, size: 16),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        onPressed: () {
+                                          controller.unassignTimetableFromTrain(train.id);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Unassigned timetable from ${train.name}'),
+                                              duration: const Duration(seconds: 2),
+                                            ),
+                                          );
+                                        },
+                                        tooltip: 'Unassign timetable',
+                                      ),
+                                    ],
+                                  ),
+                                  if (ghost.currentStationId != null) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.location_on, size: 12, color: Colors.purple[700]),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'At: ${ghost.currentStationId}',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.purple[900],
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Builder(
+                                      builder: (context) {
+                                        final nextStop = timetable.getNextStop(ghost.currentStationId!);
+                                        if (nextStop == null) {
+                                          return Row(
+                                            children: [
+                                              Icon(Icons.flag, size: 12, color: Colors.green[700]),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Terminus reached',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.green[700],
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }
+                                        return Row(
+                                          children: [
+                                            Icon(Icons.arrow_forward, size: 12, color: Colors.blue[700]),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Next: ${nextStop.stationId}',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.blue[700],
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+
+                      const SizedBox(height: 12),
+
+                      // Assign Timetable Section
+                      const Text(
+                        'Assign Timetable to Train:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      if (controller.trains.isEmpty)
+                        Text(
+                          'No trains available',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                        )
+                      else
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: controller.trains.map((train) {
+                            final hasAssignment = controller.ghostTrains.any(
+                              (g) => g.realTrainId == train.id && g.assignedToRealTrain,
+                            );
+
+                            return ElevatedButton(
+                              onPressed: hasAssignment ? null : () {
+                                if (controller.timetables.isNotEmpty) {
+                                  controller.assignTimetableToTrain(train.id, 'TT001');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Assigned TT001 to ${train.name}'),
+                                      backgroundColor: Colors.purple,
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: hasAssignment ? Colors.grey : Colors.purple,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: const Size(0, 28),
+                              ),
+                              child: Text(
+                                hasAssignment ? '${train.name} ✓' : train.name,
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // ================================================================
+              // STATION INFO PANEL
+              // ================================================================
+              Card(
+                color: Colors.blue[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.train, color: Colors.blue, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Station Information',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // List all stations
+                      ...controller.stations.map((station) {
+                        // Check if station is occupied
+                        final occupyingTrain = controller.trains.where((train) {
+                          final stationBlocks = {
+                            'MA1': ['110'],
+                            'MA2': ['111'],
+                            'MA3': ['108'],
+                          };
+                          final blocks = stationBlocks[station.id] ?? [];
+                          return blocks.any((blockId) => train.currentBlockId == blockId);
+                        }).firstOrNull;
+
+                        final isOccupied = occupyingTrain != null;
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          color: isOccupied ? Colors.blue[100] : Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: isOccupied ? Colors.red : Colors.green,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            station.id,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                          Text(
+                                            station.name,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Platform: ',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    Text(
+                                      station.platformId,
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Text(
+                                      'Status: ',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    Text(
+                                      isOccupied ? 'OCCUPIED' : 'CLEAR',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: isOccupied ? Colors.red : Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (isOccupied && occupyingTrain != null) ...[
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue[200],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.directions_railway, size: 12, color: Colors.blue),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Train: ${occupyingTrain.name}',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
             ],
           );
         },

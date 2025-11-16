@@ -31,9 +31,207 @@ enum CbtcMode {
   storage    // Storage mode - green
 }
 
+enum RailwayTheme {
+  legacy,        // Legacy Sim - original styling
+  futuristic,    // Futuristic Blue Sim - blue/neon theme
+  glassMorph     // Glass Morph Sim - glass morphism theme
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
+
+// AI Agent helper model
+class AIAgentMessage {
+  final String message;
+  final String category; // 'tip', 'suggestion', 'warning', 'info'
+  final DateTime timestamp;
+
+  AIAgentMessage({
+    required this.message,
+    required this.category,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+}
+
+class AIAgent {
+  String currentMessage;
+  String category;
+  bool isVisible;
+  double x;
+  double y;
+
+  AIAgent({
+    this.currentMessage = 'Welcome to Anthill Station! Click me for tips.',
+    this.category = 'info',
+    this.isVisible = true,
+    this.x = 100,
+    this.y = 50,
+  });
+
+  static final List<AIAgentMessage> messages = [
+    AIAgentMessage(
+      message: 'Try adding a train and setting it to automatic mode!',
+      category: 'suggestion',
+    ),
+    AIAgentMessage(
+      message: 'Enable CBTC devices for advanced train control features.',
+      category: 'tip',
+    ),
+    AIAgentMessage(
+      message: 'Set train destinations to Platform 1 or Platform 2 in AUTO/PM mode.',
+      category: 'tip',
+    ),
+    AIAgentMessage(
+      message: 'Toggle signals to see how CBTC trains bypass them!',
+      category: 'suggestion',
+    ),
+    AIAgentMessage(
+      message: 'Switch between different themes from the dropdown menu.',
+      category: 'info',
+    ),
+    AIAgentMessage(
+      message: 'Use Force Recovery if a collision occurs to move trains back safely.',
+      category: 'tip',
+    ),
+    AIAgentMessage(
+      message: 'Watch out for signal SPADs when operating trains manually!',
+      category: 'warning',
+    ),
+    AIAgentMessage(
+      message: 'Explore the Glass Morph theme for a modern visual experience.',
+      category: 'suggestion',
+    ),
+    AIAgentMessage(
+      message: 'Try the Futuristic Blue Sim theme for a cyber aesthetic.',
+      category: 'suggestion',
+    ),
+    AIAgentMessage(
+      message: 'Monitor block occupancy to prevent train collisions.',
+      category: 'warning',
+    ),
+  ];
+
+  void cycleMessage() {
+    final randomMsg = (messages..shuffle()).first;
+    currentMessage = randomMsg.message;
+    category = randomMsg.category;
+  }
+}
+
+// Theme data class to hold styling information
+class RailwayThemeData {
+  final Color trackColor;
+  final Color platformColor;
+  final Color platformEdgeColor;
+  final Color signalRedColor;
+  final Color signalGreenColor;
+  final Color trainColor;
+  final Color blockOccupiedColor;
+  final Color blockClearColor;
+  final Color backgroundColor;
+  final Color textColor;
+  final Color pointNormalColor;
+  final Color pointReverseColor;
+  final Color bufferStopColor;
+  final Color movementAuthorityColor;
+  final double glowIntensity;
+  final bool hasGlow;
+  final bool hasGlassMorphism;
+
+  const RailwayThemeData({
+    required this.trackColor,
+    required this.platformColor,
+    required this.platformEdgeColor,
+    required this.signalRedColor,
+    required this.signalGreenColor,
+    required this.trainColor,
+    required this.blockOccupiedColor,
+    required this.blockClearColor,
+    required this.backgroundColor,
+    required this.textColor,
+    required this.pointNormalColor,
+    required this.pointReverseColor,
+    required this.bufferStopColor,
+    required this.movementAuthorityColor,
+    this.glowIntensity = 0.0,
+    this.hasGlow = false,
+    this.hasGlassMorphism = false,
+  });
+
+  // Legacy theme (original)
+  static const legacy = RailwayThemeData(
+    trackColor: Colors.black,
+    platformColor: Color(0xFFFBC02D), // yellow[700]
+    platformEdgeColor: Color(0xFFFF6F00), // amber[900]
+    signalRedColor: Colors.red,
+    signalGreenColor: Colors.green,
+    trainColor: Colors.blue,
+    blockOccupiedColor: Colors.red,
+    blockClearColor: Colors.green,
+    backgroundColor: Colors.white,
+    textColor: Colors.black87,
+    pointNormalColor: Colors.teal,
+    pointReverseColor: Colors.green,
+    bufferStopColor: Colors.red,
+    movementAuthorityColor: Color(0xFF00E676), // green accent
+    hasGlow: false,
+    hasGlassMorphism: false,
+  );
+
+  // Futuristic Blue theme
+  static const futuristic = RailwayThemeData(
+    trackColor: Color(0xFF0D47A1), // dark blue
+    platformColor: Color(0xFF1976D2), // blue[700]
+    platformEdgeColor: Color(0xFF00B0FF), // light blue accent
+    signalRedColor: Color(0xFFFF1744), // red accent
+    signalGreenColor: Color(0xFF00E676), // green accent
+    trainColor: Color(0xFF00B8D4), // cyan accent
+    blockOccupiedColor: Color(0xFFFF1744),
+    blockClearColor: Color(0xFF00E676),
+    backgroundColor: Color(0xFF000A1F), // very dark blue
+    textColor: Color(0xFF64B5F6), // light blue
+    pointNormalColor: Color(0xFF1DE9B6), // teal accent
+    pointReverseColor: Color(0xFF00E676), // green accent
+    bufferStopColor: Color(0xFFFF1744),
+    movementAuthorityColor: Color(0xFF00E676),
+    glowIntensity: 8.0,
+    hasGlow: true,
+    hasGlassMorphism: false,
+  );
+
+  // Glass Morph theme
+  static const glassMorph = RailwayThemeData(
+    trackColor: Color(0x88FFFFFF), // semi-transparent white
+    platformColor: Color(0x66E1BEE7), // semi-transparent purple
+    platformEdgeColor: Color(0xFFBA68C8), // purple accent
+    signalRedColor: Color(0xFFEF5350), // softer red
+    signalGreenColor: Color(0xFF66BB6A), // softer green
+    trainColor: Color(0x99BBDEFB), // semi-transparent blue
+    blockOccupiedColor: Color(0xFFEF5350),
+    blockClearColor: Color(0xFF66BB6A),
+    backgroundColor: Color(0xFF1A1A2E), // dark purple-ish background
+    textColor: Color(0xFFEEEEEE), // light gray
+    pointNormalColor: Color(0xFF80CBC4), // teal
+    pointReverseColor: Color(0xFF81C784), // light green
+    bufferStopColor: Color(0xFFEF5350),
+    movementAuthorityColor: Color(0x8866BB6A), // semi-transparent green
+    glowIntensity: 4.0,
+    hasGlow: true,
+    hasGlassMorphism: true,
+  );
+
+  static RailwayThemeData getTheme(RailwayTheme theme) {
+    switch (theme) {
+      case RailwayTheme.legacy:
+        return legacy;
+      case RailwayTheme.futuristic:
+        return futuristic;
+      case RailwayTheme.glassMorph:
+        return glassMorph;
+    }
+  }
+}
 
 class MovementAuthority {
   final double maxDistance; // Maximum distance the green arrow extends

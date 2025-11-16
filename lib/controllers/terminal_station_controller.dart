@@ -471,6 +471,8 @@ class TerminalStationController extends ChangeNotifier {
   bool axleCountersVisible = true;
   bool signalsVisible = true;
   bool cbtcDevicesEnabled = false; // CBTC devices OFF by default
+  RailwayTheme currentTheme = RailwayTheme.legacy; // Default to Legacy Sim theme
+  late AIAgent aiAgent; // AI helper agent
 
   Duration _simulationRunningTime = Duration.zero;
   Timer? _simulationTimer;
@@ -607,6 +609,37 @@ class TerminalStationController extends ChangeNotifier {
     } catch (e) {
       _logEvent('❌ Could not set destination for VIN $vin');
     }
+  }
+
+  // Method to change railway layout theme
+  void setTheme(RailwayTheme theme) {
+    currentTheme = theme;
+    String themeName = '';
+    switch (theme) {
+      case RailwayTheme.legacy:
+        themeName = 'Legacy Sim';
+        break;
+      case RailwayTheme.futuristic:
+        themeName = 'Futuristic Blue Sim';
+        break;
+      case RailwayTheme.glassMorph:
+        themeName = 'Glass Morph Sim';
+        break;
+    }
+    _logEvent('🎨 Theme changed to: $themeName');
+    notifyListeners();
+  }
+
+  // Method to cycle AI agent message
+  void cycleAIAgentMessage() {
+    aiAgent.cycleMessage();
+    _logEvent('💡 AI Agent: ${aiAgent.currentMessage}');
+    notifyListeners();
+  }
+
+  void toggleAIAgentVisibility() {
+    aiAgent.isVisible = !aiAgent.isVisible;
+    notifyListeners();
   }
 
   // ============================================================================
@@ -763,6 +796,43 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     _logEvent('🔄 All collisions force-resolved by user');
+    notifyListeners();
+  }
+
+  void forceRecoveryFromCollision() {
+    if (!collisionAlarmActive || currentCollisionIncident == null) return;
+
+    // Move all involved trains 20 units back from crash location
+    for (var trainId in currentCollisionIncident!.trainsInvolved) {
+      try {
+        final train = trains.firstWhere((t) => t.id == trainId);
+
+        // Move train 20 units back in the opposite direction of travel
+        if (train.direction > 0) {
+          // Train was moving right (eastbound), move it left
+          train.x -= 20;
+        } else {
+          // Train was moving left (westbound), move it right
+          train.x += 20;
+        }
+
+        // Release emergency brake and reset to stopped state
+        train.emergencyBrake = false;
+        train.speed = 0;
+        train.targetSpeed = 0;
+
+        _logEvent('🔧 Force recovery: ${train.name} moved 20 units back');
+      } catch (e) {
+        _logEvent('❌ Could not force recover train $trainId');
+      }
+    }
+
+    // Clear collision state and dismiss alarm automatically
+    _activeCollisionRecoveries.clear();
+    collisionAlarmActive = false;
+    currentCollisionIncident = null;
+
+    _logEvent('✅ Force recovery completed - trains moved back 20 units');
     notifyListeners();
   }
 
@@ -1081,24 +1151,28 @@ class TerminalStationController extends ChangeNotifier {
     // Check for platform destinations
     if (train.smcDestination != null) {
       // Check if destination is a platform name
-      if (train.smcDestination == 'Platform 1' || train.smcDestination == 'Platform1') {
+      if (train.smcDestination == 'Anthill Station Platform 1' ||
+          train.smcDestination == 'Platform 1' ||
+          train.smcDestination == 'Platform1') {
         // Platform 1 is on the upper track (around blocks 110-112)
         final platform1X = 1000.0; // Approximate X position of Platform 1
         if ((direction > 0 && platform1X > trainPos) || (direction < 0 && platform1X < trainPos)) {
           final distance = (platform1X - trainPos).abs();
           if (distance < maxDistance) {
             maxDistance = distance;
-            limitReason = 'Destination: Platform 1';
+            limitReason = 'Destination: Anthill Station Platform 1';
           }
         }
-      } else if (train.smcDestination == 'Platform 2' || train.smcDestination == 'Platform2') {
+      } else if (train.smcDestination == 'Anthill Station Platform 2' ||
+                 train.smcDestination == 'Platform 2' ||
+                 train.smcDestination == 'Platform2') {
         // Platform 2 is on the lower track (around blocks 109-111)
         final platform2X = 1000.0; // Approximate X position of Platform 2
         if ((direction > 0 && platform2X > trainPos) || (direction < 0 && platform2X < trainPos)) {
           final distance = (platform2X - trainPos).abs();
           if (distance < maxDistance) {
             maxDistance = distance;
-            limitReason = 'Destination: Platform 2';
+            limitReason = 'Destination: Anthill Station Platform 2';
           }
         }
       }
@@ -1207,6 +1281,7 @@ class TerminalStationController extends ChangeNotifier {
     _initializeLayout();
     _initializeClock();
     ace = AxleCounterEvaluator(axleCounters);
+    aiAgent = AIAgent(x: -400, y: -50); // Position in top-left of railway layout
   }
 
   void _initializeAxleCounters() {
@@ -1286,9 +1361,9 @@ class TerminalStationController extends ChangeNotifier {
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
     platforms.add(Platform(
-        id: 'P1', name: 'Platform 1', startX: 980, endX: 1240, y: 100));
+        id: 'P1', name: 'Anthill Station Platform 1', startX: 980, endX: 1240, y: 100));
     platforms.add(Platform(
-        id: 'P2', name: 'Platform 2 (Bay)', startX: 980, endX: 1240, y: 300));
+        id: 'P2', name: 'Anthill Station Platform 2', startX: 980, endX: 1240, y: 300));
 
     signals['C31'] = Signal(
       id: 'C31',
@@ -1297,7 +1372,7 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'C31_R1',
-          name: 'Route 1 (Main → Platform 1)',
+          name: 'Route 1 (Main → Anthill Station Platform 1)',
           requiredBlocksClear: ['106', '108', '110'],
           requiredPointPositions: {
             '78A': PointPosition.normal,
@@ -1308,7 +1383,7 @@ class TerminalStationController extends ChangeNotifier {
         ),
         SignalRoute(
           id: 'C31_R2',
-          name: 'Route 2 (Main → Bay Platform 2)',
+          name: 'Route 2 (Main → Anthill Station Platform 2)',
           requiredBlocksClear: [
             '106',
             'crossover106',
@@ -1348,7 +1423,7 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'C33_R1',
-          name: 'Platform 1 Departure',
+          name: 'Anthill Station Platform 1 Departure',
           requiredBlocksClear: ['112', '114'],
           requiredPointPositions: {},
           pathBlocks: ['112', '114'],

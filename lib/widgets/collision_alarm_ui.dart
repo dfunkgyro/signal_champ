@@ -14,6 +14,7 @@ class CollisionAlarmWidget extends StatefulWidget {
   final VoidCallback? onAutoRecover; // New: Auto recovery callback
   final VoidCallback? onManualRecover; // New: Manual recovery callback
   final VoidCallback? onForceResolve; // New: Force resolve callback
+  final VoidCallback? onForceRecovery; // New: Force recovery callback (moves train 20 units back)
 
   const CollisionAlarmWidget({
     Key? key,
@@ -25,6 +26,7 @@ class CollisionAlarmWidget extends StatefulWidget {
     this.onAutoRecover,
     this.onManualRecover,
     this.onForceResolve,
+    this.onForceRecovery,
   }) : super(key: key);
 
   @override
@@ -182,6 +184,19 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
                 ),
               ),
               const SizedBox(width: 8),
+              // Force Recovery button - moves train back and auto-dismisses
+              if (!widget.isSPAD && widget.onForceRecovery != null) ...[
+                ElevatedButton.icon(
+                  onPressed: widget.onForceRecovery,
+                  icon: const Icon(Icons.undo),
+                  label: const Text('Force Recovery'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple.shade700,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               if (widget.onForceResolve != null) ...[
                 ElevatedButton.icon(
                   onPressed: () {

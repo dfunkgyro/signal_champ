@@ -115,22 +115,82 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Anthill Park Station'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: 30,
-            ),
-            onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
-            tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showInfo(context),
-          ),
-        ],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(20),
+        child: Consumer<TerminalStationController>(
+          builder: (context, controller, _) {
+            String themeTitle = 'Legacy Sim';
+            switch (controller.currentTheme) {
+              case RailwayTheme.legacy:
+                themeTitle = 'Legacy Sim';
+                break;
+              case RailwayTheme.futuristic:
+                themeTitle = 'Futuristic Blue Sim';
+                break;
+              case RailwayTheme.glassMorph:
+                themeTitle = 'Glass Morph Sim';
+                break;
+            }
+
+            return AppBar(
+              toolbarHeight: 20,
+              title: Text(themeTitle, style: const TextStyle(fontSize: 12)),
+              actions: [
+                PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  iconSize: 16,
+                  onSelected: (value) {
+                    RailwayTheme theme = RailwayTheme.legacy;
+                    switch (value) {
+                      case 'legacy':
+                        theme = RailwayTheme.legacy;
+                        break;
+                      case 'futuristic':
+                        theme = RailwayTheme.futuristic;
+                        break;
+                      case 'glass':
+                        theme = RailwayTheme.glassMorph;
+                        break;
+                    }
+                    controller.setTheme(theme);
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return [
+                      const PopupMenuItem(
+                        value: 'legacy',
+                        child: Text('Legacy Sim', style: TextStyle(fontSize: 11)),
+                      ),
+                      const PopupMenuItem(
+                        value: 'futuristic',
+                        child: Text('Futuristic Blue Sim', style: TextStyle(fontSize: 11)),
+                      ),
+                      const PopupMenuItem(
+                        value: 'glass',
+                        child: Text('Glass Morph Sim', style: TextStyle(fontSize: 11)),
+                      ),
+                    ];
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    size: 16,
+                  ),
+                  onPressed: () => setState(() => _showTopPanel = !_showTopPanel),
+                  tooltip: _showTopPanel ? 'Hide Top Panel' : 'Show Top Panel',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.info_outline, size: 16),
+                  onPressed: () => _showInfo(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            );
+          },
+        ),
       ),
       body: Column(
         children: [
@@ -178,6 +238,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                       ),
                     );
                   },
+                  onForceRecovery: () => controller.forceRecoveryFromCollision(), // Moves trains 20 units back and auto-dismisses
                   onForceResolve: () => controller.forceCollisionResolution(),
                 );
               },
@@ -2120,12 +2181,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                       children: [
                                         Expanded(
                                           child: ElevatedButton(
-                                            onPressed: () => controller.setTrainDestination(train.vin, 'Platform 1'),
+                                            onPressed: () => controller.setTrainDestination(train.vin, 'Anthill Station Platform 1'),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: train.smcDestination == 'Platform 1' || train.smcDestination == 'Platform1'
+                                              backgroundColor: (train.smcDestination == 'Anthill Station Platform 1' ||
+                                                               train.smcDestination == 'Platform 1' ||
+                                                               train.smcDestination == 'Platform1')
                                                 ? Colors.blue
                                                 : Colors.grey[300],
-                                              foregroundColor: train.smcDestination == 'Platform 1' || train.smcDestination == 'Platform1'
+                                              foregroundColor: (train.smcDestination == 'Anthill Station Platform 1' ||
+                                                               train.smcDestination == 'Platform 1' ||
+                                                               train.smcDestination == 'Platform1')
                                                 ? Colors.white
                                                 : Colors.black,
                                               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -2136,12 +2201,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: ElevatedButton(
-                                            onPressed: () => controller.setTrainDestination(train.vin, 'Platform 2'),
+                                            onPressed: () => controller.setTrainDestination(train.vin, 'Anthill Station Platform 2'),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: train.smcDestination == 'Platform 2' || train.smcDestination == 'Platform2'
+                                              backgroundColor: (train.smcDestination == 'Anthill Station Platform 2' ||
+                                                               train.smcDestination == 'Platform 2' ||
+                                                               train.smcDestination == 'Platform2')
                                                 ? Colors.green
                                                 : Colors.grey[300],
-                                              foregroundColor: train.smcDestination == 'Platform 2' || train.smcDestination == 'Platform2'
+                                              foregroundColor: (train.smcDestination == 'Anthill Station Platform 2' ||
+                                                               train.smcDestination == 'Platform 2' ||
+                                                               train.smcDestination == 'Platform2')
                                                 ? Colors.white
                                                 : Colors.black,
                                               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -2865,6 +2934,26 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           return GestureDetector(
             onPanUpdate: (details) {
               setState(() => _cameraOffsetX += details.delta.dx / _zoom);
+            },
+            onTapDown: (details) {
+              // Convert screen coordinates to canvas coordinates
+              final screenX = details.localPosition.dx;
+              final screenY = details.localPosition.dy;
+
+              // Account for canvas transformations
+              final canvasX = (screenX - _canvasWidth / 2) / _zoom - _cameraOffsetX;
+              final canvasY = (screenY - _canvasHeight / 2) / _zoom + 100;
+
+              // Check if tap is on AI agent (within 25 pixel radius)
+              final agentX = controller.aiAgent.x;
+              final agentY = controller.aiAgent.y;
+              final distance = ((canvasX - agentX) * (canvasX - agentX) +
+                               (canvasY - agentY) * (canvasY - agentY)).abs();
+
+              if (distance < (25 * 25)) {
+                // User clicked on AI agent - cycle message
+                controller.cycleAIAgentMessage();
+              }
             },
             child: CustomPaint(
               size: Size(_canvasWidth, _canvasHeight),

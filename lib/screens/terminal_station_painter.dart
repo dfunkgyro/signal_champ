@@ -240,8 +240,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     required this.canvasHeight,
   });
 
+  RailwayThemeData get themeData => RailwayThemeData.getTheme(controller.currentTheme);
+
   @override
   void paint(Canvas canvas, Size size) {
+    // Draw background with theme color
+    final bgPaint = Paint()..color = themeData.backgroundColor;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
+
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
     canvas.scale(zoom);
@@ -260,10 +266,154 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
     _drawLabels(canvas);
+    _drawAIAgent(canvas); // Draw AI helper agent
 
     drawCollisionEffects(canvas, controller, animationTick);
 
     canvas.restore();
+  }
+
+  void _drawAIAgent(Canvas canvas) {
+    if (!controller.aiAgent.isVisible) return;
+
+    final agent = controller.aiAgent;
+    final agentX = agent.x;
+    final agentY = agent.y;
+
+    // Determine color based on category
+    Color categoryColor;
+    IconData categoryIcon;
+    switch (agent.category) {
+      case 'tip':
+        categoryColor = Colors.blue;
+        categoryIcon = Icons.lightbulb;
+        break;
+      case 'suggestion':
+        categoryColor = Colors.purple;
+        categoryIcon = Icons.auto_awesome;
+        break;
+      case 'warning':
+        categoryColor = Colors.orange;
+        categoryIcon = Icons.warning_amber;
+        break;
+      case 'info':
+      default:
+        categoryColor = Colors.green;
+        categoryIcon = Icons.info;
+        break;
+    }
+
+    // Draw agent avatar/icon
+    final avatarPaint = Paint()
+      ..color = categoryColor.withOpacity(0.9)
+      ..style = PaintingStyle.fill;
+
+    // Add glow effect if theme supports it
+    if (themeData.hasGlow) {
+      final glowPaint = Paint()
+        ..color = categoryColor.withOpacity(0.3)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, themeData.glowIntensity);
+      canvas.drawCircle(Offset(agentX, agentY), 30, glowPaint);
+    }
+
+    canvas.drawCircle(Offset(agentX, agentY), 25, avatarPaint);
+
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawCircle(Offset(agentX, agentY), 25, borderPaint);
+
+    // Draw icon using TextPainter (since we can't directly draw Icons in CustomPainter)
+    final iconPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(categoryIcon.codePoint),
+        style: TextStyle(
+          fontFamily: categoryIcon.fontFamily,
+          fontSize: 24,
+          color: Colors.white,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    iconPainter.layout();
+    iconPainter.paint(
+      canvas,
+      Offset(agentX - iconPainter.width / 2, agentY - iconPainter.height / 2),
+    );
+
+    // Draw message bubble
+    final bubbleWidth = 280.0;
+    final bubbleHeight = 60.0;
+    final bubbleX = agentX + 40;
+    final bubbleY = agentY - bubbleHeight / 2;
+
+    // Bubble background
+    final bubblePaint = Paint()
+      ..color = themeData.hasGlassMorphism
+          ? categoryColor.withOpacity(0.15)
+          : Colors.white.withOpacity(0.95)
+      ..style = PaintingStyle.fill;
+
+    final bubbleRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight),
+      const Radius.circular(12),
+    );
+    canvas.drawRRect(bubbleRect, bubblePaint);
+
+    // Bubble border
+    final bubbleBorderPaint = Paint()
+      ..color = categoryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawRRect(bubbleRect, bubbleBorderPaint);
+
+    // Draw connector triangle from bubble to agent
+    final trianglePath = Path()
+      ..moveTo(bubbleX, agentY - 5)
+      ..lineTo(agentX + 25, agentY)
+      ..lineTo(bubbleX, agentY + 5)
+      ..close();
+    canvas.drawPath(trianglePath, bubblePaint);
+    canvas.drawPath(trianglePath, bubbleBorderPaint);
+
+    // Draw message text
+    final messagePainter = TextPainter(
+      text: TextSpan(
+        text: agent.currentMessage,
+        style: TextStyle(
+          color: themeData.hasGlassMorphism ? themeData.textColor : Colors.black87,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 3,
+      textAlign: TextAlign.left,
+    );
+    messagePainter.layout(maxWidth: bubbleWidth - 20);
+    messagePainter.paint(
+      canvas,
+      Offset(bubbleX + 10, bubbleY + (bubbleHeight - messagePainter.height) / 2),
+    );
+
+    // Draw "Click me" hint
+    final hintPainter = TextPainter(
+      text: TextSpan(
+        text: '👆 Click',
+        style: TextStyle(
+          color: categoryColor,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    hintPainter.layout();
+    hintPainter.paint(
+      canvas,
+      Offset(agentX - hintPainter.width / 2, agentY + 30),
+    );
   }
 
   void _drawAxleCounters(Canvas canvas) {
@@ -271,11 +421,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     for (var counter in controller.axleCounters.values) {
       final d1Paint = Paint()
-        ..color = counter.d1Active ? Colors.purple : Colors.grey[700]!
+        ..color = counter.d1Active ? Colors.purple : themeData.textColor.withOpacity(0.5)
         ..style = PaintingStyle.fill;
 
       final d2Paint = Paint()
-        ..color = counter.d2Active ? Colors.purple : Colors.grey[700]!
+        ..color = counter.d2Active ? Colors.purple : themeData.textColor.withOpacity(0.5)
         ..style = PaintingStyle.fill;
 
       final d1X = counter.x - 5;
@@ -289,8 +439,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final textPainter = TextPainter(
         text: TextSpan(
           text: displayLabel,
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: themeData.textColor,
             fontSize: 8,
             fontWeight: FontWeight.bold,
           ),
@@ -324,7 +474,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         text: TextSpan(
           text: abId,
           style: TextStyle(
-            color: isOccupied ? Colors.purple : Colors.grey[600],
+            color: isOccupied ? Colors.purple : themeData.textColor.withOpacity(0.6),
             fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
@@ -591,8 +741,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawBlock(Canvas canvas, BlockSection block) {
     final blockPaint = Paint()
-      ..color =
-          block.occupied ? Colors.purple.withOpacity(0.3) : Colors.grey[300]!
+      ..color = block.occupied
+          ? themeData.blockOccupiedColor.withOpacity(themeData.hasGlassMorphism ? 0.3 : 0.3)
+          : themeData.blockClearColor.withOpacity(themeData.hasGlassMorphism ? 0.2 : 0.3)
       ..style = PaintingStyle.fill;
 
     canvas.drawRRect(
@@ -606,12 +757,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     // Draw two running rails for each block
     final outerRailPaint = Paint()
-      ..color = Colors.grey[700]!
+      ..color = themeData.trackColor
       ..strokeWidth = 3;
 
     final innerRailPaint = Paint()
-      ..color = Colors.grey[700]!
+      ..color = themeData.trackColor
       ..strokeWidth = 2;
+
+    // Add glow effect if theme supports it
+    if (themeData.hasGlow) {
+      outerRailPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, themeData.glowIntensity / 4);
+    }
 
     const railSpacing = 12.0;
 
@@ -632,7 +788,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         Offset(block.endX, block.y + 8 + railSpacing / 2), innerRailPaint);
 
     final sleeperPaint = Paint()
-      ..color = Colors.brown[700]!
+      ..color = themeData.trackColor.withOpacity(0.6)
       ..strokeWidth = 6;
 
     for (double x = block.startX; x < block.endX; x += 15) {
@@ -644,12 +800,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   void _drawCrossoverTrack(Canvas canvas) {
     // Draw two separate rails for the crossover with proper spacing
     final outerRailPaint = Paint()
-      ..color = Colors.grey[700]!
+      ..color = themeData.trackColor
       ..strokeWidth = 3; // Thicker rails for main tracks
 
     final innerRailPaint = Paint()
-      ..color = Colors.grey[700]!
+      ..color = themeData.trackColor
       ..strokeWidth = 2; // Slightly thinner for inner rails
+
+    // Add glow effect if theme supports it
+    if (themeData.hasGlow) {
+      outerRailPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, themeData.glowIntensity / 4);
+    }
 
     const railSpacing = 12.0; // Space between rails
 
@@ -681,7 +842,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     // Draw sleepers for both crossovers
     final sleeperPaint = Paint()
-      ..color = Colors.brown[700]!
+      ..color = themeData.trackColor.withOpacity(0.6)
       ..strokeWidth = 4;
 
     for (double t = 0; t <= 1.0; t += 0.1) {
@@ -704,13 +865,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     if (block106 != null && block106.occupied) {
       final highlightPaint = Paint()
-        ..color = Colors.purple.withOpacity(0.4)
+        ..color = themeData.blockOccupiedColor.withOpacity(0.4)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(650, 150), 40, highlightPaint);
     }
     if (block109 != null && block109.occupied) {
       final highlightPaint = Paint()
-        ..color = Colors.purple.withOpacity(0.4)
+        ..color = themeData.blockOccupiedColor.withOpacity(0.4)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(750, 250), 40, highlightPaint);
     }
@@ -719,7 +880,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   void _drawPlatforms(Canvas canvas) {
     for (var platform in controller.platforms) {
       final platformPaint = Paint()
-        ..color = Colors.yellow[700]!
+        ..color = themeData.hasGlassMorphism
+            ? themeData.platformColor
+            : themeData.platformColor
         ..style = PaintingStyle.fill;
 
       final yOffset = platform.y == 100 ? 40 : -40;
@@ -734,9 +897,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       );
 
       final edgePaint = Paint()
-        ..color = Colors.amber[900]!
+        ..color = themeData.platformEdgeColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3;
+
+      // Add glow effect if theme supports it
+      if (themeData.hasGlow) {
+        edgePaint.maskFilter = MaskFilter.blur(BlurStyle.normal, themeData.glowIntensity / 2);
+      }
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -751,14 +919,19 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawBufferStop(Canvas canvas) {
     final bufferPaint = Paint()
-      ..color = Colors.red
+      ..color = themeData.bufferStopColor
       ..style = PaintingStyle.fill;
 
     canvas.drawRect(const Rect.fromLTWH(1190, 285, 20, 30), bufferPaint);
 
     final stripePaint = Paint()
-      ..color = Colors.yellow
+      ..color = themeData.platformEdgeColor
       ..strokeWidth = 2;
+
+    // Add glow effect if theme supports it
+    if (themeData.hasGlow) {
+      stripePaint.maskFilter = MaskFilter.blur(BlurStyle.normal, themeData.glowIntensity / 2);
+    }
 
     for (int i = 0; i < 5; i++) {
       canvas.drawLine(
@@ -786,21 +959,26 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       } else if (point.locked) {
         pointColor = Colors.blue; // Blue for manual lock
       } else if (point.position == PointPosition.normal) {
-        pointColor = Colors.teal; // Teal for normal position
+        pointColor = themeData.pointNormalColor; // Theme color for normal position
       } else {
-        pointColor = Colors.green; // Green for reverse position
+        pointColor = themeData.pointReverseColor; // Theme color for reverse position
       }
 
       final pointPaint = Paint()
         ..color = pointColor
         ..style = PaintingStyle.stroke;
 
+      // Add glow effect if theme supports it and point is not locked
+      if (themeData.hasGlow && !point.locked && !point.lockedByAB && !isABDeadlocked) {
+        pointPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, themeData.glowIntensity);
+      }
+
       canvas.drawCircle(Offset(point.x, point.y), 12, pointPaint);
 
       final outlinePaint = Paint()
         ..color = point.locked || point.lockedByAB || isABDeadlocked
             ? (isABDeadlocked ? Colors.deepOrange : Colors.red)
-            : Colors.teal
+            : themeData.pointNormalColor
         ..style = PaintingStyle.stroke
         ..strokeWidth =
             point.locked || point.lockedByAB || isABDeadlocked ? 3 : 1;
@@ -850,7 +1028,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawPointGaps(Canvas canvas, Point point) {
     final gapPaint = Paint()
-      ..color = Colors.grey[200]!
+      ..color = themeData.backgroundColor
       ..style = PaintingStyle.fill;
 
     if (point.id == '78A') {
@@ -883,7 +1061,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     for (var signal in controller.signals.values) {
       final polePaint = Paint()
-        ..color = Colors.grey[800]!
+        ..color = themeData.textColor.withOpacity(0.8)
         ..strokeWidth = 5;
 
       canvas.drawLine(Offset(signal.x, signal.y),
@@ -895,7 +1073,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawSignalHead(Canvas canvas, Signal signal) {
     final headPaint = Paint()
-      ..color = Colors.grey[900]!
+      ..color = themeData.textColor.withOpacity(0.9)
       ..style = PaintingStyle.fill;
 
     bool pointerWest = signal.id == 'C30' || signal.id == 'C28';
@@ -920,18 +1098,21 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       canvas.drawPath(path, headPaint);
     }
 
-    final lightColor =
-        signal.aspect == SignalAspect.green ? Colors.green : Colors.red;
+    final lightColor = signal.aspect == SignalAspect.green
+        ? themeData.signalGreenColor
+        : themeData.signalRedColor;
     final lightPaint = Paint()
       ..color = lightColor
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 6, lightPaint);
 
-    if (signal.aspect == SignalAspect.green) {
+    // Add glow effect for signals
+    if (themeData.hasGlow || signal.aspect == SignalAspect.green) {
       final glowPaint = Paint()
-        ..color = Colors.green.withOpacity(0.4)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+        ..color = lightColor.withOpacity(0.4)
+        ..maskFilter = MaskFilter.blur(
+            BlurStyle.normal, themeData.hasGlow ? themeData.glowIntensity : 6);
 
       canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 12, glowPaint);
     }
@@ -964,7 +1145,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       );
 
       final outlinePaint = Paint()
-        ..color = Colors.black
+        ..color = themeData.textColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1;
 
@@ -982,8 +1163,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final textPainter = TextPainter(
         text: TextSpan(
           text: trainStop.id,
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: themeData.textColor,
             fontSize: 8,
             fontWeight: FontWeight.bold,
           ),
@@ -1020,12 +1201,12 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ? trainX + ma.maxDistance
           : trainX - ma.maxDistance;
 
-      // Draw base green path with gradient
+      // Draw base movement authority path with gradient
       final gradient = LinearGradient(
         colors: [
-          Colors.green.withOpacity(0.6),
-          Colors.green.withOpacity(0.3),
-          Colors.green.withOpacity(0.1),
+          themeData.movementAuthorityColor.withOpacity(0.6),
+          themeData.movementAuthorityColor.withOpacity(0.3),
+          themeData.movementAuthorityColor.withOpacity(0.1),
         ],
         stops: const [0.0, 0.7, 1.0],
       );
@@ -1065,7 +1246,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
         // Draw arrow chevron
         final arrowPaint = Paint()
-          ..color = Colors.green.withOpacity(opacity * 0.8)
+          ..color = themeData.movementAuthorityColor.withOpacity(opacity * 0.8)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
           ..strokeCap = StrokeCap.round;
@@ -1150,22 +1331,24 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
 
       // Draw glow effect around the path for extra visibility
-      final glowPaint = Paint()
-        ..color = Colors.green.withOpacity(0.15)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 6
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      if (themeData.hasGlow) {
+        final glowPaint = Paint()
+          ..color = themeData.movementAuthorityColor.withOpacity(0.15)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 6
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, themeData.glowIntensity / 2);
 
-      final glowRect = RRect.fromRectAndRadius(
-        Rect.fromLTRB(
-          isEastbound ? startX : endX,
-          trainY - 25,
-          isEastbound ? endX : startX,
-          trainY - 15,
-        ),
-        const Radius.circular(3),
-      );
-      canvas.drawRRect(glowRect, glowPaint);
+        final glowRect = RRect.fromRectAndRadius(
+          Rect.fromLTRB(
+            isEastbound ? startX : endX,
+            trainY - 25,
+            isEastbound ? endX : startX,
+            trainY - 15,
+          ),
+          const Radius.circular(3),
+        );
+        canvas.drawRRect(glowRect, glowPaint);
+      }
     }
   }
 
@@ -1179,8 +1362,15 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
 
       final bodyPaint = Paint()
-        ..color = train.color
+        ..color = themeData.hasGlassMorphism
+            ? themeData.trainColor
+            : themeData.trainColor
         ..style = PaintingStyle.fill;
+
+      // Add glow effect if theme supports it
+      if (themeData.hasGlow) {
+        bodyPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, themeData.glowIntensity / 3);
+      }
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -1341,10 +1531,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawDirectionLabels(Canvas canvas) {
     final eastboundText = TextPainter(
-      text: const TextSpan(
+      text: TextSpan(
         text: 'EASTBOUND ROAD',
         style: TextStyle(
-          color: Colors.green,
+          color: themeData.signalGreenColor,
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
@@ -1355,10 +1545,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     eastboundText.paint(canvas, const Offset(600, 50));
 
     final westboundText = TextPainter(
-      text: const TextSpan(
+      text: TextSpan(
         text: 'WESTBOUND ROAD',
         style: TextStyle(
-          color: Colors.blue,
+          color: themeData.textColor,
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
@@ -1372,10 +1562,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   void _drawLabels(Canvas canvas) {
     // Draw station name prominently at the top
     final stationNamePainter = TextPainter(
-      text: const TextSpan(
+      text: TextSpan(
         text: 'Anthill Park Station',
         style: TextStyle(
-          color: Colors.black87,
+          color: themeData.textColor,
           fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
@@ -1394,7 +1584,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           text: TextSpan(
             text: block.id,
             style: TextStyle(
-              color: block.occupied ? Colors.purple[700] : Colors.grey[700],
+              color: block.occupied
+                  ? themeData.blockOccupiedColor
+                  : themeData.textColor.withOpacity(0.7),
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),
@@ -1416,8 +1608,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             text: signal.id,
             style: TextStyle(
               color: signal.aspect == SignalAspect.green
-                  ? Colors.green[700]
-                  : Colors.red[700],
+                  ? themeData.signalGreenColor
+                  : themeData.signalRedColor,
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),
@@ -1435,8 +1627,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final textPainter = TextPainter(
         text: TextSpan(
           text: platform.name,
-          style: const TextStyle(
-              color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: themeData.textColor, fontSize: 13, fontWeight: FontWeight.bold),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -1451,8 +1643,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final textPainter = TextPainter(
         text: TextSpan(
           text: train.name,
-          style: const TextStyle(
-              color: Colors.black87, fontSize: 11, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: themeData.textColor, fontSize: 11, fontWeight: FontWeight.bold),
         ),
         textDirection: TextDirection.ltr,
       );

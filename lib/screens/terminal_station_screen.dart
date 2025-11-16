@@ -2146,7 +2146,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                               decoration: BoxDecoration(
                                 color: signal.aspect == SignalAspect.green
                                     ? Colors.green
-                                    : Colors.red,
+                                    : signal.aspect == SignalAspect.blue
+                                        ? Colors.blue
+                                        : Colors.red,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -2216,6 +2218,98 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ),
                 );
               }),
+
+              const Divider(height: 32),
+
+              // Blue Aspect Signal Controls
+              Text('Blue Aspect Controls',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text(
+                'Set signals to BLUE for permissive movement (trains won\'t stop)',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['C28', 'C30', 'C31', 'C33'].map((signalId) {
+                  final signal = controller.signals[signalId];
+                  final isBlue = signal?.aspect == SignalAspect.blue;
+                  final isGreen = signal?.aspect == SignalAspect.green;
+                  final isRed = signal?.aspect == SignalAspect.red;
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(signalId,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Blue Button
+                          ElevatedButton(
+                            onPressed: () =>
+                                controller.setSignalToBlueAspect(signalId),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isBlue
+                                  ? Colors.blue
+                                  : Colors.blue.withOpacity(0.3),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              minimumSize: const Size(0, 30),
+                            ),
+                            child: const Text('BLUE',
+                                style: TextStyle(fontSize: 10)),
+                          ),
+                          const SizedBox(width: 4),
+                          // Red Button
+                          ElevatedButton(
+                            onPressed: () =>
+                                controller.setSignalToRedAspect(signalId),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isRed
+                                  ? Colors.red
+                                  : Colors.red.withOpacity(0.3),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              minimumSize: const Size(0, 30),
+                            ),
+                            child: const Text('RED',
+                                style: TextStyle(fontSize: 10)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      // Current Status
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isBlue
+                              ? Colors.blue
+                              : (isGreen ? Colors.green : Colors.red),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          isBlue ? 'BLUE' : (isGreen ? 'GREEN' : 'RED'),
+                          style: const TextStyle(
+                              fontSize: 9,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
 
               const Divider(height: 32),
 

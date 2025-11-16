@@ -2400,21 +2400,19 @@ class TerminalStationController extends ChangeNotifier {
   void departTrain(String id) {
     final train = trains.firstWhere((t) => t.id == id);
 
-    // FIXED: Ensure manual trains can depart properly
+    // FIXED: More aggressive departure logic
+    train.manualStop = false;
+    train.emergencyBrake = false;
+
     if (train.controlMode == TrainControlMode.manual) {
-      train.manualStop = false;
-      train.emergencyBrake = false;
       train.targetSpeed = 2.0;
-      train.speed =
-          0.5; // Give initial speed boost for manual mode to ensure immediate movement
-      _logEvent('🚦 ${train.name} MANUAL DEPART - go');
+      train.speed = 0.5; // Immediate movement
+      _logEvent('🎮 ${train.name} MANUAL DEPART - MOVING NOW');
     } else {
-      // Auto mode - just release the manual stop if it was engaged
-      train.manualStop = false;
-      train.emergencyBrake = false;
       train.targetSpeed = 2.0;
-      _logEvent('🚦 ${train.name} AUTO DEPART - released');
+      _logEvent('🤖 ${train.name} AUTO DEPART - released');
     }
+
     notifyListeners();
   }
 
@@ -2444,6 +2442,69 @@ class TerminalStationController extends ChangeNotifier {
       // Don't set targetSpeed here - let the signal logic control it
       _logEvent('🤖 ${train.name} → AUTO mode (signals control movement)');
     }
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // BLUE ASPECT SIGNAL CONTROLS
+  // ============================================================================
+
+  void setSignalToBlueAspect(String signalId) {
+    final signal = signals[signalId];
+    if (signal == null) return;
+
+    signal.aspect = SignalAspect.blue;
+    _logEvent('🔵 Signal $signalId set to BLUE aspect - permissive movement');
+    notifyListeners();
+  }
+
+  void setSignalToRedAspect(String signalId) {
+    final signal = signals[signalId];
+    if (signal == null) return;
+
+    signal.aspect = SignalAspect.red;
+    _logEvent('🔴 Signal $signalId set to RED aspect');
+    notifyListeners();
+  }
+
+  void setSignalToGreenAspect(String signalId) {
+    final signal = signals[signalId];
+    if (signal == null) return;
+
+    signal.aspect = SignalAspect.green;
+    _logEvent('🟢 Signal $signalId set to GREEN aspect');
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // DEBUG METHODS
+  // ============================================================================
+
+  void _debugTrainMovement(Train train) {
+    print('=== TRAIN DEBUG: ${train.name} ===');
+    print('Control Mode: ${train.controlMode}');
+    print('Manual Stop: ${train.manualStop}');
+    print('Emergency Brake: ${train.emergencyBrake}');
+    print('Doors Open: ${train.doorsOpen}');
+    print('Target Speed: ${train.targetSpeed}');
+    print('Current Speed: ${train.speed}');
+    print('Direction: ${train.direction}');
+    print('Position: (${train.x}, ${train.y})');
+    print('Block: ${train.currentBlockId}');
+    print('========================');
+  }
+
+  void forceMoveTrain(String trainId) {
+    final train = trains.firstWhere((t) => t.id == trainId);
+
+    train.manualStop = false;
+    train.emergencyBrake = false;
+    train.targetSpeed = 2.0;
+    train.speed = 1.0;
+    train.x += (train.speed * simulationSpeed * train.direction);
+
+    _logEvent('🚀 FORCE MOVING ${train.name}');
+    _updateBlockOccupation();
     notifyListeners();
   }
 
@@ -2591,12 +2652,12 @@ class TerminalStationController extends ChangeNotifier {
 
       // ========== NORMAL MOVEMENT LOGIC ==========
 
-      // Manual stop override
+      // Manual stop override - SIMPLIFIED
       if (train.manualStop) {
         train.targetSpeed = 0;
       } else if (train.controlMode == TrainControlMode.manual) {
-        // Manual mode without stop - allow movement at current target speed
-        // targetSpeed already set by departTrain() or user control
+        // FIXED: Manual mode trains move immediately when depart is pressed
+        train.targetSpeed = 2.0;
       } else {
         // Automatic mode - check signals and route reservations
         Signal? signalAhead = _getSignalAhead(train);
@@ -2621,7 +2682,10 @@ class TerminalStationController extends ChangeNotifier {
               reservation.reservedBlocks.contains(nextBlock));
         }
 
-        if (signalAhead == null) {
+        // BLUE ASPECT HANDLING: Don't stop at blue signals
+        if (signalAhead?.aspect == SignalAspect.blue) {
+          train.targetSpeed = 2.0; // Pass through blue signals
+        } else if (signalAhead == null) {
           train.targetSpeed = 2.0;
         } else if (signalAhead.aspect == SignalAspect.red &&
             !hasPassedSignalThreshold &&

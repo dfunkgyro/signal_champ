@@ -7,7 +7,22 @@ import 'collision_analysis_system.dart' as collision_system;
 
 enum PointPosition { normal, reverse }
 
-enum SignalAspect { red, green }
+enum SignalAspect {
+  red,
+  green,
+  blue; // Blue aspect for permissive movement (trains won't stop)
+
+  String get name {
+    switch (this) {
+      case SignalAspect.red:
+        return 'red';
+      case SignalAspect.green:
+        return 'green';
+      case SignalAspect.blue:
+        return 'blue';
+    }
+  }
+}
 
 enum RouteState { unset, setting, set, releasing }
 

@@ -920,17 +920,36 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       canvas.drawPath(path, headPaint);
     }
 
-    final lightColor =
-        signal.aspect == SignalAspect.green ? Colors.green : Colors.red;
+    // Handle signal color based on aspect
+    Color lightColor;
+    switch (signal.aspect) {
+      case SignalAspect.green:
+        lightColor = Colors.green;
+        break;
+      case SignalAspect.blue:
+        lightColor = Colors.blue; // Blue for permissive movement
+        break;
+      case SignalAspect.red:
+      default:
+        lightColor = Colors.red;
+    }
+
     final lightPaint = Paint()
       ..color = lightColor
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 6, lightPaint);
 
+    // Add glow effect for green and blue signals
     if (signal.aspect == SignalAspect.green) {
       final glowPaint = Paint()
         ..color = Colors.green.withOpacity(0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+
+      canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 12, glowPaint);
+    } else if (signal.aspect == SignalAspect.blue) {
+      final glowPaint = Paint()
+        ..color = Colors.blue.withOpacity(0.4)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
 
       canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 12, glowPaint);

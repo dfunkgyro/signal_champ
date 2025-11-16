@@ -1276,7 +1276,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C33'] = Signal(
       id: 'C33',
-      x: 1200,
+      x: 1190,
       y: 80,
       routes: [
         SignalRoute(
@@ -1292,7 +1292,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C30'] = Signal(
       id: 'C30',
-      x: 980,
+      x: 995,
       y: 320,
       routes: [
         SignalRoute(

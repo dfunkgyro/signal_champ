@@ -486,6 +486,54 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         ),
         const SizedBox(height: 8),
 
+        // Toggle CBTC System
+        Card(
+          color: controller.cbtcEnabled ? Colors.cyan.shade50 : null,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.cbtcEnabled
+                      ? Icons.router
+                      : Icons.router_outlined,
+                  color: controller.cbtcEnabled ? Colors.cyan : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'CBTC System',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        controller.cbtcEnabled
+                            ? 'Enabled (SMC & VCC1 Active)'
+                            : 'Disabled',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: controller.cbtcEnabled,
+                  onChanged: (value) => controller.toggleCbtc(),
+                  activeColor: Colors.cyan,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+
         // Individual train stop controls
         const Text('Individual Train Stops:',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
@@ -1836,6 +1884,79 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ),
                           const SizedBox(height: 12),
 
+                          // CBTC Mode Selector (shows when CBTC enabled and train is CBTC-equipped)
+                          if (controller.cbtcEnabled && train.isCbtcEquipped) ...[
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.cyan.shade50,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.cyan),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'CBTC MODE',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.cyan,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Wrap(
+                                    spacing: 4,
+                                    runSpacing: 4,
+                                    children: [
+                                      // CBTC Auto
+                                      _buildCbtcModeButton(
+                                        controller,
+                                        train,
+                                        CbtcMode.auto,
+                                        'AUTO',
+                                        Colors.cyan,
+                                      ),
+                                      // PM Mode
+                                      _buildCbtcModeButton(
+                                        controller,
+                                        train,
+                                        CbtcMode.pm,
+                                        'PM',
+                                        Colors.yellow.shade700,
+                                      ),
+                                      // RM Mode
+                                      _buildCbtcModeButton(
+                                        controller,
+                                        train,
+                                        CbtcMode.rm,
+                                        'RM',
+                                        Colors.orange,
+                                      ),
+                                      // Storage
+                                      _buildCbtcModeButton(
+                                        controller,
+                                        train,
+                                        CbtcMode.storage,
+                                        'STOR',
+                                        Colors.green,
+                                      ),
+                                      // Off
+                                      _buildCbtcModeButton(
+                                        controller,
+                                        train,
+                                        CbtcMode.off,
+                                        'OFF',
+                                        Colors.grey,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+
                           // Control Buttons - Row 1: Mode and Movement
                           Row(
                             children: [
@@ -2797,6 +2918,33 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ),
         ),
       ],
+    );
+  }
+
+  // Helper method to build CBTC mode buttons
+  Widget _buildCbtcModeButton(
+    TerminalStationController controller,
+    Train train,
+    CbtcMode mode,
+    String label,
+    Color color,
+  ) {
+    final isActive = train.cbtcMode == mode;
+    return ElevatedButton(
+      onPressed: () => controller.changeCbtcMode(train.id, mode),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isActive ? color : color.withOpacity(0.3),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: const Size(0, 28),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
     );
   }
 

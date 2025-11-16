@@ -486,6 +486,7 @@ class TerminalStationController extends ChangeNotifier {
   int tickCount = 0;
   int nextTrainNumber = 1;
   bool trainStopsEnabled = true;
+  bool cbtcEnabled = false; // CBTC system toggle
 
   final Map<String, RouteReservation> routeReservations = {};
   bool selfNormalizingPoints = true;
@@ -1389,6 +1390,77 @@ class TerminalStationController extends ChangeNotifier {
     _logEvent(trainStopsEnabled
         ? '🔴 All TrainStops ENABLED'
         : '⚪ All TrainStops DISABLED');
+    notifyListeners();
+  }
+
+  void toggleCbtc() {
+    cbtcEnabled = !cbtcEnabled;
+    _logEvent(cbtcEnabled
+        ? '🔵 CBTC System ENABLED - SMC & VCC1 Active'
+        : '⚪ CBTC System DISABLED');
+
+    // When disabling CBTC, reset all trains to off mode
+    if (!cbtcEnabled) {
+      for (var train in trains) {
+        if (train.isCbtcEquipped) {
+          train.cbtcMode = CbtcMode.off;
+        }
+      }
+    }
+    notifyListeners();
+  }
+
+  void changeCbtcMode(String trainId, CbtcMode newMode) {
+    final train = trains.firstWhere((t) => t.id == trainId);
+
+    if (!train.isCbtcEquipped) {
+      _logEvent('⚠️  ${train.name} is not CBTC equipped');
+      return;
+    }
+
+    if (!cbtcEnabled) {
+      _logEvent('⚠️  CBTC System is disabled');
+      return;
+    }
+
+    final oldMode = train.cbtcMode;
+    train.cbtcMode = newMode;
+
+    // Update train color based on CBTC mode
+    switch (newMode) {
+      case CbtcMode.auto:
+        train.color = Colors.cyan;
+        _logEvent('🔵 ${train.name} → CBTC AUTO mode (cyan)');
+        break;
+      case CbtcMode.pm:
+        train.color = Colors.yellow;
+        _logEvent('🟡 ${train.name} → PM mode (yellow) - VCC1 protected');
+        break;
+      case CbtcMode.rm:
+        train.color = Colors.orange;
+        _logEvent('🟠 ${train.name} → RM mode (orange)');
+        break;
+      case CbtcMode.storage:
+        train.color = Colors.green;
+        _logEvent('🟢 ${train.name} → STORAGE mode (green)');
+        break;
+      case CbtcMode.off:
+        train.color = Colors.blue;
+        _logEvent('⚪ ${train.name} → OFF mode (white/blue)');
+        break;
+    }
+
+    // If switching from off to any active mode, release emergency brake
+    if (oldMode == CbtcMode.off && newMode != CbtcMode.off) {
+      train.emergencyBrake = false;
+      train.manualStop = false;
+    }
+
+    // If switching to auto or PM, set target speed
+    if (newMode == CbtcMode.auto || newMode == CbtcMode.pm) {
+      train.targetSpeed = 2.0;
+    }
+
     notifyListeners();
   }
 
@@ -2652,9 +2724,45 @@ class TerminalStationController extends ChangeNotifier {
 
       // ========== NORMAL MOVEMENT LOGIC ==========
 
+      // Check if train is in CBTC mode
+      final bool isCbtcMode = cbtcEnabled &&
+          train.isCbtcEquipped &&
+          (train.cbtcMode == CbtcMode.auto ||
+              train.cbtcMode == CbtcMode.pm ||
+              train.cbtcMode == CbtcMode.rm);
+
       // Manual stop override - SIMPLIFIED
       if (train.manualStop) {
         train.targetSpeed = 0;
+      } else if (isCbtcMode) {
+        // CBTC MODE HANDLING: CBTC trains don't stop at signals
+        train.targetSpeed = 2.0;
+
+        // VCC1 PROTECTION for PM mode: Emergency brake if 20 units from obstacle
+        if (train.cbtcMode == CbtcMode.pm) {
+          final obstacle = _getObstacleAhead(train);
+          if (obstacle != null) {
+            final distance = (obstacle - train.x).abs();
+            if (distance < 20) {
+              train.emergencyBrake = true;
+              train.targetSpeed = 0;
+              train.color = Colors.red; // Turn red when emergency braked
+              _logEvent(
+                  '🚨 VCC1: ${train.name} EMERGENCY BRAKE - obstacle ${distance.toStringAsFixed(1)} units ahead');
+            }
+          }
+        }
+
+        // CBTC trains turn signals ahead to blue aspect
+        if (train.speed > 0) {
+          final signalAhead = _getSignalAhead(train);
+          if (signalAhead != null &&
+              signalAhead.aspect != SignalAspect.blue) {
+            signalAhead.aspect = SignalAspect.blue;
+            _logEvent(
+                '🔵 ${train.name} CBTC: Signal ${signalAhead.id} → BLUE');
+          }
+        }
       } else if (train.controlMode == TrainControlMode.manual) {
         // FIXED: Manual mode trains move immediately when depart is pressed
         train.targetSpeed = 2.0;
@@ -3205,6 +3313,34 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     return nearest;
+  }
+
+  // Get position of nearest obstacle ahead (other trains)
+  double? _getObstacleAhead(Train train) {
+    double? nearestObstacle;
+    double minDistance = double.infinity;
+
+    for (var otherTrain in trains) {
+      if (otherTrain.id == train.id) continue;
+
+      // Only consider trains on the same track
+      if ((otherTrain.y - train.y).abs() > 50) continue;
+
+      // Only consider trains ahead
+      final isAhead = train.direction > 0
+          ? otherTrain.x > train.x
+          : otherTrain.x < train.x;
+
+      if (isAhead) {
+        final distance = (otherTrain.x - train.x).abs();
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestObstacle = otherTrain.x;
+        }
+      }
+    }
+
+    return nearestObstacle;
   }
 
   void _logEvent(String message) {

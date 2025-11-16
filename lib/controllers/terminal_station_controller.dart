@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
-import 'package:rail_champ/controllers/timetable_controller.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -499,8 +498,18 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
-  // Timetable system for automatic train routing
-  final TimetableController timetableController = TimetableController();
+  // ============================================================================
+  // TIMETABLE SYSTEM - Integrated directly into controller
+  // ============================================================================
+
+  // Timetable manager for ghost trains and timetables
+  final List<TimetableEntry> timetables = [];
+  final List<GhostTrain> ghostTrains = [];
+  int _ghostTrainCounter = 0;
+
+  // Station and route definitions
+  final List<Station> stations = [];
+  final List<TimetableRoute> timetableRoutes = [];
 
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
@@ -1144,8 +1153,10 @@ class TerminalStationController extends ChangeNotifier {
     _initializeClock();
     ace = AxleCounterEvaluator(axleCounters);
 
-    // Initialize default timetable for MA1 → MA2 → MA3
-    timetableController.createDefaultTimetable();
+    // Initialize timetable system
+    _initializeStations();
+    _initializeTimetableRoutes();
+    _createDefaultTimetable();
   }
 
   void _initializeAxleCounters() {
@@ -2473,27 +2484,27 @@ class TerminalStationController extends ChangeNotifier {
       return;
     }
 
-    final timetable = timetableController.timetableManager.getTimetable(timetableId);
+    final timetable = _getTimetable(timetableId);
     if (timetable == null) {
       _logEvent('⚠️ Cannot assign timetable: Timetable $timetableId not found');
       return;
     }
 
     // Check if train already has a timetable assigned
-    final existing = timetableController.timetableManager.getGhostTrainByRealTrain(trainId);
+    final existing = _getGhostTrainByRealTrain(trainId);
     if (existing != null) {
       _logEvent('⚠️ ${train.name} already has timetable assigned (${existing.serviceNumber})');
       return;
     }
 
     // Create ghost train and assign to real train
-    final ghostTrain = timetableController.timetableManager.createGhostTrain(timetableId);
+    final ghostTrain = _createGhostTrain(timetableId);
     if (ghostTrain == null) {
       _logEvent('⚠️ Failed to create ghost train for timetable $timetableId');
       return;
     }
 
-    timetableController.timetableManager.assignGhostTrainToReal(ghostTrain.id, trainId);
+    _assignGhostTrainToReal(ghostTrain.id, trainId);
     _logEvent('📋 Timetable ${timetable.trainServiceNumber} assigned to ${train.name}');
     _logEvent('   Route: ${timetable.originStation} → ${timetable.terminusStation}');
 
@@ -2502,10 +2513,10 @@ class TerminalStationController extends ChangeNotifier {
 
   /// Unassigns timetable from a train
   void unassignTimetableFromTrain(String trainId) {
-    final ghostTrain = timetableController.timetableManager.getGhostTrainByRealTrain(trainId);
+    final ghostTrain = _getGhostTrainByRealTrain(trainId);
     if (ghostTrain == null) return;
 
-    timetableController.timetableManager.unassignGhostTrain(ghostTrain.id);
+    _unassignGhostTrain(ghostTrain.id);
     _logEvent('📋 Timetable unassigned from train $trainId');
     notifyListeners();
   }
@@ -3205,23 +3216,23 @@ class TerminalStationController extends ChangeNotifier {
       if (train.controlMode != TrainControlMode.automatic) continue;
 
       // Check if train has an assigned timetable
-      final ghostTrain = timetableController.timetableManager.getGhostTrainByRealTrain(train.id);
+      final ghostTrain = _getGhostTrainByRealTrain(train.id);
       if (ghostTrain == null) continue;
 
       // Update ghost train progress
-      timetableController.updateGhostTrainProgress(train);
+      _updateGhostTrainProgress(train);
 
       // Check if train should depart (dwell time complete)
-      if (timetableController.shouldDepartStation(train)) {
+      if (_shouldDepartStation(train)) {
         // Get next destination
-        final nextStop = timetableController.getNextStop(train);
+        final nextStop = _getNextStop(train);
         if (nextStop == null) {
           // At terminus
           if (!train.doorsOpen) {
             // Open doors at terminus
             train.doorsOpen = true;
             train.doorsOpenedAt = DateTime.now();
-            final currentStation = timetableController.getTrainCurrentStation(train);
+            final currentStation = _getTrainCurrentStation(train);
             _logEvent('🚪 ${train.name} doors opened at terminus $currentStation');
           }
           continue;
@@ -3232,7 +3243,7 @@ class TerminalStationController extends ChangeNotifier {
         if (currentStation == null) continue;
 
         // Get route to next station
-        final route = timetableController.getRouteForJourney(currentStation, nextStop.stationId);
+        final route = _getRouteForJourney(currentStation, nextStop.stationId);
         if (route == null) {
           _logEvent('⚠️ No route found from $currentStation to ${nextStop.stationId}');
           continue;
@@ -3265,7 +3276,7 @@ class TerminalStationController extends ChangeNotifier {
         }
       } else {
         // Check if train just arrived at a station
-        final currentStation = timetableController.getTrainCurrentStation(train);
+        final currentStation = _getTrainCurrentStation(train);
         if (currentStation != null && !train.doorsOpen && train.speed < 0.1) {
           // Train at station, stopped, doors closed - open doors
           train.doorsOpen = true;
@@ -3316,6 +3327,317 @@ class TerminalStationController extends ChangeNotifier {
     } else {
       _logEvent('ℹ️ ${train.name}: ${reason}');
     }
+  }
+
+  // ============================================================================
+  // TIMETABLE SYSTEM METHODS - All integrated into controller
+  // ============================================================================
+
+  /// Initialize the three stations: MA1, MA2, MA3
+  void _initializeStations() {
+    // MA1: Mainline Station 1 (Platform 1, upper track, center section)
+    stations.add(Station(
+      id: 'MA1',
+      name: 'Mainline Station 1',
+      platformId: 'P1',
+      x: 1110, // Center of platform 1 (980-1240)
+      y: 100, // Upper track
+    ));
+
+    // MA2: Mainline Station 2 - Bay Platform (Platform 2, lower track)
+    stations.add(Station(
+      id: 'MA2',
+      name: 'Mainline Station 2 (Bay)',
+      platformId: 'P2',
+      x: 1110, // Center of platform 2 (980-1240)
+      y: 300, // Lower track (bay platform)
+    ));
+
+    // MA3: Mainline Station 3 (Platform 1, upper track, eastern end)
+    stations.add(Station(
+      id: 'MA3',
+      name: 'Mainline Station 3',
+      platformId: 'P1',
+      x: 1490, // Eastern end of platform 1 (around block 114)
+      y: 100, // Upper track
+    ));
+  }
+
+  /// Initialize the routes between stations
+  void _initializeTimetableRoutes() {
+    // MA1 → MA2: Route via crossover to bay platform
+    timetableRoutes.add(TimetableRoute(
+      fromStationId: 'MA1',
+      toStationId: 'MA2',
+      signalId: 'C31',
+      routeId: 'C31_R2',
+      requiredBlocks: ['104', '106', 'crossover106', 'crossover109', '109', '111'],
+    ));
+
+    // MA1 → MA3: Direct route via main line
+    timetableRoutes.add(TimetableRoute(
+      fromStationId: 'MA1',
+      toStationId: 'MA3',
+      signalId: 'C31',
+      routeId: 'C31_R1',
+      requiredBlocks: ['106', '108', '110', '112', '114'],
+    ));
+
+    // MA2 → MA3: Route from bay platform via crossover to main line
+    timetableRoutes.add(TimetableRoute(
+      fromStationId: 'MA2',
+      toStationId: 'MA3',
+      signalId: 'C30',
+      routeId: 'C30_R1',
+      requiredBlocks: ['109', 'crossover109', 'crossover106', '106', '108', '110', '112', '114'],
+    ));
+  }
+
+  /// Creates default timetable MA1 → MA2 → MA3
+  void _createDefaultTimetable() {
+    final timetable = TimetableEntry(
+      id: 'TT001',
+      trainServiceNumber: '101',
+      stops: [
+        TimetableStop(
+          stationId: 'MA1',
+          arrivalTime: null, // Origin
+          departureTime: const Duration(minutes: 0),
+          dwellTime: const Duration(seconds: 30),
+          platformId: 'P1',
+        ),
+        TimetableStop(
+          stationId: 'MA2',
+          arrivalTime: const Duration(minutes: 2),
+          departureTime: const Duration(minutes: 3),
+          dwellTime: const Duration(seconds: 60),
+          platformId: 'P2',
+        ),
+        TimetableStop(
+          stationId: 'MA3',
+          arrivalTime: const Duration(minutes: 5),
+          departureTime: null, // Terminus
+          dwellTime: const Duration(seconds: 0),
+          platformId: 'P1',
+        ),
+      ],
+    );
+
+    _addTimetable(timetable);
+  }
+
+  // ========== TIMETABLE MANAGER METHODS ==========
+
+  /// Adds a timetable to the system
+  void _addTimetable(TimetableEntry timetable) {
+    timetables.add(timetable);
+  }
+
+  /// Removes a timetable from the system
+  void _removeTimetable(String timetableId) {
+    timetables.removeWhere((t) => t.id == timetableId);
+    ghostTrains.removeWhere((g) => g.timetableId == timetableId);
+  }
+
+  /// Gets a timetable by ID
+  TimetableEntry? _getTimetable(String timetableId) {
+    try {
+      return timetables.firstWhere((t) => t.id == timetableId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Creates a ghost train from a timetable
+  GhostTrain? _createGhostTrain(String timetableId) {
+    final timetable = _getTimetable(timetableId);
+    if (timetable == null) return null;
+
+    _ghostTrainCounter++;
+    final ghostTrain = GhostTrain(
+      id: 'GHOST${_ghostTrainCounter.toString().padLeft(3, '0')}',
+      timetableId: timetableId,
+      serviceNumber: timetable.trainServiceNumber,
+      currentStationId: timetable.originStation,
+      assignedToRealTrain: false,
+    );
+
+    ghostTrains.add(ghostTrain);
+    return ghostTrain;
+  }
+
+  /// Assigns a ghost train to a real train
+  void _assignGhostTrainToReal(String ghostTrainId, String realTrainId) {
+    final ghostIndex = ghostTrains.indexWhere((g) => g.id == ghostTrainId);
+    if (ghostIndex == -1) return;
+
+    final ghost = ghostTrains[ghostIndex];
+    ghostTrains[ghostIndex] = GhostTrain(
+      id: ghost.id,
+      timetableId: ghost.timetableId,
+      serviceNumber: ghost.serviceNumber,
+      currentStationId: ghost.currentStationId,
+      assignedToRealTrain: true,
+      realTrainId: realTrainId,
+    );
+  }
+
+  /// Unassigns a ghost train from a real train
+  void _unassignGhostTrain(String ghostTrainId) {
+    final ghostIndex = ghostTrains.indexWhere((g) => g.id == ghostTrainId);
+    if (ghostIndex == -1) return;
+
+    final ghost = ghostTrains[ghostIndex];
+    ghostTrains[ghostIndex] = GhostTrain(
+      id: ghost.id,
+      timetableId: ghost.timetableId,
+      serviceNumber: ghost.serviceNumber,
+      currentStationId: ghost.currentStationId,
+      assignedToRealTrain: false,
+      realTrainId: null,
+    );
+  }
+
+  /// Gets a ghost train by real train ID
+  GhostTrain? _getGhostTrainByRealTrain(String realTrainId) {
+    try {
+      return ghostTrains.firstWhere(
+        (g) => g.assignedToRealTrain && g.realTrainId == realTrainId,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Updates the current station of a ghost train
+  void _updateGhostTrainStation(String ghostTrainId, String stationId) {
+    final ghostIndex = ghostTrains.indexWhere((g) => g.id == ghostTrainId);
+    if (ghostIndex == -1) return;
+
+    final ghost = ghostTrains[ghostIndex];
+    ghostTrains[ghostIndex] = GhostTrain(
+      id: ghost.id,
+      timetableId: ghost.timetableId,
+      serviceNumber: ghost.serviceNumber,
+      currentStationId: stationId,
+      assignedToRealTrain: ghost.assignedToRealTrain,
+      realTrainId: ghost.realTrainId,
+    );
+  }
+
+  // ========== TIMETABLE HELPER METHODS ==========
+
+  /// Gets a station by ID
+  Station? _getStationById(String stationId) {
+    try {
+      return stations.firstWhere((s) => s.id == stationId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Gets the station that a train is currently at
+  String? _getTrainCurrentStation(Train train) {
+    for (final station in stations) {
+      final double tolerance = 20.0;
+      final double platformStartX = 980.0;
+      final double platformEndX = 1240.0;
+
+      // For MA3, extend the range to cover eastern end
+      final double extendedEndX = station.id == 'MA3' ? 1600.0 : platformEndX;
+      final double extendedStartX = station.id == 'MA3' ? 1200.0 : platformStartX;
+
+      bool withinX = false;
+      if (station.id == 'MA3') {
+        withinX = train.x >= extendedStartX && train.x <= extendedEndX;
+      } else {
+        withinX = train.x >= platformStartX && train.x <= platformEndX;
+      }
+
+      final bool withinY = (train.y - station.y).abs() <= tolerance;
+
+      if (withinX && withinY) {
+        return station.id;
+      }
+    }
+
+    return null;
+  }
+
+  /// Gets the next stop for a train based on its assigned timetable
+  TimetableStop? _getNextStop(Train train) {
+    final ghostTrain = _getGhostTrainByRealTrain(train.id);
+    if (ghostTrain == null) return null;
+
+    final timetable = _getTimetable(ghostTrain.timetableId);
+    if (timetable == null) return null;
+
+    final currentStationId = ghostTrain.currentStationId ?? _getTrainCurrentStation(train);
+    if (currentStationId == null) {
+      return timetable.stops.first;
+    }
+
+    return timetable.getNextStop(currentStationId);
+  }
+
+  /// Gets the route for a journey between two stations
+  TimetableRoute? _getRouteForJourney(String fromStationId, String toStationId) {
+    try {
+      return timetableRoutes.firstWhere(
+        (r) => r.fromStationId == fromStationId && r.toStationId == toStationId,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Checks if a train has completed its dwell time at a station
+  bool _isDwellTimeComplete(Train train, TimetableStop stop) {
+    final currentStation = _getTrainCurrentStation(train);
+    if (currentStation == null) return false;
+
+    if (currentStation != stop.stationId) return false;
+
+    final station = _getStationById(currentStation);
+    if (station == null) return false;
+    if (station.platformId != stop.platformId) return false;
+
+    if (!train.doorsOpen || train.doorsOpenedAt == null) return false;
+
+    final elapsed = DateTime.now().difference(train.doorsOpenedAt!);
+    return elapsed >= stop.dwellTime;
+  }
+
+  /// Updates the ghost train's current station based on train position
+  void _updateGhostTrainProgress(Train train) {
+    final ghostTrain = _getGhostTrainByRealTrain(train.id);
+    if (ghostTrain == null) return;
+
+    final currentStation = _getTrainCurrentStation(train);
+    if (currentStation != null && currentStation != ghostTrain.currentStationId) {
+      _updateGhostTrainStation(ghostTrain.id, currentStation);
+    }
+  }
+
+  /// Determines if a train should depart from current station
+  bool _shouldDepartStation(Train train) {
+    final ghostTrain = _getGhostTrainByRealTrain(train.id);
+    if (ghostTrain == null) return false;
+
+    final timetable = _getTimetable(ghostTrain.timetableId);
+    if (timetable == null) return false;
+
+    final currentStation = ghostTrain.currentStationId;
+    if (currentStation == null) return false;
+
+    final currentStop = timetable.getStop(currentStation);
+    if (currentStop == null) return false;
+
+    if (currentStop.isTerminus) return false;
+
+    if (!_isDwellTimeComplete(train, currentStop)) return false;
+
+    return true;
   }
 
   // ========== XML EXPORT ==========

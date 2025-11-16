@@ -2,6 +2,15 @@
 
 This directory contains comprehensive tests for the Rail Champ railway simulation application.
 
+## Important: Timetable System is Fully Integrated
+
+All timetable functionality is now integrated directly into the core files:
+- **Models**: `lib/screens/terminal_station_models.dart` (Station, TimetableEntry, TimetableStop, GhostTrain, TimetableRoute)
+- **Controller**: `lib/controllers/terminal_station_controller.dart` (all timetable logic integrated)
+- **No separate files**: There are no `timetable_model.dart` or `timetable_controller.dart` files
+
+This makes the timetable system a first-class feature of the core controller, not a separate module.
+
 ## Test Structure
 
 ```

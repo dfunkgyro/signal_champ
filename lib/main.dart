@@ -4,12 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../controllers/theme_controller.dart';
 import '../services/supabase_service.dart';
-import 'diagnostic_ai.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
-import 'dashboard_screen.dart';
-import 'analytics_screen.dart';
-import 'history_screen.dart';
 import 'custom_bottom_nav.dart';
 import '../screens/terminal_station_screen.dart';
 import '../controllers/terminal_station_controller.dart';
@@ -44,7 +40,6 @@ class RailChampApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SupabaseService(Supabase.instance.client),
         ),
-        ChangeNotifierProvider(create: (_) => DiagnosticAI()),
         ChangeNotifierProvider(create: (_) => WeatherSystem()),
         ChangeNotifierProvider(
           create: (_) => AchievementsService(Supabase.instance.client),
@@ -76,7 +71,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 1; // Start on simulation screen
+  int _currentIndex = 0; // Start on simulation screen
 
   @override
   void initState() {
@@ -89,10 +84,6 @@ class _MainScreenState extends State<MainScreen> {
       // Initialize Supabase presence
       final supabaseService = context.read<SupabaseService>();
       await supabaseService.initializePresence();
-
-      // Start diagnostic monitoring
-      final diagnostic = context.read<DiagnosticAI>();
-      diagnostic.startContinuousMonitoring();
 
       // Load achievements
       final achievements = context.read<AchievementsService>();
@@ -108,9 +99,7 @@ class _MainScreenState extends State<MainScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: const [
-          DashboardScreen(),
           TerminalStationScreen(), // ✅ Terminal station with crossover!
-          AnalyticsScreen(),
           SettingsScreen(),
         ],
       ),
@@ -118,7 +107,7 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
       ),
-      floatingActionButton: _currentIndex == 1
+      floatingActionButton: _currentIndex == 0
           ? FloatingActionButton(
               onPressed: () {
                 context.read<TerminalStationController>().addTrain();
@@ -208,18 +197,6 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          Consumer<DiagnosticAI>(
-            builder: (context, diagnostic, _) {
-              return SwitchListTile(
-                title: const Text('Auto-Fix Issues'),
-                subtitle: const Text('Automatically resolve detected problems'),
-                value: diagnostic.autoFixEnabled,
-                onChanged: (value) {
-                  diagnostic.setAutoFix(value);
-                },
-              );
-            },
-          ),
           const Divider(),
           const Padding(
             padding: EdgeInsets.all(16),
@@ -284,22 +261,10 @@ class SettingsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Dashboard',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text('View statistics and recent activity'),
-              SizedBox(height: 12),
-              Text(
                 'Simulation',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               Text('Control and monitor train operations'),
-              SizedBox(height: 12),
-              Text(
-                'Analytics',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text('View performance charts and AI insights'),
               SizedBox(height: 12),
               Text(
                 'Settings',

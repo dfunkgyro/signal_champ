@@ -249,6 +249,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     canvas.scale(zoom);
     canvas.translate(cameraOffsetX, -100);
 
+    _drawAreaBackgrounds(canvas);
     _drawTracks(canvas);
     _drawRouteReservations(canvas);
     _drawPlatforms(canvas);
@@ -262,10 +263,110 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
     _drawLabels(canvas);
+    _drawSrsIndicators(canvas); // Draw SRS and ghost train status
 
     drawCollisionEffects(canvas, controller, animationTick);
 
     canvas.restore();
+  }
+
+  void _drawSrsIndicators(Canvas canvas) {
+    if (!controller.srsData.isActive) return;
+
+    // Draw SRS status panel at top center
+    final panelX = 0.0;
+    final panelY = -90.0;
+
+    // Background panel
+    final panelPaint = Paint()
+      ..color = Colors.black.withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(panelX - 150, panelY - 30, 300, 60),
+        const Radius.circular(8),
+      ),
+      panelPaint,
+    );
+
+    // SRS Active indicator
+    final srsLabelPainter = TextPainter(
+      text: TextSpan(
+        text: 'SRS: ',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: layoutConfig.labelFontSize,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    srsLabelPainter.layout();
+    srsLabelPainter.paint(canvas, Offset(panelX - 140, panelY - 20));
+
+    // Timetable status
+    final allOnSchedule = controller.srsData.allOnSchedule;
+    final statusColor = allOnSchedule ? Colors.green : Colors.orange;
+    final statusText = allOnSchedule ? 'Timetable OK' : 'Delays Detected';
+
+    final statusPainter = TextPainter(
+      text: TextSpan(
+        text: statusText,
+        style: TextStyle(
+          color: statusColor,
+          fontSize: layoutConfig.labelFontSize,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    statusPainter.layout();
+    statusPainter.paint(canvas, Offset(panelX - 80, panelY - 20));
+
+    // Ghost train count
+    final ghostCount = controller.srsData.totalGhostTrains;
+    final assignedCount = controller.srsData.assignedTrains;
+
+    final countPainter = TextPainter(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: 'Ghosts: ',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: layoutConfig.labelFontSize * 0.9,
+            ),
+          ),
+          TextSpan(
+            text: '$ghostCount',
+            style: TextStyle(
+              color: Colors.cyan,
+              fontSize: layoutConfig.labelFontSize * 0.9,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          TextSpan(
+            text: ' | Assigned: ',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: layoutConfig.labelFontSize * 0.9,
+            ),
+          ),
+          TextSpan(
+            text: '$assignedCount',
+            style: TextStyle(
+              color: Colors.lightGreen,
+              fontSize: layoutConfig.labelFontSize * 0.9,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    countPainter.layout();
+    countPainter.paint(canvas, Offset(panelX - 140, panelY + 5));
   }
 
   void _drawAxleCounters(Canvas canvas) {
@@ -572,23 +673,114 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     canvas.drawPath(dashPath, reservationPaint);
   }
 
+  void _drawAreaBackgrounds(Canvas canvas) {
+    // Draw subtle background colors to distinguish the 3 railway areas
+
+    // MA2 (Left Railway) - Light blue tint
+    final ma2Paint = Paint()
+      ..color = Colors.blue.withOpacity(0.05)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      const Rect.fromLTWH(-1600, -100, 1600, 500),
+      ma2Paint,
+    );
+
+    // Draw MA2 label
+    final ma2LabelPainter = TextPainter(
+      text: TextSpan(
+        text: 'MA2',
+        style: TextStyle(
+          color: Colors.blue.withOpacity(0.3),
+          fontSize: layoutConfig.labelFontSize * 2.5,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    ma2LabelPainter.layout();
+    ma2LabelPainter.paint(canvas, const Offset(-1500, -80));
+
+    // MA1 (Center Railway) - Light green tint
+    final ma1Paint = Paint()
+      ..color = Colors.green.withOpacity(0.05)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      const Rect.fromLTWH(0, -100, 1600, 500),
+      ma1Paint,
+    );
+
+    // Draw MA1 label
+    final ma1LabelPainter = TextPainter(
+      text: TextSpan(
+        text: 'MA1',
+        style: TextStyle(
+          color: Colors.green.withOpacity(0.3),
+          fontSize: layoutConfig.labelFontSize * 2.5,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    ma1LabelPainter.layout();
+    ma1LabelPainter.paint(canvas, const Offset(100, -80));
+
+    // MA3 (Right Railway) - Light orange tint
+    final ma3Paint = Paint()
+      ..color = Colors.orange.withOpacity(0.05)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      const Rect.fromLTWH(1600, -100, 1600, 500),
+      ma3Paint,
+    );
+
+    // Draw MA3 label
+    final ma3LabelPainter = TextPainter(
+      text: TextSpan(
+        text: 'MA3',
+        style: TextStyle(
+          color: Colors.orange.withOpacity(0.3),
+          fontSize: layoutConfig.labelFontSize * 2.5,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    ma3LabelPainter.layout();
+    ma3LabelPainter.paint(canvas, const Offset(1700, -80));
+
+    // Draw boundary lines between areas
+    final boundaryPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.3)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    // MA2/MA1 boundary at X=0
+    canvas.drawLine(
+      const Offset(0, -100),
+      const Offset(0, 400),
+      boundaryPaint,
+    );
+
+    // MA1/MA3 boundary at X=1600
+    canvas.drawLine(
+      const Offset(1600, -100),
+      const Offset(1600, 400),
+      boundaryPaint,
+    );
+  }
+
   void _drawTracks(Canvas canvas) {
-    for (var blockId in [
-      '100',
-      '102',
-      '104',
-      '106',
-      '108',
-      '110',
-      '112',
-      '114'
-    ]) {
-      _drawBlock(canvas, controller.blocks[blockId]!);
+    // Draw all blocks across all 3 railway areas (MA2, MA1, MA3)
+    // This automatically handles blocks from -1600 to 3200
+    for (var block in controller.blocks.values) {
+      // Skip crossover blocks as they're drawn separately
+      if (!block.id.startsWith('crossover')) {
+        _drawBlock(canvas, block);
+      }
     }
-    for (var blockId in ['101', '103', '105', '107', '109', '111']) {
-      _drawBlock(canvas, controller.blocks[blockId]!);
-    }
-    _drawCrossoverTrack(canvas);
+
+    // Draw all crossovers
+    _drawCrossoverTracks(canvas);
   }
 
   void _drawBlock(Canvas canvas, BlockSection block) {
@@ -643,78 +835,83 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  void _drawCrossoverTrack(Canvas canvas) {
-    // Draw two separate rails for the crossover with proper spacing
+  void _drawCrossoverTracks(Canvas canvas) {
+    // Draw all crossovers across all 3 railway areas
+    // MA2: crossover90, crossover93
+    // MA1: crossover106, crossover109
+    // MA3: crossover120, crossover119
+
+    final crossoverSpecs = [
+      // MA2 crossovers (mirrored positions)
+      {'id': 'crossover90', 'x1': -700, 'y1': 100, 'x2': -600, 'y2': 200},
+      {'id': 'crossover93', 'x1': -800, 'y1': 200, 'x2': -700, 'y2': 300},
+
+      // MA1 crossovers (original)
+      {'id': 'crossover106', 'x1': 600, 'y1': 100, 'x2': 700, 'y2': 200},
+      {'id': 'crossover109', 'x1': 700, 'y1': 200, 'x2': 800, 'y2': 300},
+
+      // MA3 crossovers
+      {'id': 'crossover120', 'x1': 2000, 'y1': 100, 'x2': 2100, 'y2': 200},
+      {'id': 'crossover119', 'x1': 2100, 'y1': 200, 'x2': 2200, 'y2': 300},
+    ];
+
+    for (var spec in crossoverSpecs) {
+      _drawSingleCrossover(
+        canvas,
+        spec['id'] as String,
+        spec['x1'] as int,
+        spec['y1'] as int,
+        spec['x2'] as int,
+        spec['y2'] as int,
+      );
+    }
+  }
+
+  void _drawSingleCrossover(
+      Canvas canvas, String blockId, int x1, int y1, int x2, int y2) {
     final outerRailPaint = Paint()
       ..color = Colors.grey[700]!
-      ..strokeWidth = 3; // Thicker rails for main tracks
+      ..strokeWidth = 3;
 
     final innerRailPaint = Paint()
       ..color = Colors.grey[700]!
-      ..strokeWidth = 2; // Slightly thinner for inner rails
+      ..strokeWidth = 2;
 
-    const railSpacing = 12.0; // Space between rails
+    const railSpacing = 12.0;
 
-    // First crossover: 600,100 to 700,200
-    // Outer rail 1 (top-left to bottom-right)
-    final path1a = Path()
-      ..moveTo(600 - railSpacing / 2, 100 - railSpacing / 2)
-      ..lineTo(700 - railSpacing / 2, 200 - railSpacing / 2);
-    canvas.drawPath(path1a, outerRailPaint);
+    // Outer rail (top-left to bottom-right)
+    final pathOuter = Path()
+      ..moveTo(x1 - railSpacing / 2, y1 - railSpacing / 2)
+      ..lineTo(x2 - railSpacing / 2, y2 - railSpacing / 2);
+    canvas.drawPath(pathOuter, outerRailPaint);
 
-    // Inner rail 1 (top-left to bottom-right)
-    final path1b = Path()
-      ..moveTo(600 + railSpacing / 2, 100 + railSpacing / 2)
-      ..lineTo(700 + railSpacing / 2, 200 + railSpacing / 2);
-    canvas.drawPath(path1b, innerRailPaint);
+    // Inner rail (top-left to bottom-right)
+    final pathInner = Path()
+      ..moveTo(x1 + railSpacing / 2, y1 + railSpacing / 2)
+      ..lineTo(x2 + railSpacing / 2, y2 + railSpacing / 2);
+    canvas.drawPath(pathInner, innerRailPaint);
 
-    // Second crossover: 700,200 to 800,300
-    // Outer rail 2 (top-left to bottom-right)
-    final path2a = Path()
-      ..moveTo(700 - railSpacing / 2, 200 - railSpacing / 2)
-      ..lineTo(800 - railSpacing / 2, 300 - railSpacing / 2);
-    canvas.drawPath(path2a, outerRailPaint);
-
-    // Inner rail 2 (top-left to bottom-right)
-    final path2b = Path()
-      ..moveTo(700 + railSpacing / 2, 200 + railSpacing / 2)
-      ..lineTo(800 + railSpacing / 2, 300 + railSpacing / 2);
-    canvas.drawPath(path2b, innerRailPaint);
-
-    // Draw sleepers for both crossovers
+    // Draw sleepers
     final sleeperPaint = Paint()
       ..color = Colors.brown[700]!
       ..strokeWidth = 4;
 
     for (double t = 0; t <= 1.0; t += 0.1) {
-      // First crossover sleepers
-      final x1 = 600 + (100 * t);
-      final y1 = 100 + (100 * t);
+      final x = x1 + ((x2 - x1) * t);
+      final y = y1 + ((y2 - y1) * t);
       canvas.drawLine(
-          Offset(x1 - 10, y1 + 10), Offset(x1 + 10, y1 - 10), sleeperPaint);
-
-      // Second crossover sleepers
-      final x2 = 700 + (100 * t);
-      final y2 = 200 + (100 * t);
-      canvas.drawLine(
-          Offset(x2 - 10, y2 + 10), Offset(x2 + 10, y2 - 10), sleeperPaint);
+          Offset(x - 10, y + 10), Offset(x + 10, y - 10), sleeperPaint);
     }
 
-    // Highlight occupied crossover blocks
-    final block106 = controller.blocks['crossover106'];
-    final block109 = controller.blocks['crossover109'];
-
-    if (block106 != null && block106.occupied) {
+    // Highlight if occupied
+    final block = controller.blocks[blockId];
+    if (block != null && block.occupied) {
       final highlightPaint = Paint()
         ..color = Colors.purple.withOpacity(0.4)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(650, 150), 40, highlightPaint);
-    }
-    if (block109 != null && block109.occupied) {
-      final highlightPaint = Paint()
-        ..color = Colors.purple.withOpacity(0.4)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(750, 250), 40, highlightPaint);
+      final centerX = x1 + ((x2 - x1) / 2);
+      final centerY = y1 + ((y2 - y1) / 2);
+      canvas.drawCircle(Offset(centerX, centerY), 40, highlightPaint);
     }
   }
 
@@ -900,7 +1097,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       ..color = Colors.grey[900]!
       ..style = PaintingStyle.fill;
 
-    bool pointerWest = signal.id == 'C30' || signal.id == 'C28';
+    // Determine signal direction based on position:
+    // Lower track signals (y>250) point west, upper track signals point east
+    // Special cases: exit signals and platform signals
+    bool pointerWest = signal.y > 250 ||
+                       signal.id == 'C30' || signal.id == 'C28' ||
+                       signal.id == 'b8' || signal.id == 'b10' ||
+                       signal.id == 'b3' || signal.id == 'b4' ||
+                       signal.id == 'd48' || signal.id == 'd50';
 
     if (pointerWest) {
       final path = Path()

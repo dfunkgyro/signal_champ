@@ -31,6 +31,13 @@ enum CbtcMode {
   storage    // Storage mode - green
 }
 
+enum TrainType {
+  m1,         // Single train unit (2 wheels on AB)
+  m2,         // Double train unit (4 wheels on AB)
+  cbtcM1,     // CBTC-equipped single unit
+  cbtcM2,     // CBTC-equipped double unit
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -153,6 +160,7 @@ class Train {
   final String id;
   final String name;
   final String vin; // Vehicle Identification Number
+  final TrainType trainType; // Type of train (M1, M2, CBTC M1, CBTC M2)
   double x;
   double y;
   double speed;
@@ -177,6 +185,7 @@ class Train {
     required this.id,
     required this.name,
     required this.vin,
+    this.trainType = TrainType.m1, // Default to M1
     required this.x,
     required this.y,
     required this.speed,
@@ -197,6 +206,23 @@ class Train {
     this.smcDestination,
     this.movementAuthority,
   });
+
+  // Helper to get wheel count based on train type
+  int get wheelCount {
+    switch (trainType) {
+      case TrainType.m1:
+      case TrainType.cbtcM1:
+        return 2;
+      case TrainType.m2:
+      case TrainType.cbtcM2:
+        return 4;
+    }
+  }
+
+  // Helper to check if this is a CBTC train
+  bool get isCbtcTrain {
+    return trainType == TrainType.cbtcM1 || trainType == TrainType.cbtcM2;
+  }
 }
 
 class TrainStop {
@@ -292,6 +318,8 @@ class CollisionRecoveryPlan {
   DateTime? resolvedAt;
   CollisionRecoveryState state;
   int recoveryProgressSeconds = 0;
+  final Map<String, double> collisionPositions; // Store X position where each train collided
+  final Map<String, double> targetRecoveryPositions; // Target position 20 units back
 
   CollisionRecoveryPlan({
     required this.collisionId,
@@ -299,5 +327,9 @@ class CollisionRecoveryPlan {
     required this.reverseInstructions,
     required this.blocksToClear,
     required this.state,
-  }) : detectedAt = DateTime.now();
+    Map<String, double>? collisionPositions,
+    Map<String, double>? targetRecoveryPositions,
+  }) : detectedAt = DateTime.now(),
+       collisionPositions = collisionPositions ?? {},
+       targetRecoveryPositions = targetRecoveryPositions ?? {};
 }

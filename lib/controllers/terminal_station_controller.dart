@@ -2671,6 +2671,92 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // New enhanced train control methods
+  void updateTrainType(String id, TrainType newType) {
+    final train = trains.firstWhere((t) => t.id == id);
+    // Create a new train with updated type by copying all properties
+    final updatedTrain = Train(
+      id: train.id,
+      name: train.name,
+      vin: train.vin,
+      trainType: newType,
+      x: train.x,
+      y: train.y,
+      speed: train.speed,
+      targetSpeed: train.targetSpeed,
+      direction: train.direction,
+      color: train.color,
+      controlMode: train.controlMode,
+      manualStop: train.manualStop,
+      emergencyBrake: train.emergencyBrake,
+      currentBlockId: train.currentBlockId,
+      hasCommittedToMove: train.hasCommittedToMove,
+      lastPassedSignalId: train.lastPassedSignalId,
+      rotation: train.rotation,
+      doorsOpen: train.doorsOpen,
+      doorsOpenedAt: train.doorsOpenedAt,
+      isCbtcEquipped: newType == TrainType.cbtcM1 || newType == TrainType.cbtcM2,
+      cbtcMode: (newType == TrainType.cbtcM1 || newType == TrainType.cbtcM2)
+          ? CbtcMode.auto
+          : CbtcMode.off,
+      smcDestination: train.smcDestination,
+      movementAuthority: train.movementAuthority,
+    );
+
+    final index = trains.indexWhere((t) => t.id == id);
+    trains[index] = updatedTrain;
+
+    _logEvent('🔧 ${train.name} type changed to ${_getTrainTypeName(newType)}');
+    notifyListeners();
+  }
+
+  String _getTrainTypeName(TrainType type) {
+    switch (type) {
+      case TrainType.m1:
+        return 'M1 (Single)';
+      case TrainType.m2:
+        return 'M2 (Double)';
+      case TrainType.cbtcM1:
+        return 'CBTC M1';
+      case TrainType.cbtcM2:
+        return 'CBTC M2';
+    }
+  }
+
+  void updateTrainCbtcMode(String id, CbtcMode newMode) {
+    final train = trains.firstWhere((t) => t.id == id);
+    train.cbtcMode = newMode;
+    _logEvent('🔧 ${train.name} CBTC mode changed to ${_getCbtcModeName(newMode)}');
+    notifyListeners();
+  }
+
+  String _getCbtcModeName(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return 'Auto';
+      case CbtcMode.pm:
+        return 'PM (Protective Manual)';
+      case CbtcMode.rm:
+        return 'RM (Restrictive Manual)';
+      case CbtcMode.off:
+        return 'Off';
+      case CbtcMode.storage:
+        return 'Storage';
+    }
+  }
+
+  void setTrainDestination(String id, String? destination) {
+    final train = trains.firstWhere((t) => t.id == id);
+    train.smcDestination = destination;
+
+    if (destination == null) {
+      _logEvent('📍 ${train.name} destination cleared');
+    } else {
+      _logEvent('📍 ${train.name} destination set to $destination');
+    }
+    notifyListeners();
+  }
+
   void startSimulation() {
     isRunning = true;
     _startSimulationTimer();

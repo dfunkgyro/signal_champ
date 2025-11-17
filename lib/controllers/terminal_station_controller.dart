@@ -2799,15 +2799,146 @@ class TerminalStationController extends ChangeNotifier {
 
       // ========== NORMAL MOVEMENT LOGIC ==========
 
-      // Manual stop override
-      if (train.manualStop) {
-        train.targetSpeed = 0;
-      } else if (train.controlMode == TrainControlMode.manual) {
-        // Manual mode without stop - allow movement at current target speed
-        // targetSpeed already set by departTrain() or user control
+      // ========== CBTC TRAIN BEHAVIOR ==========
+      if (train.isCbtcTrain) {
+        if (train.cbtcMode == CbtcMode.auto) {
+          // CBTC Auto mode: Ignore signals and train stops, but check obstacles
+          if (train.manualStop) {
+            train.targetSpeed = 0;
+          } else {
+            // Check for trains ahead (stop 20 units before)
+            final trainAhead = _getTrainAhead(train, 50.0);
+            if (trainAhead != null) {
+              final distance = (trainAhead.x - train.x).abs();
+              if (distance < 20.0) {
+                train.targetSpeed = 0;
+                _logEvent('🛑 CBTC ${train.name} stopped: Train ahead within 20 units');
+              } else {
+                train.targetSpeed = 2.0;
+              }
+            } else {
+              // Check for occupied AB ahead (stop 20 units before)
+              final occupiedAB = _getOccupiedABAhead(train, 50.0);
+              if (occupiedAB != null) {
+                final abPosition = _getABPosition(occupiedAB);
+                if (abPosition != null) {
+                  final distance = (abPosition - train.x) * train.direction;
+                  if (distance < 20.0 && distance > 0) {
+                    train.targetSpeed = 0;
+                    _logEvent('🛑 CBTC ${train.name} stopped: Occupied AB ahead within 20 units');
+                  } else {
+                    train.targetSpeed = 2.0;
+                  }
+                } else {
+                  train.targetSpeed = 2.0;
+                }
+              } else {
+                train.targetSpeed = 2.0;
+              }
+            }
+          }
+        } else if (train.cbtcMode == CbtcMode.pm) {
+          // CBTC PM (Protective Manual) mode: Manual control with auto emergency brake
+          if (train.manualStop) {
+            train.targetSpeed = 0;
+          } else {
+            // Check for obstacles within 20 units and auto emergency brake
+            final trainAhead = _getTrainAhead(train, 30.0);
+            if (trainAhead != null) {
+              final distance = (trainAhead.x - train.x).abs();
+              if (distance < 20.0) {
+                train.emergencyBrake = true;
+                _logEvent('⚠️ CBTC PM ${train.name}: Emergency brake - Train ahead within 20 units');
+              }
+            }
+
+            final occupiedAB = _getOccupiedABAhead(train, 30.0);
+            if (occupiedAB != null) {
+              final abPosition = _getABPosition(occupiedAB);
+              if (abPosition != null) {
+                final distance = (abPosition - train.x) * train.direction;
+                if (distance < 20.0 && distance > 0) {
+                  train.emergencyBrake = true;
+                  _logEvent('⚠️ CBTC PM ${train.name}: Emergency brake - Occupied AB ahead within 20 units');
+                }
+              }
+            }
+          }
+        } else {
+          // Other CBTC modes (RM, off, storage) - use normal signal-based logic
+          if (train.manualStop) {
+            train.targetSpeed = 0;
+          } else if (train.controlMode == TrainControlMode.manual) {
+            // Manual mode - allow movement
+          } else {
+            // Use standard automatic mode logic below
+            Signal? signalAhead = _getSignalAhead(train);
+
+            // Enhanced permissive movement logic with direction protection
+            bool hasPassedSignalThreshold = false;
+            if (signalAhead != null && train.lastPassedSignalId == signalAhead.id) {
+              final distancePastSignal =
+                  (train.x - signalAhead.x) * train.direction;
+              hasPassedSignalThreshold = distancePastSignal > 4;
+            }
+
+            // Enhanced direction-based signal protection
+            signalAhead = _filterSignalByDirection(train, signalAhead);
+
+            // Check if train has route reservation for the block ahead
+            bool hasRouteReservation = false;
+            final nextBlock = _getNextBlockForTrain(train);
+            if (nextBlock != null) {
+              hasRouteReservation = routeReservations.values.any((reservation) =>
+                  reservation.trainId == train.id &&
+                  reservation.reservedBlocks.contains(nextBlock));
+            }
+
+            if (signalAhead == null) {
+              train.targetSpeed = 2.0;
+            } else if (signalAhead.aspect == SignalAspect.red &&
+                !hasPassedSignalThreshold &&
+                !hasRouteReservation) {
+              final distanceToSignal = (signalAhead.x - train.x).abs();
+              if (distanceToSignal < 100 && distanceToSignal > 0) {
+                if (train.targetSpeed > 0) {
+                  _logStopReason(train, signalAhead, 'approaching red signal');
+                }
+                train.targetSpeed = 0;
+                train.hasCommittedToMove = false;
+              }
+            } else {
+              train.targetSpeed = 2.0;
+
+              if ((signalAhead.aspect == SignalAspect.green ||
+                      hasRouteReservation) &&
+                  !train.hasCommittedToMove) {
+                final hasPassed = train.direction > 0
+                    ? train.x >= signalAhead.x
+                    : train.x <= signalAhead.x;
+
+                if (hasPassed) {
+                  train.lastPassedSignalId = signalAhead.id;
+                  train.hasCommittedToMove = true;
+                  _logEvent(
+                      '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+                }
+              }
+            }
+          }
+        }
       } else {
-        // Automatic mode - check signals and route reservations
-        Signal? signalAhead = _getSignalAhead(train);
+        // ========== NON-CBTC TRAIN BEHAVIOR (Standard) ==========
+
+        // Manual stop override
+        if (train.manualStop) {
+          train.targetSpeed = 0;
+        } else if (train.controlMode == TrainControlMode.manual) {
+          // Manual mode without stop - allow movement at current target speed
+          // targetSpeed already set by departTrain() or user control
+        } else {
+          // Automatic mode - check signals and route reservations
+          Signal? signalAhead = _getSignalAhead(train);
 
         // Enhanced permissive movement logic with direction protection
         bool hasPassedSignalThreshold = false;
@@ -2859,6 +2990,7 @@ class TerminalStationController extends ChangeNotifier {
                   '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
             }
           }
+        }
         }
       }
 
@@ -3356,6 +3488,73 @@ class TerminalStationController extends ChangeNotifier {
         '${DateTime.now().toIso8601String().split('T')[1].substring(0, 8)} - $message');
     if (eventLog.length > 50) {
       eventLog.removeLast();
+    }
+  }
+
+  // ========== CBTC HELPER METHODS ==========
+
+  /// Check if there's a train ahead within the specified distance
+  Train? _getTrainAhead(Train train, double maxDistance) {
+    Train? nearestTrain;
+    double minDistance = maxDistance;
+
+    for (var otherTrain in trains) {
+      if (otherTrain.id == train.id) continue;
+
+      // Check if other train is in same direction lane
+      final isSameLane = (train.y - otherTrain.y).abs() < 50;
+      if (!isSameLane) continue;
+
+      // Check if other train is ahead
+      final distance = (otherTrain.x - train.x) * train.direction;
+      if (distance > 0 && distance < minDistance) {
+        minDistance = distance;
+        nearestTrain = otherTrain;
+      }
+    }
+
+    return nearestTrain;
+  }
+
+  /// Check if there's an occupied AB ahead within the specified distance
+  String? _getOccupiedABAhead(Train train, double maxDistance) {
+    final absToCheck = ['AB100', 'AB105', 'AB106', 'AB108', 'AB111'];
+    String? nearestAB;
+    double minDistance = maxDistance;
+
+    for (var abId in absToCheck) {
+      if (!ace.isABOccupied(abId)) continue;
+
+      // Get AB position - approximate from block positions
+      final abPosition = _getABPosition(abId);
+      if (abPosition == null) continue;
+
+      // Check if AB is ahead
+      final distance = (abPosition - train.x) * train.direction;
+      if (distance > 0 && distance < minDistance) {
+        minDistance = distance;
+        nearestAB = abId;
+      }
+    }
+
+    return nearestAB;
+  }
+
+  /// Get approximate X position for an AB section
+  double? _getABPosition(String abId) {
+    switch (abId) {
+      case 'AB100':
+        return 300.0;
+      case 'AB105':
+        return 500.0;
+      case 'AB106':
+        return 675.0;
+      case 'AB108':
+        return 900.0;
+      case 'AB111':
+        return 1000.0;
+      default:
+        return null;
     }
   }
 

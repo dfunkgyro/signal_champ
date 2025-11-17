@@ -1399,6 +1399,148 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
+  // ============================================================================
+  // GHOST TRAIN AND TIMETABLE ASSIGNMENT METHODS
+  // ============================================================================
+
+  void assignTrainToTimetableSlot(String trainId, String ghostTrainId) {
+    try {
+      final train = trains.firstWhere((t) => t.id == trainId);
+      final ghost = ghostTrains.firstWhere((g) => g.id == ghostTrainId);
+
+      if (!ghost.isAvailable) {
+        _logEvent('⚠️ Ghost train $ghostTrainId is not available');
+        return;
+      }
+
+      // Assign train to ghost slot
+      train.assignedTimetableId = ghostTrainId;
+      train.assignedServiceId = ghost.serviceId;
+      ghost.assignedRealTrainId = trainId;
+
+      _logEvent('📋 ${train.name} assigned to timetable slot $ghostTrainId (${ghost.name})');
+      notifyListeners();
+    } catch (e) {
+      _logEvent('❌ Failed to assign train to timetable: $e');
+    }
+  }
+
+  void unassignTrainFromTimetable(String trainId) {
+    try {
+      final train = trains.firstWhere((t) => t.id == trainId);
+
+      if (train.assignedTimetableId == null) {
+        _logEvent('⚠️ ${train.name} is not assigned to timetable');
+        return;
+      }
+
+      // Find and clear ghost train assignment
+      final ghost = ghostTrains.firstWhere(
+        (g) => g.id == train.assignedTimetableId,
+        orElse: () => throw Exception('Ghost train not found'),
+      );
+
+      ghost.assignedRealTrainId = null;
+      final oldSlot = train.assignedTimetableId;
+
+      // Clear train assignment
+      train.assignedTimetableId = null;
+      train.assignedServiceId = null;
+      train.earlyLateSeconds = null;
+      train.currentStationId = null;
+
+      _logEvent('📋 ${train.name} unassigned from timetable slot $oldSlot');
+      notifyListeners();
+    } catch (e) {
+      _logEvent('❌ Failed to unassign train from timetable: $e');
+    }
+  }
+
+  void reassignTrainToTimetableSlot(String trainId, String newGhostTrainId) {
+    try {
+      final train = trains.firstWhere((t) => t.id == trainId);
+
+      // Unassign from current slot if any
+      if (train.assignedTimetableId != null) {
+        unassignTrainFromTimetable(trainId);
+      }
+
+      // Assign to new slot
+      assignTrainToTimetableSlot(trainId, newGhostTrainId);
+    } catch (e) {
+      _logEvent('❌ Failed to reassign train: $e');
+    }
+  }
+
+  List<GhostTrain> getAvailableGhostTrains() {
+    return ghostTrains.where((g) => g.isAvailable).toList();
+  }
+
+  void generateGhostTrainsForAllServices() {
+    ghostTrains.clear();
+
+    if (timetable == null) return;
+
+    int ghostId = 1;
+    final now = DateTime.now();
+
+    for (var service in timetable!.services) {
+      // Generate multiple ghost trains for continuous service
+      // Create ghost trains every 2 minutes for each service
+      for (int i = 0; i < 10; i++) {
+        final scheduledDeparture = service.scheduledTime.add(Duration(minutes: i * 2));
+
+        // Map platform IDs from stop blocks
+        final Map<String, DateTime> platformTimes = {};
+        for (int stopIndex = 0; stopIndex < service.stops.length; stopIndex++) {
+          final stopBlock = service.stops[stopIndex];
+          final platform = _getPlatformForBlock(stopBlock);
+          if (platform != null) {
+            // Estimate arrival time: 30 seconds per stop
+            platformTimes[platform.id] = scheduledDeparture.add(Duration(seconds: stopIndex * 30));
+          }
+        }
+
+        final startBlock = blocks[service.startBlock];
+        if (startBlock == null) continue;
+
+        final ghost = GhostTrain(
+          id: 'GHOST-${service.id}-$ghostId',
+          serviceId: service.id,
+          name: '${service.trainName} #$ghostId',
+          trainType: service.trainType,
+          x: startBlock.startX + 20,
+          y: startBlock.y,
+          speed: 0,
+          direction: startBlock.y == 100 ? 1 : -1,
+          remainingStops: List.from(service.stops),
+          scheduledPlatformTimes: platformTimes,
+        );
+
+        ghostTrains.add(ghost);
+        ghostId++;
+      }
+    }
+
+    _logEvent('👻 Generated ${ghostTrains.length} ghost trains for ${timetable!.services.length} services');
+    notifyListeners();
+  }
+
+  Platform? _getPlatformForBlock(String blockId) {
+    final block = blocks[blockId];
+    if (block == null) return null;
+
+    for (var platform in platforms) {
+      if ((block.startX >= platform.startX && block.startX <= platform.endX) ||
+          (block.endX >= platform.startX && block.endX <= platform.endX)) {
+        if ((block.y - platform.y).abs() < 50) {
+          return platform;
+        }
+      }
+    }
+    return null;
+  }
+
   void _initializeLayout() {
     _initializeAxleCounters();
 
@@ -2448,7 +2590,11 @@ class TerminalStationController extends ChangeNotifier {
         .any((reservation) => reservation.reservedBlocks.contains(blockId));
   }
 
-  void addTrainToBlock(String blockId) {
+  void addTrainToBlock(String blockId, {
+    TrainType trainType = TrainType.m1,
+    String? destination,
+    bool assignToTimetable = false,
+  }) {
     final safeBlocks = getSafeBlocksForTrainAdd();
     if (!safeBlocks.contains(blockId)) {
       _logEvent(
@@ -2469,10 +2615,13 @@ class TerminalStationController extends ChangeNotifier {
       direction = -1;
     }
 
+    final isCbtc = trainType == TrainType.cbtcM1 || trainType == TrainType.cbtcM2;
+
     final train = Train(
       id: 'T$nextTrainNumber',
       name: 'Train $nextTrainNumber',
-      vin: _generateVin(nextTrainNumber, false),
+      vin: _generateVin(nextTrainNumber, isCbtc),
+      trainType: trainType,
       x: _getInitialXForBlock(blockId),
       y: block.y,
       speed: 0,
@@ -2481,18 +2630,48 @@ class TerminalStationController extends ChangeNotifier {
       color: Colors.primaries[nextTrainNumber % Colors.primaries.length],
       controlMode: TrainControlMode.automatic,
       manualStop: false,
-      isCbtcEquipped: false,
-      cbtcMode: CbtcMode.off,
+      isCbtcEquipped: isCbtc,
+      cbtcMode: isCbtc ? CbtcMode.off : CbtcMode.off,
+      smcDestination: destination,
     );
 
     trains.add(train);
+
+    // If assign to timetable, find next available ghost train slot
+    if (assignToTimetable && ghostTrains.isNotEmpty) {
+      final availableGhost = ghostTrains.firstWhere(
+        (g) => g.isAvailable,
+        orElse: () => ghostTrains.first, // Fallback if none available
+      );
+
+      if (availableGhost.isAvailable) {
+        assignTrainToTimetableSlot(train.id, availableGhost.id);
+      }
+    }
+
     nextTrainNumber++;
     _updateBlockOccupation();
 
     String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    String typeStr = _getTrainTypeDisplayName(trainType);
+    String destStr = destination != null ? ' to $destination' : '';
+    String ttStr = assignToTimetable ? ' [TIMETABLED]' : '';
     _logEvent(
-        '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+        '🚂 Train ${nextTrainNumber - 1} ($typeStr) added at block $blockId ($trackType)$destStr$ttStr');
     notifyListeners();
+  }
+
+  String _getTrainTypeDisplayName(TrainType type) {
+    switch (type) {
+      case TrainType.m1:
+        return 'M1';
+      case TrainType.m2:
+        return 'M2';
+      case TrainType.cbtcM1:
+        return 'CBTC M1';
+      case TrainType.cbtcM2:
+        return 'CBTC M2';
+    }
   }
 
   double _getInitialXForBlock(String blockId) {

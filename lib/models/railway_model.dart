@@ -40,7 +40,7 @@ class WifiAntenna {
   final String id;
   final double x;
   final double y;
-  final bool isActive;
+  bool isActive;
 
   WifiAntenna({
     required this.id,

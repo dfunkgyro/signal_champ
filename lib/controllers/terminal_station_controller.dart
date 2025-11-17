@@ -2931,6 +2931,48 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void swingPoint(String pointId) {
+    final point = points[pointId];
+    if (point == null) return;
+
+    // Check if point is locked
+    if (point.locked) {
+      _logEvent('❌ Point $pointId is LOCKED - cannot swing');
+      return;
+    }
+
+    // Check if point is deadlocked by AB occupation
+    if (_isPointDeadlockedByAB(pointId)) {
+      final ab106Occupied = ace.isABOccupied('AB106');
+      final specificAB = pointId == '78A'
+          ? (ab106Occupied ? 'AB106' : 'AB104')
+          : (ab106Occupied ? 'AB106' : 'AB109');
+
+      _logEvent(
+          '❌ Point $pointId cannot swing: Deadlocked by $specificAB occupation');
+      return;
+    }
+
+    // Check traditional deadlock (trains in critical blocks)
+    if (!_arePointsMovable()) {
+      _logEvent(
+          '❌ Points deadlocked: Train occupying critical block (104, 106, 107, or 109)');
+      return;
+    }
+
+    // Toggle position
+    point.position = point.position == PointPosition.normal
+        ? PointPosition.reverse
+        : PointPosition.normal;
+
+    _logEvent(point.position == PointPosition.normal
+        ? '🔀 Point $pointId swung to NORMAL'
+        : '🔀 Point $pointId swung to REVERSE');
+
+    _updateSignalAspects();
+    notifyListeners();
+  }
+
   void toggleSelfNormalizingPoints() {
     selfNormalizingPoints = !selfNormalizingPoints;
     _logEvent(selfNormalizingPoints

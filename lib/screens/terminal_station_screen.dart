@@ -289,7 +289,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 ),
               ],
             ),
-          ),
 
           // SPAD Alarm - overlay at top (Layer 6)
           Positioned(

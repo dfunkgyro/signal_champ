@@ -581,6 +581,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   double _cameraOffsetX = 0;
+  double _cameraOffsetY = 0;
   double _zoom = 1.0;
   
   @override
@@ -804,6 +805,7 @@ class _SimulationScreenState extends State<SimulationScreen>
                 onPressed: () {
                   setState(() {
                     _cameraOffsetX = 0;
+                    _cameraOffsetY = 0;
                     _zoom = 1.0;
                   });
                 },
@@ -826,6 +828,7 @@ class _SimulationScreenState extends State<SimulationScreen>
             onPanUpdate: (details) {
               setState(() {
                 _cameraOffsetX += details.delta.dx / _zoom;
+                _cameraOffsetY += details.delta.dy / _zoom;
               });
             },
             child: CustomPaint(
@@ -836,6 +839,7 @@ class _SimulationScreenState extends State<SimulationScreen>
                 signals: controller.signals,
                 platforms: controller.platforms,
                 cameraOffsetX: _cameraOffsetX,
+                cameraOffsetY: _cameraOffsetY,
                 zoom: _zoom,
               ),
             ),
@@ -1110,14 +1114,16 @@ class RailwayPainter extends CustomPainter {
   final List<Signal> signals;
   final List<Platform> platforms;
   final double cameraOffsetX;
+  final double cameraOffsetY;
   final double zoom;
-  
+
   RailwayPainter({
     required this.trains,
     required this.blocks,
     required this.signals,
     required this.platforms,
     required this.cameraOffsetX,
+    required this.cameraOffsetY,
     required this.zoom,
   });
   
@@ -1126,9 +1132,9 @@ class RailwayPainter extends CustomPainter {
     canvas.save();
     
     // Apply camera transform
-    canvas.translate(size.width / 2, 0);
+    canvas.translate(size.width / 2, size.height / 2);
     canvas.scale(zoom);
-    canvas.translate(cameraOffsetX, 0);
+    canvas.translate(cameraOffsetX, cameraOffsetY);
     
     // Draw platforms first (yellow base layer)
     _drawPlatforms(canvas);

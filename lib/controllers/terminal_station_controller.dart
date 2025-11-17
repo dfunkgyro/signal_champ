@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
-import 'package:rail_champ/models/railway_model.dart';  // FIXED: Import for WiFi and Transponders
+import 'package:rail_champ/models/railway_model.dart' show WifiAntenna, Transponder, TransponderType;  // FIXED: Only import WiFi/Transponder types
 import 'dart:async';
 import 'dart:math' as math;
 

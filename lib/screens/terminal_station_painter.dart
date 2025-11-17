@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
+import 'package:rail_champ/models/railway_model.dart' show WifiAntenna, Transponder, TransponderType;
 
 // Collision Visual Effects Mixin
 mixin CollisionVisualEffects {

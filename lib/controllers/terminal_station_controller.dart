@@ -1388,8 +1388,36 @@ class TerminalStationController extends ChangeNotifier {
   void _initializeLayout() {
     _initializeAxleCounters();
 
-    // FIXED: Expanded closed-loop network - 7000×1200 canvas
-    // Section 1: Central Terminal (original, x: 0→1600, y: 100/300)
+    // MIRRORED TERMINAL STATION DESIGN - 3 sections with continuous loop
+    // Total canvas: 3200 units wide (-1600 to 3200)
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // LEFT SECTION (-1600 to 0) - Mirror of terminal
+    // ═══════════════════════════════════════════════════════════════════════
+    // Upper track (y=100) - Eastbound →
+    blocks['200'] = BlockSection(id: '200', startX: -1600, endX: -1400, y: 100);
+    blocks['202'] = BlockSection(id: '202', startX: -1400, endX: -1200, y: 100);
+    blocks['204'] = BlockSection(id: '204', startX: -1200, endX: -1000, y: 100);
+    blocks['206'] = BlockSection(id: '206', startX: -1000, endX: -800, y: 100);
+    blocks['208'] = BlockSection(id: '208', startX: -800, endX: -600, y: 100);
+    blocks['210'] = BlockSection(id: '210', startX: -600, endX: -400, y: 100);
+    blocks['212'] = BlockSection(id: '212', startX: -400, endX: -200, y: 100);
+    blocks['214'] = BlockSection(id: '214', startX: -200, endX: 0, y: 100);
+
+    // Lower track (y=300) - Westbound ←
+    blocks['201'] = BlockSection(id: '201', startX: -1600, endX: -1400, y: 300);
+    blocks['203'] = BlockSection(id: '203', startX: -1400, endX: -1200, y: 300);
+    blocks['205'] = BlockSection(id: '205', startX: -1200, endX: -1000, y: 300);
+    blocks['207'] = BlockSection(id: '207', startX: -1000, endX: -800, y: 300);
+    blocks['209'] = BlockSection(id: '209', startX: -800, endX: -600, y: 300);
+    blocks['211'] = BlockSection(id: '211', startX: -600, endX: -400, y: 300);
+    blocks['213'] = BlockSection(id: '213', startX: -400, endX: -200, y: 300);
+    blocks['215'] = BlockSection(id: '215', startX: -200, endX: 0, y: 300);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // MIDDLE SECTION (0 to 1600) - Original terminal (KEEP AS IS)
+    // ═══════════════════════════════════════════════════════════════════════
+    // Upper track (y=100) - Eastbound →
     blocks['100'] = BlockSection(id: '100', startX: 0, endX: 200, y: 100);
     blocks['102'] = BlockSection(id: '102', startX: 200, endX: 400, y: 100);
     blocks['104'] = BlockSection(id: '104', startX: 400, endX: 600, y: 100);
@@ -1399,107 +1427,96 @@ class TerminalStationController extends ChangeNotifier {
     blocks['112'] = BlockSection(id: '112', startX: 1200, endX: 1400, y: 100);
     blocks['114'] = BlockSection(id: '114', startX: 1400, endX: 1600, y: 100);
 
+    // Lower track (y=300) - Westbound ←
     blocks['101'] = BlockSection(id: '101', startX: 0, endX: 200, y: 300);
     blocks['103'] = BlockSection(id: '103', startX: 200, endX: 400, y: 300);
     blocks['105'] = BlockSection(id: '105', startX: 400, endX: 600, y: 300);
     blocks['107'] = BlockSection(id: '107', startX: 600, endX: 800, y: 300);
     blocks['109'] = BlockSection(id: '109', startX: 800, endX: 1000, y: 300);
     blocks['111'] = BlockSection(id: '111', startX: 1000, endX: 1200, y: 300);
+    blocks['113'] = BlockSection(id: '113', startX: 1200, endX: 1400, y: 300);
+    blocks['115'] = BlockSection(id: '115', startX: 1400, endX: 1600, y: 300);
 
-    // Section 2: East extension to Victoria Junction (x: 1600→3200, y: 100/300)
-    for (int i = 116; i <= 132; i += 2) {
-      double startX = 1600 + ((i - 116) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 100);
-    }
-    for (int i = 113; i <= 131; i += 2) {
-      double startX = 1600 + ((i - 113) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 300);
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // RIGHT SECTION (1600 to 3200) - Mirror of terminal
+    // ═══════════════════════════════════════════════════════════════════════
+    // Upper track (y=100) - Eastbound →
+    blocks['300'] = BlockSection(id: '300', startX: 1600, endX: 1800, y: 100);
+    blocks['302'] = BlockSection(id: '302', startX: 1800, endX: 2000, y: 100);
+    blocks['304'] = BlockSection(id: '304', startX: 2000, endX: 2200, y: 100);
+    blocks['306'] = BlockSection(id: '306', startX: 2200, endX: 2400, y: 100);
+    blocks['308'] = BlockSection(id: '308', startX: 2400, endX: 2600, y: 100);
+    blocks['310'] = BlockSection(id: '310', startX: 2600, endX: 2800, y: 100);
+    blocks['312'] = BlockSection(id: '312', startX: 2800, endX: 3000, y: 100);
+    blocks['314'] = BlockSection(id: '314', startX: 3000, endX: 3200, y: 100);
 
-    // Section 3: To Paddington Central (x: 3200→4800, y: 100/300)
-    for (int i = 134; i <= 148; i += 2) {
-      double startX = 3200 + ((i - 134) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 100);
-    }
-    for (int i = 133; i <= 149; i += 2) {
-      double startX = 3200 + ((i - 133) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 300);
-    }
+    // Lower track (y=300) - Westbound ←
+    blocks['301'] = BlockSection(id: '301', startX: 1600, endX: 1800, y: 300);
+    blocks['303'] = BlockSection(id: '303', startX: 1800, endX: 2000, y: 300);
+    blocks['305'] = BlockSection(id: '305', startX: 2000, endX: 2200, y: 300);
+    blocks['307'] = BlockSection(id: '307', startX: 2200, endX: 2400, y: 300);
+    blocks['309'] = BlockSection(id: '309', startX: 2400, endX: 2600, y: 300);
+    blocks['311'] = BlockSection(id: '311', startX: 2600, endX: 2800, y: 300);
+    blocks['313'] = BlockSection(id: '313', startX: 2800, endX: 3000, y: 300);
+    blocks['315'] = BlockSection(id: '315', startX: 3000, endX: 3200, y: 300);
 
-    // Section 4: Southern curve (x: 4800→5600, y transitions from 100 to 700)
-    for (int i = 150; i <= 158; i += 2) {
-      double startX = 4800 + ((i - 150) / 2 * 200);
-      double yPos = 100 + ((i - 150) / 2 * 150); // Gradual curve down
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: yPos);
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // CROSSOVERS - 3 total for continuous loop
+    // ═══════════════════════════════════════════════════════════════════════
+    // Left End Crossover (connects upper to lower for turnaround)
+    blocks['crossover_left'] =
+        BlockSection(id: 'crossover_left', startX: -1000, endX: -900, y: 200);
 
-    // Section 5: Eastern extension and return line (x: 5600→7000, y: 700)
-    for (int i = 160; i <= 174; i += 2) {
-      double startX = 5600 + ((i - 160) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 700);
-    }
-
-    // Section 6: Western return (x: 7000→0, y: 700) - westbound track
-    for (int i = 201; i <= 235; i += 2) {
-      double startX = 7000 - ((i - 201) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX - 200, endX: startX, y: 700);
-    }
-
-    // Section 7: Northwest curve back to start (x: 0→-800, curves north)
-    for (int i = 237; i <= 243; i += 2) {
-      double startX = 0 - ((i - 237) / 2 * 200);
-      double yPos = 700 - ((i - 237) / 2 * 150); // Curve back up
-      blocks['$i'] = BlockSection(id: '$i', startX: startX - 200, endX: startX, y: yPos);
-    }
-
-    // Crossovers
+    // Middle Crossover (original 78A/78B)
     blocks['crossover106'] =
         BlockSection(id: 'crossover106', startX: 600, endX: 700, y: 150);
     blocks['crossover109'] =
         BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
-    blocks['crossover126'] =
-        BlockSection(id: 'crossover126', startX: 2400, endX: 2500, y: 200); // Victoria
-    blocks['crossover138'] =
-        BlockSection(id: 'crossover138', startX: 3800, endX: 3900, y: 200); // Paddington
-    blocks['crossover170'] =
-        BlockSection(id: 'crossover170', startX: 6000, endX: 6100, y: 700); // Waterloo
 
-    // Points for all crossovers
+    // Right End Crossover (connects upper to lower for turnaround)
+    blocks['crossover_right'] =
+        BlockSection(id: 'crossover_right', startX: 3100, endX: 3200, y: 200);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // POINTS
+    // ═══════════════════════════════════════════════════════════════════════
+    // Left end points
+    points['76A'] = Point(id: '76A', x: -1000, y: 100);
+    points['76B'] = Point(id: '76B', x: -900, y: 300);
+
+    // Middle points (KEEP)
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
-    points['80A'] = Point(id: '80A', x: 2400, y: 100); // Victoria
-    points['80B'] = Point(id: '80B', x: 2500, y: 300);
-    points['82A'] = Point(id: '82A', x: 3800, y: 100); // Paddington
-    points['82B'] = Point(id: '82B', x: 3900, y: 300);
-    points['84A'] = Point(id: '84A', x: 6000, y: 700); // Waterloo
 
-    // FIXED: 5 Stations with unique names across the loop
-    // Central Terminal (original)
-    platforms.add(Platform(
-        id: 'P1', name: 'Central Terminal P1', startX: 980, endX: 1240, y: 100));
-    platforms.add(Platform(
-        id: 'P2', name: 'Central Terminal P2 (Bay)', startX: 980, endX: 1240, y: 300));
+    // Right end points
+    points['80A'] = Point(id: '80A', x: 3100, y: 100);
+    points['80B'] = Point(id: '80B', x: 3200, y: 300);
 
-    // Victoria Junction
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLATFORMS - 6 total (2 at each location)
+    // ═══════════════════════════════════════════════════════════════════════
+    // Left End Station
     platforms.add(Platform(
-        id: 'P3', name: 'Victoria Junction P3', startX: 2400, endX: 2800, y: 100));
+        id: 'P1', name: 'West Terminal Platform 1', startX: -1200, endX: -800, y: 100));
     platforms.add(Platform(
-        id: 'P4', name: 'Victoria Junction P4', startX: 2400, endX: 2800, y: 300));
+        id: 'P2', name: 'West Terminal Platform 2', startX: -1200, endX: -800, y: 300));
 
-    // Paddington Central
+    // Middle Station (original)
     platforms.add(Platform(
-        id: 'P5', name: 'Paddington Central P5', startX: 3800, endX: 4200, y: 100));
+        id: 'P3', name: 'Central Terminal Platform 1', startX: 800, endX: 1200, y: 100));
     platforms.add(Platform(
-        id: 'P6', name: 'Paddington Central P6', startX: 3800, endX: 4200, y: 300));
+        id: 'P4', name: 'Central Terminal Platform 2', startX: 800, endX: 1200, y: 300));
 
-    // Waterloo Express
+    // Right End Station
     platforms.add(Platform(
-        id: 'P7', name: 'Waterloo Express P7', startX: 6000, endX: 6400, y: 700));
-
-    // Camden Depot
+        id: 'P5', name: 'East Terminal Platform 1', startX: 2400, endX: 2800, y: 100));
     platforms.add(Platform(
-        id: 'P8', name: 'Camden Depot P8', startX: -800, endX: -400, y: 700));
+        id: 'P6', name: 'East Terminal Platform 2', startX: 2400, endX: 2800, y: 300));
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // SIGNALS - Simplified for mirrored design
+    // ═══════════════════════════════════════════════════════════════════════
+    // Middle section signals (KEEP existing)
     signals['C31'] = Signal(
       id: 'C31',
       x: 390,
@@ -1507,46 +1524,11 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'C31_R1',
-          name: 'Route 1 (Main → Platform 1)',
+          name: 'Main Route',
           requiredBlocksClear: ['106', '108', '110'],
-          requiredPointPositions: {
-            '78A': PointPosition.normal,
-            '78B': PointPosition.normal
-          },
-          pathBlocks: ['104', '106', '108', '110', '112'],
+          requiredPointPositions: {'78A': PointPosition.normal},
+          pathBlocks: ['104', '106', '108', '110'],
           protectedBlocks: ['106', '108', '110'],
-        ),
-        SignalRoute(
-          id: 'C31_R2',
-          name: 'Route 2 (Main → Bay Platform 2)',
-          requiredBlocksClear: [
-            '106',
-            'crossover106',
-            'crossover109',
-            '109',
-            '111'
-          ],
-          requiredPointPositions: {
-            '78A': PointPosition.reverse,
-            '78B': PointPosition.reverse
-          },
-          conflictingRoutes: ['C30_R1', 'C30_R2'],
-          pathBlocks: [
-            '104',
-            '106',
-            'crossover106',
-            'crossover109',
-            '109',
-            '111'
-          ],
-          protectedBlocks: [
-            '104',
-            '106',
-            'crossover106',
-            'crossover109',
-            '109',
-            '111'
-          ],
         ),
       ],
     );
@@ -1558,7 +1540,7 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'C33_R1',
-          name: 'Platform 1 Departure',
+          name: 'Platform Departure',
           requiredBlocksClear: ['112', '114'],
           requiredPointPositions: {},
           pathBlocks: ['112', '114'],
@@ -1569,142 +1551,42 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C30'] = Signal(
       id: 'C30',
-      x: 980,
+      x: 1000,
       y: 320,
       routes: [
         SignalRoute(
           id: 'C30_R1',
-          name: 'C30 Route 1 (Towards C28)',
-          requiredBlocksClear: ['107', '105', '103'],
+          name: 'Platform 2 Departure',
+          requiredBlocksClear: ['109', '107', '105'],
           requiredPointPositions: {'78B': PointPosition.normal},
-          pathBlocks: ['109', '107', '105', '103', '101'],
+          pathBlocks: ['109', '107', '105'],
           protectedBlocks: ['109', '107', '105'],
-        ),
-        SignalRoute(
-          id: 'C30_R2',
-          name: 'C30 Route 2 (Via Crossover)',
-          requiredBlocksClear: [
-            'crossover109',
-            'crossover106',
-            '106',
-            '108',
-            '110'
-          ],
-          requiredPointPositions: {
-            '78B': PointPosition.reverse,
-            '78A': PointPosition.reverse
-          },
-          conflictingRoutes: ['C31_R1', 'C31_R2'],
-          pathBlocks: [
-            '109',
-            'crossover109',
-            'crossover106',
-            '106',
-            '108',
-            '110'
-          ],
-          protectedBlocks: ['109', 'crossover109', 'crossover106'],
-        ),
-      ],
-    );
-
-    signals['C28'] = Signal(
-      id: 'C28',
-      x: 400,
-      y: 320,
-      routes: [
-        SignalRoute(
-          id: 'C28_R1',
-          name: 'Bay Exit (Westbound)',
-          requiredBlocksClear: ['103', '101'],
-          requiredPointPositions: {},
-          pathBlocks: ['105', '103', '101'],
-          protectedBlocks: ['103', '101'],
-        ),
-      ],
-    );
-
-    // FIXED: New signals for expanded network
-    signals['C35'] = Signal(
-      id: 'C35',
-      x: 2400,
-      y: 80,
-      routes: [
-        SignalRoute(
-          id: 'C35_R1',
-          name: 'Victoria Entry',
-          requiredBlocksClear: ['126', '128'],
-          requiredPointPositions: {},
-          pathBlocks: ['124', '126', '128'],
-          protectedBlocks: ['126', '128'],
-        ),
-      ],
-    );
-
-    signals['C37'] = Signal(
-      id: 'C37',
-      x: 3800,
-      y: 80,
-      routes: [
-        SignalRoute(
-          id: 'C37_R1',
-          name: 'Paddington Entry',
-          requiredBlocksClear: ['138', '140'],
-          requiredPointPositions: {},
-          pathBlocks: ['136', '138', '140'],
-          protectedBlocks: ['138', '140'],
-        ),
-      ],
-    );
-
-    signals['C39'] = Signal(
-      id: 'C39',
-      x: 6000,
-      y: 680,
-      routes: [
-        SignalRoute(
-          id: 'C39_R1',
-          name: 'Waterloo Departure',
-          requiredBlocksClear: ['170', '172'],
-          requiredPointPositions: {},
-          pathBlocks: ['168', '170', '172'],
-          protectedBlocks: ['170', '172'],
         ),
       ],
     );
 
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
     trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1220, y: 120);
-    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 980, y: 340);
-    trainStops['T28'] = TrainStop(id: 'T28', signalId: 'C28', x: 380, y: 340);
-    trainStops['T35'] = TrainStop(id: 'T35', signalId: 'C35', x: 2400, y: 120);
-    trainStops['T37'] = TrainStop(id: 'T37', signalId: 'C37', x: 3800, y: 120);
-    trainStops['T39'] = TrainStop(id: 'T39', signalId: 'C39', x: 6000, y: 720);
+    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 1000, y: 340);
 
-    // FIXED: WiFi Antennas for CBTC coverage across expanded network
-    wifiAntennas['W1'] = WifiAntenna(id: 'W1', x: 500, y: 200, isActive: true);
-    wifiAntennas['W2'] = WifiAntenna(id: 'W2', x: 1200, y: 200, isActive: true);
-    wifiAntennas['W3'] = WifiAntenna(id: 'W3', x: 2000, y: 200, isActive: true);
-    wifiAntennas['W4'] = WifiAntenna(id: 'W4', x: 2600, y: 200, isActive: true); // Victoria
-    wifiAntennas['W5'] = WifiAntenna(id: 'W5', x: 3400, y: 200, isActive: true);
-    wifiAntennas['W6'] = WifiAntenna(id: 'W6', x: 4000, y: 200, isActive: true); // Paddington
-    wifiAntennas['W7'] = WifiAntenna(id: 'W7', x: 4800, y: 400, isActive: true);
-    wifiAntennas['W8'] = WifiAntenna(id: 'W8', x: 5400, y: 600, isActive: true);
-    wifiAntennas['W9'] = WifiAntenna(id: 'W9', x: 6200, y: 700, isActive: true); // Waterloo
-    wifiAntennas['W10'] = WifiAntenna(id: 'W10', x: 5000, y: 700, isActive: true);
-    wifiAntennas['W11'] = WifiAntenna(id: 'W11', x: 3000, y: 700, isActive: true);
-    wifiAntennas['W12'] = WifiAntenna(id: 'W12', x: 1000, y: 700, isActive: true);
-    wifiAntennas['W13'] = WifiAntenna(id: 'W13', x: -400, y: 700, isActive: true); // Camden
+    // ═══════════════════════════════════════════════════════════════════════
+    // CBTC INFRASTRUCTURE - WiFi and Transponders
+    // ═══════════════════════════════════════════════════════════════════════
+    // WiFi Antennas across all 3 sections
+    wifiAntennas['W1'] = WifiAntenna(id: 'W1', x: -1000, y: 200, isActive: true); // Left
+    wifiAntennas['W2'] = WifiAntenna(id: 'W2', x: -400, y: 200, isActive: true); // Left
+    wifiAntennas['W3'] = WifiAntenna(id: 'W3', x: 400, y: 200, isActive: true); // Middle
+    wifiAntennas['W4'] = WifiAntenna(id: 'W4', x: 1000, y: 200, isActive: true); // Middle
+    wifiAntennas['W5'] = WifiAntenna(id: 'W5', x: 1800, y: 200, isActive: true); // Right
+    wifiAntennas['W6'] = WifiAntenna(id: 'W6', x: 2600, y: 200, isActive: true); // Right
 
     // Transponders at key locations
-    transponders['TP1'] = Transponder(id: 'TP1', type: TransponderType.t1, x: 300, y: 100, description: 'Central West');
-    transponders['TP2'] = Transponder(id: 'TP2', type: TransponderType.t2, x: 1100, y: 100, description: 'Central East');
-    transponders['TP3'] = Transponder(id: 'TP3', type: TransponderType.t3, x: 2500, y: 100, description: 'Victoria');
-    transponders['TP4'] = Transponder(id: 'TP4', type: TransponderType.t6, x: 3900, y: 100, description: 'Paddington');
-    transponders['TP5'] = Transponder(id: 'TP5', type: TransponderType.t1, x: 6100, y: 700, description: 'Waterloo');
+    transponders['TP1'] = Transponder(id: 'TP1', type: TransponderType.t1, x: -1000, y: 100, description: 'West Terminal');
+    transponders['TP2'] = Transponder(id: 'TP2', type: TransponderType.t2, x: 1000, y: 100, description: 'Central Terminal');
+    transponders['TP3'] = Transponder(id: 'TP3', type: TransponderType.t3, x: 2600, y: 100, description: 'East Terminal');
 
     _logEvent(
-        '🚉 EXPANDED LOOP NETWORK INITIALIZED: 5 stations, 8 platforms, 7 signals, 7 points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
+        '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, 3 signals, 6 points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
   }
 
   // ============================================================================
@@ -3412,190 +3294,100 @@ class TerminalStationController extends ChangeNotifier {
     final currentBlock = blocks[train.currentBlockId!];
     if (currentBlock == null) return null;
 
-    // Enhanced next block logic for the complete loop network
+    // MIRRORED TERMINAL STATION ROUTING - Continuous loop through 3 sections
+    // Upper track ALWAYS eastbound →, Lower track ALWAYS westbound ←
+
     if (train.direction > 0) {
-      // Eastbound
+      // ========== EASTBOUND (Upper Track) ==========
+
+      // LEFT SECTION (200-214)
       switch (currentBlock.id) {
-        // Terminal section (0-1600)
-        case '100':
-          return '102';
-        case '102':
-          return '104';
-        case '104':
-          return '106';
-        case '106':
-          return '108';
-        case '108':
-          return '110';
-        case '110':
-          return '112';
-        case '112':
-          return '114';
-        case '114':
-          return '116'; // Continue to Victoria Junction section
-
-        // Lower track
-        case '101':
-          return '103';
-        case '103':
-          return '105';
-        case '105':
-          return '107';
-        case '107':
-          return '109';
-        case '109':
-          return '111';
-        case '111':
-          return '113'; // Continue to Victoria Junction section
-
-        // Crossovers
-        case 'crossover106':
-          return 'crossover109';
-        case 'crossover109':
-          return '109';
+        case '200': return '202';
+        case '202': return '204';
+        case '204': return '206';
+        case '206': return '208';
+        case '208': return '210';
+        case '210': return '212';
+        case '212': return '214';
+        case '214': return '100'; // Continue to MIDDLE section
       }
 
-      // Victoria Junction section (116-132 upper, 113-131 lower)
-      // Upper track blocks (even numbers)
-      for (int i = 116; i <= 130; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i + 2}';
-        }
+      // MIDDLE SECTION (100-114)
+      switch (currentBlock.id) {
+        case '100': return '102';
+        case '102': return '104';
+        case '104': return '106';
+        case '106': return '108';
+        case '108': return '110';
+        case '110': return '112';
+        case '112': return '114';
+        case '114': return '300'; // Continue to RIGHT section
       }
-      if (currentBlock.id == '132') return '134'; // Continue to Paddington
 
-      // Lower track blocks (odd numbers)
-      for (int i = 113; i <= 129; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i + 2}';
-        }
+      // RIGHT SECTION (300-314)
+      switch (currentBlock.id) {
+        case '300': return '302';
+        case '302': return '304';
+        case '304': return '306';
+        case '306': return '308';
+        case '308': return '310';
+        case '310': return '312';
+        case '312': return '314';
+        case '314': return 'crossover_right'; // Use right crossover to switch to lower track
       }
-      if (currentBlock.id == '131') return '133'; // Continue to Paddington
 
-      // Paddington Central section (134-148 upper, 133-149 lower)
-      for (int i = 134; i <= 146; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i + 2}';
-        }
-      }
-      if (currentBlock.id == '148') return '150'; // Continue to southern curve
+      // Crossovers
+      if (currentBlock.id == 'crossover_right') return '315'; // Switch to lower track
+      if (currentBlock.id == 'crossover106') return 'crossover109';
+      if (currentBlock.id == 'crossover109') return '109';
+      if (currentBlock.id == 'crossover_left') return '201'; // Switch to lower track
 
-      for (int i = 133; i <= 147; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i + 2}';
-        }
-      }
-      if (currentBlock.id == '149') return null; // End of lower track at Paddington
-
-      // Southern curve (150-158)
-      for (int i = 150; i <= 156; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i + 2}';
-        }
-      }
-      if (currentBlock.id == '158') return '160'; // Continue to eastern extension
-
-      // Eastern extension and return line (160-174)
-      for (int i = 160; i <= 172; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i + 2}';
-        }
-      }
-      if (currentBlock.id == '174') return '201'; // Loop back westbound
     } else {
-      // Westbound
-      // Western return track (201-235)
-      for (int i = 203; i <= 235; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i + 2}';
-        }
-      }
-      if (currentBlock.id == '201') return '174'; // From return to eastern extension
-      if (currentBlock.id == '235') return '237'; // Continue to northwest curve
+      // ========== WESTBOUND (Lower Track) ==========
 
-      // Northwest curve (237-243)
-      for (int i = 237; i <= 241; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i + 2}';
-        }
-      }
-      if (currentBlock.id == '243') return '100'; // Complete the loop back to start
-
-      // Original westbound logic for terminal area
+      // RIGHT SECTION (301-315) - going west
       switch (currentBlock.id) {
-        case '114':
-          return '112';
-        case '112':
-          return '110';
-        case '110':
-          return '108';
-        case '108':
-          return '106';
-        case '106':
-          return '104';
-        case '104':
-          return '102';
-        case '102':
-          return '100';
-        case '111':
-          return '109';
-        case '109':
-          return '107';
-        case '107':
-          return '105';
-        case '105':
-          return '103';
-        case '103':
-          return '101';
-        case 'crossover109':
-          return 'crossover106';
-        case 'crossover106':
-          return '104';
+        case '315': return '313';
+        case '313': return '311';
+        case '311': return '309';
+        case '309': return '307';
+        case '307': return '305';
+        case '305': return '303';
+        case '303': return '301';
+        case '301': return '115'; // Continue to MIDDLE section
       }
 
-      // Reverse through other sections going westbound
-      for (int i = 118; i <= 132; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i - 2}';
-        }
+      // MIDDLE SECTION (101-115) - going west
+      switch (currentBlock.id) {
+        case '115': return '113';
+        case '113': return '111';
+        case '111': return '109';
+        case '109': return '107';
+        case '107': return '105';
+        case '105': return '103';
+        case '103': return '101';
+        case '101': return '215'; // Continue to LEFT section
       }
-      if (currentBlock.id == '116') return '114';
 
-      for (int i = 115; i <= 131; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i - 2}';
-        }
+      // LEFT SECTION (201-215) - going west
+      switch (currentBlock.id) {
+        case '215': return '213';
+        case '213': return '211';
+        case '211': return '209';
+        case '209': return '207';
+        case '207': return '205';
+        case '205': return '203';
+        case '203': return '201';
+        case '201': return 'crossover_left'; // Use left crossover to switch to upper track
       }
-      if (currentBlock.id == '113') return '111';
 
-      for (int i = 136; i <= 148; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i - 2}';
-        }
-      }
-      if (currentBlock.id == '134') return '132';
-
-      for (int i = 135; i <= 149; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i - 2}';
-        }
-      }
-      if (currentBlock.id == '133') return '131';
-
-      for (int i = 152; i <= 158; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i - 2}';
-        }
-      }
-      if (currentBlock.id == '150') return '148';
-
-      for (int i = 162; i <= 174; i += 2) {
-        if (currentBlock.id == '$i') {
-          return '${i - 2}';
-        }
-      }
-      if (currentBlock.id == '160') return '158';
+      // Crossovers
+      if (currentBlock.id == 'crossover_left') return '200'; // Complete loop - switch to upper track
+      if (currentBlock.id == 'crossover109') return 'crossover106';
+      if (currentBlock.id == 'crossover106') return '104';
+      if (currentBlock.id == 'crossover_right') return '314'; // Back to upper track
     }
+
     return null;
   }
 

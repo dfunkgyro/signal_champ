@@ -1313,10 +1313,14 @@ class TerminalStationController extends ChangeNotifier {
 
       // Check if assigned train has completed journey
       if (service.assignedTrainId != null) {
-        final train = trains.firstWhereOrNull((t) => t.id == service.assignedTrainId);
-        if (train != null && train.currentBlockId == service.endBlock && train.speed == 0) {
-          service.isCompleted = true;
-          _logEvent('✅ ${service.trainName} service completed');
+        try {
+          final train = trains.firstWhere((t) => t.id == service.assignedTrainId);
+          if (train.currentBlockId == service.endBlock && train.speed == 0) {
+            service.isCompleted = true;
+            _logEvent('✅ ${service.trainName} service completed');
+          }
+        } catch (e) {
+          // Train not found, possibly removed
         }
       }
     }
@@ -3408,10 +3412,11 @@ class TerminalStationController extends ChangeNotifier {
     final currentBlock = blocks[train.currentBlockId!];
     if (currentBlock == null) return null;
 
-    // Simple next block logic
+    // Enhanced next block logic for the complete loop network
     if (train.direction > 0) {
       // Eastbound
       switch (currentBlock.id) {
+        // Terminal section (0-1600)
         case '100':
           return '102';
         case '102':
@@ -3426,6 +3431,10 @@ class TerminalStationController extends ChangeNotifier {
           return '112';
         case '112':
           return '114';
+        case '114':
+          return '116'; // Continue to Victoria Junction section
+
+        // Lower track
         case '101':
           return '103';
         case '103':
@@ -3436,13 +3445,83 @@ class TerminalStationController extends ChangeNotifier {
           return '109';
         case '109':
           return '111';
+        case '111':
+          return '113'; // Continue to Victoria Junction section
+
+        // Crossovers
         case 'crossover106':
           return 'crossover109';
         case 'crossover109':
           return '109';
       }
+
+      // Victoria Junction section (116-132 upper, 113-131 lower)
+      // Upper track blocks (even numbers)
+      for (int i = 116; i <= 130; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i + 2}';
+        }
+      }
+      if (currentBlock.id == '132') return '134'; // Continue to Paddington
+
+      // Lower track blocks (odd numbers)
+      for (int i = 113; i <= 129; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i + 2}';
+        }
+      }
+      if (currentBlock.id == '131') return '133'; // Continue to Paddington
+
+      // Paddington Central section (134-148 upper, 133-149 lower)
+      for (int i = 134; i <= 146; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i + 2}';
+        }
+      }
+      if (currentBlock.id == '148') return '150'; // Continue to southern curve
+
+      for (int i = 133; i <= 147; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i + 2}';
+        }
+      }
+      if (currentBlock.id == '149') return null; // End of lower track at Paddington
+
+      // Southern curve (150-158)
+      for (int i = 150; i <= 156; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i + 2}';
+        }
+      }
+      if (currentBlock.id == '158') return '160'; // Continue to eastern extension
+
+      // Eastern extension and return line (160-174)
+      for (int i = 160; i <= 172; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i + 2}';
+        }
+      }
+      if (currentBlock.id == '174') return '201'; // Loop back westbound
     } else {
       // Westbound
+      // Western return track (201-235)
+      for (int i = 203; i <= 235; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i + 2}';
+        }
+      }
+      if (currentBlock.id == '201') return '174'; // From return to eastern extension
+      if (currentBlock.id == '235') return '237'; // Continue to northwest curve
+
+      // Northwest curve (237-243)
+      for (int i = 237; i <= 241; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i + 2}';
+        }
+      }
+      if (currentBlock.id == '243') return '100'; // Complete the loop back to start
+
+      // Original westbound logic for terminal area
       switch (currentBlock.id) {
         case '114':
           return '112';
@@ -3473,6 +3552,49 @@ class TerminalStationController extends ChangeNotifier {
         case 'crossover106':
           return '104';
       }
+
+      // Reverse through other sections going westbound
+      for (int i = 118; i <= 132; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i - 2}';
+        }
+      }
+      if (currentBlock.id == '116') return '114';
+
+      for (int i = 115; i <= 131; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i - 2}';
+        }
+      }
+      if (currentBlock.id == '113') return '111';
+
+      for (int i = 136; i <= 148; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i - 2}';
+        }
+      }
+      if (currentBlock.id == '134') return '132';
+
+      for (int i = 135; i <= 149; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i - 2}';
+        }
+      }
+      if (currentBlock.id == '133') return '131';
+
+      for (int i = 152; i <= 158; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i - 2}';
+        }
+      }
+      if (currentBlock.id == '150') return '148';
+
+      for (int i = 162; i <= 174; i += 2) {
+        if (currentBlock.id == '$i') {
+          return '${i - 2}';
+        }
+      }
+      if (currentBlock.id == '160') return '158';
     }
     return null;
   }

@@ -509,6 +509,7 @@ class TerminalStationController extends ChangeNotifier {
   Timetable? timetable;
   Timer? _timetableTimer;
   bool timetableActive = false;
+  final List<GhostTrain> ghostTrains = []; // Invisible scheduled trains for timetable
 
   bool _spadAlarmActive = false;
   CollisionIncident? _currentSpadIncident;
@@ -608,6 +609,19 @@ class TerminalStationController extends ChangeNotifier {
     _logEvent(active
         ? '🚄 CBTC Mode ACTIVATED - Moving block signaling enabled'
         : '🚄 CBTC Mode DEACTIVATED - Fixed block signaling');
+    notifyListeners();
+  }
+
+  void toggleWifiAntenna(String wifiId) {
+    final wifi = wifiAntennas[wifiId];
+    if (wifi == null) {
+      _logEvent('⚠️ WiFi antenna $wifiId not found');
+      return;
+    }
+    wifi.isActive = !wifi.isActive;
+    _logEvent(wifi.isActive
+        ? '📡 WiFi $wifiId ENABLED'
+        : '📡 WiFi $wifiId DISABLED');
     notifyListeners();
   }
 
@@ -1461,11 +1475,15 @@ class TerminalStationController extends ChangeNotifier {
     blocks['315'] = BlockSection(id: '315', startX: 3000, endX: 3200, y: 300);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // CROSSOVERS - 3 total for continuous loop
+    // CROSSOVERS - 5 total for flexible routing
     // ═══════════════════════════════════════════════════════════════════════
     // Left End Crossover (connects upper to lower for turnaround)
     blocks['crossover_left'] =
         BlockSection(id: 'crossover_left', startX: -1000, endX: -900, y: 200);
+
+    // Left Section Crossover (connects blocks 211↔212)
+    blocks['crossover_211_212'] =
+        BlockSection(id: 'crossover_211_212', startX: -450, endX: -350, y: 200);
 
     // Middle Crossover (original 78A/78B)
     blocks['crossover106'] =
@@ -1473,22 +1491,34 @@ class TerminalStationController extends ChangeNotifier {
     blocks['crossover109'] =
         BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
 
+    // Right Section Crossover (connects blocks 302↔305)
+    blocks['crossover_302_305'] =
+        BlockSection(id: 'crossover_302_305', startX: 1950, endX: 2050, y: 200);
+
     // Right End Crossover (connects upper to lower for turnaround)
     blocks['crossover_right'] =
         BlockSection(id: 'crossover_right', startX: 3100, endX: 3200, y: 200);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // POINTS
+    // POINTS - 10 points total for 5 crossovers
     // ═══════════════════════════════════════════════════════════════════════
-    // Left end points
+    // Left end points (crossover_left)
     points['76A'] = Point(id: '76A', x: -1000, y: 100);
     points['76B'] = Point(id: '76B', x: -900, y: 300);
 
-    // Middle points (KEEP)
+    // Left section points (crossover_211_212)
+    points['77A'] = Point(id: '77A', x: -450, y: 100);
+    points['77B'] = Point(id: '77B', x: -350, y: 300);
+
+    // Middle points (crossover106/109)
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
-    // Right end points
+    // Right section points (crossover_302_305)
+    points['79A'] = Point(id: '79A', x: 1950, y: 100);
+    points['79B'] = Point(id: '79B', x: 2050, y: 300);
+
+    // Right end points (crossover_right)
     points['80A'] = Point(id: '80A', x: 3100, y: 100);
     points['80B'] = Point(id: '80B', x: 3200, y: 300);
 
@@ -1514,9 +1544,126 @@ class TerminalStationController extends ChangeNotifier {
         id: 'P6', name: 'East Terminal Platform 2', startX: 2400, endX: 2800, y: 300));
 
     // ═══════════════════════════════════════════════════════════════════════
-    // SIGNALS - Simplified for mirrored design
+    // SIGNALS - Comprehensive coverage across all 3 sections
     // ═══════════════════════════════════════════════════════════════════════
-    // Middle section signals (KEEP existing)
+
+    // LEFT SECTION SIGNALS (200-215)
+    // Upper track eastbound signals
+    signals['L01'] = Signal(
+      id: 'L01',
+      x: -1500,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'L01_R1',
+          name: 'West Entry',
+          requiredBlocksClear: ['200', '202'],
+          requiredPointPositions: {},
+          pathBlocks: ['200', '202'],
+          protectedBlocks: ['200', '202'],
+        ),
+      ],
+    );
+
+    signals['L02'] = Signal(
+      id: 'L02',
+      x: -1100,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'L02_R1',
+          name: 'West Platform 1 Departure',
+          requiredBlocksClear: ['204', '206'],
+          requiredPointPositions: {},
+          pathBlocks: ['204', '206'],
+          protectedBlocks: ['204', '206'],
+        ),
+      ],
+    );
+
+    signals['L03'] = Signal(
+      id: 'L03',
+      x: -700,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'L03_R1',
+          name: 'To Central',
+          requiredBlocksClear: ['208', '210', '212'],
+          requiredPointPositions: {},
+          pathBlocks: ['208', '210', '212'],
+          protectedBlocks: ['208', '210', '212'],
+        ),
+      ],
+    );
+
+    signals['L04'] = Signal(
+      id: 'L04',
+      x: -100,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'L04_R1',
+          name: 'West Exit',
+          requiredBlocksClear: ['214', '100'],
+          requiredPointPositions: {},
+          pathBlocks: ['214', '100'],
+          protectedBlocks: ['214', '100'],
+        ),
+      ],
+    );
+
+    // Lower track westbound signals
+    signals['L05'] = Signal(
+      id: 'L05',
+      x: -200,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'L05_R1',
+          name: 'From Central',
+          requiredBlocksClear: ['215', '213'],
+          requiredPointPositions: {},
+          pathBlocks: ['215', '213'],
+          protectedBlocks: ['215', '213'],
+        ),
+      ],
+    );
+
+    signals['L06'] = Signal(
+      id: 'L06',
+      x: -600,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'L06_R1',
+          name: 'West Platform 2 Departure',
+          requiredBlocksClear: ['211', '209', '207'],
+          requiredPointPositions: {},
+          pathBlocks: ['211', '209', '207'],
+          protectedBlocks: ['211', '209', '207'],
+        ),
+      ],
+    );
+
+    signals['L07'] = Signal(
+      id: 'L07',
+      x: -1100,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'L07_R1',
+          name: 'West Loop',
+          requiredBlocksClear: ['205', '203', '201'],
+          requiredPointPositions: {'76B': PointPosition.normal},
+          pathBlocks: ['205', '203', '201'],
+          protectedBlocks: ['205', '203', '201'],
+        ),
+      ],
+    );
+
+    // MIDDLE SECTION SIGNALS (100-115)
+    // Upper track eastbound signals
     signals['C31'] = Signal(
       id: 'C31',
       x: 390,
@@ -1549,6 +1696,39 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
+    signals['C01'] = Signal(
+      id: 'C01',
+      x: 50,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C01_R1',
+          name: 'Central Entry',
+          requiredBlocksClear: ['100', '102'],
+          requiredPointPositions: {},
+          pathBlocks: ['100', '102'],
+          protectedBlocks: ['100', '102'],
+        ),
+      ],
+    );
+
+    signals['C02'] = Signal(
+      id: 'C02',
+      x: 1500,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C02_R1',
+          name: 'To East',
+          requiredBlocksClear: ['114', '300'],
+          requiredPointPositions: {},
+          pathBlocks: ['114', '300'],
+          protectedBlocks: ['114', '300'],
+        ),
+      ],
+    );
+
+    // Lower track westbound signals
     signals['C30'] = Signal(
       id: 'C30',
       x: 1000,
@@ -1565,28 +1745,235 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
+    signals['C03'] = Signal(
+      id: 'C03',
+      x: 1500,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'C03_R1',
+          name: 'From East',
+          requiredBlocksClear: ['115', '113'],
+          requiredPointPositions: {},
+          pathBlocks: ['115', '113'],
+          protectedBlocks: ['115', '113'],
+        ),
+      ],
+    );
+
+    signals['C04'] = Signal(
+      id: 'C04',
+      x: 100,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'C04_R1',
+          name: 'To West',
+          requiredBlocksClear: ['101', '215'],
+          requiredPointPositions: {},
+          pathBlocks: ['101', '215'],
+          protectedBlocks: ['101', '215'],
+        ),
+      ],
+    );
+
+    // RIGHT SECTION SIGNALS (300-315)
+    // Upper track eastbound signals
+    signals['R01'] = Signal(
+      id: 'R01',
+      x: 1650,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'R01_R1',
+          name: 'East Entry',
+          requiredBlocksClear: ['300', '302'],
+          requiredPointPositions: {},
+          pathBlocks: ['300', '302'],
+          protectedBlocks: ['300', '302'],
+        ),
+      ],
+    );
+
+    signals['R02'] = Signal(
+      id: 'R02',
+      x: 2100,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'R02_R1',
+          name: 'East Platform 1 Departure',
+          requiredBlocksClear: ['304', '306'],
+          requiredPointPositions: {},
+          pathBlocks: ['304', '306'],
+          protectedBlocks: ['304', '306'],
+        ),
+      ],
+    );
+
+    signals['R03'] = Signal(
+      id: 'R03',
+      x: 2700,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'R03_R1',
+          name: 'To East Loop',
+          requiredBlocksClear: ['308', '310', '312'],
+          requiredPointPositions: {},
+          pathBlocks: ['308', '310', '312'],
+          protectedBlocks: ['308', '310', '312'],
+        ),
+      ],
+    );
+
+    signals['R04'] = Signal(
+      id: 'R04',
+      x: 3100,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'R04_R1',
+          name: 'East Loop Entry',
+          requiredBlocksClear: ['314', 'crossover_right'],
+          requiredPointPositions: {'80A': PointPosition.reverse},
+          pathBlocks: ['314', 'crossover_right'],
+          protectedBlocks: ['314', 'crossover_right'],
+        ),
+      ],
+    );
+
+    // Lower track westbound signals
+    signals['R05'] = Signal(
+      id: 'R05',
+      x: 3100,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'R05_R1',
+          name: 'From East Loop',
+          requiredBlocksClear: ['315', '313'],
+          requiredPointPositions: {},
+          pathBlocks: ['315', '313'],
+          protectedBlocks: ['315', '313'],
+        ),
+      ],
+    );
+
+    signals['R06'] = Signal(
+      id: 'R06',
+      x: 2600,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'R06_R1',
+          name: 'East Platform 2 Departure',
+          requiredBlocksClear: ['311', '309', '307'],
+          requiredPointPositions: {},
+          pathBlocks: ['311', '309', '307'],
+          protectedBlocks: ['311', '309', '307'],
+        ),
+      ],
+    );
+
+    signals['R07'] = Signal(
+      id: 'R07',
+      x: 2100,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'R07_R1',
+          name: 'To Central',
+          requiredBlocksClear: ['305', '303', '301'],
+          requiredPointPositions: {},
+          pathBlocks: ['305', '303', '301'],
+          protectedBlocks: ['305', '303', '301'],
+        ),
+      ],
+    );
+
+    signals['R08'] = Signal(
+      id: 'R08',
+      x: 1700,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'R08_R1',
+          name: 'East Exit',
+          requiredBlocksClear: ['301', '115'],
+          requiredPointPositions: {},
+          pathBlocks: ['301', '115'],
+          protectedBlocks: ['301', '115'],
+        ),
+      ],
+    );
+
+    // TRAIN STOPS for all signals
+    trainStops['TL01'] = TrainStop(id: 'TL01', signalId: 'L01', x: -1500, y: 120);
+    trainStops['TL02'] = TrainStop(id: 'TL02', signalId: 'L02', x: -1100, y: 120);
+    trainStops['TL03'] = TrainStop(id: 'TL03', signalId: 'L03', x: -700, y: 120);
+    trainStops['TL04'] = TrainStop(id: 'TL04', signalId: 'L04', x: -100, y: 120);
+    trainStops['TL05'] = TrainStop(id: 'TL05', signalId: 'L05', x: -200, y: 340);
+    trainStops['TL06'] = TrainStop(id: 'TL06', signalId: 'L06', x: -600, y: 340);
+    trainStops['TL07'] = TrainStop(id: 'TL07', signalId: 'L07', x: -1100, y: 340);
+
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
     trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1220, y: 120);
     trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 1000, y: 340);
+    trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 50, y: 120);
+    trainStops['TC02'] = TrainStop(id: 'TC02', signalId: 'C02', x: 1500, y: 120);
+    trainStops['TC03'] = TrainStop(id: 'TC03', signalId: 'C03', x: 1500, y: 340);
+    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 100, y: 340);
+
+    trainStops['TR01'] = TrainStop(id: 'TR01', signalId: 'R01', x: 1650, y: 120);
+    trainStops['TR02'] = TrainStop(id: 'TR02', signalId: 'R02', x: 2100, y: 120);
+    trainStops['TR03'] = TrainStop(id: 'TR03', signalId: 'R03', x: 2700, y: 120);
+    trainStops['TR04'] = TrainStop(id: 'TR04', signalId: 'R04', x: 3100, y: 120);
+    trainStops['TR05'] = TrainStop(id: 'TR05', signalId: 'R05', x: 3100, y: 340);
+    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2600, y: 340);
+    trainStops['TR07'] = TrainStop(id: 'TR07', signalId: 'R07', x: 2100, y: 340);
+    trainStops['TR08'] = TrainStop(id: 'TR08', signalId: 'R08', x: 1700, y: 340);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // CBTC INFRASTRUCTURE - WiFi and Transponders
+    // CBTC INFRASTRUCTURE - WiFi and Transponders with individual control
     // ═══════════════════════════════════════════════════════════════════════
-    // WiFi Antennas across all 3 sections
-    wifiAntennas['W1'] = WifiAntenna(id: 'W1', x: -1000, y: 200, isActive: true); // Left
-    wifiAntennas['W2'] = WifiAntenna(id: 'W2', x: -400, y: 200, isActive: true); // Left
-    wifiAntennas['W3'] = WifiAntenna(id: 'W3', x: 400, y: 200, isActive: true); // Middle
-    wifiAntennas['W4'] = WifiAntenna(id: 'W4', x: 1000, y: 200, isActive: true); // Middle
-    wifiAntennas['W5'] = WifiAntenna(id: 'W5', x: 1800, y: 200, isActive: true); // Right
-    wifiAntennas['W6'] = WifiAntenna(id: 'W6', x: 2600, y: 200, isActive: true); // Right
+    // LEFT SECTION WiFi Coverage
+    wifiAntennas['W_L1'] = WifiAntenna(id: 'W_L1', x: -1500, y: 200, isActive: true);
+    wifiAntennas['W_L2'] = WifiAntenna(id: 'W_L2', x: -1200, y: 200, isActive: true);
+    wifiAntennas['W_L3'] = WifiAntenna(id: 'W_L3', x: -800, y: 200, isActive: true);
+    wifiAntennas['W_L4'] = WifiAntenna(id: 'W_L4', x: -400, y: 200, isActive: true);
+    wifiAntennas['W_L5'] = WifiAntenna(id: 'W_L5', x: -100, y: 200, isActive: true);
 
-    // Transponders at key locations
-    transponders['TP1'] = Transponder(id: 'TP1', type: TransponderType.t1, x: -1000, y: 100, description: 'West Terminal');
-    transponders['TP2'] = Transponder(id: 'TP2', type: TransponderType.t2, x: 1000, y: 100, description: 'Central Terminal');
-    transponders['TP3'] = Transponder(id: 'TP3', type: TransponderType.t3, x: 2600, y: 100, description: 'East Terminal');
+    // MIDDLE SECTION WiFi Coverage
+    wifiAntennas['W_C1'] = WifiAntenna(id: 'W_C1', x: 100, y: 200, isActive: true);
+    wifiAntennas['W_C2'] = WifiAntenna(id: 'W_C2', x: 400, y: 200, isActive: true);
+    wifiAntennas['W_C3'] = WifiAntenna(id: 'W_C3', x: 800, y: 200, isActive: true);
+    wifiAntennas['W_C4'] = WifiAntenna(id: 'W_C4', x: 1000, y: 200, isActive: true);
+    wifiAntennas['W_C5'] = WifiAntenna(id: 'W_C5', x: 1400, y: 200, isActive: true);
+
+    // RIGHT SECTION WiFi Coverage
+    wifiAntennas['W_R1'] = WifiAntenna(id: 'W_R1', x: 1700, y: 200, isActive: true);
+    wifiAntennas['W_R2'] = WifiAntenna(id: 'W_R2', x: 2000, y: 200, isActive: true);
+    wifiAntennas['W_R3'] = WifiAntenna(id: 'W_R3', x: 2400, y: 200, isActive: true);
+    wifiAntennas['W_R4'] = WifiAntenna(id: 'W_R4', x: 2600, y: 200, isActive: true);
+    wifiAntennas['W_R5'] = WifiAntenna(id: 'W_R5', x: 3000, y: 200, isActive: true);
+
+    // Transponders at platforms and key locations
+    transponders['TP_L1'] = Transponder(id: 'TP_L1', type: TransponderType.t1, x: -1200, y: 100, description: 'West Terminal Platform 1');
+    transponders['TP_L2'] = Transponder(id: 'TP_L2', type: TransponderType.t2, x: -1200, y: 300, description: 'West Terminal Platform 2');
+    transponders['TP_L3'] = Transponder(id: 'TP_L3', type: TransponderType.t3, x: -450, y: 200, description: 'West Crossover');
+
+    transponders['TP_C1'] = Transponder(id: 'TP_C1', type: TransponderType.t1, x: 800, y: 100, description: 'Central Terminal Platform 1');
+    transponders['TP_C2'] = Transponder(id: 'TP_C2', type: TransponderType.t2, x: 800, y: 300, description: 'Central Terminal Platform 2');
+    transponders['TP_C3'] = Transponder(id: 'TP_C3', type: TransponderType.t3, x: 700, y: 200, description: 'Central Crossover');
+
+    transponders['TP_R1'] = Transponder(id: 'TP_R1', type: TransponderType.t1, x: 2400, y: 100, description: 'East Terminal Platform 1');
+    transponders['TP_R2'] = Transponder(id: 'TP_R2', type: TransponderType.t2, x: 2400, y: 300, description: 'East Terminal Platform 2');
+    transponders['TP_R3'] = Transponder(id: 'TP_R3', type: TransponderType.t3, x: 2000, y: 200, description: 'East Crossover');
+    transponders['TP_R4'] = Transponder(id: 'TP_R4', type: TransponderType.t1, x: 3100, y: 200, description: 'East Loop');
 
     _logEvent(
-        '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, 3 signals, 6 points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
+        '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, ${signals.length} signals, ${points.length} points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
   }
 
   // ============================================================================

@@ -181,6 +181,12 @@ class Train {
   String? smcDestination; // SMC-assigned destination
   MovementAuthority? movementAuthority; // CBTC movement authority visualization
 
+  // Timetable tracking fields
+  String? assignedTimetableId; // ID of ghost train timetable slot
+  String? assignedServiceId; // ID of TimetableService
+  int? earlyLateSeconds; // Positive = late, Negative = early, Null = not on timetable
+  String? currentStationId; // Current platform/station ID for timing calculation
+
   Train({
     required this.id,
     required this.name,
@@ -205,6 +211,10 @@ class Train {
     this.cbtcMode = CbtcMode.off,
     this.smcDestination,
     this.movementAuthority,
+    this.assignedTimetableId,
+    this.assignedServiceId,
+    this.earlyLateSeconds,
+    this.currentStationId,
   });
 
   // Helper to get wheel count based on train type
@@ -332,4 +342,99 @@ class CollisionRecoveryPlan {
   }) : detectedAt = DateTime.now(),
        collisionPositions = collisionPositions ?? {},
        targetRecoveryPositions = targetRecoveryPositions ?? {};
+}
+
+// ============================================================================
+// TIMETABLE MODELS
+// ============================================================================
+
+class TimetableService {
+  final String id;
+  final String trainName;
+  final TrainType trainType;
+  final String startBlock;
+  final String endBlock;
+  final List<String> stops; // Block IDs where train stops
+  final DateTime scheduledTime;
+  bool isCompleted;
+  String? assignedTrainId;
+
+  TimetableService({
+    required this.id,
+    required this.trainName,
+    required this.trainType,
+    required this.startBlock,
+    required this.endBlock,
+    required this.stops,
+    required this.scheduledTime,
+    this.isCompleted = false,
+    this.assignedTrainId,
+  });
+}
+
+class Timetable {
+  final List<TimetableService> services;
+  bool isActive;
+
+  Timetable({
+    required this.services,
+    this.isActive = false,
+  });
+}
+
+// ============================================================================
+// GHOST TRAIN MODELS
+// ============================================================================
+
+class GhostTrain {
+  final String id;
+  final String serviceId; // Associated TimetableService ID
+  final String name;
+  final TrainType trainType;
+  double x; // Current position (invisible to user)
+  double y;
+  double speed;
+  int direction;
+  String? currentBlockId;
+  String? currentPlatformId;
+  DateTime? platformArrivalTime; // When ghost train arrived at current platform
+  bool doorsOpen;
+  DateTime? doorsOpenedAt;
+  List<String> remainingStops; // Platforms still to visit
+  bool hasCompletedService;
+  String? assignedRealTrainId; // ID of real train assigned to this slot
+
+  // Scheduled timing for each platform
+  Map<String, DateTime> scheduledPlatformTimes; // platformId -> scheduled arrival time
+
+  GhostTrain({
+    required this.id,
+    required this.serviceId,
+    required this.name,
+    required this.trainType,
+    required this.x,
+    required this.y,
+    required this.speed,
+    required this.direction,
+    this.currentBlockId,
+    this.currentPlatformId,
+    this.platformArrivalTime,
+    this.doorsOpen = false,
+    this.doorsOpenedAt,
+    required this.remainingStops,
+    this.hasCompletedService = false,
+    this.assignedRealTrainId,
+    required this.scheduledPlatformTimes,
+  });
+
+  // Check if ghost train is available for assignment
+  bool get isAvailable => assignedRealTrainId == null && !hasCompletedService;
+
+  // Calculate early/late seconds at current platform
+  int? getEarlyLateSeconds() {
+    if (currentPlatformId == null || platformArrivalTime == null) return null;
+    final scheduled = scheduledPlatformTimes[currentPlatformId];
+    if (scheduled == null) return null;
+    return platformArrivalTime!.difference(scheduled).inSeconds;
+  }
 }

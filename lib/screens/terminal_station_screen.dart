@@ -289,7 +289,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 ),
               ],
             ),
-          ),
 
           // SPAD Alarm - overlay at top (Layer 6)
           Positioned(
@@ -1542,6 +1541,55 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+
+              // Timetable toggle
+              Card(
+                color: controller.timetableActive ? Colors.green[50] : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        color: controller.timetableActive
+                            ? Colors.green
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Auto Timetable Service',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.timetableActive
+                                  ? 'Active - Trains auto-dispatch'
+                                  : 'Inactive',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.timetableActive,
+                        onChanged: (value) =>
+                            controller.toggleTimetableActive(),
+                        activeColor: Colors.green,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
 
               // FIXED: CBTC Controls Section
@@ -1945,6 +1993,131 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                       fontSize: 10,
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Enhanced Train Controls Section
+                          // Train Type Selector
+                          Row(
+                            children: [
+                              const Text('Type: ',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold)),
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: DropdownButton<TrainType>(
+                                    value: train.trainType,
+                                    isExpanded: true,
+                                    underline: const SizedBox(),
+                                    style: const TextStyle(
+                                        fontSize: 11, color: Colors.black),
+                                    items: TrainType.values.map((type) {
+                                      return DropdownMenuItem(
+                                        value: type,
+                                        child: Text(_getTrainTypeName(type)),
+                                      );
+                                    }).toList(),
+                                    onChanged: (newType) {
+                                      if (newType != null) {
+                                        controller.updateTrainType(
+                                            train.id, newType);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // CBTC Mode Selector (only for CBTC trains)
+                          if (train.isCbtcTrain) ...[
+                            Row(
+                              children: [
+                                const Text('CBTC Mode: ',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold)),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _getCbtcModeColor(train.cbtcMode)
+                                          .withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: DropdownButton<CbtcMode>(
+                                      value: train.cbtcMode,
+                                      isExpanded: true,
+                                      underline: const SizedBox(),
+                                      style: const TextStyle(
+                                          fontSize: 11, color: Colors.black),
+                                      items: CbtcMode.values.map((mode) {
+                                        return DropdownMenuItem(
+                                          value: mode,
+                                          child: Text(_getCbtcModeName(mode)),
+                                        );
+                                      }).toList(),
+                                      onChanged: (newMode) {
+                                        if (newMode != null) {
+                                          controller.updateTrainCbtcMode(
+                                              train.id, newMode);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+
+                          // Destination Control
+                          Row(
+                            children: [
+                              const Text('Dest: ',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold)),
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: DropdownButton<String>(
+                                    value: train.smcDestination,
+                                    isExpanded: true,
+                                    underline: const SizedBox(),
+                                    hint: const Text('Set destination',
+                                        style: TextStyle(fontSize: 11)),
+                                    style: const TextStyle(
+                                        fontSize: 11, color: Colors.black),
+                                    items: [
+                                      const DropdownMenuItem(
+                                        value: null,
+                                        child: Text('None'),
+                                      ),
+                                      ..._getDestinationOptions(),
+                                    ],
+                                    onChanged: (destination) {
+                                      controller.setTrainDestination(
+                                          train.id, destination);
+                                    },
+                                  ),
                                 ),
                               ),
                             ],
@@ -3710,5 +3883,76 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         ),
       );
     }
+  }
+
+  // Helper methods for enhanced train controls
+  String _getTrainTypeName(TrainType type) {
+    switch (type) {
+      case TrainType.m1:
+        return 'M1 (Single)';
+      case TrainType.m2:
+        return 'M2 (Double)';
+      case TrainType.cbtcM1:
+        return 'CBTC M1';
+      case TrainType.cbtcM2:
+        return 'CBTC M2';
+    }
+  }
+
+  String _getCbtcModeName(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return 'Auto (Cyan)';
+      case CbtcMode.pm:
+        return 'PM (Orange)';
+      case CbtcMode.rm:
+        return 'RM (Brown)';
+      case CbtcMode.off:
+        return 'Off (White)';
+      case CbtcMode.storage:
+        return 'Storage (Green)';
+    }
+  }
+
+  Color _getCbtcModeColor(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return Colors.cyan;
+      case CbtcMode.pm:
+        return Colors.orange;
+      case CbtcMode.rm:
+        return Colors.brown;
+      case CbtcMode.off:
+        return Colors.white;
+      case CbtcMode.storage:
+        return Colors.green;
+    }
+  }
+
+  List<DropdownMenuItem<String>> _getDestinationOptions() {
+    return [
+      // Blocks
+      const DropdownMenuItem(value: 'B:100', child: Text('Block 100')),
+      const DropdownMenuItem(value: 'B:102', child: Text('Block 102')),
+      const DropdownMenuItem(value: 'B:104', child: Text('Block 104')),
+      const DropdownMenuItem(value: 'B:106', child: Text('Block 106')),
+      const DropdownMenuItem(value: 'B:108', child: Text('Block 108')),
+      const DropdownMenuItem(value: 'B:110', child: Text('Block 110')),
+      const DropdownMenuItem(value: 'B:112', child: Text('Block 112')),
+      const DropdownMenuItem(value: 'B:114', child: Text('Block 114')),
+      const DropdownMenuItem(value: 'B:101', child: Text('Block 101')),
+      const DropdownMenuItem(value: 'B:103', child: Text('Block 103')),
+      const DropdownMenuItem(value: 'B:105', child: Text('Block 105')),
+      const DropdownMenuItem(value: 'B:107', child: Text('Block 107')),
+      const DropdownMenuItem(value: 'B:109', child: Text('Block 109')),
+      const DropdownMenuItem(value: 'B:111', child: Text('Block 111')),
+      // Stations/Platforms
+      const DropdownMenuItem(
+          value: 'S:Terminal-P1', child: Text('Terminal Station - Platform 1')),
+      const DropdownMenuItem(
+          value: 'S:Terminal-P2', child: Text('Terminal Station - Platform 2')),
+      const DropdownMenuItem(
+          value: 'S:Terminal-Bay', child: Text('Terminal Station - Bay Platform')),
+    ];
   }
 }

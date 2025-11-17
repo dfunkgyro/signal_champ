@@ -505,6 +505,12 @@ class TerminalStationController extends ChangeNotifier {
   bool cbtcDevicesEnabled = false;
   bool cbtcModeActive = false;
 
+  // Timetable system
+  Timetable? timetable;
+  Timer? _timetableTimer;
+  bool timetableActive = false;
+  final List<GhostTrain> ghostTrains = []; // Invisible scheduled trains for timetable
+
   bool _spadAlarmActive = false;
   CollisionIncident? _currentSpadIncident;
   String? _spadTrainStopId;
@@ -603,6 +609,19 @@ class TerminalStationController extends ChangeNotifier {
     _logEvent(active
         ? '🚄 CBTC Mode ACTIVATED - Moving block signaling enabled'
         : '🚄 CBTC Mode DEACTIVATED - Fixed block signaling');
+    notifyListeners();
+  }
+
+  void toggleWifiAntenna(String wifiId) {
+    final wifi = wifiAntennas[wifiId];
+    if (wifi == null) {
+      _logEvent('⚠️ WiFi antenna $wifiId not found');
+      return;
+    }
+    wifi.isActive = !wifi.isActive;
+    _logEvent(wifi.isActive
+        ? '📡 WiFi $wifiId ENABLED'
+        : '📡 WiFi $wifiId DISABLED');
     notifyListeners();
   }
 
@@ -1179,30 +1198,48 @@ class TerminalStationController extends ChangeNotifier {
   TerminalStationController() {
     _initializeLayout();
     _initializeClock();
+    _initializeTimetable();
     ace = AxleCounterEvaluator(axleCounters);
   }
 
   void _initializeAxleCounters() {
-    axleCounters['ac100'] =
-        AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
-    axleCounters['ac104'] =
-        AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
-    axleCounters['ac108'] =
-        AxleCounter(id: 'ac108', blockId: '108', x: 700, y: 120);
-    axleCounters['ac112'] =
-        AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
+    // LEFT SECTION AXLE COUNTERS (200-215)
+    // Upper track (200-214) eastbound
+    axleCounters['ac200'] = AxleCounter(id: 'ac200', blockId: '200', x: -1500, y: 120);
+    axleCounters['ac202'] = AxleCounter(id: 'ac202', blockId: '202', x: -1300, y: 120);
+    axleCounters['ac204'] = AxleCounter(id: 'ac204', blockId: '204', x: -1100, y: 120);
+    axleCounters['ac206'] = AxleCounter(id: 'ac206', blockId: '206', x: -900, y: 120);
+    axleCounters['ac208'] = AxleCounter(id: 'ac208', blockId: '208', x: -700, y: 120);
+    axleCounters['ac210'] = AxleCounter(id: 'ac210', blockId: '210', x: -500, y: 120);
+    axleCounters['ac212'] = AxleCounter(id: 'ac212', blockId: '212', x: -300, y: 120);
+    axleCounters['ac214'] = AxleCounter(id: 'ac214', blockId: '214', x: -100, y: 120);
 
-    axleCounters['ac101'] =
-        AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
-    axleCounters['ac105'] =
-        AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
-    axleCounters['ac109'] =
-        AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
+    // Lower track (201-215) westbound
+    axleCounters['ac201'] = AxleCounter(id: 'ac201', blockId: '201', x: -1500, y: 320);
+    axleCounters['ac203'] = AxleCounter(id: 'ac203', blockId: '203', x: -1300, y: 320);
+    axleCounters['ac205'] = AxleCounter(id: 'ac205', blockId: '205', x: -1100, y: 320);
+    axleCounters['ac207'] = AxleCounter(id: 'ac207', blockId: '207', x: -900, y: 320);
+    axleCounters['ac209'] = AxleCounter(id: 'ac209', blockId: '209', x: -700, y: 320);
+    axleCounters['ac211'] = AxleCounter(id: 'ac211', blockId: '211', x: -500, y: 320);
+    axleCounters['ac213'] = AxleCounter(id: 'ac213', blockId: '213', x: -300, y: 320);
+    axleCounters['ac215'] = AxleCounter(id: 'ac215', blockId: '215', x: -100, y: 320);
 
-    axleCounters['ac111'] =
-        AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
+    // Left section crossover
+    axleCounters['ac_cx_left'] = AxleCounter(id: 'ac_cx_left', blockId: 'crossover_left', x: -950, y: 200);
+    axleCounters['ac_cx211_212'] = AxleCounter(id: 'ac_cx211_212', blockId: 'crossover_211_212', x: -400, y: 200);
 
-    // UPDATED: AC106 positioned as additional entry/exit for AB104
+    // MIDDLE SECTION AXLE COUNTERS (100-115) - Original
+    axleCounters['ac100'] = AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
+    axleCounters['ac104'] = AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
+    axleCounters['ac108'] = AxleCounter(id: 'ac108', blockId: '108', x: 700, y: 120);
+    axleCounters['ac112'] = AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
+
+    axleCounters['ac101'] = AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
+    axleCounters['ac105'] = AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
+    axleCounters['ac109'] = AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
+    axleCounters['ac111'] = AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
+
+    // Middle section crossovers
     axleCounters['ac106'] = AxleCounter(
       id: 'ac106',
       blockId: 'crossover106',
@@ -1211,8 +1248,6 @@ class TerminalStationController extends ChangeNotifier {
       isTwin: false,
       twinLabel: 'ac106',
     );
-
-    // UPDATED: AC107 positioned as additional entry/exit for AB109
     axleCounters['ac107'] = AxleCounter(
       id: 'ac107',
       blockId: 'crossover109',
@@ -1221,6 +1256,33 @@ class TerminalStationController extends ChangeNotifier {
       isTwin: false,
       twinLabel: 'ac107',
     );
+
+    // RIGHT SECTION AXLE COUNTERS (300-315)
+    // Upper track (300-314) eastbound
+    axleCounters['ac300'] = AxleCounter(id: 'ac300', blockId: '300', x: 1700, y: 120);
+    axleCounters['ac302'] = AxleCounter(id: 'ac302', blockId: '302', x: 1900, y: 120);
+    axleCounters['ac304'] = AxleCounter(id: 'ac304', blockId: '304', x: 2100, y: 120);
+    axleCounters['ac306'] = AxleCounter(id: 'ac306', blockId: '306', x: 2300, y: 120);
+    axleCounters['ac308'] = AxleCounter(id: 'ac308', blockId: '308', x: 2500, y: 120);
+    axleCounters['ac310'] = AxleCounter(id: 'ac310', blockId: '310', x: 2700, y: 120);
+    axleCounters['ac312'] = AxleCounter(id: 'ac312', blockId: '312', x: 2900, y: 120);
+    axleCounters['ac314'] = AxleCounter(id: 'ac314', blockId: '314', x: 3100, y: 120);
+
+    // Lower track (301-315) westbound
+    axleCounters['ac301'] = AxleCounter(id: 'ac301', blockId: '301', x: 1700, y: 320);
+    axleCounters['ac303'] = AxleCounter(id: 'ac303', blockId: '303', x: 1900, y: 320);
+    axleCounters['ac305'] = AxleCounter(id: 'ac305', blockId: '305', x: 2100, y: 320);
+    axleCounters['ac307'] = AxleCounter(id: 'ac307', blockId: '307', x: 2300, y: 320);
+    axleCounters['ac309'] = AxleCounter(id: 'ac309', blockId: '309', x: 2500, y: 320);
+    axleCounters['ac311'] = AxleCounter(id: 'ac311', blockId: '311', x: 2700, y: 320);
+    axleCounters['ac313'] = AxleCounter(id: 'ac313', blockId: '313', x: 2900, y: 320);
+    axleCounters['ac315'] = AxleCounter(id: 'ac315', blockId: '315', x: 3100, y: 320);
+
+    // Right section crossovers
+    axleCounters['ac_cx302_305'] = AxleCounter(id: 'ac_cx302_305', blockId: 'crossover_302_305', x: 2000, y: 200);
+    axleCounters['ac_cx_right'] = AxleCounter(id: 'ac_cx_right', blockId: 'crossover_right', x: 3150, y: 200);
+
+    _logEvent('🔢 Initialized ${axleCounters.length} axle counters across all sections');
   }
 
   void _initializeClock() {
@@ -1231,11 +1293,461 @@ class TerminalStationController extends ChangeNotifier {
     });
   }
 
+  void _initializeTimetable() {
+    // Create a default timetable with sample services
+    final now = DateTime.now();
+    timetable = Timetable(
+      services: [
+        TimetableService(
+          id: 'SVC001',
+          trainName: 'Service 001',
+          trainType: TrainType.cbtcM1,
+          startBlock: '100',
+          endBlock: '114',
+          stops: ['106', '110', '114'],
+          scheduledTime: now.add(const Duration(seconds: 10)),
+        ),
+        TimetableService(
+          id: 'SVC002',
+          trainName: 'Service 002',
+          trainType: TrainType.m2,
+          startBlock: '101',
+          endBlock: '111',
+          stops: ['105', '109', '111'],
+          scheduledTime: now.add(const Duration(seconds: 30)),
+        ),
+        TimetableService(
+          id: 'SVC003',
+          trainName: 'Service 003',
+          trainType: TrainType.cbtcM2,
+          startBlock: '102',
+          endBlock: '112',
+          stops: ['106', '110', '112'],
+          scheduledTime: now.add(const Duration(minutes: 1)),
+        ),
+      ],
+    );
+  }
+
+  void toggleTimetableActive() {
+    timetableActive = !timetableActive;
+
+    if (timetableActive) {
+      _startTimetableService();
+      _logEvent('📅 Timetable service activated');
+    } else {
+      _stopTimetableService();
+      _logEvent('📅 Timetable service deactivated');
+    }
+    notifyListeners();
+  }
+
+  void _startTimetableService() {
+    _timetableTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _processTimetable();
+    });
+  }
+
+  void _stopTimetableService() {
+    _timetableTimer?.cancel();
+    _timetableTimer = null;
+  }
+
+  void _processTimetable() {
+    if (timetable == null || !timetableActive) return;
+
+    final now = DateTime.now();
+
+    // Update ghost trains
+    _updateGhostTrains();
+
+    // Update early/late timers for assigned trains
+    _updateEarlyLateTimers();
+
+    // Handle automated timetable train behaviors
+    _processAutomatedTimetableTrains();
+
+    for (var service in timetable!.services) {
+      if (service.isCompleted) continue;
+
+      // Check if it's time to dispatch this service
+      if (now.isAfter(service.scheduledTime) &&
+          service.assignedTrainId == null) {
+        _dispatchTimetableService(service);
+      }
+
+      // Check if assigned train has completed journey
+      if (service.assignedTrainId != null) {
+        try {
+          final train = trains.firstWhere((t) => t.id == service.assignedTrainId);
+          if (train.currentBlockId == service.endBlock && train.speed == 0) {
+            service.isCompleted = true;
+            _logEvent('✅ ${service.trainName} service completed');
+          }
+        } catch (e) {
+          // Train not found, possibly removed
+        }
+      }
+    }
+  }
+
+  void _updateGhostTrains() {
+    if (ghostTrains.isEmpty) return;
+
+    for (var ghost in ghostTrains) {
+      if (ghost.hasCompletedService) continue;
+
+      // Simulate ghost train movement (2.0 speed)
+      ghost.x += 2.0 * ghost.direction * simulationSpeed;
+
+      // Update current block
+      _updateGhostTrainBlock(ghost);
+
+      // Check platform arrival
+      _checkGhostTrainPlatformArrival(ghost);
+
+      // Handle platform dwell (20 seconds)
+      if (ghost.doorsOpen && ghost.doorsOpenedAt != null) {
+        final dwellTime = DateTime.now().difference(ghost.doorsOpenedAt!);
+        if (dwellTime.inSeconds >= 20) {
+          ghost.doorsOpen = false;
+          ghost.doorsOpenedAt = null;
+          ghost.platformArrivalTime = null;
+          ghost.currentPlatformId = null;
+          ghost.speed = 2.0;
+        }
+      }
+    }
+  }
+
+  void _updateGhostTrainBlock(GhostTrain ghost) {
+    for (var block in blocks.values) {
+      if (ghost.x >= block.startX && ghost.x <= block.endX &&
+          (ghost.y - block.y).abs() < 50) {
+        ghost.currentBlockId = block.id;
+        break;
+      }
+    }
+  }
+
+  void _checkGhostTrainPlatformArrival(GhostTrain ghost) {
+    if (ghost.doorsOpen) return;
+
+    for (var platform in platforms) {
+      if (ghost.x >= platform.startX && ghost.x <= platform.endX &&
+          (ghost.y - platform.y).abs() < 50) {
+        // Ghost arrived at platform
+        ghost.currentPlatformId = platform.id;
+        ghost.platformArrivalTime = DateTime.now();
+        ghost.doorsOpen = true;
+        ghost.doorsOpenedAt = DateTime.now();
+        ghost.speed = 0;
+
+        // Remove from remaining stops if applicable
+        if (ghost.currentBlockId != null && ghost.remainingStops.contains(ghost.currentBlockId)) {
+          ghost.remainingStops.remove(ghost.currentBlockId);
+        }
+
+        break;
+      }
+    }
+  }
+
+  void _updateEarlyLateTimers() {
+    for (var train in trains) {
+      if (train.assignedTimetableId == null) continue;
+
+      try {
+        final ghost = ghostTrains.firstWhere((g) => g.id == train.assignedTimetableId);
+
+        // Update current station
+        final platformId = _getPlatformForTrain(train);
+        if (platformId != null) {
+          train.currentStationId = platformId;
+
+          // Calculate early/late if at platform
+          final scheduled = ghost.scheduledPlatformTimes[platformId];
+          if (scheduled != null && train.speed == 0) {
+            final actual = DateTime.now();
+            train.earlyLateSeconds = actual.difference(scheduled).inSeconds;
+          }
+        }
+      } catch (e) {
+        // Ghost train not found
+      }
+    }
+  }
+
+  void _processAutomatedTimetableTrains() {
+    for (var train in trains) {
+      if (train.assignedTimetableId == null) continue;
+      if (train.controlMode != TrainControlMode.automatic) continue;
+
+      // Auto door management at platforms
+      final atPlatform = _isTrainAtPlatform(train);
+      if (atPlatform && !train.doorsOpen && train.speed == 0) {
+        // Auto open doors
+        train.doorsOpen = true;
+        train.doorsOpenedAt = DateTime.now();
+        _logEvent('🚪 ${train.name} doors auto-opened');
+      }
+
+      // Auto close doors after 20 seconds and depart
+      if (train.doorsOpen && train.doorsOpenedAt != null) {
+        final dwellTime = DateTime.now().difference(train.doorsOpenedAt!);
+        if (dwellTime.inSeconds >= 20) {
+          train.doorsOpen = false;
+          train.doorsOpenedAt = null;
+          train.manualStop = false;
+          train.targetSpeed = 2.0;
+
+          // Auto set next signal
+          final signalAhead = _getSignalAhead(train);
+          if (signalAhead != null && signalAhead.routes.isNotEmpty) {
+            final route = signalAhead.routes.first;
+            setRoute(signalAhead.id, route.id);
+          }
+
+          _logEvent('🚪 ${train.name} doors auto-closed, resuming journey');
+        }
+      }
+    }
+  }
+
+  void _dispatchTimetableService(TimetableService service) {
+    // Create and add train
+    final blockInfo = blocks[service.startBlock];
+    if (blockInfo == null) return;
+
+    final trainId = 'AUTO-${service.id}';
+    final train = Train(
+      id: trainId,
+      name: service.trainName,
+      vin: 'VIN-${trainId}',
+      trainType: service.trainType,
+      x: blockInfo.startX + 20,
+      y: blockInfo.y,
+      speed: 0,
+      targetSpeed: 0,
+      direction: 1,
+      color: Colors.primaries[trains.length % Colors.primaries.length],
+      controlMode: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2
+          ? TrainControlMode.automatic
+          : TrainControlMode.automatic,
+      isCbtcEquipped: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2,
+      cbtcMode: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2
+          ? CbtcMode.auto
+          : CbtcMode.off,
+      smcDestination: 'B:${service.endBlock}',
+    );
+
+    trains.add(train);
+    service.assignedTrainId = trainId;
+
+    // Auto-depart the train
+    departAutoTrain(trainId);
+
+    // Auto-set signals and points for the route
+    _autoSetRouteForTrain(train, service);
+
+    _logEvent('🚂 Auto-dispatched: ${service.trainName} from ${service.startBlock} to ${service.endBlock}');
+    notifyListeners();
+  }
+
+  void _autoSetRouteForTrain(Train train, TimetableService service) {
+    // Simple auto-route setting - set first signal ahead to green
+    final signalAhead = _getSignalAhead(train);
+    if (signalAhead != null && signalAhead.routes.isNotEmpty) {
+      final route = signalAhead.routes.first;
+      setRoute(signalAhead.id, route.id);
+      _logEvent('🚦 Auto-set route ${route.id} for signal ${signalAhead.id}');
+    }
+
+    // Auto-normalize points if needed
+    if (selfNormalizingPoints) {
+      for (var point in points.values) {
+        if (!point.locked) {
+          point.position = PointPosition.normal;
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // GHOST TRAIN AND TIMETABLE ASSIGNMENT METHODS
+  // ============================================================================
+
+  void assignTrainToTimetableSlot(String trainId, String ghostTrainId) {
+    try {
+      final train = trains.firstWhere((t) => t.id == trainId);
+      final ghost = ghostTrains.firstWhere((g) => g.id == ghostTrainId);
+
+      if (!ghost.isAvailable) {
+        _logEvent('⚠️ Ghost train $ghostTrainId is not available');
+        return;
+      }
+
+      // Assign train to ghost slot
+      train.assignedTimetableId = ghostTrainId;
+      train.assignedServiceId = ghost.serviceId;
+      ghost.assignedRealTrainId = trainId;
+
+      _logEvent('📋 ${train.name} assigned to timetable slot $ghostTrainId (${ghost.name})');
+      notifyListeners();
+    } catch (e) {
+      _logEvent('❌ Failed to assign train to timetable: $e');
+    }
+  }
+
+  void unassignTrainFromTimetable(String trainId) {
+    try {
+      final train = trains.firstWhere((t) => t.id == trainId);
+
+      if (train.assignedTimetableId == null) {
+        _logEvent('⚠️ ${train.name} is not assigned to timetable');
+        return;
+      }
+
+      // Find and clear ghost train assignment
+      final ghost = ghostTrains.firstWhere(
+        (g) => g.id == train.assignedTimetableId,
+        orElse: () => throw Exception('Ghost train not found'),
+      );
+
+      ghost.assignedRealTrainId = null;
+      final oldSlot = train.assignedTimetableId;
+
+      // Clear train assignment
+      train.assignedTimetableId = null;
+      train.assignedServiceId = null;
+      train.earlyLateSeconds = null;
+      train.currentStationId = null;
+
+      _logEvent('📋 ${train.name} unassigned from timetable slot $oldSlot');
+      notifyListeners();
+    } catch (e) {
+      _logEvent('❌ Failed to unassign train from timetable: $e');
+    }
+  }
+
+  void reassignTrainToTimetableSlot(String trainId, String newGhostTrainId) {
+    try {
+      final train = trains.firstWhere((t) => t.id == trainId);
+
+      // Unassign from current slot if any
+      if (train.assignedTimetableId != null) {
+        unassignTrainFromTimetable(trainId);
+      }
+
+      // Assign to new slot
+      assignTrainToTimetableSlot(trainId, newGhostTrainId);
+    } catch (e) {
+      _logEvent('❌ Failed to reassign train: $e');
+    }
+  }
+
+  List<GhostTrain> getAvailableGhostTrains() {
+    return ghostTrains.where((g) => g.isAvailable).toList();
+  }
+
+  void generateGhostTrainsForAllServices() {
+    ghostTrains.clear();
+
+    if (timetable == null) return;
+
+    int ghostId = 1;
+    final now = DateTime.now();
+
+    for (var service in timetable!.services) {
+      // Generate multiple ghost trains for continuous service
+      // Create ghost trains every 2 minutes for each service
+      for (int i = 0; i < 10; i++) {
+        final scheduledDeparture = service.scheduledTime.add(Duration(minutes: i * 2));
+
+        // Map platform IDs from stop blocks
+        final Map<String, DateTime> platformTimes = {};
+        for (int stopIndex = 0; stopIndex < service.stops.length; stopIndex++) {
+          final stopBlock = service.stops[stopIndex];
+          final platform = _getPlatformForBlock(stopBlock);
+          if (platform != null) {
+            // Estimate arrival time: 30 seconds per stop
+            platformTimes[platform.id] = scheduledDeparture.add(Duration(seconds: stopIndex * 30));
+          }
+        }
+
+        final startBlock = blocks[service.startBlock];
+        if (startBlock == null) continue;
+
+        final ghost = GhostTrain(
+          id: 'GHOST-${service.id}-$ghostId',
+          serviceId: service.id,
+          name: '${service.trainName} #$ghostId',
+          trainType: service.trainType,
+          x: startBlock.startX + 20,
+          y: startBlock.y,
+          speed: 0,
+          direction: startBlock.y == 100 ? 1 : -1,
+          remainingStops: List.from(service.stops),
+          scheduledPlatformTimes: platformTimes,
+        );
+
+        ghostTrains.add(ghost);
+        ghostId++;
+      }
+    }
+
+    _logEvent('👻 Generated ${ghostTrains.length} ghost trains for ${timetable!.services.length} services');
+    notifyListeners();
+  }
+
+  Platform? _getPlatformForBlock(String blockId) {
+    final block = blocks[blockId];
+    if (block == null) return null;
+
+    for (var platform in platforms) {
+      if ((block.startX >= platform.startX && block.startX <= platform.endX) ||
+          (block.endX >= platform.startX && block.endX <= platform.endX)) {
+        if ((block.y - platform.y).abs() < 50) {
+          return platform;
+        }
+      }
+    }
+    return null;
+  }
+
   void _initializeLayout() {
     _initializeAxleCounters();
 
-    // FIXED: Expanded closed-loop network - 7000×1200 canvas
-    // Section 1: Central Terminal (original, x: 0→1600, y: 100/300)
+    // MIRRORED TERMINAL STATION DESIGN - 3 sections with continuous loop
+    // Total canvas: 3200 units wide (-1600 to 3200)
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // LEFT SECTION (-1600 to 0) - Mirror of terminal
+    // ═══════════════════════════════════════════════════════════════════════
+    // Upper track (y=100) - Eastbound →
+    blocks['200'] = BlockSection(id: '200', startX: -1600, endX: -1400, y: 100);
+    blocks['202'] = BlockSection(id: '202', startX: -1400, endX: -1200, y: 100);
+    blocks['204'] = BlockSection(id: '204', startX: -1200, endX: -1000, y: 100);
+    blocks['206'] = BlockSection(id: '206', startX: -1000, endX: -800, y: 100);
+    blocks['208'] = BlockSection(id: '208', startX: -800, endX: -600, y: 100);
+    blocks['210'] = BlockSection(id: '210', startX: -600, endX: -400, y: 100);
+    blocks['212'] = BlockSection(id: '212', startX: -400, endX: -200, y: 100);
+    blocks['214'] = BlockSection(id: '214', startX: -200, endX: 0, y: 100);
+
+    // Lower track (y=300) - Westbound ←
+    blocks['201'] = BlockSection(id: '201', startX: -1600, endX: -1400, y: 300);
+    blocks['203'] = BlockSection(id: '203', startX: -1400, endX: -1200, y: 300);
+    blocks['205'] = BlockSection(id: '205', startX: -1200, endX: -1000, y: 300);
+    blocks['207'] = BlockSection(id: '207', startX: -1000, endX: -800, y: 300);
+    blocks['209'] = BlockSection(id: '209', startX: -800, endX: -600, y: 300);
+    blocks['211'] = BlockSection(id: '211', startX: -600, endX: -400, y: 300);
+    blocks['213'] = BlockSection(id: '213', startX: -400, endX: -200, y: 300);
+    blocks['215'] = BlockSection(id: '215', startX: -200, endX: 0, y: 300);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // MIDDLE SECTION (0 to 1600) - Original terminal (KEEP AS IS)
+    // ═══════════════════════════════════════════════════════════════════════
+    // Upper track (y=100) - Eastbound →
     blocks['100'] = BlockSection(id: '100', startX: 0, endX: 200, y: 100);
     blocks['102'] = BlockSection(id: '102', startX: 200, endX: 400, y: 100);
     blocks['104'] = BlockSection(id: '104', startX: 400, endX: 600, y: 100);
@@ -1245,107 +1757,229 @@ class TerminalStationController extends ChangeNotifier {
     blocks['112'] = BlockSection(id: '112', startX: 1200, endX: 1400, y: 100);
     blocks['114'] = BlockSection(id: '114', startX: 1400, endX: 1600, y: 100);
 
+    // Lower track (y=300) - Westbound ←
     blocks['101'] = BlockSection(id: '101', startX: 0, endX: 200, y: 300);
     blocks['103'] = BlockSection(id: '103', startX: 200, endX: 400, y: 300);
     blocks['105'] = BlockSection(id: '105', startX: 400, endX: 600, y: 300);
     blocks['107'] = BlockSection(id: '107', startX: 600, endX: 800, y: 300);
     blocks['109'] = BlockSection(id: '109', startX: 800, endX: 1000, y: 300);
     blocks['111'] = BlockSection(id: '111', startX: 1000, endX: 1200, y: 300);
+    blocks['113'] = BlockSection(id: '113', startX: 1200, endX: 1400, y: 300);
+    blocks['115'] = BlockSection(id: '115', startX: 1400, endX: 1600, y: 300);
 
-    // Section 2: East extension to Victoria Junction (x: 1600→3200, y: 100/300)
-    for (int i = 116; i <= 132; i += 2) {
-      double startX = 1600 + ((i - 116) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 100);
-    }
-    for (int i = 113; i <= 131; i += 2) {
-      double startX = 1600 + ((i - 113) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 300);
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // RIGHT SECTION (1600 to 3200) - Mirror of terminal
+    // ═══════════════════════════════════════════════════════════════════════
+    // Upper track (y=100) - Eastbound →
+    blocks['300'] = BlockSection(id: '300', startX: 1600, endX: 1800, y: 100);
+    blocks['302'] = BlockSection(id: '302', startX: 1800, endX: 2000, y: 100);
+    blocks['304'] = BlockSection(id: '304', startX: 2000, endX: 2200, y: 100);
+    blocks['306'] = BlockSection(id: '306', startX: 2200, endX: 2400, y: 100);
+    blocks['308'] = BlockSection(id: '308', startX: 2400, endX: 2600, y: 100);
+    blocks['310'] = BlockSection(id: '310', startX: 2600, endX: 2800, y: 100);
+    blocks['312'] = BlockSection(id: '312', startX: 2800, endX: 3000, y: 100);
+    blocks['314'] = BlockSection(id: '314', startX: 3000, endX: 3200, y: 100);
 
-    // Section 3: To Paddington Central (x: 3200→4800, y: 100/300)
-    for (int i = 134; i <= 148; i += 2) {
-      double startX = 3200 + ((i - 134) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 100);
-    }
-    for (int i = 133; i <= 149; i += 2) {
-      double startX = 3200 + ((i - 133) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 300);
-    }
+    // Lower track (y=300) - Westbound ←
+    blocks['301'] = BlockSection(id: '301', startX: 1600, endX: 1800, y: 300);
+    blocks['303'] = BlockSection(id: '303', startX: 1800, endX: 2000, y: 300);
+    blocks['305'] = BlockSection(id: '305', startX: 2000, endX: 2200, y: 300);
+    blocks['307'] = BlockSection(id: '307', startX: 2200, endX: 2400, y: 300);
+    blocks['309'] = BlockSection(id: '309', startX: 2400, endX: 2600, y: 300);
+    blocks['311'] = BlockSection(id: '311', startX: 2600, endX: 2800, y: 300);
+    blocks['313'] = BlockSection(id: '313', startX: 2800, endX: 3000, y: 300);
+    blocks['315'] = BlockSection(id: '315', startX: 3000, endX: 3200, y: 300);
 
-    // Section 4: Southern curve (x: 4800→5600, y transitions from 100 to 700)
-    for (int i = 150; i <= 158; i += 2) {
-      double startX = 4800 + ((i - 150) / 2 * 200);
-      double yPos = 100 + ((i - 150) / 2 * 150); // Gradual curve down
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: yPos);
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // CROSSOVERS - 5 total for flexible routing
+    // ═══════════════════════════════════════════════════════════════════════
+    // Left End Crossover (connects upper to lower for turnaround)
+    blocks['crossover_left'] =
+        BlockSection(id: 'crossover_left', startX: -1000, endX: -900, y: 200);
 
-    // Section 5: Eastern extension and return line (x: 5600→7000, y: 700)
-    for (int i = 160; i <= 174; i += 2) {
-      double startX = 5600 + ((i - 160) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 700);
-    }
+    // Left Section Crossover (connects blocks 211↔212)
+    blocks['crossover_211_212'] =
+        BlockSection(id: 'crossover_211_212', startX: -450, endX: -350, y: 200);
 
-    // Section 6: Western return (x: 7000→0, y: 700) - westbound track
-    for (int i = 201; i <= 235; i += 2) {
-      double startX = 7000 - ((i - 201) / 2 * 200);
-      blocks['$i'] = BlockSection(id: '$i', startX: startX - 200, endX: startX, y: 700);
-    }
-
-    // Section 7: Northwest curve back to start (x: 0→-800, curves north)
-    for (int i = 237; i <= 243; i += 2) {
-      double startX = 0 - ((i - 237) / 2 * 200);
-      double yPos = 700 - ((i - 237) / 2 * 150); // Curve back up
-      blocks['$i'] = BlockSection(id: '$i', startX: startX - 200, endX: startX, y: yPos);
-    }
-
-    // Crossovers
+    // Middle Crossover (original 78A/78B)
     blocks['crossover106'] =
         BlockSection(id: 'crossover106', startX: 600, endX: 700, y: 150);
     blocks['crossover109'] =
         BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
-    blocks['crossover126'] =
-        BlockSection(id: 'crossover126', startX: 2400, endX: 2500, y: 200); // Victoria
-    blocks['crossover138'] =
-        BlockSection(id: 'crossover138', startX: 3800, endX: 3900, y: 200); // Paddington
-    blocks['crossover170'] =
-        BlockSection(id: 'crossover170', startX: 6000, endX: 6100, y: 700); // Waterloo
 
-    // Points for all crossovers
+    // Right Section Crossover (connects blocks 302↔305)
+    blocks['crossover_302_305'] =
+        BlockSection(id: 'crossover_302_305', startX: 1950, endX: 2050, y: 200);
+
+    // Right End Crossover (connects upper to lower for turnaround)
+    blocks['crossover_right'] =
+        BlockSection(id: 'crossover_right', startX: 3100, endX: 3200, y: 200);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // POINTS - 10 points total for 5 crossovers
+    // ═══════════════════════════════════════════════════════════════════════
+    // Left end points (crossover_left)
+    points['76A'] = Point(id: '76A', x: -1000, y: 100);
+    points['76B'] = Point(id: '76B', x: -900, y: 300);
+
+    // Left section points (crossover_211_212)
+    points['77A'] = Point(id: '77A', x: -450, y: 100);
+    points['77B'] = Point(id: '77B', x: -350, y: 300);
+
+    // Middle points (crossover106/109)
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
-    points['80A'] = Point(id: '80A', x: 2400, y: 100); // Victoria
-    points['80B'] = Point(id: '80B', x: 2500, y: 300);
-    points['82A'] = Point(id: '82A', x: 3800, y: 100); // Paddington
-    points['82B'] = Point(id: '82B', x: 3900, y: 300);
-    points['84A'] = Point(id: '84A', x: 6000, y: 700); // Waterloo
 
-    // FIXED: 5 Stations with unique names across the loop
-    // Central Terminal (original)
-    platforms.add(Platform(
-        id: 'P1', name: 'Central Terminal P1', startX: 980, endX: 1240, y: 100));
-    platforms.add(Platform(
-        id: 'P2', name: 'Central Terminal P2 (Bay)', startX: 980, endX: 1240, y: 300));
+    // Right section points (crossover_302_305)
+    points['79A'] = Point(id: '79A', x: 1950, y: 100);
+    points['79B'] = Point(id: '79B', x: 2050, y: 300);
 
-    // Victoria Junction
-    platforms.add(Platform(
-        id: 'P3', name: 'Victoria Junction P3', startX: 2400, endX: 2800, y: 100));
-    platforms.add(Platform(
-        id: 'P4', name: 'Victoria Junction P4', startX: 2400, endX: 2800, y: 300));
+    // Right end points (crossover_right)
+    points['80A'] = Point(id: '80A', x: 3100, y: 100);
+    points['80B'] = Point(id: '80B', x: 3200, y: 300);
 
-    // Paddington Central
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLATFORMS - 6 total (2 at each location)
+    // ═══════════════════════════════════════════════════════════════════════
+    // Left End Station
     platforms.add(Platform(
-        id: 'P5', name: 'Paddington Central P5', startX: 3800, endX: 4200, y: 100));
+        id: 'P1', name: 'West Terminal Platform 1', startX: -1200, endX: -800, y: 100));
     platforms.add(Platform(
-        id: 'P6', name: 'Paddington Central P6', startX: 3800, endX: 4200, y: 300));
+        id: 'P2', name: 'West Terminal Platform 2', startX: -1200, endX: -800, y: 300));
 
-    // Waterloo Express
+    // Middle Station (original)
     platforms.add(Platform(
-        id: 'P7', name: 'Waterloo Express P7', startX: 6000, endX: 6400, y: 700));
-
-    // Camden Depot
+        id: 'P3', name: 'Central Terminal Platform 1', startX: 800, endX: 1200, y: 100));
     platforms.add(Platform(
-        id: 'P8', name: 'Camden Depot P8', startX: -800, endX: -400, y: 700));
+        id: 'P4', name: 'Central Terminal Platform 2', startX: 800, endX: 1200, y: 300));
 
+    // Right End Station
+    platforms.add(Platform(
+        id: 'P5', name: 'East Terminal Platform 1', startX: 2400, endX: 2800, y: 100));
+    platforms.add(Platform(
+        id: 'P6', name: 'East Terminal Platform 2', startX: 2400, endX: 2800, y: 300));
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SIGNALS - Comprehensive coverage across all 3 sections
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // LEFT SECTION SIGNALS (200-215)
+    // Upper track eastbound signals
+    signals['L01'] = Signal(
+      id: 'L01',
+      x: -1500,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'L01_R1',
+          name: 'West Entry',
+          requiredBlocksClear: ['200', '202'],
+          requiredPointPositions: {},
+          pathBlocks: ['200', '202'],
+          protectedBlocks: ['200', '202'],
+        ),
+      ],
+    );
+
+    signals['L02'] = Signal(
+      id: 'L02',
+      x: -1100,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'L02_R1',
+          name: 'West Platform 1 Departure',
+          requiredBlocksClear: ['204', '206'],
+          requiredPointPositions: {},
+          pathBlocks: ['204', '206'],
+          protectedBlocks: ['204', '206'],
+        ),
+      ],
+    );
+
+    signals['L03'] = Signal(
+      id: 'L03',
+      x: -700,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'L03_R1',
+          name: 'To Central',
+          requiredBlocksClear: ['208', '210', '212'],
+          requiredPointPositions: {},
+          pathBlocks: ['208', '210', '212'],
+          protectedBlocks: ['208', '210', '212'],
+        ),
+      ],
+    );
+
+    signals['L04'] = Signal(
+      id: 'L04',
+      x: -100,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'L04_R1',
+          name: 'West Exit',
+          requiredBlocksClear: ['214', '100'],
+          requiredPointPositions: {},
+          pathBlocks: ['214', '100'],
+          protectedBlocks: ['214', '100'],
+        ),
+      ],
+    );
+
+    // Lower track westbound signals
+    signals['L05'] = Signal(
+      id: 'L05',
+      x: -200,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'L05_R1',
+          name: 'From Central',
+          requiredBlocksClear: ['215', '213'],
+          requiredPointPositions: {},
+          pathBlocks: ['215', '213'],
+          protectedBlocks: ['215', '213'],
+        ),
+      ],
+    );
+
+    signals['L06'] = Signal(
+      id: 'L06',
+      x: -600,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'L06_R1',
+          name: 'West Platform 2 Departure',
+          requiredBlocksClear: ['211', '209', '207'],
+          requiredPointPositions: {},
+          pathBlocks: ['211', '209', '207'],
+          protectedBlocks: ['211', '209', '207'],
+        ),
+      ],
+    );
+
+    signals['L07'] = Signal(
+      id: 'L07',
+      x: -1100,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'L07_R1',
+          name: 'West Loop',
+          requiredBlocksClear: ['205', '203', '201'],
+          requiredPointPositions: {'76B': PointPosition.normal},
+          pathBlocks: ['205', '203', '201'],
+          protectedBlocks: ['205', '203', '201'],
+        ),
+      ],
+    );
+
+    // MIDDLE SECTION SIGNALS (100-115)
+    // Upper track eastbound signals
     signals['C31'] = Signal(
       id: 'C31',
       x: 390,
@@ -1353,46 +1987,11 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'C31_R1',
-          name: 'Route 1 (Main → Platform 1)',
+          name: 'Main Route',
           requiredBlocksClear: ['106', '108', '110'],
-          requiredPointPositions: {
-            '78A': PointPosition.normal,
-            '78B': PointPosition.normal
-          },
-          pathBlocks: ['104', '106', '108', '110', '112'],
+          requiredPointPositions: {'78A': PointPosition.normal},
+          pathBlocks: ['104', '106', '108', '110'],
           protectedBlocks: ['106', '108', '110'],
-        ),
-        SignalRoute(
-          id: 'C31_R2',
-          name: 'Route 2 (Main → Bay Platform 2)',
-          requiredBlocksClear: [
-            '106',
-            'crossover106',
-            'crossover109',
-            '109',
-            '111'
-          ],
-          requiredPointPositions: {
-            '78A': PointPosition.reverse,
-            '78B': PointPosition.reverse
-          },
-          conflictingRoutes: ['C30_R1', 'C30_R2'],
-          pathBlocks: [
-            '104',
-            '106',
-            'crossover106',
-            'crossover109',
-            '109',
-            '111'
-          ],
-          protectedBlocks: [
-            '104',
-            '106',
-            'crossover106',
-            'crossover109',
-            '109',
-            '111'
-          ],
         ),
       ],
     );
@@ -1404,7 +2003,7 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'C33_R1',
-          name: 'Platform 1 Departure',
+          name: 'Platform Departure',
           requiredBlocksClear: ['112', '114'],
           requiredPointPositions: {},
           pathBlocks: ['112', '114'],
@@ -1413,144 +2012,284 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
+    signals['C01'] = Signal(
+      id: 'C01',
+      x: 50,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C01_R1',
+          name: 'Central Entry',
+          requiredBlocksClear: ['100', '102'],
+          requiredPointPositions: {},
+          pathBlocks: ['100', '102'],
+          protectedBlocks: ['100', '102'],
+        ),
+      ],
+    );
+
+    signals['C02'] = Signal(
+      id: 'C02',
+      x: 1500,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C02_R1',
+          name: 'To East',
+          requiredBlocksClear: ['114', '300'],
+          requiredPointPositions: {},
+          pathBlocks: ['114', '300'],
+          protectedBlocks: ['114', '300'],
+        ),
+      ],
+    );
+
+    // Lower track westbound signals
     signals['C30'] = Signal(
       id: 'C30',
-      x: 980,
+      x: 1000,
       y: 320,
       routes: [
         SignalRoute(
           id: 'C30_R1',
-          name: 'C30 Route 1 (Towards C28)',
-          requiredBlocksClear: ['107', '105', '103'],
+          name: 'Platform 2 Departure',
+          requiredBlocksClear: ['109', '107', '105'],
           requiredPointPositions: {'78B': PointPosition.normal},
-          pathBlocks: ['109', '107', '105', '103', '101'],
+          pathBlocks: ['109', '107', '105'],
           protectedBlocks: ['109', '107', '105'],
-        ),
-        SignalRoute(
-          id: 'C30_R2',
-          name: 'C30 Route 2 (Via Crossover)',
-          requiredBlocksClear: [
-            'crossover109',
-            'crossover106',
-            '106',
-            '108',
-            '110'
-          ],
-          requiredPointPositions: {
-            '78B': PointPosition.reverse,
-            '78A': PointPosition.reverse
-          },
-          conflictingRoutes: ['C31_R1', 'C31_R2'],
-          pathBlocks: [
-            '109',
-            'crossover109',
-            'crossover106',
-            '106',
-            '108',
-            '110'
-          ],
-          protectedBlocks: ['109', 'crossover109', 'crossover106'],
         ),
       ],
     );
 
-    signals['C28'] = Signal(
-      id: 'C28',
-      x: 400,
+    signals['C03'] = Signal(
+      id: 'C03',
+      x: 1500,
       y: 320,
       routes: [
         SignalRoute(
-          id: 'C28_R1',
-          name: 'Bay Exit (Westbound)',
-          requiredBlocksClear: ['103', '101'],
+          id: 'C03_R1',
+          name: 'From East',
+          requiredBlocksClear: ['115', '113'],
           requiredPointPositions: {},
-          pathBlocks: ['105', '103', '101'],
-          protectedBlocks: ['103', '101'],
+          pathBlocks: ['115', '113'],
+          protectedBlocks: ['115', '113'],
         ),
       ],
     );
 
-    // FIXED: New signals for expanded network
-    signals['C35'] = Signal(
-      id: 'C35',
-      x: 2400,
+    signals['C04'] = Signal(
+      id: 'C04',
+      x: 100,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'C04_R1',
+          name: 'To West',
+          requiredBlocksClear: ['101', '215'],
+          requiredPointPositions: {},
+          pathBlocks: ['101', '215'],
+          protectedBlocks: ['101', '215'],
+        ),
+      ],
+    );
+
+    // RIGHT SECTION SIGNALS (300-315)
+    // Upper track eastbound signals
+    signals['R01'] = Signal(
+      id: 'R01',
+      x: 1650,
       y: 80,
       routes: [
         SignalRoute(
-          id: 'C35_R1',
-          name: 'Victoria Entry',
-          requiredBlocksClear: ['126', '128'],
+          id: 'R01_R1',
+          name: 'East Entry',
+          requiredBlocksClear: ['300', '302'],
           requiredPointPositions: {},
-          pathBlocks: ['124', '126', '128'],
-          protectedBlocks: ['126', '128'],
+          pathBlocks: ['300', '302'],
+          protectedBlocks: ['300', '302'],
         ),
       ],
     );
 
-    signals['C37'] = Signal(
-      id: 'C37',
-      x: 3800,
+    signals['R02'] = Signal(
+      id: 'R02',
+      x: 2100,
       y: 80,
       routes: [
         SignalRoute(
-          id: 'C37_R1',
-          name: 'Paddington Entry',
-          requiredBlocksClear: ['138', '140'],
+          id: 'R02_R1',
+          name: 'East Platform 1 Departure',
+          requiredBlocksClear: ['304', '306'],
           requiredPointPositions: {},
-          pathBlocks: ['136', '138', '140'],
-          protectedBlocks: ['138', '140'],
+          pathBlocks: ['304', '306'],
+          protectedBlocks: ['304', '306'],
         ),
       ],
     );
 
-    signals['C39'] = Signal(
-      id: 'C39',
-      x: 6000,
-      y: 680,
+    signals['R03'] = Signal(
+      id: 'R03',
+      x: 2700,
+      y: 80,
       routes: [
         SignalRoute(
-          id: 'C39_R1',
-          name: 'Waterloo Departure',
-          requiredBlocksClear: ['170', '172'],
+          id: 'R03_R1',
+          name: 'To East Loop',
+          requiredBlocksClear: ['308', '310', '312'],
           requiredPointPositions: {},
-          pathBlocks: ['168', '170', '172'],
-          protectedBlocks: ['170', '172'],
+          pathBlocks: ['308', '310', '312'],
+          protectedBlocks: ['308', '310', '312'],
         ),
       ],
     );
+
+    signals['R04'] = Signal(
+      id: 'R04',
+      x: 3100,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'R04_R1',
+          name: 'East Loop Entry',
+          requiredBlocksClear: ['314', 'crossover_right'],
+          requiredPointPositions: {'80A': PointPosition.reverse},
+          pathBlocks: ['314', 'crossover_right'],
+          protectedBlocks: ['314', 'crossover_right'],
+        ),
+      ],
+    );
+
+    // Lower track westbound signals
+    signals['R05'] = Signal(
+      id: 'R05',
+      x: 3100,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'R05_R1',
+          name: 'From East Loop',
+          requiredBlocksClear: ['315', '313'],
+          requiredPointPositions: {},
+          pathBlocks: ['315', '313'],
+          protectedBlocks: ['315', '313'],
+        ),
+      ],
+    );
+
+    signals['R06'] = Signal(
+      id: 'R06',
+      x: 2600,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'R06_R1',
+          name: 'East Platform 2 Departure',
+          requiredBlocksClear: ['311', '309', '307'],
+          requiredPointPositions: {},
+          pathBlocks: ['311', '309', '307'],
+          protectedBlocks: ['311', '309', '307'],
+        ),
+      ],
+    );
+
+    signals['R07'] = Signal(
+      id: 'R07',
+      x: 2100,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'R07_R1',
+          name: 'To Central',
+          requiredBlocksClear: ['305', '303', '301'],
+          requiredPointPositions: {},
+          pathBlocks: ['305', '303', '301'],
+          protectedBlocks: ['305', '303', '301'],
+        ),
+      ],
+    );
+
+    signals['R08'] = Signal(
+      id: 'R08',
+      x: 1700,
+      y: 320,
+      routes: [
+        SignalRoute(
+          id: 'R08_R1',
+          name: 'East Exit',
+          requiredBlocksClear: ['301', '115'],
+          requiredPointPositions: {},
+          pathBlocks: ['301', '115'],
+          protectedBlocks: ['301', '115'],
+        ),
+      ],
+    );
+
+    // TRAIN STOPS for all signals
+    trainStops['TL01'] = TrainStop(id: 'TL01', signalId: 'L01', x: -1500, y: 120);
+    trainStops['TL02'] = TrainStop(id: 'TL02', signalId: 'L02', x: -1100, y: 120);
+    trainStops['TL03'] = TrainStop(id: 'TL03', signalId: 'L03', x: -700, y: 120);
+    trainStops['TL04'] = TrainStop(id: 'TL04', signalId: 'L04', x: -100, y: 120);
+    trainStops['TL05'] = TrainStop(id: 'TL05', signalId: 'L05', x: -200, y: 340);
+    trainStops['TL06'] = TrainStop(id: 'TL06', signalId: 'L06', x: -600, y: 340);
+    trainStops['TL07'] = TrainStop(id: 'TL07', signalId: 'L07', x: -1100, y: 340);
 
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
     trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1220, y: 120);
-    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 980, y: 340);
-    trainStops['T28'] = TrainStop(id: 'T28', signalId: 'C28', x: 380, y: 340);
-    trainStops['T35'] = TrainStop(id: 'T35', signalId: 'C35', x: 2400, y: 120);
-    trainStops['T37'] = TrainStop(id: 'T37', signalId: 'C37', x: 3800, y: 120);
-    trainStops['T39'] = TrainStop(id: 'T39', signalId: 'C39', x: 6000, y: 720);
+    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 1000, y: 340);
+    trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 50, y: 120);
+    trainStops['TC02'] = TrainStop(id: 'TC02', signalId: 'C02', x: 1500, y: 120);
+    trainStops['TC03'] = TrainStop(id: 'TC03', signalId: 'C03', x: 1500, y: 340);
+    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 100, y: 340);
 
-    // FIXED: WiFi Antennas for CBTC coverage across expanded network
-    wifiAntennas['W1'] = WifiAntenna(id: 'W1', x: 500, y: 200, isActive: true);
-    wifiAntennas['W2'] = WifiAntenna(id: 'W2', x: 1200, y: 200, isActive: true);
-    wifiAntennas['W3'] = WifiAntenna(id: 'W3', x: 2000, y: 200, isActive: true);
-    wifiAntennas['W4'] = WifiAntenna(id: 'W4', x: 2600, y: 200, isActive: true); // Victoria
-    wifiAntennas['W5'] = WifiAntenna(id: 'W5', x: 3400, y: 200, isActive: true);
-    wifiAntennas['W6'] = WifiAntenna(id: 'W6', x: 4000, y: 200, isActive: true); // Paddington
-    wifiAntennas['W7'] = WifiAntenna(id: 'W7', x: 4800, y: 400, isActive: true);
-    wifiAntennas['W8'] = WifiAntenna(id: 'W8', x: 5400, y: 600, isActive: true);
-    wifiAntennas['W9'] = WifiAntenna(id: 'W9', x: 6200, y: 700, isActive: true); // Waterloo
-    wifiAntennas['W10'] = WifiAntenna(id: 'W10', x: 5000, y: 700, isActive: true);
-    wifiAntennas['W11'] = WifiAntenna(id: 'W11', x: 3000, y: 700, isActive: true);
-    wifiAntennas['W12'] = WifiAntenna(id: 'W12', x: 1000, y: 700, isActive: true);
-    wifiAntennas['W13'] = WifiAntenna(id: 'W13', x: -400, y: 700, isActive: true); // Camden
+    trainStops['TR01'] = TrainStop(id: 'TR01', signalId: 'R01', x: 1650, y: 120);
+    trainStops['TR02'] = TrainStop(id: 'TR02', signalId: 'R02', x: 2100, y: 120);
+    trainStops['TR03'] = TrainStop(id: 'TR03', signalId: 'R03', x: 2700, y: 120);
+    trainStops['TR04'] = TrainStop(id: 'TR04', signalId: 'R04', x: 3100, y: 120);
+    trainStops['TR05'] = TrainStop(id: 'TR05', signalId: 'R05', x: 3100, y: 340);
+    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2600, y: 340);
+    trainStops['TR07'] = TrainStop(id: 'TR07', signalId: 'R07', x: 2100, y: 340);
+    trainStops['TR08'] = TrainStop(id: 'TR08', signalId: 'R08', x: 1700, y: 340);
 
-    // Transponders at key locations
-    transponders['TP1'] = Transponder(id: 'TP1', type: TransponderType.t1, x: 300, y: 100, description: 'Central West');
-    transponders['TP2'] = Transponder(id: 'TP2', type: TransponderType.t2, x: 1100, y: 100, description: 'Central East');
-    transponders['TP3'] = Transponder(id: 'TP3', type: TransponderType.t3, x: 2500, y: 100, description: 'Victoria');
-    transponders['TP4'] = Transponder(id: 'TP4', type: TransponderType.t6, x: 3900, y: 100, description: 'Paddington');
-    transponders['TP5'] = Transponder(id: 'TP5', type: TransponderType.t1, x: 6100, y: 700, description: 'Waterloo');
+    // ═══════════════════════════════════════════════════════════════════════
+    // CBTC INFRASTRUCTURE - WiFi and Transponders with individual control
+    // ═══════════════════════════════════════════════════════════════════════
+    // LEFT SECTION WiFi Coverage
+    wifiAntennas['W_L1'] = WifiAntenna(id: 'W_L1', x: -1500, y: 200, isActive: true);
+    wifiAntennas['W_L2'] = WifiAntenna(id: 'W_L2', x: -1200, y: 200, isActive: true);
+    wifiAntennas['W_L3'] = WifiAntenna(id: 'W_L3', x: -800, y: 200, isActive: true);
+    wifiAntennas['W_L4'] = WifiAntenna(id: 'W_L4', x: -400, y: 200, isActive: true);
+    wifiAntennas['W_L5'] = WifiAntenna(id: 'W_L5', x: -100, y: 200, isActive: true);
+
+    // MIDDLE SECTION WiFi Coverage
+    wifiAntennas['W_C1'] = WifiAntenna(id: 'W_C1', x: 100, y: 200, isActive: true);
+    wifiAntennas['W_C2'] = WifiAntenna(id: 'W_C2', x: 400, y: 200, isActive: true);
+    wifiAntennas['W_C3'] = WifiAntenna(id: 'W_C3', x: 800, y: 200, isActive: true);
+    wifiAntennas['W_C4'] = WifiAntenna(id: 'W_C4', x: 1000, y: 200, isActive: true);
+    wifiAntennas['W_C5'] = WifiAntenna(id: 'W_C5', x: 1400, y: 200, isActive: true);
+
+    // RIGHT SECTION WiFi Coverage
+    wifiAntennas['W_R1'] = WifiAntenna(id: 'W_R1', x: 1700, y: 200, isActive: true);
+    wifiAntennas['W_R2'] = WifiAntenna(id: 'W_R2', x: 2000, y: 200, isActive: true);
+    wifiAntennas['W_R3'] = WifiAntenna(id: 'W_R3', x: 2400, y: 200, isActive: true);
+    wifiAntennas['W_R4'] = WifiAntenna(id: 'W_R4', x: 2600, y: 200, isActive: true);
+    wifiAntennas['W_R5'] = WifiAntenna(id: 'W_R5', x: 3000, y: 200, isActive: true);
+
+    // Transponders at platforms and key locations
+    transponders['TP_L1'] = Transponder(id: 'TP_L1', type: TransponderType.t1, x: -1200, y: 100, description: 'West Terminal Platform 1');
+    transponders['TP_L2'] = Transponder(id: 'TP_L2', type: TransponderType.t2, x: -1200, y: 300, description: 'West Terminal Platform 2');
+    transponders['TP_L3'] = Transponder(id: 'TP_L3', type: TransponderType.t3, x: -450, y: 200, description: 'West Crossover');
+
+    transponders['TP_C1'] = Transponder(id: 'TP_C1', type: TransponderType.t1, x: 800, y: 100, description: 'Central Terminal Platform 1');
+    transponders['TP_C2'] = Transponder(id: 'TP_C2', type: TransponderType.t2, x: 800, y: 300, description: 'Central Terminal Platform 2');
+    transponders['TP_C3'] = Transponder(id: 'TP_C3', type: TransponderType.t3, x: 700, y: 200, description: 'Central Crossover');
+
+    transponders['TP_R1'] = Transponder(id: 'TP_R1', type: TransponderType.t1, x: 2400, y: 100, description: 'East Terminal Platform 1');
+    transponders['TP_R2'] = Transponder(id: 'TP_R2', type: TransponderType.t2, x: 2400, y: 300, description: 'East Terminal Platform 2');
+    transponders['TP_R3'] = Transponder(id: 'TP_R3', type: TransponderType.t3, x: 2000, y: 200, description: 'East Crossover');
+    transponders['TP_R4'] = Transponder(id: 'TP_R4', type: TransponderType.t1, x: 3100, y: 200, description: 'East Loop');
 
     _logEvent(
-        '🚉 EXPANDED LOOP NETWORK INITIALIZED: 5 stations, 8 platforms, 7 signals, 7 points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
+        '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, ${signals.length} signals, ${points.length} points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
   }
 
   // ============================================================================
@@ -2025,7 +2764,11 @@ class TerminalStationController extends ChangeNotifier {
         .any((reservation) => reservation.reservedBlocks.contains(blockId));
   }
 
-  void addTrainToBlock(String blockId) {
+  void addTrainToBlock(String blockId, {
+    TrainType trainType = TrainType.m1,
+    String? destination,
+    bool assignToTimetable = false,
+  }) {
     final safeBlocks = getSafeBlocksForTrainAdd();
     if (!safeBlocks.contains(blockId)) {
       _logEvent(
@@ -2046,10 +2789,13 @@ class TerminalStationController extends ChangeNotifier {
       direction = -1;
     }
 
+    final isCbtc = trainType == TrainType.cbtcM1 || trainType == TrainType.cbtcM2;
+
     final train = Train(
       id: 'T$nextTrainNumber',
       name: 'Train $nextTrainNumber',
-      vin: _generateVin(nextTrainNumber, false),
+      vin: _generateVin(nextTrainNumber, isCbtc),
+      trainType: trainType,
       x: _getInitialXForBlock(blockId),
       y: block.y,
       speed: 0,
@@ -2058,18 +2804,48 @@ class TerminalStationController extends ChangeNotifier {
       color: Colors.primaries[nextTrainNumber % Colors.primaries.length],
       controlMode: TrainControlMode.automatic,
       manualStop: false,
-      isCbtcEquipped: false,
-      cbtcMode: CbtcMode.off,
+      isCbtcEquipped: isCbtc,
+      cbtcMode: isCbtc ? CbtcMode.off : CbtcMode.off,
+      smcDestination: destination,
     );
 
     trains.add(train);
+
+    // If assign to timetable, find next available ghost train slot
+    if (assignToTimetable && ghostTrains.isNotEmpty) {
+      final availableGhost = ghostTrains.firstWhere(
+        (g) => g.isAvailable,
+        orElse: () => ghostTrains.first, // Fallback if none available
+      );
+
+      if (availableGhost.isAvailable) {
+        assignTrainToTimetableSlot(train.id, availableGhost.id);
+      }
+    }
+
     nextTrainNumber++;
     _updateBlockOccupation();
 
     String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    String typeStr = _getTrainTypeDisplayName(trainType);
+    String destStr = destination != null ? ' to $destination' : '';
+    String ttStr = assignToTimetable ? ' [TIMETABLED]' : '';
     _logEvent(
-        '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+        '🚂 Train ${nextTrainNumber - 1} ($typeStr) added at block $blockId ($trackType)$destStr$ttStr');
     notifyListeners();
+  }
+
+  String _getTrainTypeDisplayName(TrainType type) {
+    switch (type) {
+      case TrainType.m1:
+        return 'M1';
+      case TrainType.m2:
+        return 'M2';
+      case TrainType.cbtcM1:
+        return 'CBTC M1';
+      case TrainType.cbtcM2:
+        return 'CBTC M2';
+    }
   }
 
   double _getInitialXForBlock(String blockId) {
@@ -2671,6 +3447,92 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // New enhanced train control methods
+  void updateTrainType(String id, TrainType newType) {
+    final train = trains.firstWhere((t) => t.id == id);
+    // Create a new train with updated type by copying all properties
+    final updatedTrain = Train(
+      id: train.id,
+      name: train.name,
+      vin: train.vin,
+      trainType: newType,
+      x: train.x,
+      y: train.y,
+      speed: train.speed,
+      targetSpeed: train.targetSpeed,
+      direction: train.direction,
+      color: train.color,
+      controlMode: train.controlMode,
+      manualStop: train.manualStop,
+      emergencyBrake: train.emergencyBrake,
+      currentBlockId: train.currentBlockId,
+      hasCommittedToMove: train.hasCommittedToMove,
+      lastPassedSignalId: train.lastPassedSignalId,
+      rotation: train.rotation,
+      doorsOpen: train.doorsOpen,
+      doorsOpenedAt: train.doorsOpenedAt,
+      isCbtcEquipped: newType == TrainType.cbtcM1 || newType == TrainType.cbtcM2,
+      cbtcMode: (newType == TrainType.cbtcM1 || newType == TrainType.cbtcM2)
+          ? CbtcMode.auto
+          : CbtcMode.off,
+      smcDestination: train.smcDestination,
+      movementAuthority: train.movementAuthority,
+    );
+
+    final index = trains.indexWhere((t) => t.id == id);
+    trains[index] = updatedTrain;
+
+    _logEvent('🔧 ${train.name} type changed to ${_getTrainTypeName(newType)}');
+    notifyListeners();
+  }
+
+  String _getTrainTypeName(TrainType type) {
+    switch (type) {
+      case TrainType.m1:
+        return 'M1 (Single)';
+      case TrainType.m2:
+        return 'M2 (Double)';
+      case TrainType.cbtcM1:
+        return 'CBTC M1';
+      case TrainType.cbtcM2:
+        return 'CBTC M2';
+    }
+  }
+
+  void updateTrainCbtcMode(String id, CbtcMode newMode) {
+    final train = trains.firstWhere((t) => t.id == id);
+    train.cbtcMode = newMode;
+    _logEvent('🔧 ${train.name} CBTC mode changed to ${_getCbtcModeName(newMode)}');
+    notifyListeners();
+  }
+
+  String _getCbtcModeName(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return 'Auto';
+      case CbtcMode.pm:
+        return 'PM (Protective Manual)';
+      case CbtcMode.rm:
+        return 'RM (Restrictive Manual)';
+      case CbtcMode.off:
+        return 'Off';
+      case CbtcMode.storage:
+        return 'Storage';
+    }
+  }
+
+  void setTrainDestination(String id, String? destination) {
+    final train = trains.firstWhere((t) => t.id == id);
+    train.smcDestination = destination;
+
+    if (destination == null) {
+      _logEvent('📍 ${train.name} destination cleared');
+    } else {
+      _logEvent('📍 ${train.name} destination set to $destination');
+    }
+    notifyListeners();
+  }
+
   void startSimulation() {
     isRunning = true;
     _startSimulationTimer();
@@ -3172,9 +4034,25 @@ class TerminalStationController extends ChangeNotifier {
     final currentBlock = blocks[train.currentBlockId!];
     if (currentBlock == null) return null;
 
-    // Simple next block logic
+    // MIRRORED TERMINAL STATION ROUTING - Continuous loop through 3 sections
+    // Upper track ALWAYS eastbound →, Lower track ALWAYS westbound ←
+
     if (train.direction > 0) {
-      // Eastbound
+      // ========== EASTBOUND (Upper Track) ==========
+
+      // LEFT SECTION (200-214)
+      switch (currentBlock.id) {
+        case '200': return '202';
+        case '202': return '204';
+        case '204': return '206';
+        case '206': return '208';
+        case '208': return '210';
+        case '210': return '212';
+        case '212': return '214';
+        case '214': return '100'; // Continue to MIDDLE section
+      }
+
+      // MIDDLE SECTION (100-114)
       switch (currentBlock.id) {
         case '100':
           return '102';
@@ -3223,8 +4101,29 @@ class TerminalStationController extends ChangeNotifier {
         case 'crossover109':
           return '109';
       }
+
+      // RIGHT SECTION (300-314)
+      switch (currentBlock.id) {
+        case '300': return '302';
+        case '302': return '304';
+        case '304': return '306';
+        case '306': return '308';
+        case '308': return '310';
+        case '310': return '312';
+        case '312': return '314';
+        case '314': return 'crossover_right'; // Use right crossover to switch to lower track
+      }
+
+      // Crossovers
+      if (currentBlock.id == 'crossover_right') return '315'; // Switch to lower track
+      if (currentBlock.id == 'crossover106') return 'crossover109';
+      if (currentBlock.id == 'crossover109') return '109';
+      if (currentBlock.id == 'crossover_left') return '201'; // Switch to lower track
+
     } else {
-      // Westbound
+      // ========== WESTBOUND (Lower Track) ==========
+
+      // RIGHT SECTION (301-315) - going west
       switch (currentBlock.id) {
         case '132':
           return '130';
@@ -3273,7 +4172,38 @@ class TerminalStationController extends ChangeNotifier {
         case 'crossover106':
           return '104';
       }
+
+      // MIDDLE SECTION (101-115) - going west
+      switch (currentBlock.id) {
+        case '115': return '113';
+        case '113': return '111';
+        case '111': return '109';
+        case '109': return '107';
+        case '107': return '105';
+        case '105': return '103';
+        case '103': return '101';
+        case '101': return '215'; // Continue to LEFT section
+      }
+
+      // LEFT SECTION (201-215) - going west
+      switch (currentBlock.id) {
+        case '215': return '213';
+        case '213': return '211';
+        case '211': return '209';
+        case '209': return '207';
+        case '207': return '205';
+        case '205': return '203';
+        case '203': return '201';
+        case '201': return 'crossover_left'; // Use left crossover to switch to upper track
+      }
+
+      // Crossovers
+      if (currentBlock.id == 'crossover_left') return '200'; // Complete loop - switch to upper track
+      if (currentBlock.id == 'crossover109') return 'crossover106';
+      if (currentBlock.id == 'crossover106') return '104';
+      if (currentBlock.id == 'crossover_right') return '314'; // Back to upper track
     }
+
     return null;
   }
 
@@ -3758,6 +4688,7 @@ class TerminalStationController extends ChangeNotifier {
     _clockTimer?.cancel();
     _cancellationTimer?.cancel();
     _simulationTimer?.cancel();
+    _timetableTimer?.cancel();
     super.dispose();
   }
 }

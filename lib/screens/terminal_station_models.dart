@@ -318,6 +318,8 @@ class CollisionRecoveryPlan {
   DateTime? resolvedAt;
   CollisionRecoveryState state;
   int recoveryProgressSeconds = 0;
+  final Map<String, double> collisionPositions; // Store X position where each train collided
+  final Map<String, double> targetRecoveryPositions; // Target position 20 units back
 
   CollisionRecoveryPlan({
     required this.collisionId,
@@ -325,5 +327,9 @@ class CollisionRecoveryPlan {
     required this.reverseInstructions,
     required this.blocksToClear,
     required this.state,
-  }) : detectedAt = DateTime.now();
+    Map<String, double>? collisionPositions,
+    Map<String, double>? targetRecoveryPositions,
+  }) : detectedAt = DateTime.now(),
+       collisionPositions = collisionPositions ?? {},
+       targetRecoveryPositions = targetRecoveryPositions ?? {};
 }

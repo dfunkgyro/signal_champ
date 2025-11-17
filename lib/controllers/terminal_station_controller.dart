@@ -653,27 +653,29 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void _executeRecoveryMovement(Train train, CollisionRecoveryPlan plan) {
-    final targetBlockId = plan.reverseInstructions[train.id];
-    if (targetBlockId == null) return;
+    final targetPosition = plan.targetRecoveryPositions[train.id];
+    if (targetPosition == null) return;
 
+    // Reverse direction if moving forward
     if (train.direction > 0) {
       train.direction = -1;
-      _logEvent('🔄 ${train.name} reversing for collision recovery');
+      _logEvent('🔄 ${train.name} reversing for collision recovery (moving 20 units back)');
     }
 
     train.emergencyBrake = false;
     train.targetSpeed = 3.0;
 
+    // Move train backwards
     train.x += train.speed * train.direction * simulationSpeed * 2.0;
 
-    final targetBlock = blocks[targetBlockId];
-    if (targetBlock != null && targetBlock.containsPosition(train.x, train.y)) {
-      _logEvent(
-          '✅ ${train.name} reached safe position in block $targetBlockId');
+    // Check if train has reached target position (20 units back from collision)
+    if (train.x <= targetPosition) {
+      _logEvent('✅ ${train.name} reached safe position (20 units back from collision)');
+      train.x = targetPosition; // Snap to exact position
       train.targetSpeed = 0;
       train.speed = 0;
       train.emergencyBrake = false;
-      train.direction = 1;
+      train.direction = 1; // Restore forward direction
 
       _checkRecoveryCompletion(plan);
     }
@@ -684,11 +686,11 @@ class TerminalStationController extends ChangeNotifier {
 
     for (var trainId in plan.trainsInvolved) {
       final train = trains.firstWhere((t) => t.id == trainId);
-      final targetBlockId = plan.reverseInstructions[trainId];
-      final targetBlock = blocks[targetBlockId];
+      final targetPosition = plan.targetRecoveryPositions[trainId];
 
-      if (targetBlock == null ||
-          !targetBlock.containsPosition(train.x, train.y) ||
+      // Check if train has reached target position and stopped
+      if (targetPosition == null ||
+          train.x > targetPosition ||
           train.speed > 0) {
         allTrainsSafe = false;
         break;
@@ -1835,12 +1837,18 @@ class TerminalStationController extends ChangeNotifier {
       List<String> trainIds, String location, String collisionId) {
     final reverseInstructions = <String, String>{};
     final blocksToClear = <String>[];
+    final collisionPositions = <String, double>{};
+    final targetRecoveryPositions = <String, double>{};
 
     for (var trainId in trainIds) {
       final train = trains.firstWhere((t) => t.id == trainId);
       final safeBlock = _findSafeReverseBlock(train);
       reverseInstructions[trainId] = safeBlock;
       blocksToClear.add(train.currentBlockId ?? 'unknown');
+
+      // Store collision position and calculate target 20 units back
+      collisionPositions[trainId] = train.x;
+      targetRecoveryPositions[trainId] = train.x - 20.0;
     }
 
     return CollisionRecoveryPlan(
@@ -1849,6 +1857,8 @@ class TerminalStationController extends ChangeNotifier {
       reverseInstructions: reverseInstructions,
       blocksToClear: blocksToClear,
       state: CollisionRecoveryState.detected,
+      collisionPositions: collisionPositions,
+      targetRecoveryPositions: targetRecoveryPositions,
     );
   }
 
@@ -1895,6 +1905,8 @@ class TerminalStationController extends ChangeNotifier {
       reverseInstructions: {trainId: '112'},
       blocksToClear: [train.currentBlockId ?? '114'],
       state: CollisionRecoveryState.detected,
+      collisionPositions: {trainId: train.x},
+      targetRecoveryPositions: {trainId: train.x - 20.0},
     );
     _activeCollisionRecoveries[collisionId] = recoveryPlan;
 

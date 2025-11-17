@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
+import '../controllers/canvas_theme_controller.dart';
 import 'package:rail_champ/models/railway_model.dart' show WifiAntenna, Transponder, TransponderType;
 
 // Collision Visual Effects Mixin
@@ -232,6 +233,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   final int animationTick;
   final double canvasWidth;
   final double canvasHeight;
+  final CanvasThemeData themeData;  // NEW: Canvas theme support
 
   TerminalStationPainter({
     required this.controller,
@@ -241,10 +243,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     required this.animationTick,
     required this.canvasWidth,
     required this.canvasHeight,
+    required this.themeData,  // NEW: Canvas theme support
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Draw themed background
+    final backgroundPaint = Paint()
+      ..color = themeData.canvasBackgroundColor
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
+
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
     canvas.scale(zoom);
@@ -764,8 +773,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawBlock(Canvas canvas, BlockSection block) {
     final blockPaint = Paint()
-      ..color =
-          block.occupied ? Colors.purple.withOpacity(0.3) : Colors.grey[300]!
+      ..color = block.occupied
+          ? themeData.trackOccupiedColor.withOpacity(0.3)
+          : themeData.trackColor
       ..style = PaintingStyle.fill;
 
     canvas.drawRRect(
@@ -779,12 +789,12 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     // Draw two running rails for each block
     final outerRailPaint = Paint()
-      ..color = Colors.grey[700]!
-      ..strokeWidth = 3;
+      ..color = themeData.railColor
+      ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
 
     final innerRailPaint = Paint()
-      ..color = Colors.grey[700]!
-      ..strokeWidth = 2;
+      ..color = themeData.railColor
+      ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
 
     const railSpacing = 12.0;
 
@@ -805,8 +815,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         Offset(block.endX, block.y + 8 + railSpacing / 2), innerRailPaint);
 
     final sleeperPaint = Paint()
-      ..color = Colors.brown[700]!
-      ..strokeWidth = 6;
+      ..color = themeData.sleeperColor
+      ..strokeWidth = 6 * themeData.strokeWidthMultiplier;
 
     for (double x = block.startX; x < block.endX; x += 15) {
       canvas.drawLine(
@@ -815,84 +825,112 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawCrossoverTrack(Canvas canvas) {
-    // Draw two separate rails for the crossover with proper spacing
+    // Draw ALL 5 crossovers in the expanded network
     final outerRailPaint = Paint()
-      ..color = Colors.grey[700]!
-      ..strokeWidth = 3; // Thicker rails for main tracks
+      ..color = themeData.railColor
+      ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
 
     final innerRailPaint = Paint()
-      ..color = Colors.grey[700]!
-      ..strokeWidth = 2; // Slightly thinner for inner rails
+      ..color = themeData.railColor
+      ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
 
-    const railSpacing = 12.0; // Space between rails
-
-    // First crossover: 600,100 to 700,200
-    // Outer rail 1 (top-left to bottom-right)
-    final path1a = Path()
-      ..moveTo(600 - railSpacing / 2, 100 - railSpacing / 2)
-      ..lineTo(700 - railSpacing / 2, 200 - railSpacing / 2);
-    canvas.drawPath(path1a, outerRailPaint);
-
-    // Inner rail 1 (top-left to bottom-right)
-    final path1b = Path()
-      ..moveTo(600 + railSpacing / 2, 100 + railSpacing / 2)
-      ..lineTo(700 + railSpacing / 2, 200 + railSpacing / 2);
-    canvas.drawPath(path1b, innerRailPaint);
-
-    // Second crossover: 700,200 to 800,300
-    // Outer rail 2 (top-left to bottom-right)
-    final path2a = Path()
-      ..moveTo(700 - railSpacing / 2, 200 - railSpacing / 2)
-      ..lineTo(800 - railSpacing / 2, 300 - railSpacing / 2);
-    canvas.drawPath(path2a, outerRailPaint);
-
-    // Inner rail 2 (top-left to bottom-right)
-    final path2b = Path()
-      ..moveTo(700 + railSpacing / 2, 200 + railSpacing / 2)
-      ..lineTo(800 + railSpacing / 2, 300 + railSpacing / 2);
-    canvas.drawPath(path2b, innerRailPaint);
-
-    // Draw sleepers for both crossovers
     final sleeperPaint = Paint()
-      ..color = Colors.brown[700]!
-      ..strokeWidth = 4;
+      ..color = themeData.sleeperColor
+      ..strokeWidth = 4 * themeData.strokeWidthMultiplier;
 
+    const railSpacing = 12.0;
+
+    // ═══════════════════════════════════════════════════════════════
+    // 1. LEFT END CROSSOVER (x=-1000, connects y=100 to y=300)
+    // ═══════════════════════════════════════════════════════════════
+    _drawSingleCrossover(canvas, -1000, 100, -900, 200, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _drawSingleCrossover(canvas, -900, 200, -800, 300, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _highlightCrossover(canvas, 'crossover_left', -950, 150);
+
+    // ═══════════════════════════════════════════════════════════════
+    // 2. LEFT SECTION CROSSOVER (x=-450, connects blocks 211↔212)
+    // ═══════════════════════════════════════════════════════════════
+    _drawSingleCrossover(canvas, -450, 100, -350, 200, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _drawSingleCrossover(canvas, -350, 200, -250, 300, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _highlightCrossover(canvas, 'crossover_211_212', -350, 200);
+
+    // ═══════════════════════════════════════════════════════════════
+    // 3. MIDDLE CROSSOVER (original 78A/78B at x=600-800)
+    // ═══════════════════════════════════════════════════════════════
+    _drawSingleCrossover(canvas, 600, 100, 700, 200, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _drawSingleCrossover(canvas, 700, 200, 800, 300, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _highlightCrossover(canvas, 'crossover106', 650, 150);
+    _highlightCrossover(canvas, 'crossover109', 750, 250);
+
+    // ═══════════════════════════════════════════════════════════════
+    // 4. RIGHT SECTION CROSSOVER (x=1950, connects blocks 302↔305)
+    // ═══════════════════════════════════════════════════════════════
+    _drawSingleCrossover(canvas, 1950, 100, 2050, 200, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _drawSingleCrossover(canvas, 2050, 200, 2150, 300, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _highlightCrossover(canvas, 'crossover_302_305', 2050, 200);
+
+    // ═══════════════════════════════════════════════════════════════
+    // 5. RIGHT END CROSSOVER (x=3100, connects y=100 to y=300)
+    // ═══════════════════════════════════════════════════════════════
+    _drawSingleCrossover(canvas, 3100, 100, 3200, 200, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _drawSingleCrossover(canvas, 3200, 200, 3300, 300, outerRailPaint,
+        innerRailPaint, sleeperPaint, railSpacing);
+    _highlightCrossover(canvas, 'crossover_right', 3200, 200);
+  }
+
+  // Helper method to draw a single crossover segment with 45° angle
+  void _drawSingleCrossover(Canvas canvas, double startX, double startY,
+      double endX, double endY, Paint outerPaint, Paint innerPaint,
+      Paint sleeperPaint, double railSpacing) {
+
+    // Calculate perpendicular offset for rail spacing at 45° angle
+    final offset = railSpacing / math.sqrt(2);
+
+    // Outer rail (offset perpendicular to diagonal)
+    final path1 = Path()
+      ..moveTo(startX - offset, startY + offset)
+      ..lineTo(endX - offset, endY + offset);
+    canvas.drawPath(path1, outerPaint);
+
+    // Inner rail (offset perpendicular to diagonal)
+    final path2 = Path()
+      ..moveTo(startX + offset, startY - offset)
+      ..lineTo(endX + offset, endY - offset);
+    canvas.drawPath(path2, innerPaint);
+
+    // Draw sleepers perpendicular to track direction (135° angle)
     for (double t = 0; t <= 1.0; t += 0.1) {
-      // First crossover sleepers
-      final x1 = 600 + (100 * t);
-      final y1 = 100 + (100 * t);
+      final x = startX + ((endX - startX) * t);
+      final y = startY + ((endY - startY) * t);
       canvas.drawLine(
-          Offset(x1 - 10, y1 + 10), Offset(x1 + 10, y1 - 10), sleeperPaint);
-
-      // Second crossover sleepers
-      final x2 = 700 + (100 * t);
-      final y2 = 200 + (100 * t);
-      canvas.drawLine(
-          Offset(x2 - 10, y2 + 10), Offset(x2 + 10, y2 - 10), sleeperPaint);
+          Offset(x - 10, y + 10), Offset(x + 10, y - 10), sleeperPaint);
     }
+  }
 
-    // Highlight occupied crossover blocks
-    final block106 = controller.blocks['crossover106'];
-    final block109 = controller.blocks['crossover109'];
-
-    if (block106 != null && block106.occupied) {
+  // Helper method to highlight occupied crossover blocks
+  void _highlightCrossover(Canvas canvas, String blockId, double centerX, double centerY) {
+    final block = controller.blocks[blockId];
+    if (block != null && block.occupied) {
       final highlightPaint = Paint()
-        ..color = Colors.purple.withOpacity(0.4)
+        ..color = themeData.trackOccupiedColor.withOpacity(0.4)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(650, 150), 40, highlightPaint);
-    }
-    if (block109 != null && block109.occupied) {
-      final highlightPaint = Paint()
-        ..color = Colors.purple.withOpacity(0.4)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(750, 250), 40, highlightPaint);
+      canvas.drawCircle(Offset(centerX, centerY), 40, highlightPaint);
     }
   }
 
   void _drawPlatforms(Canvas canvas) {
     for (var platform in controller.platforms) {
       final platformPaint = Paint()
-        ..color = Colors.yellow[700]!
+        ..color = themeData.platformColor
         ..style = PaintingStyle.fill;
 
       final yOffset = platform.y == 100 ? 40 : -40;
@@ -907,9 +945,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       );
 
       final edgePaint = Paint()
-        ..color = Colors.amber[900]!
+        ..color = themeData.platformEdgeColor
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3;
+        ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -952,16 +990,15 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           (point.id == '78A' || point.id == '78B') && ab106Occupied;
 
       if (isABDeadlocked) {
-        pointColor =
-            Colors.deepOrange; // Orange for AB106 deadlock (both points)
+        pointColor = themeData.pointDeadlockColor; // Deadlock color
       } else if (point.lockedByAB) {
-        pointColor = Colors.red; // Red for individual AB deadlock
+        pointColor = themeData.pointDeadlockColor; // AB deadlock
       } else if (point.locked) {
-        pointColor = Colors.blue; // Blue for manual lock
+        pointColor = themeData.pointLockedColor; // Manual lock
       } else if (point.position == PointPosition.normal) {
-        pointColor = Colors.teal; // Teal for normal position
+        pointColor = themeData.pointNormalColor; // Normal position
       } else {
-        pointColor = Colors.green; // Green for reverse position
+        pointColor = themeData.pointReverseColor; // Reverse position
       }
 
       final pointPaint = Paint()
@@ -1023,10 +1060,58 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawPointGaps(Canvas canvas, Point point) {
     final gapPaint = Paint()
-      ..color = Colors.grey[200]!
+      ..color = themeData.pointGapColor
       ..style = PaintingStyle.fill;
 
-    if (point.id == '78A') {
+    // Helper function to draw point gap based on position
+    void drawGap(double x, double y, bool isUpper, bool isNormal) {
+      if (isUpper) {
+        // Upper track point (y=100)
+        if (isNormal) {
+          canvas.drawRect(Rect.fromLTWH(x - 7.5, y + 12, 50, 12), gapPaint);
+        } else {
+          final path = Path()
+            ..moveTo(x + 5, y - 22.5)
+            ..lineTo(x + 50, y - 22.5)
+            ..lineTo(x + 50, y + 23)
+            ..close();
+          canvas.drawPath(path, gapPaint);
+        }
+      } else {
+        // Lower track point (y=300)
+        if (isNormal) {
+          canvas.drawRect(Rect.fromLTWH(x - 42.5, y - 23, 50, 12), gapPaint);
+        } else {
+          final path = Path()
+            ..moveTo(x, y - 21)
+            ..lineTo(x + 37, y + 17.5)
+            ..lineTo(x, y + 17.5)
+            ..close();
+          canvas.drawPath(path, gapPaint);
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LEFT END CROSSOVER POINTS (76A, 76B)
+    // ═══════════════════════════════════════════════════════════════
+    if (point.id == '76A') {
+      drawGap(-1000, 100, true, point.position == PointPosition.normal);
+    } else if (point.id == '76B') {
+      drawGap(-900, 300, false, point.position == PointPosition.normal);
+    }
+    // ═══════════════════════════════════════════════════════════════
+    // LEFT SECTION CROSSOVER POINTS (77A, 77B)
+    // ═══════════════════════════════════════════════════════════════
+    else if (point.id == '77A') {
+      drawGap(-450, 100, true, point.position == PointPosition.normal);
+    } else if (point.id == '77B') {
+      drawGap(-350, 300, false, point.position == PointPosition.normal);
+    }
+    // ═══════════════════════════════════════════════════════════════
+    // MIDDLE CROSSOVER POINTS (78A, 78B) - Original
+    // ═══════════════════════════════════════════════════════════════
+    else if (point.id == '78A') {
       if (point.position == PointPosition.normal) {
         canvas.drawRect(Rect.fromLTWH(592.5, 112, 50, 12), gapPaint);
       } else {
@@ -1049,6 +1134,22 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     }
+    // ═══════════════════════════════════════════════════════════════
+    // RIGHT SECTION CROSSOVER POINTS (79A, 79B)
+    // ═══════════════════════════════════════════════════════════════
+    else if (point.id == '79A') {
+      drawGap(1950, 100, true, point.position == PointPosition.normal);
+    } else if (point.id == '79B') {
+      drawGap(2050, 300, false, point.position == PointPosition.normal);
+    }
+    // ═══════════════════════════════════════════════════════════════
+    // RIGHT END CROSSOVER POINTS (80A, 80B)
+    // ═══════════════════════════════════════════════════════════════
+    else if (point.id == '80A') {
+      drawGap(3100, 100, true, point.position == PointPosition.normal);
+    } else if (point.id == '80B') {
+      drawGap(3200, 300, false, point.position == PointPosition.normal);
+    }
   }
 
   void _drawSignals(Canvas canvas) {
@@ -1056,8 +1157,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     for (var signal in controller.signals.values) {
       final polePaint = Paint()
-        ..color = Colors.grey[800]!
-        ..strokeWidth = 5;
+        ..color = themeData.signalPoleColor
+        ..strokeWidth = 5 * themeData.strokeWidthMultiplier;
 
       canvas.drawLine(Offset(signal.x, signal.y),
           Offset(signal.x, signal.y - 40), polePaint);
@@ -1068,7 +1169,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawSignalHead(Canvas canvas, Signal signal) {
     final headPaint = Paint()
-      ..color = Colors.grey[900]!
+      ..color = themeData.signalPoleColor
       ..style = PaintingStyle.fill;
 
     bool pointerWest = signal.id == 'C30' || signal.id == 'C28';
@@ -1093,17 +1194,18 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       canvas.drawPath(path, headPaint);
     }
 
-    final lightColor =
-        signal.aspect == SignalAspect.green ? Colors.green : Colors.red;
+    final lightColor = signal.aspect == SignalAspect.green
+        ? themeData.signalGreenColor
+        : themeData.signalRedColor;
     final lightPaint = Paint()
       ..color = lightColor
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 6, lightPaint);
 
-    if (signal.aspect == SignalAspect.green) {
+    if (themeData.showGlow && signal.aspect == SignalAspect.green) {
       final glowPaint = Paint()
-        ..color = Colors.green.withOpacity(0.4)
+        ..color = themeData.signalGreenColor.withOpacity(0.4)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
 
       canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 12, glowPaint);
@@ -1452,7 +1554,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
       if (train.doorsOpen) {
         final doorPaint = Paint()
-          ..color = Colors.black
+          ..color = themeData.trainDoorColor
           ..style = PaintingStyle.fill;
 
         final leftDoorRect = Rect.fromLTWH(
@@ -1473,14 +1575,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawRect(rightDoorRect, doorPaint);
 
         final doorOutlinePaint = Paint()
-          ..color = Colors.white
+          ..color = themeData.trainWindowColor
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
+          ..strokeWidth = 1.5 * themeData.strokeWidthMultiplier;
 
         canvas.drawRect(leftDoorRect, doorOutlinePaint);
         canvas.drawRect(rightDoorRect, doorOutlinePaint);
       } else {
-        final windowPaint = Paint()..color = Colors.lightBlue[100]!;
+        final windowPaint = Paint()..color = themeData.trainWindowColor;
         canvas.drawRect(
             Rect.fromLTWH(train.x - 22, train.y - 10, 12, 8), windowPaint);
         canvas.drawRect(

@@ -345,25 +345,25 @@ class AxleCounterEvaluator {
     };
   }
 
-  // Enhanced axle counter update with bidirectional tracking
-  void updateAxleCounter(String counterId, int direction, bool isEntering) {
+  // Enhanced axle counter update with bidirectional tracking and wheel count
+  void updateAxleCounter(String counterId, int direction, bool isEntering, {int wheelCount = 2}) {
     final counter = axleCounters[counterId];
     if (counter == null) return;
 
     final oldCount = counter.count;
 
     if (isEntering) {
-      counter.count++;
+      counter.count += wheelCount;
       counter.lastDirection = direction > 0 ? 'Eastbound' : 'Westbound';
       counter.lastDetectionTime = DateTime.now();
       print(
-          '🚂 ENTRY: $counterId detected train entry - Count: $oldCount → ${counter.count}');
+          '🚂 ENTRY: $counterId detected train entry ($wheelCount wheels) - Count: $oldCount → ${counter.count}');
     } else {
-      counter.count = math.max(0, counter.count - 1);
+      counter.count = math.max(0, counter.count - wheelCount);
       counter.lastDirection = direction > 0 ? 'Eastbound' : 'Westbound';
       counter.lastDetectionTime = DateTime.now();
       print(
-          '🚂 EXIT: $counterId detected train exit - Count: $oldCount → ${counter.count}');
+          '🚂 EXIT: $counterId detected train exit ($wheelCount wheels) - Count: $oldCount → ${counter.count}');
     }
 
     // Update AB occupations with bidirectional checking
@@ -392,6 +392,12 @@ class AxleCounterEvaluator {
   bool isABOccupied(String abId) {
     updateABOccupations();
     return abResults[abId] != null && abResults[abId]! > 0;
+  }
+
+  // Get the wheel count for a specific AB section
+  int getABWheelCount(String abId) {
+    updateABOccupations();
+    return abResults[abId] ?? 0;
   }
 
   // Manual reset method for individual sections
@@ -535,7 +541,7 @@ class TerminalStationController extends ChangeNotifier {
 
     if (nearestCounter != null) {
       final isEntering = _isTrainEnteringSection(nearestCounter, train);
-      ace.updateAxleCounter(nearestCounter, train.direction, isEntering);
+      ace.updateAxleCounter(nearestCounter, train.direction, isEntering, wheelCount: train.wheelCount);
       notifyListeners();
     }
   }

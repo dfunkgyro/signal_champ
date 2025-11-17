@@ -479,6 +479,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     for (var abId in abPositions.keys) {
       final position = abPositions[abId]!;
       final isOccupied = controller.ace.isABOccupied(abId);
+      final wheelCount = controller.ace.getABWheelCount(abId);
 
       final textPainter = TextPainter(
         text: TextSpan(
@@ -494,6 +495,26 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       textPainter.layout();
       textPainter.paint(
           canvas, Offset(position.dx - textPainter.width / 2, position.dy));
+
+      // Draw wheel count indicator when occupied
+      if (isOccupied && wheelCount > 0) {
+        final wheelTextPainter = TextPainter(
+          text: TextSpan(
+            text: '🛞 $wheelCount',
+            style: const TextStyle(
+              color: Colors.orange,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        wheelTextPainter.layout();
+        wheelTextPainter.paint(
+            canvas,
+            Offset(position.dx - wheelTextPainter.width / 2,
+                position.dy + 12)); // Below AB label
+      }
 
       if (isOccupied) {
         final linePaint = Paint()

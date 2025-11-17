@@ -1,4 +1,4 @@
-package com.example.signal_champ
+package io.github.dfunkgyro.signal_champ
 
 import io.flutter.embedding.android.FlutterActivity
 

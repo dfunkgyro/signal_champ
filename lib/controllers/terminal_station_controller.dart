@@ -1776,9 +1776,15 @@ class TerminalStationController extends ChangeNotifier {
     for (var train in trains) {
       if (train.doorsOpen && train.doorsOpenedAt != null) {
         final duration = now.difference(train.doorsOpenedAt!);
-        if (duration.inSeconds >= 10) {
+        if (duration.inSeconds >= 20) {
           closeTrainDoors(train.id);
-          _logEvent('⏰ ${train.name} doors auto-closed after 10 seconds');
+          _logEvent('⏰ ${train.name} doors auto-closed after 20 seconds');
+
+          // Auto-continue journey after door closes
+          if (train.manualStop) {
+            train.manualStop = false;
+            _logEvent('🚂 ${train.name} resuming journey after door closure');
+          }
         }
       }
     }

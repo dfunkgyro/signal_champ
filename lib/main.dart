@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/canvas_theme_controller.dart';
 import '../services/supabase_service.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
@@ -37,6 +38,7 @@ class RailChampApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeController()),
+        ChangeNotifierProvider(create: (_) => CanvasThemeController()),
         ChangeNotifierProvider(
           create: (_) => SupabaseService(Supabase.instance.client),
         ),

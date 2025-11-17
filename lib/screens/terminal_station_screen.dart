@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
+import '../controllers/canvas_theme_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
 import 'dart:math' as math;
 
@@ -651,6 +652,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Canvas Theme Section
+                        _buildCanvasThemeSection(),
+
+                        const VerticalDivider(width: 16),
+
                         // Points Control Section
                         _buildTopPointsSection(controller),
 
@@ -677,6 +683,64 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           );
         },
       ),
+    );
+  }
+
+  // Canvas Theme Section
+  Widget _buildCanvasThemeSection() {
+    return Consumer<CanvasThemeController>(
+      builder: (context, canvasThemeController, _) {
+        return SizedBox(
+          width: 200,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.palette, size: 16, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Canvas Theme',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
+                ),
+                child: DropdownButton<CanvasTheme>(
+                  value: canvasThemeController.currentTheme,
+                  isExpanded: true,
+                  underline: Container(),
+                  style: const TextStyle(fontSize: 11),
+                  items: CanvasTheme.values.map((theme) {
+                    return DropdownMenuItem(
+                      value: theme,
+                      child: Text(
+                        canvasThemeController.getThemeDisplayName(theme),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (theme) {
+                    if (theme != null) {
+                      canvasThemeController.setCanvasTheme(theme);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -3119,17 +3183,22 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 _cameraOffsetY += details.delta.dy / _zoom;  // FIXED: Add Y-axis panning
               });
             },
-            child: CustomPaint(
-              size: Size(_canvasWidth, _canvasHeight),
-              painter: TerminalStationPainter(
-                controller: controller,
-                cameraOffsetX: _cameraOffsetX,
-                cameraOffsetY: _cameraOffsetY,  // FIXED: Pass Y offset to painter
-                zoom: _zoom,
-                animationTick: _animationTick,
-                canvasWidth: _canvasWidth,
-                canvasHeight: _canvasHeight,
-              ),
+            child: Consumer<CanvasThemeController>(
+              builder: (context, canvasThemeController, _) {
+                return CustomPaint(
+                  size: Size(_canvasWidth, _canvasHeight),
+                  painter: TerminalStationPainter(
+                    controller: controller,
+                    cameraOffsetX: _cameraOffsetX,
+                    cameraOffsetY: _cameraOffsetY,  // FIXED: Pass Y offset to painter
+                    zoom: _zoom,
+                    animationTick: _animationTick,
+                    canvasWidth: _canvasWidth,
+                    canvasHeight: _canvasHeight,
+                    themeData: canvasThemeController.getThemeData(),
+                  ),
+                );
+              },
             ),
           );
         },

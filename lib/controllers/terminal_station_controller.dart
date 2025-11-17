@@ -505,6 +505,11 @@ class TerminalStationController extends ChangeNotifier {
   bool cbtcDevicesEnabled = false;
   bool cbtcModeActive = false;
 
+  // Timetable system
+  Timetable? timetable;
+  Timer? _timetableTimer;
+  bool timetableActive = false;
+
   bool _spadAlarmActive = false;
   CollisionIncident? _currentSpadIncident;
   String? _spadTrainStopId;
@@ -1179,6 +1184,7 @@ class TerminalStationController extends ChangeNotifier {
   TerminalStationController() {
     _initializeLayout();
     _initializeClock();
+    _initializeTimetable();
     ace = AxleCounterEvaluator(axleCounters);
   }
 
@@ -1229,6 +1235,150 @@ class TerminalStationController extends ChangeNotifier {
       _currentTime = DateTime.now();
       notifyListeners();
     });
+  }
+
+  void _initializeTimetable() {
+    // Create a default timetable with sample services
+    final now = DateTime.now();
+    timetable = Timetable(
+      services: [
+        TimetableService(
+          id: 'SVC001',
+          trainName: 'Service 001',
+          trainType: TrainType.cbtcM1,
+          startBlock: '100',
+          endBlock: '114',
+          stops: ['106', '110', '114'],
+          scheduledTime: now.add(const Duration(seconds: 10)),
+        ),
+        TimetableService(
+          id: 'SVC002',
+          trainName: 'Service 002',
+          trainType: TrainType.m2,
+          startBlock: '101',
+          endBlock: '111',
+          stops: ['105', '109', '111'],
+          scheduledTime: now.add(const Duration(seconds: 30)),
+        ),
+        TimetableService(
+          id: 'SVC003',
+          trainName: 'Service 003',
+          trainType: TrainType.cbtcM2,
+          startBlock: '102',
+          endBlock: '112',
+          stops: ['106', '110', '112'],
+          scheduledTime: now.add(const Duration(minutes: 1)),
+        ),
+      ],
+    );
+  }
+
+  void toggleTimetableActive() {
+    timetableActive = !timetableActive;
+
+    if (timetableActive) {
+      _startTimetableService();
+      _logEvent('📅 Timetable service activated');
+    } else {
+      _stopTimetableService();
+      _logEvent('📅 Timetable service deactivated');
+    }
+    notifyListeners();
+  }
+
+  void _startTimetableService() {
+    _timetableTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _processTimetable();
+    });
+  }
+
+  void _stopTimetableService() {
+    _timetableTimer?.cancel();
+    _timetableTimer = null;
+  }
+
+  void _processTimetable() {
+    if (timetable == null || !timetableActive) return;
+
+    final now = DateTime.now();
+
+    for (var service in timetable!.services) {
+      if (service.isCompleted) continue;
+
+      // Check if it's time to dispatch this service
+      if (now.isAfter(service.scheduledTime) &&
+          service.assignedTrainId == null) {
+        _dispatchTimetableService(service);
+      }
+
+      // Check if assigned train has completed journey
+      if (service.assignedTrainId != null) {
+        final train = trains.firstWhereOrNull((t) => t.id == service.assignedTrainId);
+        if (train != null && train.currentBlockId == service.endBlock && train.speed == 0) {
+          service.isCompleted = true;
+          _logEvent('✅ ${service.trainName} service completed');
+        }
+      }
+    }
+  }
+
+  void _dispatchTimetableService(TimetableService service) {
+    // Create and add train
+    final blockInfo = blocks[service.startBlock];
+    if (blockInfo == null) return;
+
+    final trainId = 'AUTO-${service.id}';
+    final train = Train(
+      id: trainId,
+      name: service.trainName,
+      vin: 'VIN-${trainId}',
+      trainType: service.trainType,
+      x: blockInfo.startX + 20,
+      y: blockInfo.y,
+      speed: 0,
+      targetSpeed: 0,
+      direction: 1,
+      color: Colors.primaries[trains.length % Colors.primaries.length],
+      controlMode: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2
+          ? TrainControlMode.automatic
+          : TrainControlMode.automatic,
+      isCbtcEquipped: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2,
+      cbtcMode: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2
+          ? CbtcMode.auto
+          : CbtcMode.off,
+      smcDestination: 'B:${service.endBlock}',
+    );
+
+    trains.add(train);
+    service.assignedTrainId = trainId;
+
+    // Auto-depart the train
+    departAutoTrain(trainId);
+
+    // Auto-set signals and points for the route
+    _autoSetRouteForTrain(train, service);
+
+    _logEvent('🚂 Auto-dispatched: ${service.trainName} from ${service.startBlock} to ${service.endBlock}');
+    notifyListeners();
+  }
+
+  void _autoSetRouteForTrain(Train train, TimetableService service) {
+    // Simple auto-route setting - set first signal ahead to green
+    final signalAhead = _getSignalAhead(train);
+    if (signalAhead != null && signalAhead.routes.isNotEmpty) {
+      final route = signalAhead.routes.first;
+      setRoute(signalAhead.id, route.id);
+      _logEvent('🚦 Auto-set route ${route.id} for signal ${signalAhead.id}');
+    }
+
+    // Auto-normalize points if needed
+    if (selfNormalizingPoints) {
+      for (var point in points.values) {
+        if (!point.locked) {
+          point.position = PointPosition.normal;
+        }
+      }
+    }
   }
 
   void _initializeLayout() {
@@ -3808,6 +3958,7 @@ class TerminalStationController extends ChangeNotifier {
     _clockTimer?.cancel();
     _cancellationTimer?.cancel();
     _simulationTimer?.cancel();
+    _timetableTimer?.cancel();
     super.dispose();
   }
 }

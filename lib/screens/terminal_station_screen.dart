@@ -1542,6 +1542,55 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+
+              // Timetable toggle
+              Card(
+                color: controller.timetableActive ? Colors.green[50] : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        color: controller.timetableActive
+                            ? Colors.green
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Auto Timetable Service',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.timetableActive
+                                  ? 'Active - Trains auto-dispatch'
+                                  : 'Inactive',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.timetableActive,
+                        onChanged: (value) =>
+                            controller.toggleTimetableActive(),
+                        activeColor: Colors.green,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
 
               // FIXED: CBTC Controls Section

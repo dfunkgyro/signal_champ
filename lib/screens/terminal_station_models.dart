@@ -333,3 +333,41 @@ class CollisionRecoveryPlan {
        collisionPositions = collisionPositions ?? {},
        targetRecoveryPositions = targetRecoveryPositions ?? {};
 }
+
+// ============================================================================
+// TIMETABLE MODELS
+// ============================================================================
+
+class TimetableService {
+  final String id;
+  final String trainName;
+  final TrainType trainType;
+  final String startBlock;
+  final String endBlock;
+  final List<String> stops; // Block IDs where train stops
+  final DateTime scheduledTime;
+  bool isCompleted;
+  String? assignedTrainId;
+
+  TimetableService({
+    required this.id,
+    required this.trainName,
+    required this.trainType,
+    required this.startBlock,
+    required this.endBlock,
+    required this.stops,
+    required this.scheduledTime,
+    this.isCompleted = false,
+    this.assignedTrainId,
+  });
+}
+
+class Timetable {
+  final List<TimetableService> services;
+  bool isActive;
+
+  Timetable({
+    required this.services,
+    this.isActive = false,
+  });
+}

@@ -3190,6 +3190,24 @@ class TerminalStationController extends ChangeNotifier {
           return '112';
         case '112':
           return '114';
+        case '114':
+          return '116';
+        case '116':
+          return '118';
+        case '118':
+          return '120';
+        case '120':
+          return '122';
+        case '122':
+          return '124';
+        case '124':
+          return '126';
+        case '126':
+          return '128';
+        case '128':
+          return '130';
+        case '130':
+          return '132';
         case '101':
           return '103';
         case '103':
@@ -3208,6 +3226,24 @@ class TerminalStationController extends ChangeNotifier {
     } else {
       // Westbound
       switch (currentBlock.id) {
+        case '132':
+          return '130';
+        case '130':
+          return '128';
+        case '128':
+          return '126';
+        case '126':
+          return '124';
+        case '124':
+          return '122';
+        case '122':
+          return '120';
+        case '120':
+          return '118';
+        case '118':
+          return '116';
+        case '116':
+          return '114';
         case '114':
           return '112';
         case '112':

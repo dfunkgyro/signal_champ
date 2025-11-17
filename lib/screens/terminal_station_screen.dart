@@ -31,11 +31,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   bool _showTopPanel = false;
   String? _selectedBlockForTrain;
 
-  // NEW: Canvas size controls
-  double _canvasWidth = 1600.0; // Default width
-  double _canvasHeight = 400.0; // Default height
-  final double _defaultCanvasWidth = 1600.0;
-  final double _defaultCanvasHeight = 400.0;
+  // FIXED: Canvas size controls for expanded 7000×1200 closed-loop network
+  double _canvasWidth = 7000.0; // Expanded width for full loop
+  double _canvasHeight = 1200.0; // Expanded height for return line
+  final double _defaultCanvasWidth = 7000.0;
+  final double _defaultCanvasHeight = 1200.0;
 
   @override
   void initState() {
@@ -69,19 +69,19 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   void _decreaseCanvasWidth() {
     setState(() {
-      _canvasWidth = (_canvasWidth - 100.0).clamp(800.0, 3000.0);
+      _canvasWidth = (_canvasWidth - 100.0).clamp(800.0, 8000.0);  // FIXED: Allow up to 8000
     });
   }
 
   void _increaseCanvasHeight() {
     setState(() {
-      _canvasHeight += 50.0;
+      _canvasHeight = (_canvasHeight + 50.0).clamp(300.0, 1500.0);  // FIXED: Clamp to max 1500
     });
   }
 
   void _decreaseCanvasHeight() {
     setState(() {
-      _canvasHeight = (_canvasHeight - 50.0).clamp(300.0, 1000.0);
+      _canvasHeight = (_canvasHeight - 50.0).clamp(300.0, 1500.0);  // FIXED: Allow up to 1500
     });
   }
 

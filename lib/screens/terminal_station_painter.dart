@@ -258,6 +258,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrainStops(canvas);
     _drawAxleCounters(canvas);
     _drawABOccupations(canvas);
+    _drawWiFiAntennas(canvas); // FIXED: Draw WiFi coverage zones
+    _drawTransponders(canvas); // FIXED: Draw track transponders
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
@@ -266,6 +268,161 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     drawCollisionEffects(canvas, controller, animationTick);
 
     canvas.restore();
+  }
+
+  // FIXED: Draw WiFi Antennas with coverage range circles
+  void _drawWiFiAntennas(Canvas canvas) {
+    if (!controller.cbtcDevicesEnabled) return;
+
+    for (var antenna in controller.wifiAntennas.values) {
+      // Draw coverage range circle (transparent)
+      final rangePaint = Paint()
+        ..color = antenna.isActive
+            ? Colors.blue.withOpacity(0.08)
+            : Colors.grey.withOpacity(0.05)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(antenna.x, antenna.y), 350.0, rangePaint); // 350 unit range
+
+      // Draw range outline
+      final rangeOutline = Paint()
+        ..color = antenna.isActive
+            ? Colors.blue.withOpacity(0.3)
+            : Colors.grey.withOpacity(0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      canvas.drawCircle(Offset(antenna.x, antenna.y), 350.0, rangeOutline);
+
+      // Draw WiFi icon/antenna tower
+      final antennaPaint = Paint()
+        ..color = antenna.isActive ? Colors.blue : Colors.grey
+        ..style = PaintingStyle.fill;
+
+      // Antenna base
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset(antenna.x, antenna.y),
+          width: 8,
+          height: 20,
+        ),
+        antennaPaint,
+      );
+
+      // Antenna signal waves (if active)
+      if (antenna.isActive) {
+        final wavePaint = Paint()
+          ..color = Colors.blue.withOpacity(0.6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2;
+
+        // Animated signal waves
+        final waveOffset = (animationTick % 30) / 30.0;
+        for (int i = 0; i < 3; i++) {
+          double radius = 15.0 + (i * 8.0) + (waveOffset * 8.0);
+          canvas.drawArc(
+            Rect.fromCenter(
+              center: Offset(antenna.x, antenna.y),
+              width: radius * 2,
+              height: radius * 2,
+            ),
+            -2.5,
+            1.0,
+            false,
+            wavePaint,
+          );
+          canvas.drawArc(
+            Rect.fromCenter(
+              center: Offset(antenna.x, antenna.y),
+              width: radius * 2,
+              height: radius * 2,
+            ),
+            0.5,
+            1.0,
+            false,
+            wavePaint,
+          );
+        }
+      }
+
+      // Label
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: antenna.id,
+          style: TextStyle(
+            color: antenna.isActive ? Colors.blue : Colors.grey,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+          canvas, Offset(antenna.x - textPainter.width / 2, antenna.y + 15));
+    }
+  }
+
+  // FIXED: Draw Transponders
+  void _drawTransponders(Canvas canvas) {
+    if (!controller.cbtcDevicesEnabled) return;
+
+    for (var transponder in controller.transponders.values) {
+      // Color based on type
+      Color color;
+      switch (transponder.type) {
+        case TransponderType.t1:
+          color = Colors.yellow[700]!;
+          break;
+        case TransponderType.t2:
+          color = Colors.orange[700]!;
+          break;
+        case TransponderType.t3:
+          color = Colors.amber[700]!;
+          break;
+        case TransponderType.t6:
+          color = Colors.lime[700]!;
+          break;
+      }
+
+      final transponderPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+
+      // Draw as diamond shape
+      final path = Path();
+      path.moveTo(transponder.x, transponder.y - 6);
+      path.lineTo(transponder.x + 6, transponder.y);
+      path.lineTo(transponder.x, transponder.y + 6);
+      path.lineTo(transponder.x - 6, transponder.y);
+      path.close();
+
+      canvas.drawPath(path, transponderPaint);
+
+      // Outline
+      final outlinePaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      canvas.drawPath(path, outlinePaint);
+
+      // Label
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: transponder.id,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(canvas,
+          Offset(transponder.x - textPainter.width / 2, transponder.y + 10));
+    }
   }
 
   void _drawAxleCounters(Canvas canvas) {
@@ -573,20 +730,12 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawTracks(Canvas canvas) {
-    for (var blockId in [
-      '100',
-      '102',
-      '104',
-      '106',
-      '108',
-      '110',
-      '112',
-      '114'
-    ]) {
-      _drawBlock(canvas, controller.blocks[blockId]!);
-    }
-    for (var blockId in ['101', '103', '105', '107', '109', '111']) {
-      _drawBlock(canvas, controller.blocks[blockId]!);
+    // FIXED: Dynamically draw ALL blocks in the expanded 7000×1200 network
+    for (var block in controller.blocks.values) {
+      if (block.id.startsWith('crossover')) {
+        continue; // Skip crossovers, draw them separately
+      }
+      _drawBlock(canvas, block);
     }
     _drawCrossoverTrack(canvas);
   }

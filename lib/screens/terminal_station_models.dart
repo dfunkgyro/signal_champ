@@ -15,10 +15,8 @@ enum TrainControlMode { automatic, manual }
 
 enum CollisionRecoveryState {
   none,
-  detected,
-  recovery,
-  resolved,
-  manualOverride
+  forceRecovery,  // Updated: Only force recovery mode, moves train 20 units backward
+  resolved
 }
 
 enum ReleaseState { inactive, counting, completed }

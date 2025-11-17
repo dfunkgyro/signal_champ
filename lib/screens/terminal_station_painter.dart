@@ -19,7 +19,7 @@ mixin CollisionVisualEffects {
 
           _drawCollisionSparkles(canvas, train, animationTick);
 
-          if (recoveryPlan.state == CollisionRecoveryState.recovery) {
+          if (recoveryPlan.state == CollisionRecoveryState.forceRecovery) {
             _drawRecoveryGuidance(canvas, train, recoveryPlan, controller);
           }
 
@@ -195,14 +195,10 @@ mixin CollisionVisualEffects {
 
   Color _getRecoveryStateColor(CollisionRecoveryState state) {
     switch (state) {
-      case CollisionRecoveryState.detected:
-        return Colors.red;
-      case CollisionRecoveryState.recovery:
+      case CollisionRecoveryState.forceRecovery:
         return Colors.orange;
       case CollisionRecoveryState.resolved:
         return Colors.green;
-      case CollisionRecoveryState.manualOverride:
-        return Colors.blue;
       case CollisionRecoveryState.none:
         return Colors.grey;
     }
@@ -210,14 +206,10 @@ mixin CollisionVisualEffects {
 
   String _getRecoveryStateText(CollisionRecoveryState state) {
     switch (state) {
-      case CollisionRecoveryState.detected:
-        return 'DETECTED';
-      case CollisionRecoveryState.recovery:
-        return 'RECOVERING...';
+      case CollisionRecoveryState.forceRecovery:
+        return 'FORCE RECOVERY';
       case CollisionRecoveryState.resolved:
         return 'RESOLVED';
-      case CollisionRecoveryState.manualOverride:
-        return 'MANUAL CONTROL';
       case CollisionRecoveryState.none:
         return 'NONE';
     }

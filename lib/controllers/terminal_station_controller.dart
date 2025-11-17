@@ -630,21 +630,11 @@ class TerminalStationController extends ChangeNotifier {
 
   void _handleCollisionRecovery(Train train, CollisionRecoveryPlan plan) {
     switch (plan.state) {
-      case CollisionRecoveryState.detected:
-        if (DateTime.now().difference(plan.detectedAt).inSeconds > 1) {
-          plan.state = CollisionRecoveryState.recovery;
-          _logEvent('🔄 Starting recovery for ${train.name}');
-        }
-        break;
-
-      case CollisionRecoveryState.recovery:
-        _executeRecoveryMovement(train, plan);
+      case CollisionRecoveryState.forceRecovery:
+        _executeForceRecoveryMovement(train, plan);
         break;
 
       case CollisionRecoveryState.resolved:
-        break;
-
-      case CollisionRecoveryState.manualOverride:
         break;
 
       case CollisionRecoveryState.none:
@@ -652,31 +642,26 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
-  void _executeRecoveryMovement(Train train, CollisionRecoveryPlan plan) {
-    final targetBlockId = plan.reverseInstructions[train.id];
-    if (targetBlockId == null) return;
+  void _executeForceRecoveryMovement(Train train, CollisionRecoveryPlan plan) {
+    // UPDATED: Force recovery moves train 20 units backward from collision
+    // No acknowledgement required
 
-    if (train.direction > 0) {
-      train.direction = -1;
-      _logEvent('🔄 ${train.name} reversing for collision recovery');
-    }
+    _logEvent('⚠️ FORCE RECOVERY: Moving ${train.name} 20 units backward');
 
-    train.emergencyBrake = false;
-    train.targetSpeed = 3.0;
+    // Move train 20 units backward from collision point
+    train.x += train.direction > 0 ? -20 : 20;
 
-    train.x += train.speed * train.direction * simulationSpeed * 2.0;
+    // Stop the train
+    train.targetSpeed = 0;
+    train.speed = 0;
+    train.emergencyBrake = true;
 
-    final targetBlock = blocks[targetBlockId];
-    if (targetBlock != null && targetBlock.containsPosition(train.x, train.y)) {
-      _logEvent(
-          '✅ ${train.name} reached safe position in block $targetBlockId');
-      train.targetSpeed = 0;
-      train.speed = 0;
-      train.emergencyBrake = false;
-      train.direction = 1;
+    // Mark recovery as complete immediately (no acknowledgement required)
+    plan.state = CollisionRecoveryState.resolved;
+    plan.resolvedAt = DateTime.now();
+    _logEvent('✅ ${train.name} force recovery completed - moved 20 units backward');
 
-      _checkRecoveryCompletion(plan);
-    }
+    _checkRecoveryCompletion(plan);
   }
 
   void _checkRecoveryCompletion(CollisionRecoveryPlan plan) {
@@ -715,7 +700,7 @@ class TerminalStationController extends ChangeNotifier {
     if (!collisionAlarmActive) return;
 
     for (var recoveryPlan in _activeCollisionRecoveries.values) {
-      recoveryPlan.state = CollisionRecoveryState.recovery;
+      recoveryPlan.state = CollisionRecoveryState.forceRecovery;
 
       for (var trainId in recoveryPlan.trainsInvolved) {
         final train = trains.firstWhere((t) => t.id == trainId);
@@ -727,22 +712,8 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void startManualCollisionRecovery() {
-    if (!collisionAlarmActive) return;
-
-    for (var recoveryPlan in _activeCollisionRecoveries.values) {
-      recoveryPlan.state = CollisionRecoveryState.manualOverride;
-
-      for (var trainId in recoveryPlan.trainsInvolved) {
-        final train = trains.firstWhere((t) => t.id == trainId);
-        train.emergencyBrake = false;
-        train.controlMode = TrainControlMode.manual;
-        _logEvent('🎮 Manual recovery enabled for ${train.name}');
-      }
-    }
-
-    notifyListeners();
-  }
+  // REMOVED: Manual collision recovery per requirements
+  // Only force recovery is available
 
   void forceCollisionResolution() {
     _activeCollisionRecoveries.clear();
@@ -1264,12 +1235,10 @@ class TerminalStationController extends ChangeNotifier {
       blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 300);
     }
 
-    // Section 4: Southern curve (x: 4800→5600, y transitions from 100 to 700)
-    for (int i = 150; i <= 158; i += 2) {
-      double startX = 4800 + ((i - 150) / 2 * 200);
-      double yPos = 100 + ((i - 150) / 2 * 150); // Gradual curve down
-      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: yPos);
-    }
+    // Section 4: Southern curve (x: 4800→5400, y transitions from 100 to 550)
+    // UPDATED: Removed tracks 152, 154, 156 per requirements
+    blocks['150'] = BlockSection(id: '150', startX: 4800, endX: 5000, y: 100);
+    blocks['158'] = BlockSection(id: '158', startX: 5000, endX: 5200, y: 250);
 
     // Section 5: Eastern extension and return line (x: 5600→7000, y: 700)
     for (int i = 160; i <= 174; i += 2) {
@@ -1283,12 +1252,7 @@ class TerminalStationController extends ChangeNotifier {
       blocks['$i'] = BlockSection(id: '$i', startX: startX - 200, endX: startX, y: 700);
     }
 
-    // Section 7: Northwest curve back to start (x: 0→-800, curves north)
-    for (int i = 237; i <= 243; i += 2) {
-      double startX = 0 - ((i - 237) / 2 * 200);
-      double yPos = 700 - ((i - 237) / 2 * 150); // Curve back up
-      blocks['$i'] = BlockSection(id: '$i', startX: startX - 200, endX: startX, y: yPos);
-    }
+    // Section 7: Removed (tracks 237, 239, 241, 243 removed per requirements)
 
     // Crossovers
     blocks['crossover106'] =
@@ -1311,12 +1275,24 @@ class TerminalStationController extends ChangeNotifier {
     points['82B'] = Point(id: '82B', x: 3900, y: 300);
     points['84A'] = Point(id: '84A', x: 6000, y: 700); // Waterloo
 
-    // FIXED: 5 Stations with unique names across the loop
+    // FIXED: Terminal stations at each end with identical layouts
+    // West Terminal (mirrored layout at western end)
+    platforms.add(Platform(
+        id: 'P9', name: 'West Terminal P9 (Main)', startX: -800, endX: -400, y: 100));
+    platforms.add(Platform(
+        id: 'P10', name: 'West Terminal P10 (Bay)', startX: -800, endX: -400, y: 300));
+
     // Central Terminal (original)
     platforms.add(Platform(
         id: 'P1', name: 'Central Terminal P1', startX: 980, endX: 1240, y: 100));
     platforms.add(Platform(
         id: 'P2', name: 'Central Terminal P2 (Bay)', startX: 980, endX: 1240, y: 300));
+
+    // East Terminal (identical layout at eastern end)
+    platforms.add(Platform(
+        id: 'P11', name: 'East Terminal P11 (Main)', startX: 6800, endX: 7200, y: 700));
+    platforms.add(Platform(
+        id: 'P12', name: 'East Terminal P12 (Bay)', startX: 6800, endX: 7200, y: 550));
 
     // Victoria Junction
     platforms.add(Platform(
@@ -1334,9 +1310,7 @@ class TerminalStationController extends ChangeNotifier {
     platforms.add(Platform(
         id: 'P7', name: 'Waterloo Express P7', startX: 6000, endX: 6400, y: 700));
 
-    // Camden Depot
-    platforms.add(Platform(
-        id: 'P8', name: 'Camden Depot P8', startX: -800, endX: -400, y: 700));
+    // Camden Depot P8 removed per requirements
 
     signals['C31'] = Signal(
       id: 'C31',
@@ -1519,20 +1493,21 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['T37'] = TrainStop(id: 'T37', signalId: 'C37', x: 3800, y: 120);
     trainStops['T39'] = TrainStop(id: 'T39', signalId: 'C39', x: 6000, y: 720);
 
-    // FIXED: WiFi Antennas for CBTC coverage across expanded network
-    wifiAntennas['W1'] = WifiAntenna(id: 'W1', x: 500, y: 200, isActive: true);
-    wifiAntennas['W2'] = WifiAntenna(id: 'W2', x: 1200, y: 200, isActive: true);
-    wifiAntennas['W3'] = WifiAntenna(id: 'W3', x: 2000, y: 200, isActive: true);
-    wifiAntennas['W4'] = WifiAntenna(id: 'W4', x: 2600, y: 200, isActive: true); // Victoria
-    wifiAntennas['W5'] = WifiAntenna(id: 'W5', x: 3400, y: 200, isActive: true);
-    wifiAntennas['W6'] = WifiAntenna(id: 'W6', x: 4000, y: 200, isActive: true); // Paddington
-    wifiAntennas['W7'] = WifiAntenna(id: 'W7', x: 4800, y: 400, isActive: true);
-    wifiAntennas['W8'] = WifiAntenna(id: 'W8', x: 5400, y: 600, isActive: true);
-    wifiAntennas['W9'] = WifiAntenna(id: 'W9', x: 6200, y: 700, isActive: true); // Waterloo
-    wifiAntennas['W10'] = WifiAntenna(id: 'W10', x: 5000, y: 700, isActive: true);
-    wifiAntennas['W11'] = WifiAntenna(id: 'W11', x: 3000, y: 700, isActive: true);
-    wifiAntennas['W12'] = WifiAntenna(id: 'W12', x: 1000, y: 700, isActive: true);
-    wifiAntennas['W13'] = WifiAntenna(id: 'W13', x: -400, y: 700, isActive: true); // Camden
+    // UPDATED: WiFi Antennas positioned away from running lines for CBTC coverage
+    // Antennas positioned at y: 50 (above upper track), y: 350 (below lower track), y: 650/750 (away from return line)
+    wifiAntennas['W1'] = WifiAntenna(id: 'W1', x: 500, y: 50, isActive: true);
+    wifiAntennas['W2'] = WifiAntenna(id: 'W2', x: 1200, y: 350, isActive: true);
+    wifiAntennas['W3'] = WifiAntenna(id: 'W3', x: 2000, y: 50, isActive: true);
+    wifiAntennas['W4'] = WifiAntenna(id: 'W4', x: 2600, y: 350, isActive: true); // Victoria
+    wifiAntennas['W5'] = WifiAntenna(id: 'W5', x: 3400, y: 50, isActive: true);
+    wifiAntennas['W6'] = WifiAntenna(id: 'W6', x: 4000, y: 350, isActive: true); // Paddington
+    wifiAntennas['W7'] = WifiAntenna(id: 'W7', x: 4800, y: 350, isActive: true);
+    wifiAntennas['W8'] = WifiAntenna(id: 'W8', x: 5400, y: 50, isActive: true);
+    wifiAntennas['W9'] = WifiAntenna(id: 'W9', x: 6200, y: 650, isActive: true); // Waterloo - above return line
+    wifiAntennas['W10'] = WifiAntenna(id: 'W10', x: 5000, y: 750, isActive: true); // Below return line
+    wifiAntennas['W11'] = WifiAntenna(id: 'W11', x: 3000, y: 650, isActive: true);
+    wifiAntennas['W12'] = WifiAntenna(id: 'W12', x: 1000, y: 750, isActive: true);
+    wifiAntennas['W13'] = WifiAntenna(id: 'W13', x: -400, y: 650, isActive: true); // Removed Camden depot
 
     // Transponders at key locations
     transponders['TP1'] = Transponder(id: 'TP1', type: TransponderType.t1, x: 300, y: 100, description: 'Central West');
@@ -1848,7 +1823,7 @@ class TerminalStationController extends ChangeNotifier {
       trainsInvolved: trainIds,
       reverseInstructions: reverseInstructions,
       blocksToClear: blocksToClear,
-      state: CollisionRecoveryState.detected,
+      state: CollisionRecoveryState.forceRecovery,
     );
   }
 
@@ -1894,7 +1869,7 @@ class TerminalStationController extends ChangeNotifier {
       trainsInvolved: [trainId],
       reverseInstructions: {trainId: '112'},
       blocksToClear: [train.currentBlockId ?? '114'],
-      state: CollisionRecoveryState.detected,
+      state: CollisionRecoveryState.forceRecovery,
     );
     _activeCollisionRecoveries[collisionId] = recoveryPlan;
 

@@ -1203,26 +1203,43 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void _initializeAxleCounters() {
-    axleCounters['ac100'] =
-        AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
-    axleCounters['ac104'] =
-        AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
-    axleCounters['ac108'] =
-        AxleCounter(id: 'ac108', blockId: '108', x: 700, y: 120);
-    axleCounters['ac112'] =
-        AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
+    // LEFT SECTION AXLE COUNTERS (200-215)
+    // Upper track (200-214) eastbound
+    axleCounters['ac200'] = AxleCounter(id: 'ac200', blockId: '200', x: -1500, y: 120);
+    axleCounters['ac202'] = AxleCounter(id: 'ac202', blockId: '202', x: -1300, y: 120);
+    axleCounters['ac204'] = AxleCounter(id: 'ac204', blockId: '204', x: -1100, y: 120);
+    axleCounters['ac206'] = AxleCounter(id: 'ac206', blockId: '206', x: -900, y: 120);
+    axleCounters['ac208'] = AxleCounter(id: 'ac208', blockId: '208', x: -700, y: 120);
+    axleCounters['ac210'] = AxleCounter(id: 'ac210', blockId: '210', x: -500, y: 120);
+    axleCounters['ac212'] = AxleCounter(id: 'ac212', blockId: '212', x: -300, y: 120);
+    axleCounters['ac214'] = AxleCounter(id: 'ac214', blockId: '214', x: -100, y: 120);
 
-    axleCounters['ac101'] =
-        AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
-    axleCounters['ac105'] =
-        AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
-    axleCounters['ac109'] =
-        AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
+    // Lower track (201-215) westbound
+    axleCounters['ac201'] = AxleCounter(id: 'ac201', blockId: '201', x: -1500, y: 320);
+    axleCounters['ac203'] = AxleCounter(id: 'ac203', blockId: '203', x: -1300, y: 320);
+    axleCounters['ac205'] = AxleCounter(id: 'ac205', blockId: '205', x: -1100, y: 320);
+    axleCounters['ac207'] = AxleCounter(id: 'ac207', blockId: '207', x: -900, y: 320);
+    axleCounters['ac209'] = AxleCounter(id: 'ac209', blockId: '209', x: -700, y: 320);
+    axleCounters['ac211'] = AxleCounter(id: 'ac211', blockId: '211', x: -500, y: 320);
+    axleCounters['ac213'] = AxleCounter(id: 'ac213', blockId: '213', x: -300, y: 320);
+    axleCounters['ac215'] = AxleCounter(id: 'ac215', blockId: '215', x: -100, y: 320);
 
-    axleCounters['ac111'] =
-        AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
+    // Left section crossover
+    axleCounters['ac_cx_left'] = AxleCounter(id: 'ac_cx_left', blockId: 'crossover_left', x: -950, y: 200);
+    axleCounters['ac_cx211_212'] = AxleCounter(id: 'ac_cx211_212', blockId: 'crossover_211_212', x: -400, y: 200);
 
-    // UPDATED: AC106 positioned as additional entry/exit for AB104
+    // MIDDLE SECTION AXLE COUNTERS (100-115) - Original
+    axleCounters['ac100'] = AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
+    axleCounters['ac104'] = AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
+    axleCounters['ac108'] = AxleCounter(id: 'ac108', blockId: '108', x: 700, y: 120);
+    axleCounters['ac112'] = AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
+
+    axleCounters['ac101'] = AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
+    axleCounters['ac105'] = AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
+    axleCounters['ac109'] = AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
+    axleCounters['ac111'] = AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
+
+    // Middle section crossovers
     axleCounters['ac106'] = AxleCounter(
       id: 'ac106',
       blockId: 'crossover106',
@@ -1231,8 +1248,6 @@ class TerminalStationController extends ChangeNotifier {
       isTwin: false,
       twinLabel: 'ac106',
     );
-
-    // UPDATED: AC107 positioned as additional entry/exit for AB109
     axleCounters['ac107'] = AxleCounter(
       id: 'ac107',
       blockId: 'crossover109',
@@ -1241,6 +1256,33 @@ class TerminalStationController extends ChangeNotifier {
       isTwin: false,
       twinLabel: 'ac107',
     );
+
+    // RIGHT SECTION AXLE COUNTERS (300-315)
+    // Upper track (300-314) eastbound
+    axleCounters['ac300'] = AxleCounter(id: 'ac300', blockId: '300', x: 1700, y: 120);
+    axleCounters['ac302'] = AxleCounter(id: 'ac302', blockId: '302', x: 1900, y: 120);
+    axleCounters['ac304'] = AxleCounter(id: 'ac304', blockId: '304', x: 2100, y: 120);
+    axleCounters['ac306'] = AxleCounter(id: 'ac306', blockId: '306', x: 2300, y: 120);
+    axleCounters['ac308'] = AxleCounter(id: 'ac308', blockId: '308', x: 2500, y: 120);
+    axleCounters['ac310'] = AxleCounter(id: 'ac310', blockId: '310', x: 2700, y: 120);
+    axleCounters['ac312'] = AxleCounter(id: 'ac312', blockId: '312', x: 2900, y: 120);
+    axleCounters['ac314'] = AxleCounter(id: 'ac314', blockId: '314', x: 3100, y: 120);
+
+    // Lower track (301-315) westbound
+    axleCounters['ac301'] = AxleCounter(id: 'ac301', blockId: '301', x: 1700, y: 320);
+    axleCounters['ac303'] = AxleCounter(id: 'ac303', blockId: '303', x: 1900, y: 320);
+    axleCounters['ac305'] = AxleCounter(id: 'ac305', blockId: '305', x: 2100, y: 320);
+    axleCounters['ac307'] = AxleCounter(id: 'ac307', blockId: '307', x: 2300, y: 320);
+    axleCounters['ac309'] = AxleCounter(id: 'ac309', blockId: '309', x: 2500, y: 320);
+    axleCounters['ac311'] = AxleCounter(id: 'ac311', blockId: '311', x: 2700, y: 320);
+    axleCounters['ac313'] = AxleCounter(id: 'ac313', blockId: '313', x: 2900, y: 320);
+    axleCounters['ac315'] = AxleCounter(id: 'ac315', blockId: '315', x: 3100, y: 320);
+
+    // Right section crossovers
+    axleCounters['ac_cx302_305'] = AxleCounter(id: 'ac_cx302_305', blockId: 'crossover_302_305', x: 2000, y: 200);
+    axleCounters['ac_cx_right'] = AxleCounter(id: 'ac_cx_right', blockId: 'crossover_right', x: 3150, y: 200);
+
+    _logEvent('🔢 Initialized ${axleCounters.length} axle counters across all sections');
   }
 
   void _initializeClock() {
@@ -1316,6 +1358,15 @@ class TerminalStationController extends ChangeNotifier {
 
     final now = DateTime.now();
 
+    // Update ghost trains
+    _updateGhostTrains();
+
+    // Update early/late timers for assigned trains
+    _updateEarlyLateTimers();
+
+    // Handle automated timetable train behaviors
+    _processAutomatedTimetableTrains();
+
     for (var service in timetable!.services) {
       if (service.isCompleted) continue;
 
@@ -1335,6 +1386,129 @@ class TerminalStationController extends ChangeNotifier {
           }
         } catch (e) {
           // Train not found, possibly removed
+        }
+      }
+    }
+  }
+
+  void _updateGhostTrains() {
+    if (ghostTrains.isEmpty) return;
+
+    for (var ghost in ghostTrains) {
+      if (ghost.hasCompletedService) continue;
+
+      // Simulate ghost train movement (2.0 speed)
+      ghost.x += 2.0 * ghost.direction * simulationSpeed;
+
+      // Update current block
+      _updateGhostTrainBlock(ghost);
+
+      // Check platform arrival
+      _checkGhostTrainPlatformArrival(ghost);
+
+      // Handle platform dwell (20 seconds)
+      if (ghost.doorsOpen && ghost.doorsOpenedAt != null) {
+        final dwellTime = DateTime.now().difference(ghost.doorsOpenedAt!);
+        if (dwellTime.inSeconds >= 20) {
+          ghost.doorsOpen = false;
+          ghost.doorsOpenedAt = null;
+          ghost.platformArrivalTime = null;
+          ghost.currentPlatformId = null;
+          ghost.speed = 2.0;
+        }
+      }
+    }
+  }
+
+  void _updateGhostTrainBlock(GhostTrain ghost) {
+    for (var block in blocks.values) {
+      if (ghost.x >= block.startX && ghost.x <= block.endX &&
+          (ghost.y - block.y).abs() < 50) {
+        ghost.currentBlockId = block.id;
+        break;
+      }
+    }
+  }
+
+  void _checkGhostTrainPlatformArrival(GhostTrain ghost) {
+    if (ghost.doorsOpen) return;
+
+    for (var platform in platforms) {
+      if (ghost.x >= platform.startX && ghost.x <= platform.endX &&
+          (ghost.y - platform.y).abs() < 50) {
+        // Ghost arrived at platform
+        ghost.currentPlatformId = platform.id;
+        ghost.platformArrivalTime = DateTime.now();
+        ghost.doorsOpen = true;
+        ghost.doorsOpenedAt = DateTime.now();
+        ghost.speed = 0;
+
+        // Remove from remaining stops if applicable
+        if (ghost.currentBlockId != null && ghost.remainingStops.contains(ghost.currentBlockId)) {
+          ghost.remainingStops.remove(ghost.currentBlockId);
+        }
+
+        break;
+      }
+    }
+  }
+
+  void _updateEarlyLateTimers() {
+    for (var train in trains) {
+      if (train.assignedTimetableId == null) continue;
+
+      try {
+        final ghost = ghostTrains.firstWhere((g) => g.id == train.assignedTimetableId);
+
+        // Update current station
+        final platformId = _getPlatformForTrain(train);
+        if (platformId != null) {
+          train.currentStationId = platformId;
+
+          // Calculate early/late if at platform
+          final scheduled = ghost.scheduledPlatformTimes[platformId];
+          if (scheduled != null && train.speed == 0) {
+            final actual = DateTime.now();
+            train.earlyLateSeconds = actual.difference(scheduled).inSeconds;
+          }
+        }
+      } catch (e) {
+        // Ghost train not found
+      }
+    }
+  }
+
+  void _processAutomatedTimetableTrains() {
+    for (var train in trains) {
+      if (train.assignedTimetableId == null) continue;
+      if (train.controlMode != TrainControlMode.automatic) continue;
+
+      // Auto door management at platforms
+      final atPlatform = _isTrainAtPlatform(train);
+      if (atPlatform && !train.doorsOpen && train.speed == 0) {
+        // Auto open doors
+        train.doorsOpen = true;
+        train.doorsOpenedAt = DateTime.now();
+        _logEvent('🚪 ${train.name} doors auto-opened');
+      }
+
+      // Auto close doors after 20 seconds and depart
+      if (train.doorsOpen && train.doorsOpenedAt != null) {
+        final dwellTime = DateTime.now().difference(train.doorsOpenedAt!);
+        if (dwellTime.inSeconds >= 20) {
+          train.doorsOpen = false;
+          train.doorsOpenedAt = null;
+          train.manualStop = false;
+          train.targetSpeed = 2.0;
+
+          // Auto set next signal
+          final signalAhead = _getSignalAhead(train);
+          if (signalAhead != null && signalAhead.routes.isNotEmpty) {
+            final route = signalAhead.routes.first;
+            setRoute(signalAhead.id, route.id);
+          }
+
+          _logEvent('🚪 ${train.name} doors auto-closed, resuming journey');
         }
       }
     }

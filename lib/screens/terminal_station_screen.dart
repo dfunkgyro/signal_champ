@@ -30,6 +30,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   bool _showRightPanel = true;
   bool _showTopPanel = false;
   String? _selectedBlockForTrain;
+  TrainType _selectedTrainType = TrainType.m1;
+  String? _selectedDestination;
+  bool _assignToTimetable = false;
+  bool _showGhostTrains = false;
 
   // FIXED: Canvas size controls for expanded 7000×1200 closed-loop network
   double _canvasWidth = 7000.0; // Expanded width for full loop
@@ -1700,6 +1704,18 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               _buildAddTrainSection(controller),
               const Divider(height: 32),
 
+              // Point Control Panel
+              _buildPointControlPanel(controller),
+              const Divider(height: 32),
+
+              // WiFi Control Panel
+              _buildWiFiControlPanel(controller),
+              const Divider(height: 32),
+
+              // Timetable Management Panel
+              _buildTimetableManagementPanel(controller),
+              const Divider(height: 32),
+
               // Axle Counter Controls
               _buildAxleCounterControlsSection(controller),
               const Divider(height: 32),
@@ -2738,6 +2754,32 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         const Text('Add Train to Block',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
+
+        // Train Type Selector
+        const Text('Train Type:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        DropdownButton<TrainType>(
+          isExpanded: true,
+          value: _selectedTrainType,
+          items: TrainType.values.map((type) {
+            return DropdownMenuItem(
+              value: type,
+              child: Text(_getTrainTypeDisplayName(type)),
+            );
+          }).toList(),
+          onChanged: (type) {
+            if (type != null) {
+              setState(() {
+                _selectedTrainType = type;
+              });
+            }
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // Block Selector
+        const Text('Target Block:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
         DropdownButton<String>(
           isExpanded: true,
           hint: const Text('Select Safe Block'),
@@ -2754,19 +2796,77 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             });
           },
         ),
+        const SizedBox(height: 12),
+
+        // Destination Selector
+        const Text('Destination (Optional):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        DropdownButton<String>(
+          isExpanded: true,
+          hint: const Text('No Destination'),
+          value: _selectedDestination,
+          items: [
+            const DropdownMenuItem(value: null, child: Text('No Destination')),
+            ...controller.blocks.keys.map((blockId) {
+              return DropdownMenuItem(
+                value: 'B:$blockId',
+                child: Text('Block $blockId'),
+              );
+            }),
+            ...controller.platforms.map((platform) {
+              return DropdownMenuItem(
+                value: 'P:${platform.id}',
+                child: Text(platform.name),
+              );
+            }),
+          ],
+          onChanged: (dest) {
+            setState(() {
+              _selectedDestination = dest;
+            });
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // Timetable Assignment Checkbox
+        CheckboxListTile(
+          title: const Text('Assign to Timetable', style: TextStyle(fontSize: 12)),
+          subtitle: Text(
+            _assignToTimetable ? 'Auto-assign to next ghost train slot' : 'Manual operation',
+            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+          ),
+          value: _assignToTimetable,
+          onChanged: (value) {
+            setState(() {
+              _assignToTimetable = value ?? false;
+            });
+          },
+          dense: true,
+          controlAffinity: ListTileControlAffinity.leading,
+        ),
         const SizedBox(height: 8),
+
+        // Add Train Button
         ElevatedButton.icon(
           onPressed: _selectedBlockForTrain != null
               ? () {
-                  controller.addTrainToBlock(_selectedBlockForTrain!);
+                  controller.addTrainToBlock(
+                    _selectedBlockForTrain!,
+                    trainType: _selectedTrainType,
+                    destination: _selectedDestination,
+                    assignToTimetable: _assignToTimetable,
+                  );
                   setState(() {
                     _selectedBlockForTrain = null;
+                    _selectedDestination = null;
+                    _selectedTrainType = TrainType.m1;
+                    _assignToTimetable = false;
                   });
                 }
               : null,
           icon: const Icon(Icons.add),
           label: Text(_selectedBlockForTrain != null
-              ? 'Add Train to Block $_selectedBlockForTrain'
+              ? 'Add ${_getTrainTypeDisplayName(_selectedTrainType)} to Block $_selectedBlockForTrain'
               : 'Select a Block First'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
@@ -2783,6 +2883,19 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ),
       ],
     );
+  }
+
+  String _getTrainTypeDisplayName(TrainType type) {
+    switch (type) {
+      case TrainType.m1:
+        return 'M1 (Single Unit - 2 wheels)';
+      case TrainType.m2:
+        return 'M2 (Double Unit - 4 wheels)';
+      case TrainType.cbtcM1:
+        return 'CBTC M1 (Single Unit - 2 wheels)';
+      case TrainType.cbtcM2:
+        return 'CBTC M2 (Double Unit - 4 wheels)';
+    }
   }
 
   Widget _buildAxleCounterControlsSection(
@@ -3954,5 +4067,337 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       const DropdownMenuItem(
           value: 'S:Terminal-Bay', child: Text('Terminal Station - Bay Platform')),
     ];
+  }
+
+  // ============================================================================
+  // POINT CONTROL PANEL
+  // ============================================================================
+  Widget _buildPointControlPanel(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Point Control Panel',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('Control all 10 points across the network',
+            style: TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 12),
+
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: controller.points.entries.map((entry) {
+            final point = entry.value;
+            final isNormal = point.position == PointPosition.normal;
+
+            return ElevatedButton(
+              onPressed: point.locked
+                  ? null
+                  : () => controller.swingPoint(point.id),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isNormal ? Colors.green : Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(point.id, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  Text(
+                    isNormal ? 'NORMAL' : 'REVERSE',
+                    style: const TextStyle(fontSize: 9),
+                  ),
+                  if (point.locked)
+                    const Icon(Icons.lock, size: 12),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================================
+  // WIFI CONTROL PANEL
+  // ============================================================================
+  Widget _buildWiFiControlPanel(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('WiFi Antenna Control',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Spacer(),
+            // Ghost Train Visibility Toggle
+            IconButton(
+              icon: Icon(_showGhostTrains ? Icons.visibility : Icons.visibility_off),
+              tooltip: 'Toggle Ghost Trains',
+              onPressed: () {
+                setState(() {
+                  _showGhostTrains = !_showGhostTrains;
+                });
+              },
+              color: _showGhostTrains ? Colors.green : Colors.grey,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Text('15 WiFi antennas across all 3 sections',
+            style: TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 12),
+
+        // Group by section
+        _buildWiFiSection('LEFT SECTION', ['W_L1', 'W_L2', 'W_L3', 'W_L4', 'W_L5'], controller),
+        const Divider(),
+        _buildWiFiSection('MIDDLE SECTION', ['W_C1', 'W_C2', 'W_C3', 'W_C4', 'W_C5'], controller),
+        const Divider(),
+        _buildWiFiSection('RIGHT SECTION', ['W_R1', 'W_R2', 'W_R3', 'W_R4', 'W_R5'], controller),
+      ],
+    );
+  }
+
+  Widget _buildWiFiSection(String title, List<String> wifiIds, TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: wifiIds.map((wifiId) {
+            final wifi = controller.wifiAntennas[wifiId];
+            if (wifi == null) return const SizedBox.shrink();
+
+            return Card(
+              color: wifi.isActive ? Colors.green[50] : Colors.grey[200],
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.wifi,
+                          color: wifi.isActive ? Colors.green : Colors.grey,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(wifiId, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Switch(
+                      value: wifi.isActive,
+                      onChanged: (value) => controller.toggleWifiAntenna(wifiId),
+                      activeColor: Colors.green,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================================
+  // TIMETABLE MANAGEMENT PANEL
+  // ============================================================================
+  Widget _buildTimetableManagementPanel(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Timetable Management',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+
+        // Timetable Active Toggle
+        Card(
+          color: controller.timetableActive ? Colors.green[50] : Colors.grey[100],
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.timetableActive ? Icons.schedule : Icons.schedule_outlined,
+                  color: controller.timetableActive ? Colors.green : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Timetable Service', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        controller.timetableActive ? 'Active - Automated Operation' : 'Inactive',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: controller.timetableActive,
+                  onChanged: (value) => controller.toggleTimetableActive(),
+                  activeColor: Colors.green,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Generate Ghost Trains Button
+        ElevatedButton.icon(
+          onPressed: () {
+            controller.generateGhostTrainsForAllServices();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Generated ${controller.ghostTrains.length} ghost trains')),
+            );
+          },
+          icon: const Icon(Icons.auto_awesome),
+          label: const Text('Generate Ghost Trains'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.purple,
+            foregroundColor: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Text('${controller.ghostTrains.length} ghost trains | ${controller.getAvailableGhostTrains().length} available',
+            style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+        const SizedBox(height: 12),
+
+        // Train Assignment Section
+        if (controller.trains.isNotEmpty) ...[
+          const Text('Assign Trains to Timetable',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+
+          ...controller.trains.map((train) {
+            final isAssigned = train.assignedTimetableId != null;
+
+            return Card(
+              color: isAssigned ? Colors.blue[50] : null,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: train.color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            train.name,
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        if (isAssigned)
+                          const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                      ],
+                    ),
+                    if (isAssigned) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Assigned to: ${train.assignedTimetableId}',
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      ),
+                      if (train.earlyLateSeconds != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          train.earlyLateSeconds! > 0
+                              ? 'Running LATE by ${train.earlyLateSeconds}s'
+                              : train.earlyLateSeconds! < 0
+                                  ? 'Running EARLY by ${-train.earlyLateSeconds!}s'
+                                  : 'ON TIME',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: train.earlyLateSeconds! > 0
+                                ? Colors.red
+                                : train.earlyLateSeconds! < 0
+                                    ? Colors.orange
+                                    : Colors.green,
+                          ),
+                        ),
+                      ],
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!isAssigned && controller.getAvailableGhostTrains().isNotEmpty)
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                final ghostTrain = controller.getAvailableGhostTrains().first;
+                                controller.assignTrainToTimetableSlot(train.id, ghostTrain.id);
+                              },
+                              icon: const Icon(Icons.add_task, size: 14),
+                              label: const Text('Assign', style: TextStyle(fontSize: 11)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                            ),
+                          ),
+                        if (isAssigned) ...[
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => controller.unassignTrainFromTimetable(train.id),
+                              icon: const Icon(Icons.remove_circle, size: 14),
+                              label: const Text('Unassign', style: TextStyle(fontSize: 11)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          if (controller.getAvailableGhostTrains().isNotEmpty)
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  final ghostTrain = controller.getAvailableGhostTrains().first;
+                                  controller.reassignTrainToTimetableSlot(train.id, ghostTrain.id);
+                                },
+                                icon: const Icon(Icons.swap_horiz, size: 14),
+                                label: const Text('Reassign', style: TextStyle(fontSize: 11)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ],
+      ],
+    );
   }
 }

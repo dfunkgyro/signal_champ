@@ -3880,14 +3880,52 @@ class TerminalStationController extends ChangeNotifier {
 
       // MIDDLE SECTION (100-114)
       switch (currentBlock.id) {
-        case '100': return '102';
-        case '102': return '104';
-        case '104': return '106';
-        case '106': return '108';
-        case '108': return '110';
-        case '110': return '112';
-        case '112': return '114';
-        case '114': return '300'; // Continue to RIGHT section
+        case '100':
+          return '102';
+        case '102':
+          return '104';
+        case '104':
+          return '106';
+        case '106':
+          return '108';
+        case '108':
+          return '110';
+        case '110':
+          return '112';
+        case '112':
+          return '114';
+        case '114':
+          return '116';
+        case '116':
+          return '118';
+        case '118':
+          return '120';
+        case '120':
+          return '122';
+        case '122':
+          return '124';
+        case '124':
+          return '126';
+        case '126':
+          return '128';
+        case '128':
+          return '130';
+        case '130':
+          return '132';
+        case '101':
+          return '103';
+        case '103':
+          return '105';
+        case '105':
+          return '107';
+        case '107':
+          return '109';
+        case '109':
+          return '111';
+        case 'crossover106':
+          return 'crossover109';
+        case 'crossover109':
+          return '109';
       }
 
       // RIGHT SECTION (300-314)
@@ -3913,14 +3951,52 @@ class TerminalStationController extends ChangeNotifier {
 
       // RIGHT SECTION (301-315) - going west
       switch (currentBlock.id) {
-        case '315': return '313';
-        case '313': return '311';
-        case '311': return '309';
-        case '309': return '307';
-        case '307': return '305';
-        case '305': return '303';
-        case '303': return '301';
-        case '301': return '115'; // Continue to MIDDLE section
+        case '132':
+          return '130';
+        case '130':
+          return '128';
+        case '128':
+          return '126';
+        case '126':
+          return '124';
+        case '124':
+          return '122';
+        case '122':
+          return '120';
+        case '120':
+          return '118';
+        case '118':
+          return '116';
+        case '116':
+          return '114';
+        case '114':
+          return '112';
+        case '112':
+          return '110';
+        case '110':
+          return '108';
+        case '108':
+          return '106';
+        case '106':
+          return '104';
+        case '104':
+          return '102';
+        case '102':
+          return '100';
+        case '111':
+          return '109';
+        case '109':
+          return '107';
+        case '107':
+          return '105';
+        case '105':
+          return '103';
+        case '103':
+          return '101';
+        case 'crossover109':
+          return 'crossover106';
+        case 'crossover106':
+          return '104';
       }
 
       // MIDDLE SECTION (101-115) - going west

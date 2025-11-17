@@ -110,12 +110,150 @@ class _MainScreenState extends State<MainScreen> {
       floatingActionButton: _currentIndex == 0
           ? FloatingActionButton(
               onPressed: () {
-                context.read<TerminalStationController>().addTrain();
+                _showAddTrainDialog(context);
               },
               child: const Icon(Icons.add),
               tooltip: 'Add Train',
             )
           : null,
+    );
+  }
+
+  void _showAddTrainDialog(BuildContext context) {
+    final controller = context.read<TerminalStationController>();
+    final safeBlocks = controller.getSafeBlocksForTrainAdd();
+
+    if (safeBlocks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No safe blocks available for adding trains'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    String selectedBlock = safeBlocks.first;
+    TrainType selectedType = TrainType.m2;
+    String? selectedDestination;
+
+    // Get list of all blocks for destination selection
+    final allBlocks = controller.blocks.keys.toList()..sort();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Add Train'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select Block:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedBlock,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: safeBlocks.map((block) {
+                    return DropdownMenuItem(
+                      value: block,
+                      child: Text('Block $block'),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => selectedBlock = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text('Train Type:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<TrainType>(
+                  value: selectedType,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: TrainType.m1,
+                      child: Text('M1 (1 carriage)'),
+                    ),
+                    DropdownMenuItem(
+                      value: TrainType.m2,
+                      child: Text('M2 (2 carriages with bellows)'),
+                    ),
+                    DropdownMenuItem(
+                      value: TrainType.cbtc,
+                      child: Text('CBTC (with auto/PM/RM modes)'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => selectedType = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text('Destination (Optional):', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String?>(
+                  value: selectedDestination,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    hintText: 'Select destination block',
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('No destination'),
+                    ),
+                    ...allBlocks.map((block) {
+                      return DropdownMenuItem(
+                        value: block,
+                        child: Text('Block $block'),
+                      );
+                    }).toList(),
+                  ],
+                  onChanged: (value) {
+                    setState(() => selectedDestination = value);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                controller.addTrainToBlock(
+                  selectedBlock,
+                  trainType: selectedType,
+                  destination: selectedDestination,
+                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Train added to block $selectedBlock'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              child: const Text('Add Train'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -31,6 +31,12 @@ enum CbtcMode {
   storage    // Storage mode - green
 }
 
+enum TrainType {
+  m1,        // 1 carriage train (M1)
+  m2,        // 2 carriage train with bellows (M2)
+  cbtc       // CBTC equipped train
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -172,6 +178,7 @@ class Train {
   CbtcMode cbtcMode;
   String? smcDestination; // SMC-assigned destination
   MovementAuthority? movementAuthority; // CBTC movement authority visualization
+  TrainType trainType; // Type of train (M1, M2, or CBTC)
 
   Train({
     required this.id,
@@ -196,6 +203,7 @@ class Train {
     this.cbtcMode = CbtcMode.off,
     this.smcDestination,
     this.movementAuthority,
+    this.trainType = TrainType.m2, // Default to 2-car train
   });
 }
 

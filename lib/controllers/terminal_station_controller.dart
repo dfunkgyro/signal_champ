@@ -2001,7 +2001,7 @@ class TerminalStationController extends ChangeNotifier {
         .any((reservation) => reservation.reservedBlocks.contains(blockId));
   }
 
-  void addTrainToBlock(String blockId) {
+  void addTrainToBlock(String blockId, {TrainType trainType = TrainType.m2, String? destination}) {
     final safeBlocks = getSafeBlocksForTrainAdd();
     if (!safeBlocks.contains(blockId)) {
       _logEvent(
@@ -2022,10 +2022,13 @@ class TerminalStationController extends ChangeNotifier {
       direction = -1;
     }
 
+    // Determine if CBTC equipped based on train type
+    final isCbtc = trainType == TrainType.cbtc;
+
     final train = Train(
       id: 'T$nextTrainNumber',
       name: 'Train $nextTrainNumber',
-      vin: _generateVin(nextTrainNumber, false),
+      vin: _generateVin(nextTrainNumber, isCbtc),
       x: _getInitialXForBlock(blockId),
       y: block.y,
       speed: 0,
@@ -2034,8 +2037,10 @@ class TerminalStationController extends ChangeNotifier {
       color: Colors.primaries[nextTrainNumber % Colors.primaries.length],
       controlMode: TrainControlMode.automatic,
       manualStop: false,
-      isCbtcEquipped: false,
-      cbtcMode: CbtcMode.off,
+      isCbtcEquipped: isCbtc,
+      cbtcMode: isCbtc ? CbtcMode.auto : CbtcMode.off,
+      trainType: trainType,
+      smcDestination: destination,
     );
 
     trains.add(train);
@@ -2043,8 +2048,12 @@ class TerminalStationController extends ChangeNotifier {
     _updateBlockOccupation();
 
     String trackType = block.y == 100 ? 'EASTBOUND road' : 'WESTBOUND road';
+    String typeStr = trainType == TrainType.m1 ? 'M1 (1 car)' :
+                     trainType == TrainType.m2 ? 'M2 (2 cars)' :
+                     'CBTC';
+    String destStr = destination != null ? ' → $destination' : '';
     _logEvent(
-        '🚂 Train ${nextTrainNumber - 1} added at block $blockId ($trackType) - AUTO mode');
+        '🚂 Train ${nextTrainNumber - 1} ($typeStr) added at block $blockId ($trackType)$destStr - AUTO mode');
     notifyListeners();
   }
 
@@ -2789,56 +2798,62 @@ class TerminalStationController extends ChangeNotifier {
         // targetSpeed already set by departTrain() or user control
       } else {
         // Automatic mode - check signals and route reservations
-        Signal? signalAhead = _getSignalAhead(train);
-
-        // Enhanced permissive movement logic with direction protection
-        bool hasPassedSignalThreshold = false;
-        if (signalAhead != null && train.lastPassedSignalId == signalAhead.id) {
-          final distancePastSignal =
-              (train.x - signalAhead.x) * train.direction;
-          hasPassedSignalThreshold = distancePastSignal > 4;
-        }
-
-        // Enhanced direction-based signal protection
-        signalAhead = _filterSignalByDirection(train, signalAhead);
-
-        // Check if train has route reservation for the block ahead
-        bool hasRouteReservation = false;
-        final nextBlock = _getNextBlockForTrain(train);
-        if (nextBlock != null) {
-          hasRouteReservation = routeReservations.values.any((reservation) =>
-              reservation.trainId == train.id &&
-              reservation.reservedBlocks.contains(nextBlock));
-        }
-
-        if (signalAhead == null) {
+        // If signals are toggled off, treat all signals as green
+        if (!signalsVisible) {
+          // Signals disabled - trains in auto mode proceed as if all signals are green
           train.targetSpeed = 2.0;
-        } else if (signalAhead.aspect == SignalAspect.red &&
-            !hasPassedSignalThreshold &&
-            !hasRouteReservation) {
-          final distanceToSignal = (signalAhead.x - train.x).abs();
-          if (distanceToSignal < 100 && distanceToSignal > 0) {
-            if (train.targetSpeed > 0) {
-              _logStopReason(train, signalAhead, 'approaching red signal');
-            }
-            train.targetSpeed = 0;
-            train.hasCommittedToMove = false;
-          }
         } else {
-          train.targetSpeed = 2.0;
+          Signal? signalAhead = _getSignalAhead(train);
 
-          if ((signalAhead.aspect == SignalAspect.green ||
-                  hasRouteReservation) &&
-              !train.hasCommittedToMove) {
-            final hasPassed = train.direction > 0
-                ? train.x >= signalAhead.x
-                : train.x <= signalAhead.x;
+          // Enhanced permissive movement logic with direction protection
+          bool hasPassedSignalThreshold = false;
+          if (signalAhead != null && train.lastPassedSignalId == signalAhead.id) {
+            final distancePastSignal =
+                (train.x - signalAhead.x) * train.direction;
+            hasPassedSignalThreshold = distancePastSignal > 4;
+          }
 
-            if (hasPassed) {
-              train.lastPassedSignalId = signalAhead.id;
-              train.hasCommittedToMove = true;
-              _logEvent(
-                  '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+          // Enhanced direction-based signal protection
+          signalAhead = _filterSignalByDirection(train, signalAhead);
+
+          // Check if train has route reservation for the block ahead
+          bool hasRouteReservation = false;
+          final nextBlock = _getNextBlockForTrain(train);
+          if (nextBlock != null) {
+            hasRouteReservation = routeReservations.values.any((reservation) =>
+                reservation.trainId == train.id &&
+                reservation.reservedBlocks.contains(nextBlock));
+          }
+
+          if (signalAhead == null) {
+            train.targetSpeed = 2.0;
+          } else if (signalAhead.aspect == SignalAspect.red &&
+              !hasPassedSignalThreshold &&
+              !hasRouteReservation) {
+            final distanceToSignal = (signalAhead.x - train.x).abs();
+            if (distanceToSignal < 100 && distanceToSignal > 0) {
+              if (train.targetSpeed > 0) {
+                _logStopReason(train, signalAhead, 'approaching red signal');
+              }
+              train.targetSpeed = 0;
+              train.hasCommittedToMove = false;
+            }
+          } else {
+            train.targetSpeed = 2.0;
+
+            if ((signalAhead.aspect == SignalAspect.green ||
+                    hasRouteReservation) &&
+                !train.hasCommittedToMove) {
+              final hasPassed = train.direction > 0
+                  ? train.x >= signalAhead.x
+                  : train.x <= signalAhead.x;
+
+              if (hasPassed) {
+                train.lastPassedSignalId = signalAhead.id;
+                train.hasCommittedToMove = true;
+                _logEvent(
+                    '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+              }
             }
           }
         }
@@ -2846,14 +2861,8 @@ class TerminalStationController extends ChangeNotifier {
 
       // Auto mode directional restrictions
       if (train.controlMode == TrainControlMode.automatic) {
-        // Prevent auto trains from traveling from block 114 to 108
-        if (train.currentBlockId == '114' && train.direction < 0) {
-          train.targetSpeed = 0;
-          train.speed = 0;
-          _logEvent(
-              '🛑 ${train.name} stopped: Auto mode cannot travel westbound from block 114');
-          continue;
-        }
+        // REMOVED: Block 114 westbound restriction - trains can now continue around the loop
+        // This allows continuous operation through the entire rail network
 
         // Prevent auto trains from block 103 to 105 and 105 to 107
         if ((train.currentBlockId == '103' &&
@@ -3016,7 +3025,7 @@ class TerminalStationController extends ChangeNotifier {
     final currentBlock = blocks[train.currentBlockId!];
     if (currentBlock == null) return null;
 
-    // Simple next block logic
+    // Routing logic for continuous network
     if (train.direction > 0) {
       // Eastbound
       switch (currentBlock.id) {
@@ -3034,6 +3043,8 @@ class TerminalStationController extends ChangeNotifier {
           return '112';
         case '112':
           return '114';
+        case '114':
+          return '116'; // Extended network connection
         case '101':
           return '103';
         case '103':
@@ -3044,14 +3055,35 @@ class TerminalStationController extends ChangeNotifier {
           return '109';
         case '109':
           return '111';
+        case '111':
+          return '113'; // Extended lower track
         case 'crossover106':
           return 'crossover109';
         case 'crossover109':
           return '109';
       }
+
+      // Auto-generate routing for extended sections (eastbound)
+      final blockNum = int.tryParse(currentBlock.id);
+      if (blockNum != null) {
+        // Upper track (even numbers 116-174, y=100 or transitioning)
+        if (blockNum >= 116 && blockNum < 174 && blockNum % 2 == 0) {
+          return '${blockNum + 2}';
+        }
+        // Lower track (odd numbers 113-235, y=300 or 700)
+        if (blockNum >= 113 && blockNum < 235 && blockNum % 2 == 1) {
+          return '${blockNum + 2}';
+        }
+        // Westbound return track (odd numbers 201-243)
+        if (blockNum >= 201 && blockNum < 243 && blockNum % 2 == 1) {
+          return '${blockNum + 2}';
+        }
+      }
     } else {
       // Westbound
       switch (currentBlock.id) {
+        case '116':
+          return '114'; // Return from extended network
         case '114':
           return '112';
         case '112':
@@ -3066,6 +3098,8 @@ class TerminalStationController extends ChangeNotifier {
           return '102';
         case '102':
           return '100';
+        case '113':
+          return '111'; // Extended lower track
         case '111':
           return '109';
         case '109':
@@ -3080,6 +3114,23 @@ class TerminalStationController extends ChangeNotifier {
           return 'crossover106';
         case 'crossover106':
           return '104';
+      }
+
+      // Auto-generate routing for extended sections (westbound)
+      final blockNum = int.tryParse(currentBlock.id);
+      if (blockNum != null) {
+        // Upper track (even numbers 118-174, y=100 or transitioning)
+        if (blockNum >= 118 && blockNum <= 174 && blockNum % 2 == 0) {
+          return '${blockNum - 2}';
+        }
+        // Lower track (odd numbers 115-235, y=300 or 700)
+        if (blockNum >= 115 && blockNum <= 235 && blockNum % 2 == 1) {
+          return '${blockNum - 2}';
+        }
+        // Westbound return track (odd numbers 203-243)
+        if (blockNum >= 203 && blockNum <= 243 && blockNum % 2 == 1) {
+          return '${blockNum - 2}';
+        }
       }
     }
     return null;

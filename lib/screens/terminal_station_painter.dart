@@ -1402,17 +1402,86 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.translate(-train.x, -train.y);
       }
 
+      // Determine train dimensions based on type
+      double trainWidth;
+      double trainHalfWidth;
+      bool drawBellows = false;
+
+      switch (train.trainType) {
+        case TrainType.m1:
+          trainWidth = 40; // Single carriage
+          trainHalfWidth = 20;
+          break;
+        case TrainType.m2:
+          trainWidth = 60; // Two carriages
+          trainHalfWidth = 30;
+          drawBellows = true; // Draw bellows between carriages
+          break;
+        case TrainType.cbtc:
+          trainWidth = 60;
+          trainHalfWidth = 30;
+          drawBellows = true;
+          break;
+      }
+
       final bodyPaint = Paint()
         ..color = train.color
         ..style = PaintingStyle.fill;
 
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
-          const Radius.circular(6),
-        ),
-        bodyPaint,
-      );
+      // Draw train body
+      if (train.trainType == TrainType.m2 || train.trainType == TrainType.cbtc) {
+        // Draw as two separate carriages with gap for bellows
+        // Front carriage
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - trainHalfWidth, train.y - 15, 26, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+
+        // Rear carriage
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x + 4, train.y - 15, 26, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+
+        // Draw bellows connector between carriages
+        final bellowsPaint = Paint()
+          ..color = Colors.black87
+          ..style = PaintingStyle.fill;
+
+        canvas.drawRect(
+          Rect.fromLTWH(train.x - 4, train.y - 12, 8, 24),
+          bellowsPaint,
+        );
+
+        // Bellows accordion details
+        final accordionPaint = Paint()
+          ..color = Colors.grey[600]!
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1;
+
+        for (int i = 0; i < 3; i++) {
+          canvas.drawLine(
+            Offset(train.x - 4, train.y - 10 + (i * 8)),
+            Offset(train.x + 4, train.y - 10 + (i * 8)),
+            accordionPaint,
+          );
+        }
+      } else {
+        // M1: Single carriage
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - trainHalfWidth, train.y - 15, trainWidth, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+      }
 
       final outlinePaint = Paint()
         ..color = train.controlMode == TrainControlMode.manual
@@ -1421,13 +1490,34 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         ..style = PaintingStyle.stroke
         ..strokeWidth = train.controlMode == TrainControlMode.manual ? 3 : 2;
 
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
-          const Radius.circular(6),
-        ),
-        outlinePaint,
-      );
+      // Draw outlines
+      if (train.trainType == TrainType.m2 || train.trainType == TrainType.cbtc) {
+        // Front carriage outline
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - trainHalfWidth, train.y - 15, 26, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+
+        // Rear carriage outline
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x + 4, train.y - 15, 26, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+      } else {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - trainHalfWidth, train.y - 15, trainWidth, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+      }
 
       if (train.doorsOpen) {
         final doorPaint = Paint()

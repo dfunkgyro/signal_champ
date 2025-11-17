@@ -134,64 +134,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // SPAD Alarm - make it smaller and positioned at top
-          Container(
-            height: 80,
-            child: Consumer<TerminalStationController>(
-              builder: (context, controller, _) {
-                return CollisionAlarmWidget(
-                  isActive: controller.spadAlarmActive,
-                  currentIncident: controller.currentSpadIncident,
-                  onDismiss: () => controller.acknowledgeSPADAlarm(),
-                  isSPAD: true,
-                  trainStopId: controller.spadTrainStopId,
-                );
-              },
-            ),
-          ),
-          // Collision Alarm - make it smaller
-          Container(
-            height: 80,
-            child: Consumer<TerminalStationController>(
-              builder: (context, controller, _) {
-                return CollisionAlarmWidget(
-                  isActive: controller.collisionAlarmActive,
-                  currentIncident: controller.currentCollisionIncident,
-                  onDismiss: () => controller.acknowledgeCollisionAlarm(),
-                  onAutoRecover: () {
-                    controller.startAutomaticCollisionRecovery();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🤖 Automatic recovery started'),
-                        backgroundColor: Colors.blue,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  onManualRecover: () {
-                    controller.startManualCollisionRecovery();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🎮 Manual recovery enabled'),
-                        backgroundColor: Colors.orange,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  onForceResolve: () => controller.forceCollisionResolution(),
-                );
-              },
-            ),
-          ),
-
-          // Top Control Panel
-          if (_showTopPanel) _buildTopControlPanel(),
-
-          Expanded(
-            child: Stack(
-              children: [
+          // Main canvas area - now takes full available space
+          Stack(
+            children: [
                 // Layer 1: Railway Canvas (bottom layer)
                 _buildStationCanvas(),
 
@@ -343,6 +290,93 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ],
             ),
           ),
+
+          // SPAD Alarm - overlay at top (Layer 6)
+          Positioned(
+            left: _showLeftPanel ? 320 : 0,
+            right: _showRightPanel ? 320 : 0,
+            top: 0,
+            child: Consumer<TerminalStationController>(
+              builder: (context, controller, _) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: controller.spadAlarmActive ? 80 : 0,
+                  child: controller.spadAlarmActive
+                      ? CollisionAlarmWidget(
+                          isActive: controller.spadAlarmActive,
+                          currentIncident: controller.currentSpadIncident,
+                          onDismiss: () => controller.acknowledgeSPADAlarm(),
+                          isSPAD: true,
+                          trainStopId: controller.spadTrainStopId,
+                        )
+                      : const SizedBox.shrink(),
+                );
+              },
+            ),
+          ),
+
+          // Collision Alarm - overlay below SPAD alarm (Layer 7)
+          Positioned(
+            left: _showLeftPanel ? 320 : 0,
+            right: _showRightPanel ? 320 : 0,
+            top: 0,
+            child: Consumer<TerminalStationController>(
+              builder: (context, controller, _) {
+                final spadOffset = controller.spadAlarmActive ? 80.0 : 0.0;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: EdgeInsets.only(top: spadOffset),
+                  height: controller.collisionAlarmActive ? 80 : 0,
+                  child: controller.collisionAlarmActive
+                      ? CollisionAlarmWidget(
+                          isActive: controller.collisionAlarmActive,
+                          currentIncident: controller.currentCollisionIncident,
+                          onDismiss: () => controller.acknowledgeCollisionAlarm(),
+                          onAutoRecover: () {
+                            controller.startAutomaticCollisionRecovery();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('🤖 Automatic recovery started'),
+                                backgroundColor: Colors.blue,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          onManualRecover: () {
+                            controller.startManualCollisionRecovery();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('🎮 Manual recovery enabled'),
+                                backgroundColor: Colors.orange,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          onForceResolve: () => controller.forceCollisionResolution(),
+                        )
+                      : const SizedBox.shrink(),
+                );
+              },
+            ),
+          ),
+
+          // Top Control Panel - overlay (Layer 8)
+          if (_showTopPanel)
+            Positioned(
+              left: _showLeftPanel ? 320 : 0,
+              right: _showRightPanel ? 320 : 0,
+              top: 0,
+              child: Consumer<TerminalStationController>(
+                builder: (context, controller, _) {
+                  final spadOffset = controller.spadAlarmActive ? 80.0 : 0.0;
+                  final collisionOffset = controller.collisionAlarmActive ? 80.0 : 0.0;
+                  return Container(
+                    margin: EdgeInsets.only(top: spadOffset + collisionOffset),
+                    child: _buildTopControlPanel(),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );

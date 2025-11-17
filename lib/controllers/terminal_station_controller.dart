@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
+import 'package:rail_champ/models/railway_model.dart';  // FIXED: Import for WiFi and Transponders
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -456,6 +457,10 @@ class TerminalStationController extends ChangeNotifier {
   final List<Platform> platforms = [];
   final Map<String, TrainStop> trainStops = {};
   final List<String> eventLog = [];
+
+  // FIXED: Add CBTC infrastructure
+  final Map<String, WifiAntenna> wifiAntennas = {};
+  final Map<String, Transponder> transponders = {};
   final CollisionAnalysisSystem _collisionSystem = CollisionAnalysisSystem();
   final Map<String, bool> _pendingRouteCancellations = {};
   final Map<String, DateTime> _pendingCancellationTimers = {};
@@ -489,6 +494,10 @@ class TerminalStationController extends ChangeNotifier {
 
   final Map<String, RouteReservation> routeReservations = {};
   bool selfNormalizingPoints = true;
+
+  // FIXED: CBTC system properties
+  bool cbtcDevicesEnabled = false;
+  bool cbtcModeActive = false;
 
   bool _spadAlarmActive = false;
   CollisionIncident? _currentSpadIncident;
@@ -564,6 +573,30 @@ class TerminalStationController extends ChangeNotifier {
   void toggleSignalsVisibility() {
     signalsVisible = !signalsVisible;
     _logEvent(signalsVisible ? '✅ Signals enabled' : '❌ Signals disabled');
+    notifyListeners();
+  }
+
+  // FIXED: CBTC toggle methods
+  void toggleCbtcDevices(bool enabled) {
+    cbtcDevicesEnabled = enabled;
+    if (!enabled) {
+      cbtcModeActive = false;  // Disable mode if devices are disabled
+    }
+    _logEvent(enabled
+        ? '📡 CBTC devices ENABLED (Transponders + WiFi)'
+        : '📡 CBTC devices DISABLED');
+    notifyListeners();
+  }
+
+  void toggleCbtcMode(bool active) {
+    if (!cbtcDevicesEnabled) {
+      _logEvent('⚠️ Cannot activate CBTC mode: Devices not enabled');
+      return;
+    }
+    cbtcModeActive = active;
+    _logEvent(active
+        ? '🚄 CBTC Mode ACTIVATED - Moving block signaling enabled'
+        : '🚄 CBTC Mode DEACTIVATED - Fixed block signaling');
     notifyListeners();
   }
 
@@ -1193,6 +1226,8 @@ class TerminalStationController extends ChangeNotifier {
   void _initializeLayout() {
     _initializeAxleCounters();
 
+    // FIXED: Expanded closed-loop network - 7000×1200 canvas
+    // Section 1: Central Terminal (original, x: 0→1600, y: 100/300)
     blocks['100'] = BlockSection(id: '100', startX: 0, endX: 200, y: 100);
     blocks['102'] = BlockSection(id: '102', startX: 200, endX: 400, y: 100);
     blocks['104'] = BlockSection(id: '104', startX: 400, endX: 600, y: 100);
@@ -1209,18 +1244,99 @@ class TerminalStationController extends ChangeNotifier {
     blocks['109'] = BlockSection(id: '109', startX: 800, endX: 1000, y: 300);
     blocks['111'] = BlockSection(id: '111', startX: 1000, endX: 1200, y: 300);
 
+    // Section 2: East extension to Victoria Junction (x: 1600→3200, y: 100/300)
+    for (int i = 116; i <= 132; i += 2) {
+      double startX = 1600 + ((i - 116) / 2 * 200);
+      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 100);
+    }
+    for (int i = 113; i <= 131; i += 2) {
+      double startX = 1600 + ((i - 113) / 2 * 200);
+      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 300);
+    }
+
+    // Section 3: To Paddington Central (x: 3200→4800, y: 100/300)
+    for (int i = 134; i <= 148; i += 2) {
+      double startX = 3200 + ((i - 134) / 2 * 200);
+      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 100);
+    }
+    for (int i = 133; i <= 149; i += 2) {
+      double startX = 3200 + ((i - 133) / 2 * 200);
+      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 300);
+    }
+
+    // Section 4: Southern curve (x: 4800→5600, y transitions from 100 to 700)
+    for (int i = 150; i <= 158; i += 2) {
+      double startX = 4800 + ((i - 150) / 2 * 200);
+      double yPos = 100 + ((i - 150) / 2 * 150); // Gradual curve down
+      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: yPos);
+    }
+
+    // Section 5: Eastern extension and return line (x: 5600→7000, y: 700)
+    for (int i = 160; i <= 174; i += 2) {
+      double startX = 5600 + ((i - 160) / 2 * 200);
+      blocks['$i'] = BlockSection(id: '$i', startX: startX, endX: startX + 200, y: 700);
+    }
+
+    // Section 6: Western return (x: 7000→0, y: 700) - westbound track
+    for (int i = 201; i <= 235; i += 2) {
+      double startX = 7000 - ((i - 201) / 2 * 200);
+      blocks['$i'] = BlockSection(id: '$i', startX: startX - 200, endX: startX, y: 700);
+    }
+
+    // Section 7: Northwest curve back to start (x: 0→-800, curves north)
+    for (int i = 237; i <= 243; i += 2) {
+      double startX = 0 - ((i - 237) / 2 * 200);
+      double yPos = 700 - ((i - 237) / 2 * 150); // Curve back up
+      blocks['$i'] = BlockSection(id: '$i', startX: startX - 200, endX: startX, y: yPos);
+    }
+
+    // Crossovers
     blocks['crossover106'] =
         BlockSection(id: 'crossover106', startX: 600, endX: 700, y: 150);
     blocks['crossover109'] =
         BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
+    blocks['crossover126'] =
+        BlockSection(id: 'crossover126', startX: 2400, endX: 2500, y: 200); // Victoria
+    blocks['crossover138'] =
+        BlockSection(id: 'crossover138', startX: 3800, endX: 3900, y: 200); // Paddington
+    blocks['crossover170'] =
+        BlockSection(id: 'crossover170', startX: 6000, endX: 6100, y: 700); // Waterloo
 
+    // Points for all crossovers
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
+    points['80A'] = Point(id: '80A', x: 2400, y: 100); // Victoria
+    points['80B'] = Point(id: '80B', x: 2500, y: 300);
+    points['82A'] = Point(id: '82A', x: 3800, y: 100); // Paddington
+    points['82B'] = Point(id: '82B', x: 3900, y: 300);
+    points['84A'] = Point(id: '84A', x: 6000, y: 700); // Waterloo
 
+    // FIXED: 5 Stations with unique names across the loop
+    // Central Terminal (original)
     platforms.add(Platform(
-        id: 'P1', name: 'Platform 1', startX: 980, endX: 1240, y: 100));
+        id: 'P1', name: 'Central Terminal P1', startX: 980, endX: 1240, y: 100));
     platforms.add(Platform(
-        id: 'P2', name: 'Platform 2 (Bay)', startX: 980, endX: 1240, y: 300));
+        id: 'P2', name: 'Central Terminal P2 (Bay)', startX: 980, endX: 1240, y: 300));
+
+    // Victoria Junction
+    platforms.add(Platform(
+        id: 'P3', name: 'Victoria Junction P3', startX: 2400, endX: 2800, y: 100));
+    platforms.add(Platform(
+        id: 'P4', name: 'Victoria Junction P4', startX: 2400, endX: 2800, y: 300));
+
+    // Paddington Central
+    platforms.add(Platform(
+        id: 'P5', name: 'Paddington Central P5', startX: 3800, endX: 4200, y: 100));
+    platforms.add(Platform(
+        id: 'P6', name: 'Paddington Central P6', startX: 3800, endX: 4200, y: 300));
+
+    // Waterloo Express
+    platforms.add(Platform(
+        id: 'P7', name: 'Waterloo Express P7', startX: 6000, endX: 6400, y: 700));
+
+    // Camden Depot
+    platforms.add(Platform(
+        id: 'P8', name: 'Camden Depot P8', startX: -800, endX: -400, y: 700));
 
     signals['C31'] = Signal(
       id: 'C31',
@@ -1346,13 +1462,87 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
+    // FIXED: New signals for expanded network
+    signals['C35'] = Signal(
+      id: 'C35',
+      x: 2400,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C35_R1',
+          name: 'Victoria Entry',
+          requiredBlocksClear: ['126', '128'],
+          requiredPointPositions: {},
+          pathBlocks: ['124', '126', '128'],
+          protectedBlocks: ['126', '128'],
+        ),
+      ],
+    );
+
+    signals['C37'] = Signal(
+      id: 'C37',
+      x: 3800,
+      y: 80,
+      routes: [
+        SignalRoute(
+          id: 'C37_R1',
+          name: 'Paddington Entry',
+          requiredBlocksClear: ['138', '140'],
+          requiredPointPositions: {},
+          pathBlocks: ['136', '138', '140'],
+          protectedBlocks: ['138', '140'],
+        ),
+      ],
+    );
+
+    signals['C39'] = Signal(
+      id: 'C39',
+      x: 6000,
+      y: 680,
+      routes: [
+        SignalRoute(
+          id: 'C39_R1',
+          name: 'Waterloo Departure',
+          requiredBlocksClear: ['170', '172'],
+          requiredPointPositions: {},
+          pathBlocks: ['168', '170', '172'],
+          protectedBlocks: ['170', '172'],
+        ),
+      ],
+    );
+
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
     trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1220, y: 120);
     trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 980, y: 340);
     trainStops['T28'] = TrainStop(id: 'T28', signalId: 'C28', x: 380, y: 340);
+    trainStops['T35'] = TrainStop(id: 'T35', signalId: 'C35', x: 2400, y: 120);
+    trainStops['T37'] = TrainStop(id: 'T37', signalId: 'C37', x: 3800, y: 120);
+    trainStops['T39'] = TrainStop(id: 'T39', signalId: 'C39', x: 6000, y: 720);
+
+    // FIXED: WiFi Antennas for CBTC coverage across expanded network
+    wifiAntennas['W1'] = WifiAntenna(id: 'W1', x: 500, y: 200, isActive: true);
+    wifiAntennas['W2'] = WifiAntenna(id: 'W2', x: 1200, y: 200, isActive: true);
+    wifiAntennas['W3'] = WifiAntenna(id: 'W3', x: 2000, y: 200, isActive: true);
+    wifiAntennas['W4'] = WifiAntenna(id: 'W4', x: 2600, y: 200, isActive: true); // Victoria
+    wifiAntennas['W5'] = WifiAntenna(id: 'W5', x: 3400, y: 200, isActive: true);
+    wifiAntennas['W6'] = WifiAntenna(id: 'W6', x: 4000, y: 200, isActive: true); // Paddington
+    wifiAntennas['W7'] = WifiAntenna(id: 'W7', x: 4800, y: 400, isActive: true);
+    wifiAntennas['W8'] = WifiAntenna(id: 'W8', x: 5400, y: 600, isActive: true);
+    wifiAntennas['W9'] = WifiAntenna(id: 'W9', x: 6200, y: 700, isActive: true); // Waterloo
+    wifiAntennas['W10'] = WifiAntenna(id: 'W10', x: 5000, y: 700, isActive: true);
+    wifiAntennas['W11'] = WifiAntenna(id: 'W11', x: 3000, y: 700, isActive: true);
+    wifiAntennas['W12'] = WifiAntenna(id: 'W12', x: 1000, y: 700, isActive: true);
+    wifiAntennas['W13'] = WifiAntenna(id: 'W13', x: -400, y: 700, isActive: true); // Camden
+
+    // Transponders at key locations
+    transponders['TP1'] = Transponder(id: 'TP1', type: TransponderType.t1, x: 300, y: 100, description: 'Central West');
+    transponders['TP2'] = Transponder(id: 'TP2', type: TransponderType.t2, x: 1100, y: 100, description: 'Central East');
+    transponders['TP3'] = Transponder(id: 'TP3', type: TransponderType.t3, x: 2500, y: 100, description: 'Victoria');
+    transponders['TP4'] = Transponder(id: 'TP4', type: TransponderType.t6, x: 3900, y: 100, description: 'Paddington');
+    transponders['TP5'] = Transponder(id: 'TP5', type: TransponderType.t1, x: 6100, y: 700, description: 'Waterloo');
 
     _logEvent(
-        'Station initialized: 2 platforms, 4 signals, 2 points, 4 train stops, 8 axle counters');
+        '🚉 EXPANDED LOOP NETWORK INITIALIZED: 5 stations, 8 platforms, 7 signals, 7 points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
   }
 
   // ============================================================================

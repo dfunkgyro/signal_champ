@@ -226,6 +226,7 @@ mixin CollisionVisualEffects {
 class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   final TerminalStationController controller;
   final double cameraOffsetX;
+  final double cameraOffsetY;  // FIXED: Add Y offset parameter
   final double zoom;
   final int animationTick;
   final double canvasWidth;
@@ -234,6 +235,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   TerminalStationPainter({
     required this.controller,
     required this.cameraOffsetX,
+    required this.cameraOffsetY,  // FIXED: Add Y offset parameter
     required this.zoom,
     required this.animationTick,
     required this.canvasWidth,
@@ -245,7 +247,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
     canvas.scale(zoom);
-    canvas.translate(cameraOffsetX, -100);
+    canvas.translate(cameraOffsetX, cameraOffsetY);  // FIXED: Use Y offset for panning
 
     _drawTracks(canvas);
     _drawRouteReservations(canvas);
@@ -256,6 +258,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawTrainStops(canvas);
     _drawAxleCounters(canvas);
     _drawABOccupations(canvas);
+    _drawWiFiAntennas(canvas); // FIXED: Draw WiFi coverage zones
+    _drawTransponders(canvas); // FIXED: Draw track transponders
     _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
@@ -264,6 +268,161 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     drawCollisionEffects(canvas, controller, animationTick);
 
     canvas.restore();
+  }
+
+  // FIXED: Draw WiFi Antennas with coverage range circles
+  void _drawWiFiAntennas(Canvas canvas) {
+    if (!controller.cbtcDevicesEnabled) return;
+
+    for (var antenna in controller.wifiAntennas.values) {
+      // Draw coverage range circle (transparent)
+      final rangePaint = Paint()
+        ..color = antenna.isActive
+            ? Colors.blue.withOpacity(0.08)
+            : Colors.grey.withOpacity(0.05)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(antenna.x, antenna.y), 350.0, rangePaint); // 350 unit range
+
+      // Draw range outline
+      final rangeOutline = Paint()
+        ..color = antenna.isActive
+            ? Colors.blue.withOpacity(0.3)
+            : Colors.grey.withOpacity(0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      canvas.drawCircle(Offset(antenna.x, antenna.y), 350.0, rangeOutline);
+
+      // Draw WiFi icon/antenna tower
+      final antennaPaint = Paint()
+        ..color = antenna.isActive ? Colors.blue : Colors.grey
+        ..style = PaintingStyle.fill;
+
+      // Antenna base
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset(antenna.x, antenna.y),
+          width: 8,
+          height: 20,
+        ),
+        antennaPaint,
+      );
+
+      // Antenna signal waves (if active)
+      if (antenna.isActive) {
+        final wavePaint = Paint()
+          ..color = Colors.blue.withOpacity(0.6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2;
+
+        // Animated signal waves
+        final waveOffset = (animationTick % 30) / 30.0;
+        for (int i = 0; i < 3; i++) {
+          double radius = 15.0 + (i * 8.0) + (waveOffset * 8.0);
+          canvas.drawArc(
+            Rect.fromCenter(
+              center: Offset(antenna.x, antenna.y),
+              width: radius * 2,
+              height: radius * 2,
+            ),
+            -2.5,
+            1.0,
+            false,
+            wavePaint,
+          );
+          canvas.drawArc(
+            Rect.fromCenter(
+              center: Offset(antenna.x, antenna.y),
+              width: radius * 2,
+              height: radius * 2,
+            ),
+            0.5,
+            1.0,
+            false,
+            wavePaint,
+          );
+        }
+      }
+
+      // Label
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: antenna.id,
+          style: TextStyle(
+            color: antenna.isActive ? Colors.blue : Colors.grey,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+          canvas, Offset(antenna.x - textPainter.width / 2, antenna.y + 15));
+    }
+  }
+
+  // FIXED: Draw Transponders
+  void _drawTransponders(Canvas canvas) {
+    if (!controller.cbtcDevicesEnabled) return;
+
+    for (var transponder in controller.transponders.values) {
+      // Color based on type
+      Color color;
+      switch (transponder.type) {
+        case TransponderType.t1:
+          color = Colors.yellow[700]!;
+          break;
+        case TransponderType.t2:
+          color = Colors.orange[700]!;
+          break;
+        case TransponderType.t3:
+          color = Colors.amber[700]!;
+          break;
+        case TransponderType.t6:
+          color = Colors.lime[700]!;
+          break;
+      }
+
+      final transponderPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+
+      // Draw as diamond shape
+      final path = Path();
+      path.moveTo(transponder.x, transponder.y - 6);
+      path.lineTo(transponder.x + 6, transponder.y);
+      path.lineTo(transponder.x, transponder.y + 6);
+      path.lineTo(transponder.x - 6, transponder.y);
+      path.close();
+
+      canvas.drawPath(path, transponderPaint);
+
+      // Outline
+      final outlinePaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+
+      canvas.drawPath(path, outlinePaint);
+
+      // Label
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: transponder.id,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(canvas,
+          Offset(transponder.x - textPainter.width / 2, transponder.y + 10));
+    }
   }
 
   void _drawAxleCounters(Canvas canvas) {
@@ -571,20 +730,12 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawTracks(Canvas canvas) {
-    for (var blockId in [
-      '100',
-      '102',
-      '104',
-      '106',
-      '108',
-      '110',
-      '112',
-      '114'
-    ]) {
-      _drawBlock(canvas, controller.blocks[blockId]!);
-    }
-    for (var blockId in ['101', '103', '105', '107', '109', '111']) {
-      _drawBlock(canvas, controller.blocks[blockId]!);
+    // FIXED: Dynamically draw ALL blocks in the expanded 7000×1200 network
+    for (var block in controller.blocks.values) {
+      if (block.id.startsWith('crossover')) {
+        continue; // Skip crossovers, draw them separately
+      }
+      _drawBlock(canvas, block);
     }
     _drawCrossoverTrack(canvas);
   }
@@ -996,6 +1147,75 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
+  // FIXED: Draw bellows (flexible connectors) between adjacent trains
+  void _drawTrainBellows(Canvas canvas) {
+    final trains = controller.trains;
+    if (trains.length < 2) return;
+
+    for (int i = 0; i < trains.length - 1; i++) {
+      final train1 = trains[i];
+      final train2 = trains[i + 1];
+
+      // Only draw bellow if trains are close enough (within 80 units)
+      final distance = (train1.x - train2.x).abs();
+      if (distance > 80) continue;
+
+      // Check if trains are on the same track (similar Y positions)
+      if ((train1.y - train2.y).abs() > 20) continue;
+
+      // Determine the bellow connection points
+      final train1EndX = train1.direction > 0 ? train1.x + 30 : train1.x - 30;
+      final train2EndX = train2.direction > 0 ? train2.x - 30 : train2.x + 30;
+
+      // Draw bellow as a flexible connector
+      final bellowPaint = Paint()
+        ..color = Colors.grey[800]!
+        ..style = PaintingStyle.fill;
+
+      // Draw accordion-style bellow
+      final path = Path();
+      final segments = 4;
+      final segmentWidth = (train2EndX - train1EndX) / segments;
+
+      for (int j = 0; j < segments; j++) {
+        final x1 = train1EndX + (j * segmentWidth);
+        final x2 = train1EndX + ((j + 1) * segmentWidth);
+        final amplitude = j % 2 == 0 ? 3.0 : -3.0;
+
+        if (j == 0) {
+          path.moveTo(x1, train1.y - 8);
+        }
+
+        path.lineTo(x1, train1.y - 8 + amplitude);
+        path.lineTo(x2, train1.y - 8 - amplitude);
+      }
+
+      path.lineTo(train2EndX, train2.y - 8);
+      path.lineTo(train2EndX, train2.y + 8);
+
+      for (int j = segments - 1; j >= 0; j--) {
+        final x1 = train1EndX + (j * segmentWidth);
+        final x2 = train1EndX + ((j + 1) * segmentWidth);
+        final amplitude = j % 2 == 0 ? 3.0 : -3.0;
+
+        path.lineTo(x2, train2.y + 8 - amplitude);
+        path.lineTo(x1, train2.y + 8 + amplitude);
+      }
+
+      path.lineTo(train1EndX, train1.y + 8);
+      path.close();
+
+      canvas.drawPath(path, bellowPaint);
+
+      // Draw bellow outline
+      final outlinePaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      canvas.drawPath(path, outlinePaint);
+    }
+  }
+
   void _drawMovementAuthorities(Canvas canvas) {
     // Get current time for animation
     final animationOffset = (DateTime.now().millisecondsSinceEpoch % 2000) / 2000.0;
@@ -1170,6 +1390,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawTrains(Canvas canvas) {
+    // FIXED: Draw bellows between adjacent trains first
+    _drawTrainBellows(canvas);
+
     for (var train in controller.trains) {
       canvas.save();
       if (train.rotation != 0.0) {
@@ -1448,6 +1671,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   bool shouldRepaint(TerminalStationPainter oldDelegate) {
     return oldDelegate.controller != controller ||
         oldDelegate.cameraOffsetX != cameraOffsetX ||
+        oldDelegate.cameraOffsetY != cameraOffsetY ||  // FIXED: Check Y offset for repaint
         oldDelegate.zoom != zoom ||
         oldDelegate.animationTick != animationTick ||
         oldDelegate.canvasWidth != canvasWidth ||

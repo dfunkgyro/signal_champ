@@ -67,8 +67,8 @@ class RelayRackPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
           child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 4,
+            runSpacing: 4,
             children: railwayModel.signals.map((signal) {
               final relayName = _getSignalRelayName(signal.id);
               final isUp = signal.state == SignalState.green;
@@ -111,8 +111,8 @@ class RelayRackPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
           child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 4,
+            runSpacing: 4,
             children: railwayModel.points.map((point) {
               final relayName = _getPointRelayName(point.id);
               final position = _getPointRelayPosition(point);
@@ -155,8 +155,8 @@ class RelayRackPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
           child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 4,
+            runSpacing: 4,
             children: railwayModel.blocks
                 .where((block) => !block.isCrossover)
                 .map((block) {
@@ -172,41 +172,64 @@ class RelayRackPanel extends StatelessWidget {
 
   Widget _buildRelayIndicator(String relayName, bool isUp) {
     return Container(
-      width: 70,
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      width: 52,
+      height: 65,
       decoration: BoxDecoration(
-        color: isUp ? Colors.green[50] : Colors.red[50],
-        border: Border.all(
-          color: isUp ? Colors.green[700]! : Colors.red[700]!,
-          width: 2,
-        ),
-        borderRadius: BorderRadius.circular(6),
+        color: Colors.grey[900],
+        border: Border.all(color: Colors.grey[800]!, width: 1),
+        borderRadius: BorderRadius.circular(3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            relayName,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: isUp ? Colors.green[900] : Colors.red[900],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
+          // Relay body with label
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 2),
             decoration: BoxDecoration(
-              color: isUp ? Colors.green[700] : Colors.red[700],
-              borderRadius: BorderRadius.circular(3),
+              color: Colors.grey[850],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
             ),
             child: Text(
-              isUp ? 'UP' : 'DOWN',
-              style: const TextStyle(
-                fontSize: 9,
+              relayName,
+              style: TextStyle(
+                fontSize: 8,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Colors.grey[400],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          // Indicator light
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isUp ? Colors.green[500] : Colors.red[600],
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isUp ? Colors.green : Colors.red).withOpacity(0.6),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  isUp ? 'UP' : 'DN',
+                  style: TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
               ),
             ),
           ),
@@ -248,65 +271,80 @@ class RelayRackPanel extends StatelessWidget {
 
   Widget _buildPointRelayIndicator(String relayName, String position) {
     // Determine colors based on position
-    Color backgroundColor;
-    Color borderColor;
-    Color textColor;
+    Color indicatorColor;
 
     if (position == 'normal') {
-      backgroundColor = Colors.red[50]!;
-      borderColor = Colors.red[700]!;
-      textColor = Colors.red[900]!;
+      indicatorColor = Colors.red[600]!;
     } else if (position == 'mid') {
-      backgroundColor = Colors.orange[50]!;
-      borderColor = Colors.orange[700]!;
-      textColor = Colors.orange[900]!;
+      indicatorColor = Colors.orange[600]!;
     } else {
       // reverse
-      backgroundColor = Colors.green[50]!;
-      borderColor = Colors.green[700]!;
-      textColor = Colors.green[900]!;
+      indicatorColor = Colors.green[500]!;
     }
 
     return Container(
-      width: 80,
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      width: 60,
+      height: 65,
       decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border.all(
-          color: borderColor,
-          width: 2,
-        ),
-        borderRadius: BorderRadius.circular(6),
+        color: Colors.grey[900],
+        border: Border.all(color: Colors.grey[800]!, width: 1),
+        borderRadius: BorderRadius.circular(3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            relayName,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
+          // Relay body with label
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 2),
             decoration: BoxDecoration(
-              color: position == 'normal'
-                  ? Colors.red[700]
-                  : position == 'mid'
-                      ? Colors.orange[700]
-                      : Colors.green[700],
-              borderRadius: BorderRadius.circular(3),
+              color: Colors.grey[850],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
             ),
             child: Text(
-              position.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 8,
+              relayName,
+              style: TextStyle(
+                fontSize: 7,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Colors.grey[400],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          // Indicator light
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: indicatorColor,
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: [
+                  BoxShadow(
+                    color: indicatorColor.withOpacity(0.6),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  position == 'normal'
+                      ? 'NWP'
+                      : position == 'mid'
+                          ? 'MID'
+                          : 'RWP',
+                  style: TextStyle(
+                    fontSize: 6,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
               ),
             ),
           ),

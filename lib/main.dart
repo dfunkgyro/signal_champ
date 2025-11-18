@@ -11,6 +11,7 @@ import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../services/connection_service.dart';
 import '../services/sound_service.dart';
+import '../services/scenario_service.dart';
 import '../widgets/connection_indicator.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
@@ -95,6 +96,7 @@ class RailChampApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => WeatherSystem()),
         ChangeNotifierProvider(create: (_) => AchievementsService(client)),
+        ChangeNotifierProvider(create: (_) => ScenarioService(client)),
         ChangeNotifierProvider(create: (_) => TerminalStationController()),
       ],
       child: Consumer<ThemeController>(

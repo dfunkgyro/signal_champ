@@ -56,6 +56,7 @@ class MovementAuthority {
 
 class BlockSection {
   final String id;
+  final String? name;  // Optional display name for crossovers and special sections
   final double startX;
   final double endX;
   final double y;
@@ -64,6 +65,7 @@ class BlockSection {
 
   BlockSection({
     required this.id,
+    this.name,
     required this.startX,
     required this.endX,
     required this.y,

@@ -13,6 +13,8 @@ enum CanvasTheme {
   professionalModern, // Clean, minimal, corporate style
   simplified,         // Minimal UI, focus on essentials
   smartUserFriendly,  // High contrast, clear labels, accessible
+  glass,              // Transparent, frosted glass aesthetic with blur effects
+  blueprintWhite,     // White background with blue lines, architectural style
 }
 
 class CanvasThemeData {
@@ -133,6 +135,10 @@ class CanvasThemeController extends ChangeNotifier {
         return _getSimplifiedTheme();
       case CanvasTheme.smartUserFriendly:
         return _getSmartUserFriendlyTheme();
+      case CanvasTheme.glass:
+        return _getGlassTheme();
+      case CanvasTheme.blueprintWhite:
+        return _getBlueprintWhiteTheme();
     }
   }
 
@@ -148,6 +154,10 @@ class CanvasThemeController extends ChangeNotifier {
         return 'Simplified';
       case CanvasTheme.smartUserFriendly:
         return 'Smart User Friendly';
+      case CanvasTheme.glass:
+        return 'Glass (Frosted Transparency)';
+      case CanvasTheme.blueprintWhite:
+        return 'Blueprint White (Architectural)';
     }
   }
 
@@ -333,6 +343,80 @@ class CanvasThemeController extends ChangeNotifier {
       showGlow: false,
       showShadows: true,
       strokeWidthMultiplier: 1.3,
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // GLASS THEME - Transparent, frosted glass aesthetic with blur effects
+  // ══════════════════════════════════════════════════════════════════════════
+  CanvasThemeData _getGlassTheme() {
+    return const CanvasThemeData(
+      trackColor: Color(0xCCE3F2FD),            // Light blue with transparency
+      trackOccupiedColor: Color(0xCC9575CD),    // Purple with transparency
+      railColor: Color(0xCC90A4AE),             // Blue grey with transparency
+      sleeperColor: Color(0xCCB0BEC5),          // Light blue grey with transparency
+      platformColor: Color(0xCCFFF9C4),         // Light yellow with transparency
+      platformEdgeColor: Color(0xCC64B5F6),     // Blue with transparency
+      signalPoleColor: Color(0xCC607D8B),       // Blue grey with transparency
+      signalRedColor: Color(0xFFEF5350),        // Bright red (less transparent)
+      signalGreenColor: Color(0xFF66BB6A),      // Bright green (less transparent)
+      signalYellowColor: Color(0xFFFFEE58),     // Bright yellow (less transparent)
+      pointNormalColor: Color(0xCC4FC3F7),      // Light blue with transparency
+      pointReverseColor: Color(0xCC81C784),     // Light green with transparency
+      pointLockedColor: Color(0xCC5C6BC0),      // Indigo with transparency
+      pointDeadlockColor: Color(0xCCFF7043),    // Orange with transparency
+      pointGapColor: Color(0xCCF5F5F5),         // Light grey with transparency
+      trainBodyColor: Color(0xCC42A5F5),        // Blue with transparency
+      trainWindowColor: Color(0xCCE1F5FE),      // Very light blue with transparency
+      trainDoorColor: Color(0xCC1976D2),        // Darker blue with transparency
+      canvasBackgroundColor: Color(0xFFF0F4F8), // Very light blue-grey background
+      wifiAntennaColor: Color(0xCC26C6DA),      // Cyan with transparency
+      wifiCoverageColor: Color(0x8026C6DA),     // Cyan with more transparency
+      transponderColor: Color(0xCCFFA726),      // Orange with transparency
+      movementAuthorityColor: Color(0xCC66BB6A),// Green with transparency
+      labelTextColor: Color(0xFF1976D2),        // Solid dark blue
+      labelBackgroundColor: Color(0xDDFFFFFF),  // White with slight transparency
+      labelFontSize: 10.5,
+      showGlow: true,
+      showShadows: false,
+      strokeWidthMultiplier: 1.0,
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BLUEPRINT WHITE THEME - White background with blue lines, architectural
+  // ══════════════════════════════════════════════════════════════════════════
+  CanvasThemeData _getBlueprintWhiteTheme() {
+    return const CanvasThemeData(
+      trackColor: Color(0xFF1976D2),            // Blueprint blue
+      trackOccupiedColor: Color(0xFF7B1FA2),    // Purple
+      railColor: Color(0xFF0D47A1),             // Dark blue
+      sleeperColor: Color(0xFF1976D2),          // Blueprint blue
+      platformColor: Color(0xFFE3F2FD),         // Very light blue
+      platformEdgeColor: Color(0xFF1976D2),     // Blueprint blue
+      signalPoleColor: Color(0xFF0D47A1),       // Dark blue
+      signalRedColor: Color(0xFFD32F2F),        // Red
+      signalGreenColor: Color(0xFF388E3C),      // Green
+      signalYellowColor: Color(0xFFFBC02D),     // Yellow
+      pointNormalColor: Color(0xFF1976D2),      // Blueprint blue
+      pointReverseColor: Color(0xFF0288D1),     // Light blue
+      pointLockedColor: Color(0xFF303F9F),      // Indigo
+      pointDeadlockColor: Color(0xFFC62828),    // Dark red
+      pointGapColor: Color(0xFFFFFFFF),         // White
+      trainBodyColor: Color(0xFF1976D2),        // Blueprint blue
+      trainWindowColor: Color(0xFFE3F2FD),      // Very light blue
+      trainDoorColor: Color(0xFF0D47A1),        // Dark blue
+      canvasBackgroundColor: Color(0xFFFFFFFF), // Pure white (blueprint paper)
+      wifiAntennaColor: Color(0xFF0288D1),      // Light blue
+      wifiCoverageColor: Color(0xFF0288D1),     // Light blue with opacity
+      transponderColor: Color(0xFFFF6F00),      // Dark orange
+      movementAuthorityColor: Color(0xFF388E3C),// Green
+      labelTextColor: Color(0xFF0D47A1),        // Dark blue
+      labelBackgroundColor: Color(0xFFFFFFFF),  // White
+      labelFontSize: 10.0,
+      showGlow: false,
+      showShadows: false,
+      strokeWidthMultiplier: 0.8,
     );
   }
 }

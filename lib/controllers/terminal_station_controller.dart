@@ -1980,19 +1980,39 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
     // Left Section Crossover (connects blocks 211↔212) - MOVED from 206-207 area
     // Allows train from block 209→211 (lower track) to cross to block 212 (upper track)
-    blocks['crossover_211_212'] =
-        BlockSection(id: 'crossover_211_212', startX: -450, endX: -300, y: 200);
+    blocks['crossover_211_212'] = BlockSection(
+      id: 'crossover_211_212',
+      name: 'West Terminal Double Diamond',
+      startX: -450,
+      endX: -300,
+      y: 200,
+    );
 
     // Middle Crossover (original 78A/78B)
-    blocks['crossover106'] =
-        BlockSection(id: 'crossover106', startX: 600, endX: 700, y: 150);
-    blocks['crossover109'] =
-        BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
+    blocks['crossover106'] = BlockSection(
+      id: 'crossover106',
+      name: 'Central Station Crossover Upper',
+      startX: 600,
+      endX: 700,
+      y: 150,
+    );
+    blocks['crossover109'] = BlockSection(
+      id: 'crossover109',
+      name: 'Central Station Crossover Lower',
+      startX: 700,
+      endX: 800,
+      y: 250,
+    );
 
     // Right Section Crossover (connects blocks 303↔304) - MOVED from 314 area
     // Allows train from block 301→303 (lower track) to cross to block 304 (upper track)
-    blocks['crossover_303_304'] =
-        BlockSection(id: 'crossover_303_304', startX: 1900, endX: 2050, y: 200);
+    blocks['crossover_303_304'] = BlockSection(
+      id: 'crossover_303_304',
+      name: 'East Terminal Double Diamond',
+      startX: 1900,
+      endX: 2050,
+      y: 200,
+    );
 
     // ═══════════════════════════════════════════════════════════════════════
     // POINTS - 10 points total (4 for each double diamond crossover + 2 for middle)

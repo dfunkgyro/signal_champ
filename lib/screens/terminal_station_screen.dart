@@ -3542,7 +3542,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     controller.setHoveredObject(null);
   }
 
-  // Handle click on canvas objects (signals and points)
+  // Handle click on canvas objects (signals, points, and blocks)
   void _handleCanvasClick(TerminalStationController controller, double canvasX, double canvasY) {
     // Check for signal clicks
     for (final signal in controller.signals.values) {
@@ -3557,7 +3557,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     for (final point in controller.points.values) {
       final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
       if (distance < 20) {
-        _togglePoint(controller, point);
+        _showPointDialog(controller, point);
+        return;
+      }
+    }
+
+    // Check for block clicks (CTRL+click for block controls)
+    for (final block in controller.blocks.values) {
+      if (canvasX >= block.startX && canvasX <= block.endX &&
+          (canvasY - block.y).abs() < 15) {
+        _showBlockDialog(controller, block);
         return;
       }
     }
@@ -3621,30 +3630,132 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
-  // Toggle point position
-  void _togglePoint(TerminalStationController controller, Point point) {
-    if (point.locked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Point ${point.id} is locked and cannot be changed'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
+  // Show point control dialog
+  void _showPointDialog(TerminalStationController controller, Point point) {
+    final isReserved = controller.isPointReserved(point.id);
+    final reservedPosition = controller.getPointReservation(point.id);
 
-    // Swing the point to toggle its position
-    controller.swingPoint(point.id);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Point ${point.id}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Current Position: ${point.position.name.toUpperCase()}',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('Locked: ${point.locked ? "YES" : "NO"}'),
+              if (isReserved) ...[
+                const SizedBox(height: 8),
+                Text('🔒 Reserved: ${reservedPosition!.name.toUpperCase()}',
+                    style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+              ],
+              const SizedBox(height: 16),
+              const Text('Actions:', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          actions: [
+            if (!point.locked && !isReserved)
+              TextButton.icon(
+                icon: const Icon(Icons.swap_horiz),
+                label: const Text('Toggle Position'),
+                onPressed: () {
+                  controller.swingPoint(point.id);
+                  Navigator.of(context).pop();
+                },
+              ),
+            TextButton.icon(
+              icon: Icon(isReserved ? Icons.lock_open : Icons.lock),
+              label: Text(isReserved ? 'Remove Reservation' : 'Reserve Normal'),
+              onPressed: () {
+                if (isReserved) {
+                  controller.unreservePoint(point.id);
+                } else {
+                  controller.reservePoint(point.id, PointPosition.normal);
+                }
+                Navigator.of(context).pop();
+              },
+            ),
+            if (!isReserved)
+              TextButton.icon(
+                icon: const Icon(Icons.lock),
+                label: const Text('Reserve Reverse'),
+                onPressed: () {
+                  controller.reservePoint(point.id, PointPosition.reverse);
+                  Navigator.of(context).pop();
+                },
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-    final newPosition = point.position == PointPosition.normal
-        ? PointPosition.reverse
-        : PointPosition.normal;
+  // Show block control dialog
+  void _showBlockDialog(TerminalStationController controller, BlockSection block) {
+    final isClosed = controller.isBlockClosed(block.id);
+    final blockName = block.name ?? 'Block ${block.id}';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Point ${point.id} set to ${newPosition.name.toUpperCase()}'),
-        duration: const Duration(seconds: 1),
-      ),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(blockName),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('ID: ${block.id}',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('Occupied: ${block.occupied ? "YES" : "NO"}'),
+              if (block.occupied && block.occupyingTrainId != null) ...[
+                const SizedBox(height: 4),
+                Text('Train: ${block.occupyingTrainId}'),
+              ],
+              const SizedBox(height: 8),
+              Text('Status: ${isClosed ? "🚫 CLOSED" : "✅ OPEN"}',
+                  style: TextStyle(
+                    color: isClosed ? Colors.red : Colors.green,
+                    fontWeight: FontWeight.bold,
+                  )),
+              const SizedBox(height: 8),
+              Text('Position: ${block.startX.toInt()} - ${block.endX.toInt()}, Y: ${block.y.toInt()}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 16),
+              if (isClosed)
+                const Text(
+                  '⚠️ Auto trains will emergency brake if in or approaching this block',
+                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton.icon(
+              icon: Icon(isClosed ? Icons.lock_open : Icons.block),
+              label: Text(isClosed ? 'Open Block' : 'Close Block'),
+              style: TextButton.styleFrom(
+                foregroundColor: isClosed ? Colors.green : Colors.red,
+              ),
+              onPressed: () {
+                controller.toggleBlockClosed(block.id);
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 

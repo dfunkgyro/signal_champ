@@ -545,6 +545,12 @@ class TerminalStationController extends ChangeNotifier {
   Map<String, String> pointMachineStates = {}; // pointId -> 'normal', 'reverse', 'mid'
   Map<String, DateTime> pointThrowStartTimes = {}; // Track when points started moving
 
+  // Block closing system - closed blocks emergency brake auto trains
+  Map<String, bool> closedBlocks = {}; // blockId -> true if closed
+
+  // Point reservation system - reserved points stay in position
+  Map<String, PointPosition> reservedPoints = {}; // pointId -> reserved position
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -719,6 +725,34 @@ class TerminalStationController extends ChangeNotifier {
   void setHoveredObject(Map<String, dynamic>? object) {
     hoveredObject = object;
     notifyListeners();
+  }
+
+  // ============================================================================
+  // BLOCK CLOSING SYSTEM
+  // ============================================================================
+
+  void closeBlock(String blockId) {
+    closedBlocks[blockId] = true;
+    _logEvent('🚫 Block $blockId CLOSED');
+    notifyListeners();
+  }
+
+  void openBlock(String blockId) {
+    closedBlocks.remove(blockId);
+    _logEvent('✅ Block $blockId OPENED');
+    notifyListeners();
+  }
+
+  bool isBlockClosed(String blockId) {
+    return closedBlocks[blockId] ?? false;
+  }
+
+  void toggleBlockClosed(String blockId) {
+    if (isBlockClosed(blockId)) {
+      openBlock(blockId);
+    } else {
+      closeBlock(blockId);
+    }
   }
 
   // Get relay status for signals (GR - proceed relay)
@@ -2959,13 +2993,16 @@ class TerminalStationController extends ChangeNotifier {
 
   void acknowledgeCollisionAlarm() {
     // Move collided trains back 20 units in opposite directions for recovery
-    if (currentCollisionIncident != null) {
+    if (currentCollisionIncident != null && currentCollisionIncident!.trainsInvolved.length >= 2) {
+      final train1Id = currentCollisionIncident!.trainsInvolved[0];
+      final train2Id = currentCollisionIncident!.trainsInvolved[1];
+
       final train1 = trains.firstWhere(
-        (t) => t.id == currentCollisionIncident!.train1Id,
+        (t) => t.id == train1Id,
         orElse: () => trains.first,
       );
       final train2 = trains.firstWhere(
-        (t) => t.id == currentCollisionIncident!.train2Id,
+        (t) => t.id == train2Id,
         orElse: () => trains.first,
       );
 
@@ -3194,6 +3231,12 @@ class TerminalStationController extends ChangeNotifier {
     final point = points[pointId];
     if (point == null) return;
 
+    // Check if point is reserved
+    if (reservedPoints.containsKey(pointId)) {
+      _logEvent('🔒 Point $pointId is RESERVED in ${reservedPoints[pointId]!.name} - cannot swing');
+      return;
+    }
+
     // Check if point is locked
     if (point.locked) {
       _logEvent('❌ Point $pointId is LOCKED - cannot swing');
@@ -3241,6 +3284,54 @@ class TerminalStationController extends ChangeNotifier {
         ? '🔄 Self-normalizing points ENABLED'
         : '⏸️ Self-normalizing points DISABLED');
     notifyListeners();
+  }
+
+  // ============================================================================
+  // POINT RESERVATION SYSTEM
+  // ============================================================================
+
+  void reservePoint(String pointId, PointPosition position) {
+    final point = points[pointId];
+    if (point == null) {
+      _logEvent('⚠️ Point $pointId not found');
+      return;
+    }
+
+    reservedPoints[pointId] = position;
+
+    // Set the point to the reserved position
+    point.position = position;
+
+    _logEvent('🔒 Point $pointId RESERVED in ${position.name.toUpperCase()}');
+    _updateSignalAspects();
+    notifyListeners();
+  }
+
+  void unreservePoint(String pointId) {
+    if (!reservedPoints.containsKey(pointId)) {
+      _logEvent('⚠️ Point $pointId is not reserved');
+      return;
+    }
+
+    reservedPoints.remove(pointId);
+    _logEvent('🔓 Point $pointId UNRESERVED');
+    notifyListeners();
+  }
+
+  bool isPointReserved(String pointId) {
+    return reservedPoints.containsKey(pointId);
+  }
+
+  PointPosition? getPointReservation(String pointId) {
+    return reservedPoints[pointId];
+  }
+
+  void togglePointReservation(String pointId, PointPosition position) {
+    if (isPointReserved(pointId)) {
+      unreservePoint(pointId);
+    } else {
+      reservePoint(pointId, position);
+    }
   }
 
   // ============================================================================
@@ -3943,6 +4034,58 @@ class TerminalStationController extends ChangeNotifier {
         train.targetSpeed = 0;
         train.speed = 0;
         continue;
+      }
+
+      // 1.5. CLOSED BLOCK CHECK - Auto trains emergency brake in/approaching closed blocks
+      if (train.controlMode == TrainControlMode.automatic) {
+        // Check if current block is closed
+        if (train.currentBlockId != null && isBlockClosed(train.currentBlockId!)) {
+          if (!train.emergencyBrake) {
+            train.emergencyBrake = true;
+            train.targetSpeed = 0;
+            train.speed = 0;
+            _logEvent('🚫 ${train.name} EMERGENCY BRAKE: In closed block ${train.currentBlockId}');
+          }
+          continue;
+        }
+
+        // Check if approaching a closed block within 20 units
+        bool approachingClosedBlock = false;
+        for (var block in blocks.values) {
+          if (!isBlockClosed(block.id)) continue;
+
+          // Calculate distance to block based on train direction
+          double distanceToBlock = 0;
+          bool isAhead = false;
+
+          if (train.direction > 0) {
+            // Eastbound - check blocks ahead (to the right)
+            if (block.startX > train.x && block.y == train.y) {
+              isAhead = true;
+              distanceToBlock = block.startX - train.x;
+            }
+          } else {
+            // Westbound - check blocks ahead (to the left)
+            if (block.endX < train.x && block.y == train.y) {
+              isAhead = true;
+              distanceToBlock = train.x - block.endX;
+            }
+          }
+
+          if (isAhead && distanceToBlock <= 20) {
+            approachingClosedBlock = true;
+            if (!train.emergencyBrake) {
+              train.emergencyBrake = true;
+              train.targetSpeed = 0;
+              _logEvent('🚫 ${train.name} EMERGENCY BRAKE: Approaching closed block ${block.id} (${distanceToBlock.toStringAsFixed(1)}m away)');
+            }
+            break;
+          }
+        }
+
+        if (approachingClosedBlock) {
+          continue;
+        }
       }
 
       // 2. COLLISION RECOVERY - Modified to not block movement completely

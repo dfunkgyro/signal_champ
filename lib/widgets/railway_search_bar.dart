@@ -267,23 +267,9 @@ class _RailwaySearchBarState extends State<RailwaySearchBar> {
     });
   }
 
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is KeyDownEvent && _showResults && _searchResults.isNotEmpty) {
-      if (event.logicalKey.keyLabel == 'Arrow Down') {
-        setState(() {
-          _selectedIndex = (_selectedIndex + 1) % _searchResults.length;
-        });
-      } else if (event.logicalKey.keyLabel == 'Arrow Up') {
-        setState(() {
-          _selectedIndex = (_selectedIndex - 1) % _searchResults.length;
-          if (_selectedIndex < 0) _selectedIndex = _searchResults.length - 1;
-        });
-      } else if (event.logicalKey.keyLabel == 'Enter' && _selectedIndex >= 0) {
-        final controller = context.read<TerminalStationController>();
-        _selectResult(_searchResults[_selectedIndex], controller);
-      }
-    }
-  }
+  // Note: Keyboard navigation is handled via TextField's onSubmitted
+  // Arrow key navigation would require RawKeyboardListener wrapping
+  // For now, users can press Enter to select the highlighted result
 
   @override
   Widget build(BuildContext context) {

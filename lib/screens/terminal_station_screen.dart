@@ -1562,6 +1562,241 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
               const SizedBox(height: 12),
 
+              // Grid Toggle
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.gridVisible
+                            ? Icons.grid_on
+                            : Icons.grid_off,
+                        color: controller.gridVisible
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Grid',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.gridVisible ? 'Visible' : 'Hidden',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.gridVisible,
+                        onChanged: (value) => controller.toggleGrid(),
+                        activeColor: Colors.blue,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Traction Current Toggle
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.tractionCurrentOn
+                            ? Icons.bolt
+                            : Icons.bolt_outlined,
+                        color: controller.tractionCurrentOn
+                            ? Colors.amber
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Traction Current',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.tractionCurrentOn ? 'ON' : 'OFF',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.tractionCurrentOn,
+                        onChanged: (value) => controller.toggleTractionCurrent(),
+                        activeColor: Colors.amber,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Tooltips Toggle
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.tooltipsEnabled
+                            ? Icons.info
+                            : Icons.info_outline,
+                        color: controller.tooltipsEnabled
+                            ? Colors.purple
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Tooltips',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.tooltipsEnabled ? 'Enabled' : 'Disabled',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.tooltipsEnabled,
+                        onChanged: (value) => controller.toggleTooltips(),
+                        activeColor: Colors.purple,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // AI Agent Toggle
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.aiAgentVisible
+                            ? Icons.smart_toy
+                            : Icons.smart_toy_outlined,
+                        color: controller.aiAgentVisible
+                            ? Colors.cyan
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'AI Agent',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.aiAgentVisible ? 'Visible' : 'Hidden',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.aiAgentVisible,
+                        onChanged: (value) => controller.toggleAiAgent(),
+                        activeColor: Colors.cyan,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Relay Rack Toggle
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.relayRackVisible
+                            ? Icons.electrical_services
+                            : Icons.electrical_services_outlined,
+                        color: controller.relayRackVisible
+                            ? Colors.orange
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Relay Rack',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              controller.relayRackVisible ? 'Visible' : 'Hidden',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.relayRackVisible,
+                        onChanged: (value) => controller.toggleRelayRack(),
+                        activeColor: Colors.orange,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               Row(
                 children: [
                   Expanded(
@@ -3176,34 +3411,116 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       color: Colors.grey[200],
       child: Consumer<TerminalStationController>(
         builder: (context, controller, _) {
-          return GestureDetector(
-            onPanUpdate: (details) {
-              setState(() {
-                _cameraOffsetX += details.delta.dx / _zoom;
-                _cameraOffsetY += details.delta.dy / _zoom;  // FIXED: Add Y-axis panning
-              });
+          return MouseRegion(
+            onHover: (event) {
+              if (!controller.tooltipsEnabled) return;
+
+              // Convert screen coordinates to canvas coordinates
+              final localPosition = event.localPosition;
+              final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
+              final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
+
+              // Check for hovered objects (signals, points, trains, etc.)
+              _detectHoveredObject(controller, canvasX, canvasY);
             },
-            child: Consumer<CanvasThemeController>(
-              builder: (context, canvasThemeController, _) {
-                return CustomPaint(
-                  size: Size(_canvasWidth, _canvasHeight),
-                  painter: TerminalStationPainter(
-                    controller: controller,
-                    cameraOffsetX: _cameraOffsetX,
-                    cameraOffsetY: _cameraOffsetY,  // FIXED: Pass Y offset to painter
-                    zoom: _zoom,
-                    animationTick: _animationTick,
-                    canvasWidth: _canvasWidth,
-                    canvasHeight: _canvasHeight,
-                    themeData: canvasThemeController.getThemeData(),
-                  ),
-                );
+            onExit: (event) {
+              controller.setHoveredObject(null);
+            },
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                setState(() {
+                  _cameraOffsetX += details.delta.dx / _zoom;
+                  _cameraOffsetY += details.delta.dy / _zoom;  // FIXED: Add Y-axis panning
+                });
               },
+              child: Consumer<CanvasThemeController>(
+                builder: (context, canvasThemeController, _) {
+                  return CustomPaint(
+                    size: Size(_canvasWidth, _canvasHeight),
+                    painter: TerminalStationPainter(
+                      controller: controller,
+                      cameraOffsetX: _cameraOffsetX,
+                      cameraOffsetY: _cameraOffsetY,  // FIXED: Pass Y offset to painter
+                      zoom: _zoom,
+                      animationTick: _animationTick,
+                      canvasWidth: _canvasWidth,
+                      canvasHeight: _canvasHeight,
+                      themeData: canvasThemeController.getThemeData(),
+                    ),
+                  );
+                },
+              ),
             ),
           );
         },
       ),
     );
+  }
+
+  // Helper method to detect hovered object on the canvas
+  void _detectHoveredObject(TerminalStationController controller, double canvasX, double canvasY) {
+    // Check signals first
+    for (final signal in controller.signals.values) {
+      final distance = ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
+      if (distance < 30) {
+        controller.setHoveredObject({
+          'type': 'Signal',
+          'id': signal.id,
+          'x': signal.x,
+          'y': signal.y,
+          'aspect': signal.aspect.name,
+        });
+        return;
+      }
+    }
+
+    // Check points
+    for (final point in controller.points.values) {
+      final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
+      if (distance < 20) {
+        controller.setHoveredObject({
+          'type': 'Point',
+          'id': point.id,
+          'x': point.x,
+          'y': point.y,
+          'position': point.position.name,
+        });
+        return;
+      }
+    }
+
+    // Check trains
+    for (final train in controller.trains) {
+      final distance = ((train.x - canvasX).abs() + (train.y - canvasY).abs());
+      if (distance < 40) {
+        controller.setHoveredObject({
+          'type': 'Train',
+          'id': train.name,
+          'x': train.x,
+          'y': train.y,
+          'speed': train.speed.toStringAsFixed(1),
+        });
+        return;
+      }
+    }
+
+    // Check blocks
+    for (final block in controller.blocks.values) {
+      if (canvasX >= block.startX && canvasX <= block.endX &&
+          (block.y - canvasY).abs() < 20) {
+        controller.setHoveredObject({
+          'type': 'Block',
+          'id': block.id,
+          'x': (block.startX + block.endX) / 2,
+          'y': block.y,
+          'occupied': block.occupied ? 'Yes' : 'No',
+        });
+        return;
+      }
+    }
+
+    // No object found - clear hover
+    controller.setHoveredObject(null);
   }
 
   Widget _buildStatusPanel() {

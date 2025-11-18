@@ -632,9 +632,21 @@ class TerminalStationController extends ChangeNotifier {
       return;
     }
     cbtcModeActive = active;
-    _logEvent(active
-        ? '🚄 CBTC Mode ACTIVATED - Moving block signaling enabled'
-        : '🚄 CBTC Mode DEACTIVATED - Fixed block signaling');
+
+    // Set all signals to blue when CBTC mode is active
+    if (active) {
+      for (final signal in signals.values) {
+        signal.aspect = SignalAspect.blue;
+      }
+      _logEvent('🚄 CBTC Mode ACTIVATED - Moving block signaling enabled, all signals BLUE');
+    } else {
+      // Restore normal signal aspects when CBTC mode is deactivated
+      for (final signal in signals.values) {
+        signal.aspect = SignalAspect.red;
+      }
+      _logEvent('🚄 CBTC Mode DEACTIVATED - Fixed block signaling, signals restored');
+    }
+
     notifyListeners();
   }
 
@@ -1968,19 +1980,39 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
     // Left Section Crossover (connects blocks 211↔212) - MOVED from 206-207 area
     // Allows train from block 209→211 (lower track) to cross to block 212 (upper track)
-    blocks['crossover_211_212'] =
-        BlockSection(id: 'crossover_211_212', startX: -450, endX: -300, y: 200);
+    blocks['crossover_211_212'] = BlockSection(
+      id: 'crossover_211_212',
+      name: 'West Terminal Double Diamond',
+      startX: -450,
+      endX: -300,
+      y: 200,
+    );
 
     // Middle Crossover (original 78A/78B)
-    blocks['crossover106'] =
-        BlockSection(id: 'crossover106', startX: 600, endX: 700, y: 150);
-    blocks['crossover109'] =
-        BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
+    blocks['crossover106'] = BlockSection(
+      id: 'crossover106',
+      name: 'Central Station Crossover Upper',
+      startX: 600,
+      endX: 700,
+      y: 150,
+    );
+    blocks['crossover109'] = BlockSection(
+      id: 'crossover109',
+      name: 'Central Station Crossover Lower',
+      startX: 700,
+      endX: 800,
+      y: 250,
+    );
 
     // Right Section Crossover (connects blocks 303↔304) - MOVED from 314 area
     // Allows train from block 301→303 (lower track) to cross to block 304 (upper track)
-    blocks['crossover_303_304'] =
-        BlockSection(id: 'crossover_303_304', startX: 1900, endX: 2050, y: 200);
+    blocks['crossover_303_304'] = BlockSection(
+      id: 'crossover_303_304',
+      name: 'East Terminal Double Diamond',
+      startX: 1900,
+      endX: 2050,
+      y: 200,
+    );
 
     // ═══════════════════════════════════════════════════════════════════════
     // POINTS - 10 points total (4 for each double diamond crossover + 2 for middle)
@@ -2245,7 +2277,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C04'] = Signal(
       id: 'C04',
-      x: 390,  // FIXED: 10 units from end of block 103 (before block 101)
+      x: 290,  // MOVED: 100 units left from 390 to avoid conflict with C31
       y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
@@ -2344,7 +2376,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R06'] = Signal(
       id: 'R06',
-      x: 2590,  // FIXED: 10 units from end of block 309 (before block 307)
+      x: 2490,  // MOVED: 100 units left from 2590 to avoid conflict with R02
       y: 320,
       routes: [
         SignalRoute(
@@ -2405,14 +2437,14 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 50, y: 120);
     trainStops['TC02'] = TrainStop(id: 'TC02', signalId: 'C02', x: 990, y: 340);
     trainStops['TC03'] = TrainStop(id: 'TC03', signalId: 'C03', x: 1190, y: 340);
-    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 390, y: 120);
+    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 290, y: 120);  // MOVED: Match C04 signal position
 
     trainStops['TR01'] = TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
     trainStops['TR02'] = TrainStop(id: 'TR02', signalId: 'R02', x: 2590, y: 340);
     trainStops['TR03'] = TrainStop(id: 'TR03', signalId: 'R03', x: 2790, y: 120);
     trainStops['TR04'] = TrainStop(id: 'TR04', signalId: 'R04', x: 3290, y: 340);
     trainStops['TR05'] = TrainStop(id: 'TR05', signalId: 'R05', x: 2790, y: 340);
-    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2590, y: 340);
+    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2490, y: 340);  // MOVED: Match R06 signal position
     trainStops['TR07'] = TrainStop(id: 'TR07', signalId: 'R07', x: 1990, y: 340);
     trainStops['TR08'] = TrainStop(id: 'TR08', signalId: 'R08', x: 1590, y: 120);
 
@@ -3973,36 +4005,49 @@ class TerminalStationController extends ChangeNotifier {
                   reservation.reservedBlocks.contains(nextBlock));
             }
 
-            if (signalAhead == null) {
-              train.targetSpeed = 2.0;
-            } else if (signalAhead.aspect == SignalAspect.red &&
-                !hasPassedSignalThreshold &&
-                !hasRouteReservation) {
-              final distanceToSignal = (signalAhead.x - train.x).abs();
-              if (distanceToSignal < 100 && distanceToSignal > 0) {
-                if (train.targetSpeed > 0) {
-                  _logStopReason(train, signalAhead, 'approaching red signal');
+            // CBTC trains in AUTO/PM mode ignore fixed block signals
+            // They only check for obstacles via movement authority
+            if (signalAhead != null) {
+              // If signal is blue (CBTC mode), proceed regardless
+              // Otherwise, only stop if route is not set AND signal is red
+              if (signalAhead.aspect == SignalAspect.blue) {
+                // CBTC mode active - proceed through blue signal
+                train.targetSpeed = 2.0;
+              } else if (signalAhead.aspect == SignalAspect.red &&
+                  !hasPassedSignalThreshold &&
+                  !hasRouteReservation) {
+                // Fixed block mode - respect red signals
+                final distanceToSignal = (signalAhead.x - train.x).abs();
+                if (distanceToSignal < 100 && distanceToSignal > 0) {
+                  if (train.targetSpeed > 0) {
+                    _logStopReason(train, signalAhead, 'approaching red signal');
+                  }
+                  train.targetSpeed = 0;
+                  train.hasCommittedToMove = false;
                 }
-                train.targetSpeed = 0;
-                train.hasCommittedToMove = false;
+              } else {
+                // Signal is green or has route reservation - proceed
+                train.targetSpeed = 2.0;
+
+                if ((signalAhead.aspect == SignalAspect.green ||
+                        signalAhead.aspect == SignalAspect.blue ||
+                        hasRouteReservation) &&
+                    !train.hasCommittedToMove) {
+                  final hasPassed = train.direction > 0
+                      ? train.x >= signalAhead.x
+                      : train.x <= signalAhead.x;
+
+                  if (hasPassed) {
+                    train.lastPassedSignalId = signalAhead.id;
+                    train.hasCommittedToMove = true;
+                    _logEvent(
+                        '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+                  }
+                }
               }
             } else {
+              // No signal ahead - proceed
               train.targetSpeed = 2.0;
-
-              if ((signalAhead.aspect == SignalAspect.green ||
-                      hasRouteReservation) &&
-                  !train.hasCommittedToMove) {
-                final hasPassed = train.direction > 0
-                    ? train.x >= signalAhead.x
-                    : train.x <= signalAhead.x;
-
-                if (hasPassed) {
-                  train.lastPassedSignalId = signalAhead.id;
-                  train.hasCommittedToMove = true;
-                  _logEvent(
-                      '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
-                }
-              }
             }
           }
         }
@@ -4487,27 +4532,50 @@ class TerminalStationController extends ChangeNotifier {
   // ========== EXISTING METHODS ==========
 
   void _updateTrainYPosition(Train train) {
+    final point76A = points['76A'];
+    final point76B = points['76B'];
     final point78A = points['78A'];
     final point78B = points['78B'];
+    final point80A = points['80A'];
+    final point80B = points['80B'];
 
-    if (train.x < 600) {
-      if (train.y > 200) {
-        train.y = 300;
+    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-550 to -450, points 76A, 76B)
+    if (train.x >= -550 && train.x < -450) {
+      if (point76A?.position == PointPosition.reverse &&
+          point76B?.position == PointPosition.reverse) {
+        // 135-degree crossover - train transitioning between upper and lower tracks
+        double progress = (train.x + 550) / 100;  // 0 to 1 over the crossover
+        if (train.direction > 0) {
+          // Moving right: upper track (y=100) to lower track (y=300)
+          train.y = 100 + (200 * progress);
+          train.rotation = 2.356; // 135 degrees in radians
+        } else {
+          // Moving left: lower track (y=300) to upper track (y=100)
+          train.y = 300 - (200 * progress);
+          train.rotation = -2.356; // -135 degrees in radians
+        }
       } else {
-        train.y = 100;
+        // Points in normal position - stay on current track
+        if (train.y < 200) {
+          train.y = 100;
+        } else {
+          train.y = 300;
+        }
+        train.rotation = 0.0;
       }
-      train.rotation = 0.0;
-    } else if (train.x >= 600 && train.x < 800) {
+    }
+    // CENTER SECTION DOUBLE CROSSOVER (x=600 to 800, points 78A, 78B) - EXISTING CODE
+    else if (train.x >= 600 && train.x < 800) {
       if (point78A?.position == PointPosition.reverse &&
           point78B?.position == PointPosition.reverse) {
         if (train.x < 700) {
           double progress = (train.x - 600) / 100;
           train.y = 100 + (100 * progress);
-          train.rotation = 0.785398;
+          train.rotation = 0.785398;  // 45 degrees
         } else {
           double progress = (train.x - 700) / 100;
           train.y = 200 + (100 * progress);
-          train.rotation = 0.785398;
+          train.rotation = 0.785398;  // 45 degrees
         }
       } else {
         if (train.y < 200) {
@@ -4517,7 +4585,34 @@ class TerminalStationController extends ChangeNotifier {
         }
         train.rotation = 0.0;
       }
-    } else {
+    }
+    // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (x=1900 to 2000, points 80A, 80B)
+    else if (train.x >= 1900 && train.x < 2000) {
+      if (point80A?.position == PointPosition.reverse &&
+          point80B?.position == PointPosition.reverse) {
+        // 135-degree crossover - train transitioning between upper and lower tracks
+        double progress = (train.x - 1900) / 100;  // 0 to 1 over the crossover
+        if (train.direction > 0) {
+          // Moving right: upper track (y=100) to lower track (y=300)
+          train.y = 100 + (200 * progress);
+          train.rotation = 2.356; // 135 degrees in radians
+        } else {
+          // Moving left: lower track (y=300) to upper track (y=100)
+          train.y = 300 - (200 * progress);
+          train.rotation = -2.356; // -135 degrees in radians
+        }
+      } else {
+        // Points in normal position - stay on current track
+        if (train.y < 200) {
+          train.y = 100;
+        } else {
+          train.y = 300;
+        }
+        train.rotation = 0.0;
+      }
+    }
+    // ALL OTHER SECTIONS - maintain straight tracks
+    else {
       if (train.y > 200) {
         train.y = 300;
       } else {
@@ -4559,9 +4654,47 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   bool _isValidJunctionMove(Train train, String fromBlockId, String toBlockId) {
+    final point76A = points['76A'];
+    final point76B = points['76B'];
     final point78A = points['78A'];
     final point78B = points['78B'];
+    final point80A = points['80A'];
+    final point80B = points['80B'];
 
+    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (blocks 211, 212, crossover_211_212)
+    if (train.direction > 0) {
+      // Eastbound through left crossover
+      if (fromBlockId == '210' && toBlockId == 'crossover_211_212') {
+        return point76A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_211_212' && toBlockId == '212') {
+        return point76B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == '211' && toBlockId == 'crossover_211_212') {
+        return point76B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_211_212' && toBlockId == '213') {
+        return point76A?.position == PointPosition.reverse;
+      }
+    }
+
+    if (train.direction < 0) {
+      // Westbound through left crossover
+      if (fromBlockId == '212' && toBlockId == 'crossover_211_212') {
+        return point76B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_211_212' && toBlockId == '210') {
+        return point76A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == '213' && toBlockId == 'crossover_211_212') {
+        return point76A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_211_212' && toBlockId == '211') {
+        return point76B?.position == PointPosition.reverse;
+      }
+    }
+
+    // CENTER SECTION DOUBLE CROSSOVER (blocks 106, 108, 107, 109, crossover106, crossover109)
     if (train.direction > 0) {
       if (fromBlockId == '106' && toBlockId == 'crossover106') {
         return point78A?.position == PointPosition.reverse;
@@ -4601,6 +4734,39 @@ class TerminalStationController extends ChangeNotifier {
       }
       if (fromBlockId == 'crossover109' && toBlockId == '107') {
         return point78B?.position == PointPosition.reverse;
+      }
+    }
+
+    // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (blocks 302, 304, 303, 305, crossover_303_304)
+    if (train.direction > 0) {
+      // Eastbound through right crossover
+      if (fromBlockId == '302' && toBlockId == 'crossover_303_304') {
+        return point80A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_303_304' && toBlockId == '304') {
+        return point80B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == '303' && toBlockId == 'crossover_303_304') {
+        return point80B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_303_304' && toBlockId == '305') {
+        return point80A?.position == PointPosition.reverse;
+      }
+    }
+
+    if (train.direction < 0) {
+      // Westbound through right crossover
+      if (fromBlockId == '304' && toBlockId == 'crossover_303_304') {
+        return point80B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_303_304' && toBlockId == '302') {
+        return point80A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == '305' && toBlockId == 'crossover_303_304') {
+        return point80A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_303_304' && toBlockId == '303') {
+        return point80B?.position == PointPosition.reverse;
       }
     }
 

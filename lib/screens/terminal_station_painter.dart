@@ -1236,18 +1236,29 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       canvas.drawPath(path, headPaint);
     }
 
-    final lightColor = signal.aspect == SignalAspect.green
-        ? themeData.signalGreenColor
-        : themeData.signalRedColor;
+    // Determine signal light color based on aspect
+    Color lightColor;
+    if (signal.aspect == SignalAspect.green) {
+      lightColor = themeData.signalGreenColor;
+    } else if (signal.aspect == SignalAspect.blue) {
+      lightColor = Colors.blue;
+    } else {
+      lightColor = themeData.signalRedColor;
+    }
+
     final lightPaint = Paint()
       ..color = lightColor
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 6, lightPaint);
 
-    if (themeData.showGlow && signal.aspect == SignalAspect.green) {
+    // Add glow effect for green and blue signals
+    if (themeData.showGlow && (signal.aspect == SignalAspect.green || signal.aspect == SignalAspect.blue)) {
+      final glowColor = signal.aspect == SignalAspect.green
+          ? themeData.signalGreenColor
+          : Colors.blue;
       final glowPaint = Paint()
-        ..color = themeData.signalGreenColor.withOpacity(0.4)
+        ..color = glowColor.withOpacity(0.4)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
 
       canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 12, glowPaint);
@@ -1572,14 +1583,6 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         ..color = train.color
         ..style = PaintingStyle.fill;
 
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
-          const Radius.circular(6),
-        ),
-        bodyPaint,
-      );
-
       final outlinePaint = Paint()
         ..color = train.controlMode == TrainControlMode.manual
             ? Colors.blue
@@ -1587,13 +1590,68 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         ..style = PaintingStyle.stroke
         ..strokeWidth = train.controlMode == TrainControlMode.manual ? 3 : 2;
 
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
-          const Radius.circular(6),
-        ),
-        outlinePaint,
-      );
+      // Check if this is an M2 train (double unit)
+      final isM2Train = train.trainType == TrainType.m2 || train.trainType == TrainType.cbtcM2;
+
+      if (isM2Train) {
+        // Draw two coupled train bodies for M2 trains
+        // First car (leading)
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 30, train.y - 15, 50, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 30, train.y - 15, 50, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+
+        // Coupling/connector between cars
+        final couplingPaint = Paint()
+          ..color = Colors.grey[700]!
+          ..style = PaintingStyle.fill;
+        canvas.drawRect(
+          Rect.fromLTWH(train.x + 20, train.y - 4, 8, 8),
+          couplingPaint,
+        );
+
+        // Second car (trailing)
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x + 28, train.y - 15, 50, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x + 28, train.y - 15, 50, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+      } else {
+        // Draw single train body for M1 trains
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+      }
 
       if (train.doorsOpen) {
         final doorPaint = Paint()
@@ -1625,18 +1683,44 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawRect(leftDoorRect, doorOutlinePaint);
         canvas.drawRect(rightDoorRect, doorOutlinePaint);
       } else {
+        // Windows for closed doors
         final windowPaint = Paint()..color = themeData.trainWindowColor;
-        canvas.drawRect(
-            Rect.fromLTWH(train.x - 22, train.y - 10, 12, 8), windowPaint);
-        canvas.drawRect(
-            Rect.fromLTWH(train.x - 6, train.y - 10, 12, 8), windowPaint);
-        canvas.drawRect(
-            Rect.fromLTWH(train.x + 10, train.y - 10, 12, 8), windowPaint);
+        if (isM2Train) {
+          // M2 train - draw windows on both cars
+          // First car windows
+          canvas.drawRect(
+              Rect.fromLTWH(train.x - 22, train.y - 10, 12, 8), windowPaint);
+          canvas.drawRect(
+              Rect.fromLTWH(train.x + 6, train.y - 10, 10, 8), windowPaint);
+          // Second car windows
+          canvas.drawRect(
+              Rect.fromLTWH(train.x + 32, train.y - 10, 10, 8), windowPaint);
+          canvas.drawRect(
+              Rect.fromLTWH(train.x + 54, train.y - 10, 12, 8), windowPaint);
+        } else {
+          // M1 train - draw windows on single car
+          canvas.drawRect(
+              Rect.fromLTWH(train.x - 22, train.y - 10, 12, 8), windowPaint);
+          canvas.drawRect(
+              Rect.fromLTWH(train.x - 6, train.y - 10, 12, 8), windowPaint);
+          canvas.drawRect(
+              Rect.fromLTWH(train.x + 10, train.y - 10, 12, 8), windowPaint);
+        }
       }
 
+      // Wheels
       final wheelPaint = Paint()..color = Colors.black;
-      canvas.drawCircle(Offset(train.x - 18, train.y + 15), 6, wheelPaint);
-      canvas.drawCircle(Offset(train.x + 18, train.y + 15), 6, wheelPaint);
+      if (isM2Train) {
+        // M2 train - draw wheels on both cars (4 wheels total)
+        canvas.drawCircle(Offset(train.x - 18, train.y + 15), 6, wheelPaint);
+        canvas.drawCircle(Offset(train.x + 8, train.y + 15), 6, wheelPaint);
+        canvas.drawCircle(Offset(train.x + 40, train.y + 15), 6, wheelPaint);
+        canvas.drawCircle(Offset(train.x + 66, train.y + 15), 6, wheelPaint);
+      } else {
+        // M1 train - draw wheels on single car (2 wheels)
+        canvas.drawCircle(Offset(train.x - 18, train.y + 15), 6, wheelPaint);
+        canvas.drawCircle(Offset(train.x + 18, train.y + 15), 6, wheelPaint);
+      }
 
       final arrowPaint = Paint()
         ..color = train.direction > 0 ? Colors.green : Colors.orange

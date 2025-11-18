@@ -669,6 +669,47 @@ class TerminalStationController extends ChangeNotifier {
     _logEvent(wifi.isActive
         ? '📡 WiFi $wifiId ENABLED'
         : '📡 WiFi $wifiId DISABLED');
+
+    // If WiFi is turned OFF, check for CBTC trains in range and set them to NCT
+    if (!wifi.isActive) {
+      const wifiRange = 300.0; // WiFi coverage range
+      for (var train in trains) {
+        if (!train.isCbtcTrain) continue;
+        if (train.cbtcMode == CbtcMode.off || train.cbtcMode == CbtcMode.storage) continue;
+
+        // Check if train is within range of this WiFi antenna
+        final distance = math.sqrt(
+          math.pow(train.x - wifi.x, 2) + math.pow(train.y - wifi.y, 2)
+        );
+
+        if (distance <= wifiRange) {
+          // Check if train has other WiFi coverage
+          bool hasOtherWifi = false;
+          for (var otherWifi in wifiAntennas.values) {
+            if (otherWifi.id == wifiId || !otherWifi.isActive) continue;
+            final otherDistance = math.sqrt(
+              math.pow(train.x - otherWifi.x, 2) + math.pow(train.y - otherWifi.y, 2)
+            );
+            if (otherDistance <= wifiRange) {
+              hasOtherWifi = true;
+              break;
+            }
+          }
+
+          // If no other WiFi coverage, set train to NCT
+          if (!hasOtherWifi) {
+            train.isNCT = true;
+            train.transpondersPassed = 0;
+            train.terReceived = false;
+            train.directionConfirmed = false;
+            train.lastTransponderId = null;
+            _logEvent('🚨 NCT ALERT: ${train.name} lost WiFi communication (antenna $wifiId disabled)');
+            _logEvent('ℹ️  Switch to RM mode and pass over 2 transponders to reactivate');
+          }
+        }
+      }
+    }
+
     notifyListeners();
   }
 
@@ -3352,6 +3393,12 @@ class TerminalStationController extends ChangeNotifier {
 
     trains.add(train);
 
+    // Log NCT alert if CBTC train starts in NCT state
+    if (train.isNCT) {
+      _logEvent('🚨 NCT ALERT: ${train.name} is a Non-Communication Train (newly added)');
+      _logEvent('ℹ️  Put train in RM mode and pass over 2 transponders to activate');
+    }
+
     // If assign to timetable, find next available ghost train slot
     if (assignToTimetable && ghostTrains.isNotEmpty) {
       final availableGhost = ghostTrains.firstWhere(
@@ -4170,7 +4217,20 @@ class TerminalStationController extends ChangeNotifier {
       return;
     }
 
+    final oldMode = train.cbtcMode;
     train.cbtcMode = newMode;
+
+    // If switching FROM off mode TO any other mode, trigger NCT
+    if (oldMode == CbtcMode.off && newMode != CbtcMode.off && newMode != CbtcMode.storage) {
+      train.isNCT = true;
+      train.transpondersPassed = 0;
+      train.terReceived = false;
+      train.directionConfirmed = false;
+      train.lastTransponderId = null;
+      _logEvent('🚨 NCT ALERT: ${train.name} is now a Non-Communication Train (was in OFF mode)');
+      _logEvent('ℹ️  Switch to RM mode and pass over 2 transponders to activate');
+    }
+
     _logEvent('🔧 ${train.name} CBTC mode changed to ${_getCbtcModeName(newMode)}');
     notifyListeners();
   }
@@ -4499,80 +4559,24 @@ class TerminalStationController extends ChangeNotifier {
               }
             }
           }
-        } else {
-          // Other CBTC modes (RM, off, storage) - use normal signal-based logic
+        } else if (train.cbtcMode == CbtcMode.rm) {
+          // CBTC RM (Restrictive Manual) mode: Full manual control - NO restrictions
+          // RM mode ignores signals, ignores train stops - used for NCT re-entry
+          // User has full manual control to move train in any direction
           if (train.manualStop) {
             train.targetSpeed = 0;
-          } else if (train.controlMode == TrainControlMode.manual) {
-            // Manual mode - allow movement
           } else {
-            // Use standard automatic mode logic below
-            Signal? signalAhead = _getSignalAhead(train);
-
-            // Enhanced permissive movement logic with direction protection
-            bool hasPassedSignalThreshold = false;
-            if (signalAhead != null && train.lastPassedSignalId == signalAhead.id) {
-              final distancePastSignal =
-                  (train.x - signalAhead.x) * train.direction;
-              hasPassedSignalThreshold = distancePastSignal > 4;
-            }
-
-            // Enhanced direction-based signal protection
-            signalAhead = _filterSignalByDirection(train, signalAhead);
-
-            // Check if train has route reservation for the block ahead
-            bool hasRouteReservation = false;
-            final nextBlock = _getNextBlockForTrain(train);
-            if (nextBlock != null) {
-              hasRouteReservation = routeReservations.values.any((reservation) =>
-                  reservation.trainId == train.id &&
-                  reservation.reservedBlocks.contains(nextBlock));
-            }
-
-            // CBTC trains in AUTO/PM mode ignore fixed block signals
-            // They only check for obstacles via movement authority
-            if (signalAhead != null) {
-              // If signal is blue (CBTC mode), proceed regardless
-              // Otherwise, only stop if route is not set AND signal is red
-              if (signalAhead.aspect == SignalAspect.blue) {
-                // CBTC mode active - proceed through blue signal
-                train.targetSpeed = 2.0;
-              } else if (signalAhead.aspect == SignalAspect.red &&
-                  !hasPassedSignalThreshold &&
-                  !hasRouteReservation) {
-                // Fixed block mode - respect red signals
-                final distanceToSignal = (signalAhead.x - train.x).abs();
-                if (distanceToSignal < 100 && distanceToSignal > 0) {
-                  if (train.targetSpeed > 0) {
-                    _logStopReason(train, signalAhead, 'approaching red signal');
-                  }
-                  train.targetSpeed = 0;
-                  train.hasCommittedToMove = false;
-                }
-              } else {
-                // Signal is green or has route reservation - proceed
-                train.targetSpeed = 2.0;
-
-                if ((signalAhead.aspect == SignalAspect.green ||
-                        signalAhead.aspect == SignalAspect.blue ||
-                        hasRouteReservation) &&
-                    !train.hasCommittedToMove) {
-                  final hasPassed = train.direction > 0
-                      ? train.x >= signalAhead.x
-                      : train.x <= signalAhead.x;
-
-                  if (hasPassed) {
-                    train.lastPassedSignalId = signalAhead.id;
-                    train.hasCommittedToMove = true;
-                    _logEvent(
-                        '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
-                  }
-                }
-              }
-            } else {
-              // No signal ahead - proceed
-              train.targetSpeed = 2.0;
-            }
+            // Allow free movement - targetSpeed controlled by user
+            // No signal checks, no train stop checks
+          }
+        } else if (train.cbtcMode == CbtcMode.storage || train.cbtcMode == CbtcMode.off) {
+          // Storage or Off mode - train should not move
+          train.targetSpeed = 0;
+          train.speed = 0;
+        } else {
+          // Fallback for any other modes
+          if (train.manualStop) {
+            train.targetSpeed = 0;
           }
         }
       } else {

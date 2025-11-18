@@ -1578,21 +1578,46 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.translate(-train.x, -train.y);
       }
 
+      // Determine train color based on CBTC mode and NCT state
+      Color trainColor;
+      Color outlineColor;
+      double outlineWidth;
+
       // NCT trains flash red (alternating every 500ms)
       final isFlashingRed = train.isNCT && (DateTime.now().millisecondsSinceEpoch ~/ 500) % 2 == 0;
 
+      if (isFlashingRed) {
+        // NCT flashing red
+        trainColor = Colors.red;
+        outlineColor = Colors.red[900]!;
+        outlineWidth = 4;
+      } else if (train.isCbtcTrain && train.cbtcMode == CbtcMode.storage) {
+        // Storage mode: Green train
+        trainColor = Colors.green[600]!;
+        outlineColor = Colors.green[900]!;
+        outlineWidth = 2;
+      } else if (train.isCbtcTrain && train.cbtcMode == CbtcMode.off) {
+        // Off mode: White train
+        trainColor = Colors.white;
+        outlineColor = Colors.grey[800]!;
+        outlineWidth = 2;
+      } else {
+        // Normal color
+        trainColor = train.color;
+        outlineColor = train.controlMode == TrainControlMode.manual
+            ? Colors.blue
+            : Colors.black;
+        outlineWidth = train.controlMode == TrainControlMode.manual ? 3 : 2;
+      }
+
       final bodyPaint = Paint()
-        ..color = isFlashingRed ? Colors.red : train.color
+        ..color = trainColor
         ..style = PaintingStyle.fill;
 
       final outlinePaint = Paint()
-        ..color = isFlashingRed
-            ? Colors.red[900]!
-            : (train.controlMode == TrainControlMode.manual
-                ? Colors.blue
-                : Colors.black)
+        ..color = outlineColor
         ..style = PaintingStyle.stroke
-        ..strokeWidth = isFlashingRed ? 4 : (train.controlMode == TrainControlMode.manual ? 3 : 2);
+        ..strokeWidth = outlineWidth;
 
       // Check if this is an M2 train (double unit)
       final isM2Train = train.trainType == TrainType.m2 || train.trainType == TrainType.cbtcM2;

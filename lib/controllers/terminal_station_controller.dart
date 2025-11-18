@@ -596,6 +596,7 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   Duration get simulationRunningTime => _simulationRunningTime;
+  DateTime get currentTime => _currentTime;
 
   String getFormattedRunningTime() {
     final duration = _simulationRunningTime;

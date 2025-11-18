@@ -3823,11 +3823,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                    ),
+                    const SizedBox(height: 16),
 
-              // Axle Counter Evaluator (ACE) Section
-              Card(
+                    // Axle Counter Evaluator (ACE) Section
+                    Card(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -3946,26 +3946,26 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                    ),
+                    const SizedBox(height: 16),
 
-              Text('Status',
+                    Text('Status',
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              _buildStatusCard('Trains', '${stats['trains']}', Colors.blue),
-              _buildStatusCard('Occupied Blocks', '${stats['occupied_blocks']}',
+                    const SizedBox(height: 16),
+                    _buildStatusCard('Trains', '${stats['trains']}', Colors.blue),
+                    _buildStatusCard('Occupied Blocks', '${stats['occupied_blocks']}',
                   Colors.orange),
-              // Release Status
-              _buildStatusCard(
+                    // Release Status
+                    _buildStatusCard(
                   'Pending Cancellations',
                   '${stats['pending_cancellations']}',
                   stats['pending_cancellations'] > 0
                       ? Colors.orange
                       : Colors.grey),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'Release State',
                   '${stats['release_state']}',
                   stats['release_state'] == 'counting'
@@ -3973,60 +3973,60 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                       : stats['release_state'] == 'completed'
                           ? Colors.green
                           : Colors.grey),
-              if (stats['release_countdown'] > 0)
+                    if (stats['release_countdown'] > 0)
                 _buildStatusCard('Release Countdown',
                     '${stats['release_countdown']}s', Colors.orange),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'Active Routes', '${stats['active_routes']}', Colors.green),
-              _buildStatusCard('Route Reservations',
+                    _buildStatusCard('Route Reservations',
                   '${stats['route_reservations']}', Colors.teal),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'Self-normalizing',
                   stats['self_normalizing_points'] ? 'ON' : 'OFF',
                   stats['self_normalizing_points']
                       ? Colors.green
                       : Colors.grey),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'Train Stops',
                   stats['train_stops_enabled'] ? 'ENABLED' : 'DISABLED',
                   stats['train_stops_enabled'] ? Colors.red : Colors.grey),
-              _buildStatusCard('Active Train Stops',
+                    _buildStatusCard('Active Train Stops',
                   '${stats['active_train_stops']}', Colors.orange),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'Signals',
                   stats['signals_visible'] ? 'VISIBLE' : 'HIDDEN',
                   stats['signals_visible'] ? Colors.green : Colors.grey),
-              // AB Deadlock Status
-              _buildStatusCard(
+                    // AB Deadlock Status
+                    _buildStatusCard(
                   'Point 78A Deadlocked',
                   stats['point_78a_deadlocked'] ? 'YES' : 'NO',
                   stats['point_78a_deadlocked'] ? Colors.red : Colors.green),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'Point 78B Deadlocked',
                   stats['point_78b_deadlocked'] ? 'YES' : 'NO',
                   stats['point_78b_deadlocked'] ? Colors.red : Colors.green),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'AB104 Occupied',
                   stats['ab104_occupied'] ? 'YES' : 'NO',
                   stats['ab104_occupied'] ? Colors.orange : Colors.green),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'AB106 Occupied',
                   stats['ab106_occupied'] ? 'YES' : 'NO',
                   stats['ab106_occupied'] ? Colors.deepOrange : Colors.green),
-              _buildStatusCard(
+                    _buildStatusCard(
                   'AB109 Occupied',
                   stats['ab109_occupied'] ? 'YES' : 'NO',
                   stats['ab109_occupied'] ? Colors.orange : Colors.green),
-              const Divider(height: 32),
+                    const Divider(height: 32),
 
-              // Points Status
-              Text('Points',
+                    // Points Status
+                    Text('Points',
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              ...controller.points.entries.map((entry) {
+                    const SizedBox(height: 8),
+                    ...controller.points.entries.map((entry) {
                 final point = entry.value;
                 final isDeadlocked =
                     (point.id == '78A' && stats['point_78a_deadlocked']) ||
@@ -4087,17 +4087,17 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     ),
                   ),
                 );
-              }),
-              const Divider(height: 32),
+                    }),
+                    const Divider(height: 32),
 
-              // Route Reservations
-              Text('Active Reservations',
+                    // Route Reservations
+                    Text('Active Reservations',
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              ...controller.routeReservations.values.map((reservation) {
+                    const SizedBox(height: 8),
+                    ...controller.routeReservations.values.map((reservation) {
                 final isPendingCancellation =
                     controller.isRoutePendingCancellation(reservation.signalId);
                 return Card(
@@ -4130,23 +4130,23 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                         : null,
                   ),
                 );
-              }),
-              if (controller.routeReservations.isEmpty)
+                    }),
+                    if (controller.routeReservations.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: Text('No active route reservations',
                       style: TextStyle(fontSize: 12, color: Colors.grey)),
                 ),
-              const Divider(height: 32),
+                    const Divider(height: 32),
 
-              // Event Log
-              Text('Event Log',
+                    // Event Log
+                    Text('Event Log',
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Container(
+                    const SizedBox(height: 8),
+                    Container(
                 height: 200,
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -4185,12 +4185,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     );
                   },
                 ),
-              ),
+                    ),
 
-              const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-              // Current Time and Date
-              Card(
+                    // Current Time and Date
+                    Card(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -4245,12 +4245,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     ],
                   ),
                 ),
-              ),
+                    ),
 
-              const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-              // Quick Actions Section
-              Card(
+                    // Quick Actions Section
+                    Card(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -4410,15 +4410,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     ],
                   ),
                 ),
-              ),
+                    ),
 
-              const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-              // Relay Rack Panel
-              if (controller.relayRackVisible)
+                    // Relay Rack Panel
+                    if (controller.relayRackVisible)
                 const RelayRackPanel(),
 
-              if (controller.relayRackVisible)
+                    if (controller.relayRackVisible)
                 const SizedBox(height: 16),
             ],
           );
@@ -4455,86 +4455,86 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('🚀 NEW FEATURES:',
+                    Text('🚀 NEW FEATURES:',
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.green)),
-              SizedBox(height: 8),
-              Text('• Signal Visibility Toggle: Show/hide all signals'),
-              Text('• Visual Train Doors: Black rectangles show open doors'),
-              Text('• Smart Train Placement: Add trains to safe blocks only'),
-              Text('• Auto Train Controls: Depart & Emergency Brake buttons'),
-              Text('• Point Lock/Unlock: Manual control when unlocked'),
-              Text('• Self-normalizing Points: Auto-return to normal'),
-              Text(
+                    SizedBox(height: 8),
+                    Text('• Signal Visibility Toggle: Show/hide all signals'),
+                    Text('• Visual Train Doors: Black rectangles show open doors'),
+                    Text('• Smart Train Placement: Add trains to safe blocks only'),
+                    Text('• Auto Train Controls: Depart & Emergency Brake buttons'),
+                    Text('• Point Lock/Unlock: Manual control when unlocked'),
+                    Text('• Self-normalizing Points: Auto-return to normal'),
+                    Text(
                   '• Route Reservations: Green highlights show protected blocks'),
-              Text(
+                    Text(
                   '• Direction Labels: Clear Eastbound/Westbound road identification'),
-              Text('• Simulation Timer: Tracks running time'),
-              Text(
+                    Text('• Simulation Timer: Tracks running time'),
+                    Text(
                   '• Comprehensive Train Controls: Full control in left sidebar'),
-              Text('• AB Section Deadlocking: Points lock when track occupied'),
-              Text('• Crossover Detection: AB106 monitors crossover occupancy'),
-              Text('• Enhanced Collision Recovery: Faster recovery process'),
-              Text('• Canvas Size Controls: Adjust width and height'),
-              Text('• Floating Zoom Controls: Easy zoom in/out/reset'),
-              SizedBox(height: 12),
-              Text('🔧 BUG FIXES:',
+                    Text('• AB Section Deadlocking: Points lock when track occupied'),
+                    Text('• Crossover Detection: AB106 monitors crossover occupancy'),
+                    Text('• Enhanced Collision Recovery: Faster recovery process'),
+                    Text('• Canvas Size Controls: Adjust width and height'),
+                    Text('• Floating Zoom Controls: Easy zoom in/out/reset'),
+                    SizedBox(height: 12),
+                    Text('🔧 BUG FIXES:',
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.blue)),
-              SizedBox(height: 8),
-              Text('✅ C31 Route 1: Yellow reservations only up to block 110'),
-              Text('✅ C31 Route 2: Now shows block 104 properly'),
-              Text('✅ C30 Route 1 & 2: Now show block 109 properly'),
-              Text('✅ C30 Route 2: Now shows block 104 in yellow reservation'),
-              Text('✅ Auto trains in block 111 now properly reverse'),
-              Text('✅ Signal C33 only protects eastbound movement'),
-              Text('✅ Signal C31 only protects eastbound movement'),
-              Text('✅ Permissive movement logic enhanced'),
-              Text('✅ No more teleportation or off-screen trains'),
-              Text(
+                    SizedBox(height: 8),
+                    Text('✅ C31 Route 1: Yellow reservations only up to block 110'),
+                    Text('✅ C31 Route 2: Now shows block 104 properly'),
+                    Text('✅ C30 Route 1 & 2: Now show block 109 properly'),
+                    Text('✅ C30 Route 2: Now shows block 104 in yellow reservation'),
+                    Text('✅ Auto trains in block 111 now properly reverse'),
+                    Text('✅ Signal C33 only protects eastbound movement'),
+                    Text('✅ Signal C31 only protects eastbound movement'),
+                    Text('✅ Permissive movement logic enhanced'),
+                    Text('✅ No more teleportation or off-screen trains'),
+                    Text(
                   '✅ Route reservations only show when signal is green and train is using route'),
-              Text('✅ Collision recovery no longer blocks train movement'),
-              Text('✅ Points properly route trains through crossovers'),
-              Text('✅ C31 shows red if block 104 has a train'),
-              Text('✅ C30 shows red if block 109 has a train'),
-              SizedBox(height: 12),
-              Text('🎯 ENHANCEMENTS:',
+                    Text('✅ Collision recovery no longer blocks train movement'),
+                    Text('✅ Points properly route trains through crossovers'),
+                    Text('✅ C31 shows red if block 104 has a train'),
+                    Text('✅ C30 shows red if block 109 has a train'),
+                    SizedBox(height: 12),
+                    Text('🎯 ENHANCEMENTS:',
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.orange)),
-              SizedBox(height: 8),
-              Text('• Visual route reservations with green highlights'),
-              Text('• Emergency brake for auto trains'),
-              Text('• Point manual override when unlocked'),
-              Text('• Enhanced signal protection directions'),
-              Text('• Better train movement commitment logic'),
-              Text('• Direction arrows and road names on tracks'),
-              Text('• Comprehensive train statistics and quick actions'),
-              Text('• Axle counter system with twin counters on crossover'),
-              Text('• AB section occupancy detection and visualization'),
-              Text('• Point deadlocking based on AB section occupancy'),
-              Text('• Faster collision recovery with visual guidance'),
-              Text('• Two running rails on crossover tracks'),
-              Text('• Dynamic canvas sizing with width/height controls'),
-              Text('• Floating zoom controls in bottom-right corner'),
-              SizedBox(height: 12),
-              Text('⚠️ AUTO MODE RESTRICTIONS:',
+                    SizedBox(height: 8),
+                    Text('• Visual route reservations with green highlights'),
+                    Text('• Emergency brake for auto trains'),
+                    Text('• Point manual override when unlocked'),
+                    Text('• Enhanced signal protection directions'),
+                    Text('• Better train movement commitment logic'),
+                    Text('• Direction arrows and road names on tracks'),
+                    Text('• Comprehensive train statistics and quick actions'),
+                    Text('• Axle counter system with twin counters on crossover'),
+                    Text('• AB section occupancy detection and visualization'),
+                    Text('• Point deadlocking based on AB section occupancy'),
+                    Text('• Faster collision recovery with visual guidance'),
+                    Text('• Two running rails on crossover tracks'),
+                    Text('• Dynamic canvas sizing with width/height controls'),
+                    Text('• Floating zoom controls in bottom-right corner'),
+                    SizedBox(height: 12),
+                    Text('⚠️ AUTO MODE RESTRICTIONS:',
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.red)),
-              SizedBox(height: 8),
-              Text(
+                    SizedBox(height: 8),
+                    Text(
                   '• Auto trains cannot travel from block 101→103→105 (Westbound Road)'),
-              Text('• This route is manual mode only'),
-              Text('• Use manual mode for full directional flexibility'),
-              SizedBox(height: 12),
-              Text('🔒 SAFETY FEATURES:',
+                    Text('• This route is manual mode only'),
+                    Text('• Use manual mode for full directional flexibility'),
+                    SizedBox(height: 12),
+                    Text('🔒 SAFETY FEATURES:',
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.purple)),
-              SizedBox(height: 8),
-              Text('• AB104 occupation deadlocks point 78A'),
-              Text('• AB109 occupation deadlocks point 78B'),
-              Text('• AB106 occupation deadlocks both points 78A and 78B'),
-              Text('• Automatic point unlocking when AB sections clear'),
-              Text(
+                    SizedBox(height: 8),
+                    Text('• AB104 occupation deadlocks point 78A'),
+                    Text('• AB109 occupation deadlocks point 78B'),
+                    Text('• AB106 occupation deadlocks both points 78A and 78B'),
+                    Text('• Automatic point unlocking when AB sections clear'),
+                    Text(
                   '• Visual deadlock indicators on points and in status panel'),
             ],
           ),
@@ -4583,8 +4583,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             width: 600,
             height: 100,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 const Text('XML layout has been generated successfully!',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
@@ -4610,23 +4610,23 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 const SizedBox(height: 12),
                 Text('Size: ${(bytes.length / 1024).toStringAsFixed(2)} KB',
                     style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-              ],
+                    ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () {
+                    onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                       content:
                           Text('Copy feature requires clipboard permission')),
                 );
-              },
-              child: const Text('Copy XML'),
+                    },
+                    child: const Text('Copy XML'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Done'),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Done'),
             ),
           ],
         ),
@@ -4643,8 +4643,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           content: Text('Error exporting layout: $e'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
             ),
           ],
         ),
@@ -4745,15 +4745,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             final isNormal = point.position == PointPosition.normal;
 
             return ElevatedButton(
-              onPressed: point.locked
+                    onPressed: point.locked
                   ? null
                   : () => controller.swingPoint(point.id),
-              style: ElevatedButton.styleFrom(
+                    style: ElevatedButton.styleFrom(
                 backgroundColor: isNormal ? Colors.green : Colors.orange,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              child: Column(
+                    ),
+                    child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(point.id, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
@@ -4765,7 +4765,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   if (point.locked)
                     const Icon(Icons.lock, size: 12),
                 ],
-              ),
+                    ),
             );
           }).toList(),
         ),
@@ -4787,12 +4787,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             const Spacer(),
             // Ghost Train Visibility Toggle
             Consumer<TerminalStationController>(
-              builder: (context, ctrl, _) => IconButton(
+                    builder: (context, ctrl, _) => IconButton(
                 icon: Icon(ctrl.showGhostTrains ? Icons.visibility : Icons.visibility_off),
                 tooltip: 'Toggle Ghost Trains (Shadow Mode)',
                 onPressed: () => ctrl.toggleGhostTrainsVisibility(),
                 color: ctrl.showGhostTrains ? Colors.green : Colors.grey,
-              ),
+                    ),
             ),
           ],
         ),
@@ -4825,8 +4825,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             if (wifi == null) return const SizedBox.shrink();
 
             return Card(
-              color: wifi.isActive ? Colors.green[50] : Colors.grey[200],
-              child: Padding(
+                    color: wifi.isActive ? Colors.green[50] : Colors.grey[200],
+                    child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -4852,7 +4852,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     ),
                   ],
                 ),
-              ),
+                    ),
             );
           }).toList(),
         ),
@@ -4877,7 +4877,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
-              children: [
+                    children: [
                 Icon(
                   controller.timetableActive ? Icons.schedule : Icons.schedule_outlined,
                   color: controller.timetableActive ? Colors.green : Colors.grey,
@@ -4900,7 +4900,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   onChanged: (value) => controller.toggleTimetableActive(),
                   activeColor: Colors.green,
                 ),
-              ],
+                    ],
             ),
           ),
         ),
@@ -4911,7 +4911,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           onPressed: () {
             controller.generateGhostTrainsForAllServices();
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Generated ${controller.ghostTrains.length} ghost trains')),
+                    SnackBar(content: Text('Generated ${controller.ghostTrains.length} ghost trains')),
             );
           },
           icon: const Icon(Icons.auto_awesome),
@@ -4930,15 +4930,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         // Train Assignment Section
         if (controller.trains.isNotEmpty) ...[
           const Text('Assign Trains to Timetable',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
 
           ...controller.trains.map((train) {
             final isAssigned = train.assignedTimetableId != null;
 
             return Card(
-              color: isAssigned ? Colors.blue[50] : null,
-              child: Padding(
+                    color: isAssigned ? Colors.blue[50] : null,
+                    child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -5045,7 +5045,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     ),
                   ],
                 ),
-              ),
+                    ),
             );
           }).toList(),
                   ], // End of ListView children

@@ -1432,12 +1432,22 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final endX =
           isEastbound ? trainX + ma.maxDistance : trainX - ma.maxDistance;
 
-      // Draw base green path with gradient
+      // Draw base path with gradient using train's color
+      // Color matches the CBTC mode: AUTO/PM = green, RM = yellow/amber
+      Color reservationColor;
+      if (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm) {
+        reservationColor = Colors.green;
+      } else if (train.cbtcMode == CbtcMode.rm) {
+        reservationColor = Colors.amber;
+      } else {
+        reservationColor = train.color; // Fallback to train's assigned color
+      }
+
       final gradient = LinearGradient(
         colors: [
-          Colors.green.withOpacity(0.6),
-          Colors.green.withOpacity(0.3),
-          Colors.green.withOpacity(0.1),
+          reservationColor.withOpacity(0.6),
+          reservationColor.withOpacity(0.3),
+          reservationColor.withOpacity(0.1),
         ],
         stops: const [0.0, 0.7, 1.0],
       );
@@ -1475,9 +1485,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         // Fade out arrows near the end
         final opacity = (1.0 - normalizedProgress).clamp(0.3, 1.0);
 
-        // Draw arrow chevron
+        // Draw arrow chevron with matching color
         final arrowPaint = Paint()
-          ..color = Colors.green.withOpacity(opacity * 0.8)
+          ..color = reservationColor.withOpacity(opacity * 0.8)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
           ..strokeCap = StrokeCap.round;
@@ -2048,6 +2058,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final point = controller.points[id];
       if (point != null) {
         tooltipText += '\nPosition: ${point.position.name.toUpperCase()}';
+        // Add WKR relay information
+        final wkrStatus = point.position == PointPosition.normal ? 'NWP (DOWN)' : 'RWP (UP)';
+        tooltipText += '\nWKR Relay: $id WKR - $wkrStatus';
         tooltipText += '\nLocked: ${point.locked ? "YES" : "NO"}';
         if (point.lockedByAB) {
           tooltipText += '\nLocked by AB System';
@@ -2059,20 +2072,28 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       tooltipText += '\nVIN: ${train.vin}';
       tooltipText += '\nSpeed: ${train.speed.toStringAsFixed(1)} m/s';
       tooltipText += '\nTarget: ${train.targetSpeed.toStringAsFixed(1)} m/s';
+      tooltipText += '\nDirection: ${train.direction > 0 ? "EAST ➜" : "WEST ⬅"}';
       tooltipText += '\nControl: ${train.controlMode.name}';
       if (train.isCbtcEquipped) {
         tooltipText += '\nCBTC Mode: ${train.cbtcMode.name.toUpperCase()}';
-        if (train.smcDestination != null) {
-          tooltipText += '\nDestination: ${train.smcDestination}';
-        }
+      }
+      // Show destination for all trains
+      if (train.smcDestination != null) {
+        tooltipText += '\nDestination: ${train.smcDestination}';
       }
       if (train.currentBlockId != null) {
         tooltipText += '\nBlock: ${train.currentBlockId}';
+      }
+      if (train.emergencyBrake) {
+        tooltipText += '\n⚠️  EMERGENCY BRAKE ACTIVE';
       }
     } else if (type == 'Block') {
       final block = controller.blocks[id];
       if (block != null) {
         tooltipText += '\nOccupied: ${block.occupied ? "YES" : "NO"}';
+        // Add TR relay information
+        final trStatus = block.occupied ? 'DOWN (Train Present)' : 'UP (Track Clear)';
+        tooltipText += '\nTR Relay: ${id}TR - $trStatus';
         if (block.occupyingTrainId != null) {
           tooltipText += '\nTrain: ${block.occupyingTrainId}';
         }

@@ -73,7 +73,7 @@ class RelayRackPanel extends StatelessWidget {
             children: controller.signals.values.map((signal) {
               final relayName = _getSignalRelayName(signal.id);
               // GR relays are DOWN normally, pick UP when signal shows green
-              final isUp = signal.state == SignalState.green;
+              final isUp = signal.aspect == SignalAspect.green;
               return _buildRelayIndicator(relayName, isUp);
             }).toList(),
           ),
@@ -262,26 +262,22 @@ class RelayRackPanel extends StatelessWidget {
   }
 
   String _getPointRelayPosition(Point point) {
-    // Determine relay position based on animation progress
-    // Mid position occurs during animation (animationProgress > 0 and < 1)
-    if (point.animationProgress > 0 && point.animationProgress < 1) {
-      return 'mid';
-    }
-    // Otherwise return the actual position
+    // Determine relay position based on point position
+    // In real railway systems, WKR relays show 2-second mid transition,
+    // but since our points switch instantly, we just show current position
     return point.position == PointPosition.normal ? 'normal' : 'reverse';
   }
 
   Widget _buildPointRelayIndicator(String relayName, String position) {
     // Determine colors based on position
+    // Normal = Down (red), Reverse = Up (green)
     Color indicatorColor;
 
     if (position == 'normal') {
-      indicatorColor = Colors.red[600]!;
-    } else if (position == 'mid') {
-      indicatorColor = Colors.orange[600]!;
+      indicatorColor = Colors.red[600]!; // Down position
     } else {
       // reverse
-      indicatorColor = Colors.green[500]!;
+      indicatorColor = Colors.green[500]!; // Up position
     }
 
     return Container(
@@ -336,11 +332,7 @@ class RelayRackPanel extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  position == 'normal'
-                      ? 'NWP'
-                      : position == 'mid'
-                          ? 'MID'
-                          : 'RWP',
+                  position == 'normal' ? 'NWP' : 'RWP',
                   style: TextStyle(
                     fontSize: 6,
                     fontWeight: FontWeight.bold,

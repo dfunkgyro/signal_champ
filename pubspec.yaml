@@ -9,10 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # State Management
   provider: ^6.1.5+1
-  
+
   # UI/UX
   cupertino_icons: ^1.0.8
   shimmer: ^3.0.0
@@ -27,7 +27,24 @@ dependencies:
   # AI & Cloud
   http: ^1.5.0
   supabase_flutter: ^2.10.3
-  
+
+  # Authentication
+  google_sign_in: ^6.2.2
+  sign_in_with_apple: ^6.1.3
+  crypto: ^3.0.6
+
+  # Force Update
+  upgrader: ^11.4.0
+  package_info_plus: ^8.1.3
+
+  # Analytics & Tracking
+  firebase_core: ^3.13.1
+  firebase_analytics: ^11.3.9
+  app_usage: ^3.1.0
+  geolocator: ^13.0.2
+  permission_handler: ^11.3.1
+  device_info_plus: ^11.2.0
+
   # Utilities
   shared_preferences: ^2.5.3
   intl: ^0.20.2
@@ -35,11 +52,11 @@ dependencies:
   path_provider: ^2.1.5
   flutter_dotenv: ^6.0.0
   timeago: ^3.7.1
-  
+
   # Performance
   flutter_cache_manager: ^3.4.1
   sqflite: ^2.4.2
-  
+
   # Mobile Features
   share_plus: ^12.0.1
   flutter_launcher_icons: ^0.14.4

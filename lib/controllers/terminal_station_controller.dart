@@ -1328,6 +1328,15 @@ class TerminalStationController extends ChangeNotifier {
     String? limitReason;
     bool hasDestination = train.smcDestination != null;
 
+    // CBTC Emergency Brake: Pull back reservation immediately
+    if (train.emergencyBrake) {
+      return MovementAuthority(
+        maxDistance: 0.0,
+        limitReason: '⚠️  EMERGENCY BRAKE ACTIVE',
+        hasDestination: hasDestination,
+      );
+    }
+
     final trainPos = train.x;
     final direction = train.direction;
 
@@ -1426,6 +1435,42 @@ class TerminalStationController extends ChangeNotifier {
         if (limitDistance > 0 && limitDistance < maxDistance) {
           maxDistance = limitDistance;
           limitReason = 'Signal ${signal.id} at danger';
+        }
+      }
+    }
+
+    // Check for points in wrong position for destination (CBTC AUTO/PM mode only)
+    if ((train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm) &&
+        train.smcDestination != null) {
+      for (var point in points.values) {
+        final pointPos = point.x;
+        bool isAhead = false;
+        double distance = 0;
+
+        if (direction > 0 && pointPos > trainPos) {
+          isAhead = true;
+          distance = pointPos - trainPos;
+        } else if (direction < 0 && pointPos < trainPos) {
+          isAhead = true;
+          distance = trainPos - pointPos;
+        }
+
+        if (isAhead) {
+          // TODO: Check if point position is correct for train's destination
+          // For now, we assume point correctness is handled by route setting
+          // This is a placeholder for future route-based point validation
+          // If point is wrong for destination:
+          //   Stop 20 units before the point
+          //   Train will resume when point is corrected
+
+          // Example logic (needs route integration):
+          // if (point is wrong for destination route) {
+          //   final limitDistance = distance - 20;
+          //   if (limitDistance > 0 && limitDistance < maxDistance) {
+          //     maxDistance = limitDistance;
+          //     limitReason = 'Point ${point.id} wrong position';
+          //   }
+          // }
         }
       }
     }

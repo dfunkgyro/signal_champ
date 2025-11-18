@@ -1982,16 +1982,70 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     canvas.drawCircle(Offset(x, y), 25, outlinePaint);
 
-    // Draw tooltip box
-    final tooltipText = '$type: $id\n(${x.toStringAsFixed(0)}, ${y.toStringAsFixed(0)})';
+    // Build detailed tooltip text based on object type
+    String tooltipText = '$type: $id\n(${x.toStringAsFixed(0)}, ${y.toStringAsFixed(0)})';
+
+    // Add detailed information based on type
+    if (type == 'Signal') {
+      final signal = controller.signals[id];
+      if (signal != null) {
+        tooltipText += '\nAspect: ${signal.aspect.name.toUpperCase()}';
+        tooltipText += '\nRoute State: ${signal.routeState.name}';
+        if (signal.activeRouteId != null) {
+          final activeRoute = signal.routes.firstWhere(
+            (r) => r.id == signal.activeRouteId,
+            orElse: () => signal.routes.first,
+          );
+          tooltipText += '\nActive: ${activeRoute.name}';
+        }
+        tooltipText += '\nRoutes Available: ${signal.routes.length}';
+      }
+    } else if (type == 'Point') {
+      final point = controller.points[id];
+      if (point != null) {
+        tooltipText += '\nPosition: ${point.position.name.toUpperCase()}';
+        tooltipText += '\nLocked: ${point.locked ? "YES" : "NO"}';
+        if (point.lockedByAB) {
+          tooltipText += '\nLocked by AB System';
+        }
+      }
+    } else if (type == 'Train') {
+      final train = controller.trains.firstWhere((t) => t.id == id, orElse: () => controller.trains.first);
+      tooltipText += '\nName: ${train.name}';
+      tooltipText += '\nVIN: ${train.vin}';
+      tooltipText += '\nSpeed: ${train.speed.toStringAsFixed(1)} m/s';
+      tooltipText += '\nTarget: ${train.targetSpeed.toStringAsFixed(1)} m/s';
+      tooltipText += '\nControl: ${train.controlMode.name}';
+      if (train.isCbtcEquipped) {
+        tooltipText += '\nCBTC Mode: ${train.cbtcMode.name.toUpperCase()}';
+        if (train.smcDestination != null) {
+          tooltipText += '\nDestination: ${train.smcDestination}';
+        }
+      }
+      if (train.currentBlockId != null) {
+        tooltipText += '\nBlock: ${train.currentBlockId}';
+      }
+    } else if (type == 'Block') {
+      final block = controller.blocks[id];
+      if (block != null) {
+        tooltipText += '\nOccupied: ${block.occupied ? "YES" : "NO"}';
+        if (block.occupyingTrainId != null) {
+          tooltipText += '\nTrain: ${block.occupyingTrainId}';
+        }
+        if (block.name != null) {
+          tooltipText += '\nName: ${block.name}';
+        }
+      }
+    }
 
     final textPainter = TextPainter(
       text: TextSpan(
         text: tooltipText,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
+          height: 1.3,
         ),
       ),
       textDirection: TextDirection.ltr,

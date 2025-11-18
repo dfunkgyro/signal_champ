@@ -4152,6 +4152,11 @@ class TerminalStationController extends ChangeNotifier {
         }
       }
 
+      // Check for point collision (running through points from converging side)
+      if (_checkPointCollision(train)) {
+        continue; // Skip movement this tick
+      }
+
       // Auto mode directional restrictions
       if (train.controlMode == TrainControlMode.automatic) {
         // Prevent auto trains from traveling from block 114 to 108
@@ -4806,6 +4811,98 @@ class TerminalStationController extends ChangeNotifier {
 
     _logEvent(
         '🚨 DERAILMENT PREVENTED: ${train.name} tried to move $fromBlockId→$toBlockId (no track connection)');
+    return false;
+  }
+
+  // Check if train is approaching points from converging side with points reversed
+  // This should trigger emergency brake (collision scenario)
+  bool _checkPointCollision(Train train) {
+    final currentBlockId = train.currentBlockId;
+    if (currentBlockId == null) return false;
+
+    // LEFT CROSSOVER - Check points 76A, 76B, 77A, 77B
+    // Eastbound approaching from converging side (lower track to upper via points in reverse)
+    if (train.direction > 0 && currentBlockId == '211') {
+      final point76B = points['76B'];
+      final point77B = points['77B'];
+      if (point76B?.position == PointPosition.reverse &&
+          point77B?.position == PointPosition.reverse) {
+        _logEvent('💥 COLLISION: ${train.name} running through reversed points 76B/77B from converging side!');
+        train.emergencyBrake = true;
+        train.speed = 0;
+        train.targetSpeed = 0;
+        return true;
+      }
+    }
+
+    // Westbound approaching from converging side (upper track to lower via points in reverse)
+    if (train.direction < 0 && currentBlockId == '212') {
+      final point76A = points['76A'];
+      final point77A = points['77A'];
+      if (point76A?.position == PointPosition.reverse &&
+          point77A?.position == PointPosition.reverse) {
+        _logEvent('💥 COLLISION: ${train.name} running through reversed points 76A/77A from converging side!');
+        train.emergencyBrake = true;
+        train.speed = 0;
+        train.targetSpeed = 0;
+        return true;
+      }
+    }
+
+    // CENTRAL CROSSOVER - Check points 78A, 78B
+    // Eastbound approaching from converging side
+    if (train.direction > 0 && currentBlockId == '109') {
+      final point78B = points['78B'];
+      if (point78B?.position == PointPosition.reverse) {
+        _logEvent('💥 COLLISION: ${train.name} running through reversed point 78B from converging side!');
+        train.emergencyBrake = true;
+        train.speed = 0;
+        train.targetSpeed = 0;
+        return true;
+      }
+    }
+
+    // Westbound approaching from converging side
+    if (train.direction < 0 && currentBlockId == '108') {
+      final point78A = points['78A'];
+      if (point78A?.position == PointPosition.reverse) {
+        _logEvent('💥 COLLISION: ${train.name} running through reversed point 78A from converging side!');
+        train.emergencyBrake = true;
+        train.speed = 0;
+        train.targetSpeed = 0;
+        return true;
+      }
+    }
+
+    // RIGHT CROSSOVER - Check points 79A, 79B, 80A, 80B
+    // Eastbound approaching from converging side
+    if (train.direction > 0 && currentBlockId == '303') {
+      final point79B = points['79B'];
+      final point80B = points['80B'];
+      if (point79B?.position == PointPosition.reverse &&
+          point80B?.position == PointPosition.reverse) {
+        _logEvent('💥 COLLISION: ${train.name} running through reversed points 79B/80B from converging side!');
+        train.emergencyBrake = true;
+        train.speed = 0;
+        train.targetSpeed = 0;
+        return true;
+      }
+    }
+
+    // Westbound approaching from converging side
+    if (train.direction < 0 && currentBlockId == '304') {
+      final point79A = points['79A'];
+      final point80A = points['80A'];
+      if (point79A?.position == PointPosition.reverse &&
+          point80A?.position == PointPosition.reverse) {
+        _logEvent('💥 COLLISION: ${train.name} running through reversed points 79A/80A from converging side!');
+        train.emergencyBrake = true;
+        train.speed = 0;
+        train.targetSpeed = 0;
+        return true;
+      }
+    }
+
     return false;
   }
 

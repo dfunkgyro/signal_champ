@@ -3623,11 +3623,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       return;
     }
 
+    // Swing the point to toggle its position
+    controller.swingPoint(point.id);
+
     final newPosition = point.position == PointPosition.normal
         ? PointPosition.reverse
         : PointPosition.normal;
-
-    controller.setPointPosition(point.id, newPosition);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -2958,6 +2958,33 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void acknowledgeCollisionAlarm() {
+    // Move collided trains back 20 units in opposite directions for recovery
+    if (currentCollisionIncident != null) {
+      final train1 = trains.firstWhere(
+        (t) => t.id == currentCollisionIncident!.train1Id,
+        orElse: () => trains.first,
+      );
+      final train2 = trains.firstWhere(
+        (t) => t.id == currentCollisionIncident!.train2Id,
+        orElse: () => trains.first,
+      );
+
+      // Move train 1 back 20 units in opposite direction
+      train1.x -= 20 * train1.direction;
+      train1.speed = 0;
+      train1.targetSpeed = 0;
+      train1.emergencyBrake = true;
+
+      // Move train 2 back 20 units in opposite direction
+      train2.x -= 20 * train2.direction;
+      train2.speed = 0;
+      train2.targetSpeed = 0;
+      train2.emergencyBrake = true;
+
+      _logEvent('🔧 COLLISION RECOVERY: ${train1.name} and ${train2.name} moved back 20 units');
+      _updateBlockOccupation();
+    }
+
     collisionAlarmActive = false;
     currentCollisionIncident = null;
     notifyListeners();

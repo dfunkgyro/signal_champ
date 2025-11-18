@@ -540,6 +540,17 @@ class TerminalStationController extends ChangeNotifier {
   // AI Agent
   bool aiAgentVisible = false;
   Offset aiAgentPosition = const Offset(50, 50);
+  double aiAgentOpacity = 1.0;
+  double aiAgentWidth = 175.0;
+  double aiAgentHeight = 250.0;
+
+  // Camera controls for search and follow
+  double cameraOffsetX = 0;
+  double cameraOffsetY = 0;
+  double cameraZoom = 0.8;
+  String? followingTrainId; // ID of train being followed
+  String? highlightedItemId; // ID of currently highlighted item
+  String? highlightedItemType; // Type of highlighted item (train, signal, block, point)
 
   // Relay rack panel
   bool relayRackVisible = false;
@@ -848,6 +859,60 @@ class TerminalStationController extends ChangeNotifier {
 
   void updateAiAgentPosition(Offset newPosition) {
     aiAgentPosition = newPosition;
+    notifyListeners();
+  }
+
+  void updateAiAgentSize(double width, double height) {
+    aiAgentWidth = width.clamp(150.0, 600.0);
+    aiAgentHeight = height.clamp(200.0, 800.0);
+    notifyListeners();
+  }
+
+  void updateAiAgentOpacity(double opacity) {
+    aiAgentOpacity = opacity.clamp(0.1, 1.0);
+    notifyListeners();
+  }
+
+  // Camera control methods
+  void updateCameraPosition(double offsetX, double offsetY, double zoom) {
+    cameraOffsetX = offsetX;
+    cameraOffsetY = offsetY;
+    cameraZoom = zoom.clamp(0.3, 3.0);
+    notifyListeners();
+  }
+
+  void panToPosition(double x, double y, {double? zoom}) {
+    cameraOffsetX = -x;
+    cameraOffsetY = -y;
+    if (zoom != null) {
+      cameraZoom = zoom.clamp(0.3, 3.0);
+    }
+    notifyListeners();
+  }
+
+  void followTrain(String trainId) {
+    followingTrainId = trainId;
+    final train = trains.where((t) => t.id == trainId).firstOrNull;
+    if (train != null) {
+      panToPosition(train.x, train.y);
+    }
+    notifyListeners();
+  }
+
+  void stopFollowingTrain() {
+    followingTrainId = null;
+    notifyListeners();
+  }
+
+  void highlightItem(String itemId, String itemType) {
+    highlightedItemId = itemId;
+    highlightedItemType = itemType;
+    notifyListeners();
+  }
+
+  void clearHighlight() {
+    highlightedItemId = null;
+    highlightedItemType = null;
     notifyListeners();
   }
 
@@ -4902,6 +4967,19 @@ class TerminalStationController extends ChangeNotifier {
     _updateBlockOccupation();
     _updateSignalAspects();
     _checkCollisions();
+
+    // Auto-follow train if following mode is active
+    if (followingTrainId != null) {
+      final train = trains.where((t) => t.id == followingTrainId).firstOrNull;
+      if (train != null) {
+        cameraOffsetX = -train.x;
+        cameraOffsetY = -train.y;
+      } else {
+        // Train no longer exists, stop following
+        followingTrainId = null;
+      }
+    }
+
     notifyListeners();
   }
 

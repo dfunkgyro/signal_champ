@@ -700,19 +700,43 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawCrossoverReservation(
       Canvas canvas, BlockSection block, Color reservationColor) {
+    // Main reservation line with enhanced width
     final reservationPaint = Paint()
       ..color = reservationColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4 // Wider by 1 unit
+      ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
 
-    const dashLength = 15.0; // Longer dashes
+    // Glow effect for dramatic visualization
+    final glowPaint = Paint()
+      ..color = reservationColor.withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+
+    // Animated pulse effect
+    final pulseOpacity = (0.3 + (math.sin(animationTick * 0.1) * 0.2)).clamp(0.0, 1.0);
+    final pulsePaint = Paint()
+      ..color = reservationColor.withOpacity(pulseOpacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+
+    const dashLength = 15.0;
     const gapLength = 5.0;
+    const reservationOffset = 3.0; // Offset perpendicular to track direction
 
     if (block.id == 'crossover106') {
+      // 45-degree crossover from upper-left to lower-right
       double totalDistance = math.sqrt(math.pow(100, 2) + math.pow(100, 2));
       double currentDistance = 0;
       bool drawDash = true;
+
+      // Calculate perpendicular offset for 45-degree angle
+      final offsetX = reservationOffset * math.cos(math.pi / 4 + math.pi / 2);
+      final offsetY = reservationOffset * math.sin(math.pi / 4 + math.pi / 2);
 
       while (currentDistance < totalDistance) {
         double t1 = currentDistance / totalDistance;
@@ -720,20 +744,29 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             math.min((currentDistance + dashLength) / totalDistance, 1.0);
 
         if (drawDash) {
-          final x1 = 600 + (100 * t1);
-          final y1 = 100 + (100 * t1);
-          final x2 = 600 + (100 * t2);
-          final y2 = 100 + (100 * t2);
+          final x1 = 600 + (100 * t1) + offsetX;
+          final y1 = 100 + (100 * t1) + offsetY;
+          final x2 = 600 + (100 * t2) + offsetX;
+          final y2 = 100 + (100 * t2) + offsetY;
+
+          // Draw glow, main line, and pulse
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), glowPaint);
           canvas.drawLine(Offset(x1, y1), Offset(x2, y2), reservationPaint);
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), pulsePaint);
         }
 
         currentDistance += dashLength + gapLength;
         drawDash = !drawDash;
       }
     } else if (block.id == 'crossover109') {
+      // 135-degree crossover from upper-right to lower-left
       double totalDistance = math.sqrt(math.pow(100, 2) + math.pow(100, 2));
       double currentDistance = 0;
       bool drawDash = true;
+
+      // Calculate perpendicular offset for 135-degree angle
+      final offsetX = reservationOffset * math.cos(3 * math.pi / 4 + math.pi / 2);
+      final offsetY = reservationOffset * math.sin(3 * math.pi / 4 + math.pi / 2);
 
       while (currentDistance < totalDistance) {
         double t1 = currentDistance / totalDistance;
@@ -741,11 +774,15 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             math.min((currentDistance + dashLength) / totalDistance, 1.0);
 
         if (drawDash) {
-          final x1 = 700 + (100 * t1);
-          final y1 = 200 + (100 * t1);
-          final x2 = 700 + (100 * t2);
-          final y2 = 200 + (100 * t2);
+          final x1 = 700 + (100 * t1) + offsetX;
+          final y1 = 200 + (100 * t1) + offsetY;
+          final x2 = 700 + (100 * t2) + offsetX;
+          final y2 = 200 + (100 * t2) + offsetY;
+
+          // Draw glow, main line, and pulse
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), glowPaint);
           canvas.drawLine(Offset(x1, y1), Offset(x2, y2), reservationPaint);
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), pulsePaint);
         }
 
         currentDistance += dashLength + gapLength;
@@ -755,24 +792,55 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawBlockReservation(Canvas canvas, BlockSection block, Color color) {
+    // Draw reservation between the rails (offset from centerline)
+    final reservationOffset = 3.0; // Offset from track centerline
+
+    // Main reservation line
     final reservationPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4 // Wider by 1 unit
+      ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
 
+    // Glow effect for dramatic visualization
+    final glowPaint = Paint()
+      ..color = color.withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+
     final dashPath = Path();
+    final glowPath = Path();
     double currentX = block.startX;
-    const dashLength = 15.0; // Longer dashes
+    const dashLength = 15.0;
     const gapLength = 5.0;
 
+    // Draw dashed line with glow effect
     while (currentX < block.endX) {
-      dashPath.moveTo(currentX, block.y);
-      dashPath.lineTo(math.min(currentX + dashLength, block.endX), block.y);
+      dashPath.moveTo(currentX, block.y + reservationOffset);
+      dashPath.lineTo(math.min(currentX + dashLength, block.endX), block.y + reservationOffset);
+
+      glowPath.moveTo(currentX, block.y + reservationOffset);
+      glowPath.lineTo(math.min(currentX + dashLength, block.endX), block.y + reservationOffset);
+
       currentX += dashLength + gapLength;
     }
 
+    // Draw glow first, then main line
+    canvas.drawPath(glowPath, glowPaint);
     canvas.drawPath(dashPath, reservationPaint);
+
+    // Add animated pulse effect based on animation tick
+    final pulseOpacity = (0.3 + (math.sin(animationTick * 0.1) * 0.2)).clamp(0.0, 1.0);
+    final pulsePaint = Paint()
+      ..color = color.withOpacity(pulseOpacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+
+    canvas.drawPath(dashPath, pulsePaint);
   }
 
   void _drawTracks(Canvas canvas) {

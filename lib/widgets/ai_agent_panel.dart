@@ -323,6 +323,85 @@ Examples:
       return;
     }
 
+    // Search and pan commands
+    if (lower.contains('find') || lower.contains('search') || lower.contains('locate')) {
+      final trainMatch = RegExp(r'train\s*(\d+)', caseSensitive: false).firstMatch(input);
+      final signalMatch = RegExp(r'signal\s*([lcr]\d+)', caseSensitive: false).firstMatch(input);
+      final blockMatch = RegExp(r'block\s*(\d+)', caseSensitive: false).firstMatch(input);
+      final pointMatch = RegExp(r'point\s*(\d+[ab])', caseSensitive: false).firstMatch(input);
+
+      if (trainMatch != null) {
+        final trainId = trainMatch.group(1)!;
+        final train = controller.trains.where((t) => t.id == trainId).firstOrNull;
+        if (train != null) {
+          controller.panToPosition(train.x, train.y, zoom: 1.2);
+          controller.highlightItem(trainId, 'train');
+          _addMessage('AI Agent', '🔍 Found Train $trainId at position (${train.x.toInt()}, ${train.y.toInt()})', isAI: true);
+        } else {
+          _addMessage('AI Agent', '❌ Train $trainId not found', isAI: true);
+        }
+      } else if (signalMatch != null) {
+        final signalId = signalMatch.group(1)!.toUpperCase();
+        final signal = controller.signals[signalId];
+        if (signal != null) {
+          controller.panToPosition(signal.x, signal.y, zoom: 1.5);
+          controller.highlightItem(signalId, 'signal');
+          _addMessage('AI Agent', '🔍 Found Signal $signalId (${signal.currentAspect.name})', isAI: true);
+        } else {
+          _addMessage('AI Agent', '❌ Signal $signalId not found', isAI: true);
+        }
+      } else if (blockMatch != null) {
+        final blockId = blockMatch.group(1)!;
+        final block = controller.blocks[blockId];
+        if (block != null) {
+          final centerX = (block.startX + block.endX) / 2;
+          controller.panToPosition(centerX, block.y, zoom: 1.2);
+          controller.highlightItem(blockId, 'block');
+          _addMessage('AI Agent', '🔍 Found Block $blockId (${block.occupied ? "Occupied" : "Clear"})', isAI: true);
+        } else {
+          _addMessage('AI Agent', '❌ Block $blockId not found', isAI: true);
+        }
+      } else if (pointMatch != null) {
+        final pointId = pointMatch.group(1)!.toUpperCase();
+        final point = controller.points[pointId];
+        if (point != null) {
+          controller.panToPosition(point.x, point.y, zoom: 1.5);
+          controller.highlightItem(pointId, 'point');
+          _addMessage('AI Agent', '🔍 Found Point $pointId (${point.isNormal ? "Normal" : "Reverse"})', isAI: true);
+        } else {
+          _addMessage('AI Agent', '❌ Point $pointId not found', isAI: true);
+        }
+      } else {
+        _addMessage('AI Agent', '⚠️ Please specify what to search for (e.g., "find train 1", "search signal L01")', isAI: true);
+      }
+      return;
+    }
+
+    // Follow train command
+    if (lower.contains('follow') && lower.contains('train')) {
+      final trainMatch = RegExp(r'train\s*(\d+)', caseSensitive: false).firstMatch(input);
+      if (trainMatch != null) {
+        final trainId = trainMatch.group(1)!;
+        final train = controller.trains.where((t) => t.id == trainId).firstOrNull;
+        if (train != null) {
+          controller.followTrain(trainId);
+          _addMessage('AI Agent', '📹 Following Train $trainId', isAI: true);
+        } else {
+          _addMessage('AI Agent', '❌ Train $trainId not found', isAI: true);
+        }
+      } else {
+        _addMessage('AI Agent', '⚠️ Please specify train ID (e.g., "follow train 1")', isAI: true);
+      }
+      return;
+    }
+
+    // Stop following command
+    if (lower.contains('stop following') || lower.contains('unfollow')) {
+      controller.stopFollowingTrain();
+      _addMessage('AI Agent', '✅ Stopped following train', isAI: true);
+      return;
+    }
+
     // Status queries
     if (lower.contains('status') || lower.contains('how many')) {
       final trainCount = controller.trains.length;
@@ -408,67 +487,104 @@ Try saying:
 
   @override
   Widget build(BuildContext context) {
-    final controller = Provider.of<TerminalStationController>(context, listen: false);
-
-    return Positioned(
-      left: controller.aiAgentPosition.dx,
-      top: controller.aiAgentPosition.dy,
-      child: Draggable(
-        feedback: Material(child: _buildPanel(controller, isDragging: true)),
-        childWhenDragging: const SizedBox.shrink(),
-        onDragEnd: (details) {
-          controller.updateAiAgentPosition(details.offset);
-        },
-        child: _buildPanel(controller),
-      ),
+    return Consumer<TerminalStationController>(
+      builder: (context, controller, child) {
+        return Positioned(
+          left: controller.aiAgentPosition.dx,
+          top: controller.aiAgentPosition.dy,
+          child: Draggable(
+            feedback: Opacity(
+              opacity: 0.7,
+              child: Material(child: _buildPanel(controller, isDragging: true)),
+            ),
+            childWhenDragging: const SizedBox.shrink(),
+            onDragEnd: (details) {
+              controller.updateAiAgentPosition(details.offset);
+            },
+            child: _buildPanel(controller),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildPanel(TerminalStationController controller, {bool isDragging = false}) {
-    return Material(
-      elevation: isDragging ? 8 : 4,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 175,  // Half of original 350
-        height: 250, // Half of original 500
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue, width: 2),
-        ),
-        child: Column(
+    return Opacity(
+      opacity: isDragging ? 0.7 : controller.aiAgentOpacity,
+      child: Material(
+        elevation: isDragging ? 8 : 4,
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
           children: [
-            // Header
             Container(
-              padding: const EdgeInsets.all(12),
+              width: controller.aiAgentWidth,
+              height: controller.aiAgentHeight,
               decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                ),
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue, width: 2),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  const Icon(Icons.smart_toy, color: Colors.white),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'AI Railway Assistant',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  // Header with drag handle and controls
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.drag_indicator, color: Colors.white, size: 20),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.smart_toy, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'AI Assistant',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            // Opacity control
+                            SizedBox(
+                              width: 80,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.opacity, color: Colors.white70, size: 14),
+                                  Expanded(
+                                    child: Slider(
+                                      value: controller.aiAgentOpacity,
+                                      min: 0.1,
+                                      max: 1.0,
+                                      activeColor: Colors.white,
+                                      inactiveColor: Colors.white30,
+                                      onChanged: (value) => controller.updateAiAgentOpacity(value),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white),
+                              onPressed: () => controller.toggleAiAgent(),
+                              iconSize: 18,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => controller.toggleAiAgent(),
-                    iconSize: 20,
-                  ),
-                ],
-              ),
-            ),
             // Messages
             Expanded(
               child: ListView.builder(
@@ -523,6 +639,37 @@ Try saying:
                     onPressed: _isProcessing ? null : () => _processCommand(controller),
                   ),
                 ],
+              ),
+            ),
+                ],
+              ),
+            ),
+            // Resize handle
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  final newWidth = controller.aiAgentWidth + details.delta.dx;
+                  final newHeight = controller.aiAgentHeight + details.delta.dy;
+                  controller.updateAiAgentSize(newWidth, newHeight);
+                },
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.8),
+                    borderRadius: const BorderRadius.only(
+                      bottomRight: Radius.circular(10),
+                      topLeft: Radius.circular(4),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.zoom_out_map,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
               ),
             ),
           ],

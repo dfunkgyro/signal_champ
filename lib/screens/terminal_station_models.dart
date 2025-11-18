@@ -190,6 +190,10 @@ class Train {
   bool terReceived; // Train Entry Request received by VCC (1st transponder)
   bool directionConfirmed; // Direction confirmed by VCC (2nd transponder)
 
+  // CBTC traction loss tracking
+  DateTime? tractionLostAt; // When traction current was lost
+  bool tractionLossWarned; // Whether 30-second warning was logged
+
   // Timetable tracking fields
   String? assignedTimetableId; // ID of ghost train timetable slot
   String? assignedServiceId; // ID of TimetableService
@@ -225,6 +229,8 @@ class Train {
     this.lastTransponderId,
     this.terReceived = false,
     this.directionConfirmed = false,
+    this.tractionLostAt,
+    this.tractionLossWarned = false,
     this.assignedTimetableId,
     this.assignedServiceId,
     this.earlyLateSeconds,

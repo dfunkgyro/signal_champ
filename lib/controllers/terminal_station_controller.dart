@@ -2102,11 +2102,19 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'L03_R1',
-          name: 'To Central',
+          name: 'To Central (Straight)',
           requiredBlocksClear: ['208', '210', '212'],
-          requiredPointPositions: {},
+          requiredPointPositions: {'76A': PointPosition.normal, '77A': PointPosition.normal},
           pathBlocks: ['208', '210', '212'],
           protectedBlocks: ['208', '210', '212'],
+        ),
+        SignalRoute(
+          id: 'L03_R2',
+          name: 'To Central via Crossover (Diverging)',
+          requiredBlocksClear: ['208', 'crossover_211_212', '211'],
+          requiredPointPositions: {'76A': PointPosition.reverse, '76B': PointPosition.reverse},
+          pathBlocks: ['208', 'crossover_211_212', '211'],
+          protectedBlocks: ['crossover_211_212', '211'],
         ),
       ],
     );
@@ -2151,11 +2159,19 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'L06_R1',
-          name: 'West Platform 2 Departure',
+          name: 'West Platform 2 Departure (Straight)',
           requiredBlocksClear: ['211', '209', '207'],
-          requiredPointPositions: {},
+          requiredPointPositions: {'76B': PointPosition.normal, '77B': PointPosition.normal},
           pathBlocks: ['211', '209', '207'],
           protectedBlocks: ['211', '209', '207'],
+        ),
+        SignalRoute(
+          id: 'L06_R2',
+          name: 'West Platform 2 via Crossover (Diverging)',
+          requiredBlocksClear: ['crossover_211_212', '210', '208'],
+          requiredPointPositions: {'76A': PointPosition.reverse, '77A': PointPosition.reverse},
+          pathBlocks: ['crossover_211_212', '210', '208'],
+          protectedBlocks: ['crossover_211_212', '210', '208'],
         ),
       ],
     );
@@ -2185,11 +2201,19 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'C31_R1',
-          name: 'Main Route',
+          name: 'Main Route (Straight)',
           requiredBlocksClear: ['106', '108', '110'],
           requiredPointPositions: {'78A': PointPosition.normal},
           pathBlocks: ['104', '106', '108', '110'],
           protectedBlocks: ['106', '108', '110'],
+        ),
+        SignalRoute(
+          id: 'C31_R2',
+          name: 'Via Crossover (Diverging)',
+          requiredBlocksClear: ['crossover106', '109', '107'],
+          requiredPointPositions: {'78A': PointPosition.reverse, '78B': PointPosition.reverse},
+          pathBlocks: ['104', 'crossover106', '109', '107'],
+          protectedBlocks: ['crossover106', '109', '107'],
         ),
       ],
     );
@@ -2226,21 +2250,7 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
-    signals['C02'] = Signal(
-      id: 'C02',
-      x: 990,  // FIXED: 10 units from end of block 108 (before block 106)
-      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
-      routes: [
-        SignalRoute(
-          id: 'C02_R1',
-          name: 'To East',
-          requiredBlocksClear: ['114', '300'],
-          requiredPointPositions: {},
-          pathBlocks: ['114', '300'],
-          protectedBlocks: ['114', '300'],
-        ),
-      ],
-    );
+    // REMOVED C02 - was within 20 units of C30 (duplicate)
 
     // Lower track westbound signals
     signals['C30'] = Signal(
@@ -2255,6 +2265,14 @@ class TerminalStationController extends ChangeNotifier {
           requiredPointPositions: {'78B': PointPosition.normal},
           pathBlocks: ['109', '107', '105'],
           protectedBlocks: ['109', '107', '105'],
+        ),
+        SignalRoute(
+          id: 'C30_R2',
+          name: 'To East via Crossover',
+          requiredBlocksClear: ['114', '300'],
+          requiredPointPositions: {'78B': PointPosition.reverse},
+          pathBlocks: ['114', '300'],
+          protectedBlocks: ['114', '300'],
         ),
       ],
     );
@@ -2300,11 +2318,19 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'R01_R1',
-          name: 'East Entry',
+          name: 'East Entry (Straight)',
           requiredBlocksClear: ['300', '302'],
-          requiredPointPositions: {},
+          requiredPointPositions: {'79A': PointPosition.normal, '80A': PointPosition.normal},
           pathBlocks: ['300', '302'],
           protectedBlocks: ['300', '302'],
+        ),
+        SignalRoute(
+          id: 'R01_R2',
+          name: 'East Entry via Crossover (Diverging)',
+          requiredBlocksClear: ['crossover_303_304', '303', '301'],
+          requiredPointPositions: {'79A': PointPosition.reverse, '79B': PointPosition.reverse},
+          pathBlocks: ['crossover_303_304', '303', '301'],
+          protectedBlocks: ['crossover_303_304', '303', '301'],
         ),
       ],
     );
@@ -2397,11 +2423,19 @@ class TerminalStationController extends ChangeNotifier {
       routes: [
         SignalRoute(
           id: 'R07_R1',
-          name: 'To Central',
+          name: 'To Central (Straight)',
           requiredBlocksClear: ['305', '303', '301'],
-          requiredPointPositions: {},
+          requiredPointPositions: {'79B': PointPosition.normal, '80B': PointPosition.normal},
           pathBlocks: ['305', '303', '301'],
           protectedBlocks: ['305', '303', '301'],
+        ),
+        SignalRoute(
+          id: 'R07_R2',
+          name: 'To Central via Crossover (Diverging)',
+          requiredBlocksClear: ['crossover_303_304', '304', '302'],
+          requiredPointPositions: {'80A': PointPosition.reverse, '80B': PointPosition.reverse},
+          pathBlocks: ['crossover_303_304', '304', '302'],
+          protectedBlocks: ['crossover_303_304', '304', '302'],
         ),
       ],
     );
@@ -2433,9 +2467,9 @@ class TerminalStationController extends ChangeNotifier {
 
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
     trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1190, y: 120);
-    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 995, y: 340);  // FIXED: Moved to x: 995
+    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 1000, y: 340);  // FIXED: Match C30 signal x-position
     trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 50, y: 120);
-    trainStops['TC02'] = TrainStop(id: 'TC02', signalId: 'C02', x: 990, y: 340);
+    // REMOVED TC02 - was within 20 units of T30 (duplicate, C02 signal removed)
     trainStops['TC03'] = TrainStop(id: 'TC03', signalId: 'C03', x: 1190, y: 340);
     trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 290, y: 120);  // MOVED: Match C04 signal position
 

@@ -3427,6 +3427,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               controller.setHoveredObject(null);
             },
             child: GestureDetector(
+              onTapDown: (details) {
+                // Convert screen coordinates to canvas coordinates
+                final localPosition = details.localPosition;
+                final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
+                final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
+
+                // Handle click on signals or points
+                _handleCanvasClick(controller, canvasX, canvasY);
+              },
               onPanUpdate: (details) {
                 setState(() {
                   _cameraOffsetX += details.delta.dx / _zoom;
@@ -3521,6 +3530,111 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
     // No object found - clear hover
     controller.setHoveredObject(null);
+  }
+
+  // Handle click on canvas objects (signals and points)
+  void _handleCanvasClick(TerminalStationController controller, double canvasX, double canvasY) {
+    // Check for signal clicks
+    for (final signal in controller.signals.values) {
+      final distance = ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
+      if (distance < 30) {
+        _showSignalRouteDialog(controller, signal);
+        return;
+      }
+    }
+
+    // Check for point clicks
+    for (final point in controller.points.values) {
+      final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
+      if (distance < 20) {
+        _togglePoint(controller, point);
+        return;
+      }
+    }
+  }
+
+  // Show dialog to select signal route
+  void _showSignalRouteDialog(TerminalStationController controller, Signal signal) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Signal ${signal.id}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Current Aspect: ${signal.aspect.name.toUpperCase()}',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('Route State: ${signal.routeState.name}'),
+              const SizedBox(height: 16),
+              const Text('Select Route:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              ...signal.routes.map((route) {
+                final isActive = signal.activeRouteId == route.id;
+                return ListTile(
+                  title: Text(route.name),
+                  subtitle: Text(route.id),
+                  trailing: isActive
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : null,
+                  selected: isActive,
+                  onTap: () {
+                    if (isActive) {
+                      controller.cancelRoute(signal.id);
+                    } else {
+                      controller.setRoute(signal.id, route.id);
+                    }
+                    Navigator.of(context).pop();
+                  },
+                );
+              }).toList(),
+            ],
+          ),
+          actions: [
+            if (signal.activeRouteId != null)
+              TextButton(
+                onPressed: () {
+                  controller.cancelRoute(signal.id);
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel Route'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Toggle point position
+  void _togglePoint(TerminalStationController controller, Point point) {
+    if (point.locked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Point ${point.id} is locked and cannot be changed'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final newPosition = point.position == PointPosition.normal
+        ? PointPosition.reverse
+        : PointPosition.normal;
+
+    controller.setPointPosition(point.id, newPosition);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Point ${point.id} set to ${newPosition.name.toUpperCase()}'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   Widget _buildStatusPanel() {

@@ -10,6 +10,7 @@ import '../services/supabase_service.dart';
 import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../services/connection_service.dart';
+import '../services/sound_service.dart';
 import '../widgets/connection_indicator.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
@@ -44,6 +45,13 @@ Future<void> main() async {
       await Firebase.initializeApp();
     } catch (e) {
       debugPrint('Firebase initialization error (optional): $e');
+    }
+
+    // Initialize Sound Service
+    try {
+      await SoundService().initialize();
+    } catch (e) {
+      debugPrint('Sound service initialization error (optional): $e');
     }
   } catch (e) {
     debugPrint('Initialization error: $e');

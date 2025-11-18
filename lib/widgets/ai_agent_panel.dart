@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
+import '../screens/terminal_station_models.dart';
 import '../services/openai_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -117,7 +118,7 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
       final blockMatch = RegExp(r'block (\d+)').firstMatch(lower);
       if (blockMatch != null) {
         final blockId = blockMatch.group(1)!;
-        controller.addTrain(blockId, TrainType.m1);
+        controller.addTrainToBlock(blockId, trainType: TrainType.m1);
         _addMessage('AI Agent', 'Train added to block $blockId', isAI: true);
       }
     }
@@ -157,7 +158,7 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
         case 'add_train':
           final blockId = command.parameters['block_id'] as String;
           final trainType = _parseTrainType(command.parameters['train_type'] as String?);
-          controller.addTrain(blockId, trainType);
+          controller.addTrainToBlock(blockId, trainType: trainType);
           _addMessage('AI Agent', 'Train added to block $blockId', isAI: true);
           break;
 

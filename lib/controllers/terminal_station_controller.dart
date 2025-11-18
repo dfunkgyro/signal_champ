@@ -3342,8 +3342,12 @@ class TerminalStationController extends ChangeNotifier {
       controlMode: TrainControlMode.automatic,
       manualStop: false,
       isCbtcEquipped: isCbtc,
-      cbtcMode: isCbtc ? CbtcMode.off : CbtcMode.off,
+      cbtcMode: isCbtc ? CbtcMode.rm : CbtcMode.off, // Start CBTC trains in RM mode
       smcDestination: destination,
+      isNCT: isCbtc && destination != null, // NCT if CBTC with destination
+      transpondersPassed: 0,
+      terReceived: false,
+      directionConfirmed: false,
     );
 
     trains.add(train);
@@ -4129,6 +4133,11 @@ class TerminalStationController extends ChangeNotifier {
           : CbtcMode.off,
       smcDestination: train.smcDestination,
       movementAuthority: train.movementAuthority,
+      isNCT: train.isNCT, // Preserve NCT state
+      transpondersPassed: train.transpondersPassed,
+      lastTransponderId: train.lastTransponderId,
+      terReceived: train.terReceived,
+      directionConfirmed: train.directionConfirmed,
     );
 
     final index = trains.indexWhere((t) => t.id == id);
@@ -4153,6 +4162,14 @@ class TerminalStationController extends ChangeNotifier {
 
   void updateTrainCbtcMode(String id, CbtcMode newMode) {
     final train = trains.firstWhere((t) => t.id == id);
+
+    // Prevent switching to AUTO or PM mode when in NCT state
+    if (train.isNCT && (newMode == CbtcMode.auto || newMode == CbtcMode.pm)) {
+      _logEvent('❌ ${train.name} is in NCT state (flashing red) - cannot enter ${_getCbtcModeName(newMode)} mode');
+      _logEvent('ℹ️  Put train in RM mode and pass over 2 transponders first');
+      return;
+    }
+
     train.cbtcMode = newMode;
     _logEvent('🔧 ${train.name} CBTC mode changed to ${_getCbtcModeName(newMode)}');
     notifyListeners();
@@ -4268,6 +4285,45 @@ class TerminalStationController extends ChangeNotifier {
 
   // ========== SIMULATION UPDATE ==========
 
+  /// Check if CBTC trains in NCT mode pass over transponders for activation
+  void _checkTransponders() {
+    for (var train in trains) {
+      if (!train.isCbtcTrain || !train.isNCT) continue;
+      if (train.cbtcMode != CbtcMode.rm) continue; // Must be in RM mode
+
+      // Check all transponders
+      for (var transponder in transponders.values) {
+        // Check if train is within 5 units of transponder (passing over it)
+        final distance = (train.x - transponder.x).abs();
+        if (distance < 5 && (train.y - transponder.y).abs() < 20) {
+          // Check if this is a different transponder from last one
+          if (train.lastTransponderId != transponder.id) {
+            train.lastTransponderId = transponder.id;
+            train.transpondersPassed++;
+
+            if (train.transpondersPassed == 1) {
+              // First transponder: TER (Train Entry Request)
+              train.terReceived = true;
+              _logEvent('📡 ${train.name} TER: Train Entry Request received by VCC (Transponder ${transponder.id})');
+            } else if (train.transpondersPassed == 2) {
+              // Second transponder: Direction confirmed, NCT cleared
+              train.directionConfirmed = true;
+              train.isNCT = false; // Clear NCT state
+              _logEvent('✅ ${train.name} ACTIVE: Direction confirmed, NCT state cleared (Transponder ${transponder.id})');
+              _logEvent('🚄 ${train.name} can now enter AUTO or PM mode');
+            } else if (train.transpondersPassed > 2) {
+              // Log subsequent transponder passes for positioning
+              _logEvent('📍 ${train.name} passed transponder ${transponder.id} (${transponder.description})');
+            }
+
+            notifyListeners();
+            break; // Only process one transponder per tick
+          }
+        }
+      }
+    }
+  }
+
   void updateSimulation() {
     if (!isRunning) return;
 
@@ -4282,6 +4338,7 @@ class TerminalStationController extends ChangeNotifier {
     _checkAutoSignals();
     _updateAxleCounters();
     _updateMovementAuthorities();
+    _checkTransponders(); // Check for CBTC NCT transponder activation
 
     for (var train in trains) {
       // ========== EARLY EXIT CONDITIONS ==========

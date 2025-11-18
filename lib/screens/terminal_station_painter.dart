@@ -1579,16 +1579,21 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.translate(-train.x, -train.y);
       }
 
+      // NCT trains flash red (alternating every 500ms)
+      final isFlashingRed = train.isNCT && (DateTime.now().millisecondsSinceEpoch ~/ 500) % 2 == 0;
+
       final bodyPaint = Paint()
-        ..color = train.color
+        ..color = isFlashingRed ? Colors.red : train.color
         ..style = PaintingStyle.fill;
 
       final outlinePaint = Paint()
-        ..color = train.controlMode == TrainControlMode.manual
-            ? Colors.blue
-            : Colors.black
+        ..color = isFlashingRed
+            ? Colors.red[900]!
+            : (train.controlMode == TrainControlMode.manual
+                ? Colors.blue
+                : Colors.black)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = train.controlMode == TrainControlMode.manual ? 3 : 2;
+        ..strokeWidth = isFlashingRed ? 4 : (train.controlMode == TrainControlMode.manual ? 3 : 2);
 
       // Check if this is an M2 train (double unit)
       final isM2Train = train.trainType == TrainType.m2 || train.trainType == TrainType.cbtcM2;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/railway_model.dart';
+import '../controllers/terminal_station_controller.dart';
+import '../screens/terminal_station_models.dart';
 
 class RelayRackPanel extends StatelessWidget {
   const RelayRackPanel({super.key});
@@ -37,7 +38,7 @@ class RelayRackPanel extends StatelessWidget {
   }
 
   Widget _buildSignalRelaysSection(BuildContext context) {
-    final railwayModel = context.watch<RailwayModel>();
+    final controller = context.watch<TerminalStationController>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,7 +51,7 @@ class RelayRackPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
           child: const Text(
-            'Signal Relays',
+            'Signal Relays (GR)',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -69,8 +70,9 @@ class RelayRackPanel extends StatelessWidget {
           child: Wrap(
             spacing: 4,
             runSpacing: 4,
-            children: railwayModel.signals.map((signal) {
+            children: controller.signals.values.map((signal) {
               final relayName = _getSignalRelayName(signal.id);
+              // GR relays are DOWN normally, pick UP when signal shows green
               final isUp = signal.state == SignalState.green;
               return _buildRelayIndicator(relayName, isUp);
             }).toList(),
@@ -81,7 +83,7 @@ class RelayRackPanel extends StatelessWidget {
   }
 
   Widget _buildPointsRelaysSection(BuildContext context) {
-    final railwayModel = context.watch<RailwayModel>();
+    final controller = context.watch<TerminalStationController>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,7 +96,7 @@ class RelayRackPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
           child: const Text(
-            'Points Relays',
+            'Points Relays (WKR)',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -113,7 +115,7 @@ class RelayRackPanel extends StatelessWidget {
           child: Wrap(
             spacing: 4,
             runSpacing: 4,
-            children: railwayModel.points.map((point) {
+            children: controller.points.values.map((point) {
               final relayName = _getPointRelayName(point.id);
               final position = _getPointRelayPosition(point);
               return _buildPointRelayIndicator(relayName, position);
@@ -125,7 +127,7 @@ class RelayRackPanel extends StatelessWidget {
   }
 
   Widget _buildTrackRelaysSection(BuildContext context) {
-    final railwayModel = context.watch<RailwayModel>();
+    final controller = context.watch<TerminalStationController>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +140,7 @@ class RelayRackPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
           child: const Text(
-            'Track Relays',
+            'Track Relays (TR)',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -157,10 +159,10 @@ class RelayRackPanel extends StatelessWidget {
           child: Wrap(
             spacing: 4,
             runSpacing: 4,
-            children: railwayModel.blocks
-                .where((block) => !block.isCrossover)
+            children: controller.blocks.values
                 .map((block) {
               final relayName = _getBlockRelayName(block.id);
+              // TR relays are UP when no trains are on the block
               final isUp = !block.occupied;
               return _buildRelayIndicator(relayName, isUp);
             }).toList(),

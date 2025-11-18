@@ -856,16 +856,16 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     const railSpacing = 12.0;
 
     // ═══════════════════════════════════════════════════════════════
-    // 2. LEFT SECTION - DOUBLE DIAMOND CROSSOVER (x=-550 to -450, connects blocks 211↔212)
-    // Two crossovers: 135° and 45° creating a diamond pattern
+    // 2. LEFT SECTION - DOUBLE DIAMOND CROSSOVER (x=-550 to -350, connects blocks 211↔212)
+    // Two crossovers: 45° creating a proper diamond pattern (200 units for 45° angle)
     // Points: 76A, 76B, 77A, 77B
     // ═══════════════════════════════════════════════════════════════
-    final leftRailColor = controller.isTractionOnAt(-500) ? themeData.railColor : Colors.red;
+    final leftRailColor = controller.isTractionOnAt(-450) ? themeData.railColor : Colors.red;
     final leftOuterPaint = Paint()..color = leftRailColor..strokeWidth = 3 * themeData.strokeWidthMultiplier;
     final leftInnerPaint = Paint()..color = leftRailColor..strokeWidth = 2 * themeData.strokeWidthMultiplier;
-    _drawDoubleDiamondCrossover(canvas, -550, -450, leftOuterPaint,
+    _drawDoubleDiamondCrossover(canvas, -550, -350, leftOuterPaint,
         leftInnerPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover_211_212', -500, 200);
+    _highlightCrossover(canvas, 'crossover_211_212', -450, 200);
 
     // ═══════════════════════════════════════════════════════════════
     // 3. MIDDLE CROSSOVER (original 78A/78B at x=600-800)
@@ -881,19 +881,19 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _highlightCrossover(canvas, 'crossover109', 750, 250);
 
     // ═══════════════════════════════════════════════════════════════
-    // 4. RIGHT SECTION - DOUBLE DIAMOND CROSSOVER (x=1900 to 2000, connects blocks 302↔305)
-    // Two crossovers: 135° and 45° creating a diamond pattern
+    // 4. RIGHT SECTION - DOUBLE DIAMOND CROSSOVER (x=1900 to 2100, connects blocks 302↔305)
+    // Two crossovers: 45° creating a proper diamond pattern (200 units for 45° angle)
     // Points: 79A, 79B, 80A, 80B
     // ═══════════════════════════════════════════════════════════════
-    final rightRailColor = controller.isTractionOnAt(1950) ? themeData.railColor : Colors.red;
+    final rightRailColor = controller.isTractionOnAt(2000) ? themeData.railColor : Colors.red;
     final rightOuterPaint = Paint()..color = rightRailColor..strokeWidth = 3 * themeData.strokeWidthMultiplier;
     final rightInnerPaint = Paint()..color = rightRailColor..strokeWidth = 2 * themeData.strokeWidthMultiplier;
-    _drawDoubleDiamondCrossover(canvas, 1900, 2000, rightOuterPaint,
+    _drawDoubleDiamondCrossover(canvas, 1900, 2100, rightOuterPaint,
         rightInnerPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover_303_304', 1950, 200);
+    _highlightCrossover(canvas, 'crossover_303_304', 2000, 200);
   }
 
-  // Helper method to draw a single crossover segment with 45° angle
+  // Helper method to draw a single crossover segment with proper geometry
   void _drawSingleCrossover(
       Canvas canvas,
       double startX,
@@ -904,27 +904,42 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       Paint innerPaint,
       Paint sleeperPaint,
       double railSpacing) {
-    // Calculate perpendicular offset for rail spacing at 45° angle
-    final offset = railSpacing / math.sqrt(2);
+    // Calculate track direction vector
+    final dx = endX - startX;
+    final dy = endY - startY;
+    final length = math.sqrt(dx * dx + dy * dy);
+
+    // Normalize direction vector
+    final dirX = dx / length;
+    final dirY = dy / length;
+
+    // Calculate perpendicular vector (rotate 90° counterclockwise)
+    // For direction (dx, dy), perpendicular is (-dy, dx)
+    final perpX = -dirY * railSpacing / 2;
+    final perpY = dirX * railSpacing / 2;
 
     // Outer rail (offset perpendicular to diagonal)
     final path1 = Path()
-      ..moveTo(startX - offset, startY + offset)
-      ..lineTo(endX - offset, endY + offset);
+      ..moveTo(startX - perpX, startY - perpY)
+      ..lineTo(endX - perpX, endY - perpY);
     canvas.drawPath(path1, outerPaint);
 
-    // Inner rail (offset perpendicular to diagonal)
+    // Inner rail (offset perpendicular to diagonal on opposite side)
     final path2 = Path()
-      ..moveTo(startX + offset, startY - offset)
-      ..lineTo(endX + offset, endY - offset);
+      ..moveTo(startX + perpX, startY + perpY)
+      ..lineTo(endX + perpX, endY + perpY);
     canvas.drawPath(path2, innerPaint);
 
-    // Draw sleepers perpendicular to track direction (135° angle)
+    // Draw sleepers perpendicular to track direction
+    // Sleeper direction is the perpendicular vector
     for (double t = 0; t <= 1.0; t += 0.1) {
-      final x = startX + ((endX - startX) * t);
-      final y = startY + ((endY - startY) * t);
+      final x = startX + (dx * t);
+      final y = startY + (dy * t);
+      // Draw sleeper from one side to the other (perpendicular to track)
       canvas.drawLine(
-          Offset(x - 10, y + 10), Offset(x + 10, y - 10), sleeperPaint);
+          Offset(x - perpX * 1.5, y - perpY * 1.5),
+          Offset(x + perpX * 1.5, y + perpY * 1.5),
+          sleeperPaint);
     }
   }
 
@@ -1137,17 +1152,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     // LEFT END CROSSOVER POINTS (76A, 76B)
     // ═══════════════════════════════════════════════════════════════
     if (point.id == '76A') {
-      drawGap(-1000, 100, true, point.position == PointPosition.normal);
+      drawGap(-550, 100, true, point.position == PointPosition.normal);
     } else if (point.id == '76B') {
-      drawGap(-900, 300, false, point.position == PointPosition.normal);
+      drawGap(-550, 300, false, point.position == PointPosition.normal);
     }
     // ═══════════════════════════════════════════════════════════════
     // LEFT SECTION CROSSOVER POINTS (77A, 77B)
     // ═══════════════════════════════════════════════════════════════
     else if (point.id == '77A') {
-      drawGap(-450, 100, true, point.position == PointPosition.normal);
+      drawGap(-350, 100, true, point.position == PointPosition.normal);
     } else if (point.id == '77B') {
-      drawGap(-150, 300, false, point.position == PointPosition.normal);
+      drawGap(-350, 300, false, point.position == PointPosition.normal);
     }
     // ═══════════════════════════════════════════════════════════════
     // MIDDLE CROSSOVER POINTS (78A, 78B) - Original
@@ -1179,17 +1194,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     // RIGHT SECTION CROSSOVER POINTS (79A, 79B)
     // ═══════════════════════════════════════════════════════════════
     else if (point.id == '79A') {
-      drawGap(1950, 100, true, point.position == PointPosition.normal);
+      drawGap(1900, 100, true, point.position == PointPosition.normal);
     } else if (point.id == '79B') {
-      drawGap(2250, 300, false, point.position == PointPosition.normal);
+      drawGap(1900, 300, false, point.position == PointPosition.normal);
     }
     // ═══════════════════════════════════════════════════════════════
     // RIGHT END CROSSOVER POINTS (80A, 80B)
     // ═══════════════════════════════════════════════════════════════
     else if (point.id == '80A') {
-      drawGap(3100, 100, true, point.position == PointPosition.normal);
+      drawGap(2100, 100, true, point.position == PointPosition.normal);
     } else if (point.id == '80B') {
-      drawGap(3200, 300, false, point.position == PointPosition.normal);
+      drawGap(2100, 300, false, point.position == PointPosition.normal);
     }
   }
 

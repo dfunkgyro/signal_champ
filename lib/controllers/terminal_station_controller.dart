@@ -2158,22 +2158,22 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Left section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // 135-degree and 45-degree crossovers
-    points['76A'] = Point(id: '76A', x: -550, y: 100);  // Additional point for double diamond
-    points['76B'] = Point(id: '76B', x: -550, y: 300);  // Additional point for double diamond
-    points['77A'] = Point(id: '77A', x: -450, y: 100);
-    points['77B'] = Point(id: '77B', x: -450, y: 300);
+    // 45-degree crossovers with proper 200-unit span for correct geometry
+    points['76A'] = Point(id: '76A', x: -550, y: 100);  // Start of double diamond
+    points['76B'] = Point(id: '76B', x: -550, y: 300);  // Start of double diamond
+    points['77A'] = Point(id: '77A', x: -350, y: 100);  // End of double diamond (200 units span)
+    points['77B'] = Point(id: '77B', x: -350, y: 300);  // End of double diamond (200 units span)
 
     // Middle points (crossover106/109) - Standard crossover
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // 135-degree and 45-degree crossovers
-    points['79A'] = Point(id: '79A', x: 1900, y: 100);
-    points['79B'] = Point(id: '79B', x: 1900, y: 300);
-    points['80A'] = Point(id: '80A', x: 2000, y: 100);  // Additional point for double diamond
-    points['80B'] = Point(id: '80B', x: 2000, y: 300);  // Additional point for double diamond
+    // 45-degree crossovers with proper 200-unit span for correct geometry
+    points['79A'] = Point(id: '79A', x: 1900, y: 100);  // Start of double diamond
+    points['79B'] = Point(id: '79B', x: 1900, y: 300);  // Start of double diamond
+    points['80A'] = Point(id: '80A', x: 2100, y: 100);  // End of double diamond (200 units span)
+    points['80B'] = Point(id: '80B', x: 2100, y: 300);  // End of double diamond (200 units span)
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)
@@ -3422,6 +3422,12 @@ class TerminalStationController extends ChangeNotifier {
     String ttStr = assignToTimetable ? ' [TIMETABLED]' : '';
     _logEvent(
         '🚂 Train ${nextTrainNumber - 1} ($typeStr) added at block $blockId ($trackType)$destStr$ttStr');
+
+    // Reminder for users who may forget to start the simulator
+    if (trains.length == 1) {
+      _logEvent('💡 REMINDER: Click ▶️ PLAY button to start the simulator');
+    }
+
     notifyListeners();
   }
 

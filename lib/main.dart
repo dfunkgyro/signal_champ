@@ -2,51 +2,91 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:upgrader/upgrader.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/canvas_theme_controller.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
+import '../services/analytics_service.dart';
+import '../services/connection_service.dart';
+import '../widgets/connection_indicator.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
 import 'custom_bottom_nav.dart';
 import '../screens/terminal_station_screen.dart';
+import '../screens/auth/login_screen.dart';
+import '../screens/analytics_screen.dart';
 import '../controllers/terminal_station_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  String? openAiApiKey;
+  SupabaseClient? supabaseClient;
+
   try {
+    // Load environment variables
     await dotenv.load(fileName: 'assets/.env');
 
     final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
     final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+    openAiApiKey = dotenv.env['OPENAI_API_KEY'];
 
+    // Initialize Supabase
     if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
       await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+      supabaseClient = Supabase.instance.client;
+    }
+
+    // Initialize Firebase for Analytics
+    try {
+      await Firebase.initializeApp();
+    } catch (e) {
+      debugPrint('Firebase initialization error (optional): $e');
     }
   } catch (e) {
     debugPrint('Initialization error: $e');
   }
 
-  runApp(const RailChampApp());
+  // Create a fallback Supabase client if initialization failed
+  if (supabaseClient == null) {
+    debugPrint('Running in fallback mode without Supabase');
+  }
+
+  runApp(RailChampApp(
+    supabaseClient: supabaseClient,
+    openAiApiKey: openAiApiKey,
+  ));
 }
 
 class RailChampApp extends StatelessWidget {
-  const RailChampApp({Key? key}) : super(key: key);
+  final SupabaseClient? supabaseClient;
+  final String? openAiApiKey;
+
+  const RailChampApp({
+    Key? key,
+    this.supabaseClient,
+    this.openAiApiKey,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Create a dummy Supabase client if none provided (for fallback mode)
+    final client = supabaseClient ?? Supabase.instance.client;
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => CanvasThemeController()),
+        ChangeNotifierProvider(create: (_) => SupabaseService(client)),
+        ChangeNotifierProvider(create: (_) => AuthService(client)),
+        ChangeNotifierProvider(create: (_) => AnalyticsService(client)),
         ChangeNotifierProvider(
-          create: (_) => SupabaseService(Supabase.instance.client),
+          create: (_) => ConnectionService(client, openAiApiKey: openAiApiKey),
         ),
         ChangeNotifierProvider(create: (_) => WeatherSystem()),
-        ChangeNotifierProvider(
-          create: (_) => AchievementsService(Supabase.instance.client),
-        ),
-        // Terminal station with crossover and route setting
+        ChangeNotifierProvider(create: (_) => AchievementsService(client)),
         ChangeNotifierProvider(create: (_) => TerminalStationController()),
       ],
       child: Consumer<ThemeController>(
@@ -57,10 +97,53 @@ class RailChampApp extends StatelessWidget {
             themeMode: themeController.themeMode,
             theme: themeController.getLightTheme(),
             darkTheme: themeController.getDarkTheme(),
-            home: const MainScreen(),
+            home: const AuthWrapper(),
           );
         },
       ),
+    );
+  }
+}
+
+/// Wrapper to handle authentication state and show appropriate screen
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+
+    // Show loading while initializing
+    if (!authService.isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Show main screen if authenticated or in guest mode
+    if (authService.isAuthenticated) {
+      return const MainScreenWithUpgrader();
+    }
+
+    // Show login screen
+    return const LoginScreen();
+  }
+}
+
+/// Main screen wrapped with upgrader for force update mechanism
+class MainScreenWithUpgrader extends StatelessWidget {
+  const MainScreenWithUpgrader({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return UpgradeAlert(
+      upgrader: Upgrader(
+        durationUntilAlertAgain: const Duration(days: 1),
+        shouldPopScope: () => true,
+      ),
+      child: const MainScreen(),
     );
   }
 }
@@ -90,6 +173,14 @@ class _MainScreenState extends State<MainScreen> {
       // Load achievements
       final achievements = context.read<AchievementsService>();
       await achievements.loadEarnedAchievements();
+
+      // Start connection monitoring
+      final connectionService = context.read<ConnectionService>();
+      await connectionService.checkAllConnections();
+
+      // Log app open event
+      final analyticsService = context.read<AnalyticsService>();
+      await analyticsService.logEvent('app_opened');
     } catch (e) {
       debugPrint('Service initialization error: $e');
     }
@@ -102,7 +193,8 @@ class _MainScreenState extends State<MainScreen> {
         index: _currentIndex,
         children: const [
           TerminalStationScreen(), // ✅ Terminal station with crossover!
-          SettingsScreen(),
+          AnalyticsScreen(), // 📊 Analytics tab
+          SettingsScreen(), // ⚙️ Settings tab
         ],
       ),
       bottomNavigationBar: CustomBottomNav(
@@ -128,13 +220,61 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeController = context.watch<ThemeController>();
+    final authService = context.watch<AuthService>();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: ConnectionIndicator(),
+          ),
+        ],
       ),
       body: ListView(
         children: [
+          // User Info Section
+          if (authService.isAuthenticated) ...[
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Account',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                child: Icon(
+                  authService.isGuest ? Icons.person_outline : Icons.person,
+                ),
+              ),
+              title: Text(authService.displayName),
+              subtitle: Text(authService.userEmail ?? 'No email'),
+              trailing: authService.isGuest
+                  ? Chip(
+                      label: const Text('Guest'),
+                      backgroundColor: Colors.orange.withOpacity(0.2),
+                    )
+                  : null,
+            ),
+            const Divider(),
+          ],
+
+          // Connection Status
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'Connection Status',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: ConnectionIndicator(showDetails: true),
+          ),
+          const Divider(),
+
           const Padding(
             padding: EdgeInsets.all(16),
             child: Text(
@@ -228,6 +368,49 @@ class SettingsScreen extends StatelessWidget {
               _showHelp(context);
             },
           ),
+          const Divider(),
+
+          // Logout Button
+          if (authService.isAuthenticated)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Sign Out'),
+                      content: const Text('Are you sure you want to sign out?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Sign Out'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true && context.mounted) {
+                    await context.read<AuthService>().signOut();
+                  }
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text('Sign Out'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
         ],
       ),
     );

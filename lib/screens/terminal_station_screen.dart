@@ -29,7 +29,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   late AnimationController _animationController;
   int _animationTick = 0;
   double _cameraOffsetX = 0;
-  double _cameraOffsetY = 0;  // FIXED: Add Y-axis panning support
+  double _cameraOffsetY = 0; // FIXED: Add Y-axis panning support
   double _zoom = 0.8;
   bool _showLeftPanel = true;
   bool _showRightPanel = true;
@@ -78,19 +78,22 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   void _decreaseCanvasWidth() {
     setState(() {
-      _canvasWidth = (_canvasWidth - 100.0).clamp(800.0, 8000.0);  // FIXED: Allow up to 8000
+      _canvasWidth = (_canvasWidth - 100.0)
+          .clamp(800.0, 8000.0); // FIXED: Allow up to 8000
     });
   }
 
   void _increaseCanvasHeight() {
     setState(() {
-      _canvasHeight = (_canvasHeight + 50.0).clamp(300.0, 1500.0);  // FIXED: Clamp to max 1500
+      _canvasHeight = (_canvasHeight + 50.0)
+          .clamp(300.0, 1500.0); // FIXED: Clamp to max 1500
     });
   }
 
   void _decreaseCanvasHeight() {
     setState(() {
-      _canvasHeight = (_canvasHeight - 50.0).clamp(300.0, 1500.0);  // FIXED: Allow up to 1500
+      _canvasHeight = (_canvasHeight - 50.0)
+          .clamp(300.0, 1500.0); // FIXED: Allow up to 1500
     });
   }
 
@@ -99,7 +102,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       _canvasWidth = _defaultCanvasWidth;
       _canvasHeight = _defaultCanvasHeight;
       _cameraOffsetX = 0;
-      _cameraOffsetY = 0;  // FIXED: Reset Y offset too
+      _cameraOffsetY = 0; // FIXED: Reset Y offset too
       _zoom = 0.8;
     });
   }
@@ -148,156 +151,156 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           // Main canvas area - now takes full available space
           Stack(
             children: [
-                // Layer 1: Railway Canvas (bottom layer)
-                _buildStationCanvas(),
+              // Layer 1: Railway Canvas (bottom layer)
+              _buildStationCanvas(),
 
-                // Layer 2: Floating Zoom Controls (NEW)
+              // Layer 2: Floating Zoom Controls (NEW)
+              Positioned(
+                right: 20,
+                bottom: 20,
+                child: _buildFloatingZoomControls(),
+              ),
+
+              // Layer 3: Left Sidebar (higher z-order)
+              if (_showLeftPanel)
                 Positioned(
-                  right: 20,
-                  bottom: 20,
-                  child: _buildFloatingZoomControls(),
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 320,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border(
+                        right: BorderSide(
+                          color: Theme.of(context).colorScheme.outline,
+                          width: 2,
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                          offset: const Offset(2, 0),
+                        ),
+                      ],
+                    ),
+                    child: _buildControlPanel(),
+                  ),
                 ),
 
-                // Layer 3: Left Sidebar (higher z-order)
-                if (_showLeftPanel)
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
+              // Layer 4: Right Sidebar (higher z-order)
+              if (_showRightPanel)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 320,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border(
+                        left: BorderSide(
+                          color: Theme.of(context).colorScheme.outline,
+                          width: 2,
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                          offset: const Offset(-2, 0),
+                        ),
+                      ],
+                    ),
+                    child: _buildStatusPanel(),
+                  ),
+                ),
+
+              // Layer 5: Toggle buttons (highest z-order)
+              // Left panel toggle button
+              Positioned(
+                left: _showLeftPanel ? 320 : 0,
+                top: 10,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                  child: InkWell(
+                    onTap: () =>
+                        setState(() => _showLeftPanel = !_showLeftPanel),
                     child: Container(
-                      width: 320,
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
-                        border: Border(
-                          right: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                            width: 2,
-                          ),
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                            offset: const Offset(2, 0),
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
-                      child: _buildControlPanel(),
+                      child: Icon(
+                        _showLeftPanel
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
+                ),
+              ),
 
-                // Layer 4: Right Sidebar (higher z-order)
-                if (_showRightPanel)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
+              // Right panel toggle button
+              Positioned(
+                right: _showRightPanel ? 320 : 0,
+                top: 10,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  child: InkWell(
+                    onTap: () =>
+                        setState(() => _showRightPanel = !_showRightPanel),
                     child: Container(
-                      width: 320,
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
-                        border: Border(
-                          left: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                            width: 2,
-                          ),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                            offset: const Offset(-2, 0),
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
-                      child: _buildStatusPanel(),
-                    ),
-                  ),
-
-                // Layer 5: Toggle buttons (highest z-order)
-                // Left panel toggle button
-                Positioned(
-                  left: _showLeftPanel ? 320 : 0,
-                  top: 10,
-                  child: Material(
-                    elevation: 8,
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(8),
-                      bottomRight: Radius.circular(8),
-                    ),
-                    child: InkWell(
-                      onTap: () =>
-                          setState(() => _showLeftPanel = !_showLeftPanel),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          _showLeftPanel
-                              ? Icons.chevron_left
-                              : Icons.chevron_right,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                      child: Icon(
+                        _showRightPanel
+                            ? Icons.chevron_right
+                            : Icons.chevron_left,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),
                 ),
-
-                // Right panel toggle button
-                Positioned(
-                  right: _showRightPanel ? 320 : 0,
-                  top: 10,
-                  child: Material(
-                    elevation: 8,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(8),
-                      bottomLeft: Radius.circular(8),
-                    ),
-                    child: InkWell(
-                      onTap: () =>
-                          setState(() => _showRightPanel = !_showRightPanel),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          _showRightPanel
-                              ? Icons.chevron_right
-                              : Icons.chevron_left,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
 
           // SPAD Alarm - overlay at top (Layer 6)
           Positioned(
@@ -339,7 +342,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                       ? CollisionAlarmWidget(
                           isActive: controller.collisionAlarmActive,
                           currentIncident: controller.currentCollisionIncident,
-                          onDismiss: () => controller.acknowledgeCollisionAlarm(),
+                          onDismiss: () =>
+                              controller.acknowledgeCollisionAlarm(),
                           onAutoRecover: () {
                             controller.startAutomaticCollisionRecovery();
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -360,7 +364,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                               ),
                             );
                           },
-                          onForceResolve: () => controller.forceCollisionResolution(),
+                          onForceResolve: () =>
+                              controller.forceCollisionResolution(),
                         )
                       : const SizedBox.shrink(),
                 );
@@ -377,7 +382,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               child: Consumer<TerminalStationController>(
                 builder: (context, controller, _) {
                   final spadOffset = controller.spadAlarmActive ? 80.0 : 0.0;
-                  final collisionOffset = controller.collisionAlarmActive ? 80.0 : 0.0;
+                  final collisionOffset =
+                      controller.collisionAlarmActive ? 80.0 : 0.0;
                   return Container(
                     margin: EdgeInsets.only(top: spadOffset + collisionOffset),
                     child: _buildTopControlPanel(),
@@ -710,7 +716,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             children: [
               Row(
                 children: [
-                  Icon(Icons.palette, size: 16, color: Theme.of(context).colorScheme.primary),
+                  Icon(Icons.palette,
+                      size: 16, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 4),
                   const Text(
                     'Canvas Theme',
@@ -724,7 +731,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceVariant,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: DropdownButton<CanvasTheme>(
                   value: canvasThemeController.currentTheme,
@@ -1582,12 +1590,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   child: Row(
                     children: [
                       Icon(
-                        controller.gridVisible
-                            ? Icons.grid_on
-                            : Icons.grid_off,
-                        color: controller.gridVisible
-                            ? Colors.blue
-                            : Colors.grey,
+                        controller.gridVisible ? Icons.grid_on : Icons.grid_off,
+                        color:
+                            controller.gridVisible ? Colors.blue : Colors.grey,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -1660,7 +1665,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                       ),
                       Switch(
                         value: controller.tractionCurrentOn,
-                        onChanged: (value) => controller.toggleTractionCurrent(),
+                        onChanged: (value) =>
+                            controller.toggleTractionCurrent(),
                         activeColor: Colors.amber,
                       ),
                     ],
@@ -1696,7 +1702,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                               ),
                             ),
                             Text(
-                              controller.tooltipsEnabled ? 'Enabled' : 'Disabled',
+                              controller.tooltipsEnabled
+                                  ? 'Enabled'
+                                  : 'Disabled',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -1790,7 +1798,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                               ),
                             ),
                             Text(
-                              controller.relayRackVisible ? 'Visible' : 'Hidden',
+                              controller.relayRackVisible
+                                  ? 'Visible'
+                                  : 'Hidden',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -3068,7 +3078,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         const SizedBox(height: 8),
 
         // Train Type Selector
-        const Text('Train Type:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const Text('Train Type:',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         DropdownButton<TrainType>(
           isExpanded: true,
@@ -3090,7 +3101,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         const SizedBox(height: 12),
 
         // Block Selector
-        const Text('Target Block:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const Text('Target Block:',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         DropdownButton<String>(
           isExpanded: true,
@@ -3111,7 +3123,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         const SizedBox(height: 12),
 
         // Destination Selector
-        const Text('Destination (Optional):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const Text('Destination (Optional):',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         DropdownButton<String>(
           isExpanded: true,
@@ -3142,9 +3155,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
         // Timetable Assignment Checkbox
         CheckboxListTile(
-          title: const Text('Assign to Timetable', style: TextStyle(fontSize: 12)),
+          title:
+              const Text('Assign to Timetable', style: TextStyle(fontSize: 12)),
           subtitle: Text(
-            _assignToTimetable ? 'Auto-assign to next ghost train slot' : 'Manual operation',
+            _assignToTimetable
+                ? 'Auto-assign to next ghost train slot'
+                : 'Manual operation',
             style: TextStyle(fontSize: 10, color: Colors.grey[600]),
           ),
           value: _assignToTimetable,
@@ -3430,8 +3446,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
               // Convert screen coordinates to canvas coordinates
               final localPosition = event.localPosition;
-              final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
-              final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
+              final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom -
+                  _cameraOffsetX;
+              final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom -
+                  _cameraOffsetY;
 
               // Check for hovered objects (signals, points, trains, etc.)
               _detectHoveredObject(controller, canvasX, canvasY);
@@ -3443,8 +3461,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               onTapDown: (details) {
                 // Convert screen coordinates to canvas coordinates
                 final localPosition = details.localPosition;
-                final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
-                final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
+                final canvasX =
+                    (localPosition.dx - (_canvasWidth / 2)) / _zoom -
+                        _cameraOffsetX;
+                final canvasY =
+                    (localPosition.dy - (_canvasHeight / 2)) / _zoom -
+                        _cameraOffsetY;
 
                 // Handle click on signals or points
                 _handleCanvasClick(controller, canvasX, canvasY);
@@ -3452,7 +3474,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               onPanUpdate: (details) {
                 setState(() {
                   _cameraOffsetX += details.delta.dx / _zoom;
-                  _cameraOffsetY += details.delta.dy / _zoom;  // FIXED: Add Y-axis panning
+                  _cameraOffsetY +=
+                      details.delta.dy / _zoom; // FIXED: Add Y-axis panning
                 });
               },
               child: Consumer<CanvasThemeController>(
@@ -3462,7 +3485,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     painter: TerminalStationPainter(
                       controller: controller,
                       cameraOffsetX: _cameraOffsetX,
-                      cameraOffsetY: _cameraOffsetY,  // FIXED: Pass Y offset to painter
+                      cameraOffsetY:
+                          _cameraOffsetY, // FIXED: Pass Y offset to painter
                       zoom: _zoom,
                       animationTick: _animationTick,
                       canvasWidth: _canvasWidth,
@@ -3480,10 +3504,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   }
 
   // Helper method to detect hovered object on the canvas
-  void _detectHoveredObject(TerminalStationController controller, double canvasX, double canvasY) {
+  void _detectHoveredObject(
+      TerminalStationController controller, double canvasX, double canvasY) {
     // Check signals first
     for (final signal in controller.signals.values) {
-      final distance = ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
+      final distance =
+          ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
       if (distance < 30) {
         controller.setHoveredObject({
           'type': 'Signal',
@@ -3528,7 +3554,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
     // Check blocks
     for (final block in controller.blocks.values) {
-      if (canvasX >= block.startX && canvasX <= block.endX &&
+      if (canvasX >= block.startX &&
+          canvasX <= block.endX &&
           (block.y - canvasY).abs() < 20) {
         controller.setHoveredObject({
           'type': 'Block',
@@ -3546,10 +3573,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   }
 
   // Handle click on canvas objects (signals, points, and blocks)
-  void _handleCanvasClick(TerminalStationController controller, double canvasX, double canvasY) {
+  void _handleCanvasClick(
+      TerminalStationController controller, double canvasX, double canvasY) {
     // Check for signal clicks
     for (final signal in controller.signals.values) {
-      final distance = ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
+      final distance =
+          ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
       if (distance < 30) {
         _showSignalRouteDialog(controller, signal);
         return;
@@ -3567,7 +3596,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
     // Check for block clicks (CTRL+click for block controls)
     for (final block in controller.blocks.values) {
-      if (canvasX >= block.startX && canvasX <= block.endX &&
+      if (canvasX >= block.startX &&
+          canvasX <= block.endX &&
           (canvasY - block.y).abs() < 15) {
         _showBlockDialog(controller, block);
         return;
@@ -3576,7 +3606,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   }
 
   // Show dialog to select signal route
-  void _showSignalRouteDialog(TerminalStationController controller, Signal signal) {
+  void _showSignalRouteDialog(
+      TerminalStationController controller, Signal signal) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -3591,7 +3622,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               const SizedBox(height: 8),
               Text('Route State: ${signal.routeState.name}'),
               const SizedBox(height: 16),
-              const Text('Select Route:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Select Route:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               ...signal.routes.map((route) {
                 final isActive = signal.activeRouteId == route.id;
@@ -3654,10 +3686,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               if (isReserved) ...[
                 const SizedBox(height: 8),
                 Text('🔒 Reserved: ${reservedPosition!.name.toUpperCase()}',
-                    style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                    style: const TextStyle(
+                        color: Colors.orange, fontWeight: FontWeight.bold)),
               ],
               const SizedBox(height: 16),
-              const Text('Actions:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Actions:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           actions: [
@@ -3702,7 +3736,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   }
 
   // Show block control dialog
-  void _showBlockDialog(TerminalStationController controller, BlockSection block) {
+  void _showBlockDialog(
+      TerminalStationController controller, BlockSection block) {
     final isClosed = controller.isBlockClosed(block.id);
     final blockName = block.name ?? 'Block ${block.id}';
 
@@ -3730,7 +3765,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     fontWeight: FontWeight.bold,
                   )),
               const SizedBox(height: 8),
-              Text('Position: ${block.startX.toInt()} - ${block.endX.toInt()}, Y: ${block.y.toInt()}',
+              Text(
+                  'Position: ${block.startX.toInt()} - ${block.endX.toInt()}, Y: ${block.y.toInt()}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 16),
               if (isClosed)
@@ -3787,8 +3823,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 cameraZoom: _zoom,
                 onNavigate: (x, y) {
                   setState(() {
-                    _cameraOffsetX = -x * _zoom + MediaQuery.of(context).size.width / 2;
-                    _cameraOffsetY = -y * _zoom + MediaQuery.of(context).size.height / 2;
+                    _cameraOffsetX =
+                        -x * _zoom + MediaQuery.of(context).size.width / 2;
+                    _cameraOffsetY =
+                        -y * _zoom + MediaQuery.of(context).size.height / 2;
                   });
                 },
               ),
@@ -3818,16 +3856,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                     fontFamily: 'monospace')),
                             const SizedBox(height: 4),
                             Text('HH:MM:SS',
-                                style:
-                                    TextStyle(fontSize: 10, color: Colors.grey[600])),
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.grey[600])),
                           ],
                         ),
                       ),
-                          ),
-                          const SizedBox(height: 16),
-      
-                          // Axle Counter Evaluator (ACE) Section
-                          Card(
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Axle Counter Evaluator (ACE) Section
+                    Card(
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -3837,15 +3875,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                               children: [
                                 const Text('Axle Counter Evaluator (ACE)',
                                     style: TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.bold)),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold)),
                                 const Spacer(),
                                 ElevatedButton(
                                   onPressed: () => controller.resetACE(),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.blue,
                                     foregroundColor: Colors.white,
-                                    padding:
-                                        const EdgeInsets.symmetric(horizontal: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
                                     minimumSize: const Size(0, 30),
                                   ),
                                   child: const Text('Reset ACE',
@@ -3854,7 +3893,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                               ],
                             ),
                             const SizedBox(height: 12),
-      
+
                             // Axle Counter Results
                             const Text('Axle Counter Results:',
                                 style: TextStyle(
@@ -3863,7 +3902,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                             Wrap(
                               spacing: 8,
                               runSpacing: 4,
-                              children: controller.axleCounters.entries.map((entry) {
+                              children:
+                                  controller.axleCounters.entries.map((entry) {
                                 final counter = entry.value;
                                 return Container(
                                   padding: const EdgeInsets.symmetric(
@@ -3871,7 +3911,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                   decoration: BoxDecoration(
                                     color: Colors.grey[100],
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.grey[300]!),
+                                    border:
+                                        Border.all(color: Colors.grey[300]!),
                                   ),
                                   child: Column(
                                     children: [
@@ -3898,9 +3939,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                 );
                               }).toList(),
                             ),
-      
+
                             const SizedBox(height: 12),
-      
+
                             // AB Results
                             const Text('AB Occupation Results:',
                                 style: TextStyle(
@@ -3908,35 +3949,39 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                             const SizedBox(height: 8),
                             ...['AB100', 'AB105', 'AB106', 'AB108', 'AB111']
                                 .map((abId) {
-                              final isOccupied = controller.ace.isABOccupied(abId);
+                              final isOccupied =
+                                  controller.ace.isABOccupied(abId);
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 4),
-                                color:
-                                    isOccupied ? Colors.purple[50] : Colors.grey[50],
+                                color: isOccupied
+                                    ? Colors.purple[50]
+                                    : Colors.grey[50],
                                 child: ListTile(
                                   dense: true,
                                   title: Text(abId,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
-                                        color:
-                                            isOccupied ? Colors.purple : Colors.grey,
+                                        color: isOccupied
+                                            ? Colors.purple
+                                            : Colors.grey,
                                       )),
-                                  subtitle:
-                                      Text(isOccupied ? 'OCCUPIED' : 'UNOCCUPIED',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: isOccupied
-                                                ? Colors.purple
-                                                : Colors.green,
-                                            fontWeight: FontWeight.bold,
-                                          )),
+                                  subtitle: Text(
+                                      isOccupied ? 'OCCUPIED' : 'UNOCCUPIED',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isOccupied
+                                            ? Colors.purple
+                                            : Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                      )),
                                   trailing: Container(
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color:
-                                          isOccupied ? Colors.purple : Colors.green,
+                                      color: isOccupied
+                                          ? Colors.purple
+                                          : Colors.green,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -3946,26 +3991,27 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ],
                         ),
                       ),
-                          ),
-                          const SizedBox(height: 16),
-      
-                          Text('Status',
+                    ),
+                    const SizedBox(height: 16),
+
+                    Text('Status',
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 16),
-                          _buildStatusCard('Trains', '${stats['trains']}', Colors.blue),
-                          _buildStatusCard('Occupied Blocks', '${stats['occupied_blocks']}',
-                        Colors.orange),
-                          // Release Status
-                          _buildStatusCard(
+                    const SizedBox(height: 16),
+                    _buildStatusCard(
+                        'Trains', '${stats['trains']}', Colors.blue),
+                    _buildStatusCard('Occupied Blocks',
+                        '${stats['occupied_blocks']}', Colors.orange),
+                    // Release Status
+                    _buildStatusCard(
                         'Pending Cancellations',
                         '${stats['pending_cancellations']}',
                         stats['pending_cancellations'] > 0
                             ? Colors.orange
                             : Colors.grey),
-                          _buildStatusCard(
+                    _buildStatusCard(
                         'Release State',
                         '${stats['release_state']}',
                         stats['release_state'] == 'counting'
@@ -3973,74 +4019,83 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                             : stats['release_state'] == 'completed'
                                 ? Colors.green
                                 : Colors.grey),
-                          if (stats['release_countdown'] > 0)
+                    if (stats['release_countdown'] > 0)
                       _buildStatusCard('Release Countdown',
                           '${stats['release_countdown']}s', Colors.orange),
-                          _buildStatusCard(
-                        'Active Routes', '${stats['active_routes']}', Colors.green),
-                          _buildStatusCard('Route Reservations',
+                    _buildStatusCard('Active Routes',
+                        '${stats['active_routes']}', Colors.green),
+                    _buildStatusCard('Route Reservations',
                         '${stats['route_reservations']}', Colors.teal),
-                          _buildStatusCard(
+                    _buildStatusCard(
                         'Self-normalizing',
                         stats['self_normalizing_points'] ? 'ON' : 'OFF',
                         stats['self_normalizing_points']
                             ? Colors.green
                             : Colors.grey),
-                          _buildStatusCard(
+                    _buildStatusCard(
                         'Train Stops',
                         stats['train_stops_enabled'] ? 'ENABLED' : 'DISABLED',
-                        stats['train_stops_enabled'] ? Colors.red : Colors.grey),
-                          _buildStatusCard('Active Train Stops',
+                        stats['train_stops_enabled']
+                            ? Colors.red
+                            : Colors.grey),
+                    _buildStatusCard('Active Train Stops',
                         '${stats['active_train_stops']}', Colors.orange),
-                          _buildStatusCard(
+                    _buildStatusCard(
                         'Signals',
                         stats['signals_visible'] ? 'VISIBLE' : 'HIDDEN',
                         stats['signals_visible'] ? Colors.green : Colors.grey),
-                          // AB Deadlock Status
-                          _buildStatusCard(
+                    // AB Deadlock Status
+                    _buildStatusCard(
                         'Point 78A Deadlocked',
                         stats['point_78a_deadlocked'] ? 'YES' : 'NO',
-                        stats['point_78a_deadlocked'] ? Colors.red : Colors.green),
-                          _buildStatusCard(
+                        stats['point_78a_deadlocked']
+                            ? Colors.red
+                            : Colors.green),
+                    _buildStatusCard(
                         'Point 78B Deadlocked',
                         stats['point_78b_deadlocked'] ? 'YES' : 'NO',
-                        stats['point_78b_deadlocked'] ? Colors.red : Colors.green),
-                          _buildStatusCard(
+                        stats['point_78b_deadlocked']
+                            ? Colors.red
+                            : Colors.green),
+                    _buildStatusCard(
                         'AB104 Occupied',
                         stats['ab104_occupied'] ? 'YES' : 'NO',
                         stats['ab104_occupied'] ? Colors.orange : Colors.green),
-                          _buildStatusCard(
+                    _buildStatusCard(
                         'AB106 Occupied',
                         stats['ab106_occupied'] ? 'YES' : 'NO',
-                        stats['ab106_occupied'] ? Colors.deepOrange : Colors.green),
-                          _buildStatusCard(
+                        stats['ab106_occupied']
+                            ? Colors.deepOrange
+                            : Colors.green),
+                    _buildStatusCard(
                         'AB109 Occupied',
                         stats['ab109_occupied'] ? 'YES' : 'NO',
                         stats['ab109_occupied'] ? Colors.orange : Colors.green),
-                          const Divider(height: 32),
-      
-                          // Points Status
-                          Text('Points',
+                    const Divider(height: 32),
+
+                    // Points Status
+                    Text('Points',
                         style: Theme.of(context)
                             .textTheme
                             .titleSmall
                             ?.copyWith(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          ...controller.points.entries.map((entry) {
+                    const SizedBox(height: 8),
+                    ...controller.points.entries.map((entry) {
                       final point = entry.value;
-                      final isDeadlocked =
-                          (point.id == '78A' && stats['point_78a_deadlocked']) ||
-                              (point.id == '78B' && stats['point_78b_deadlocked']);
+                      final isDeadlocked = (point.id == '78A' &&
+                              stats['point_78a_deadlocked']) ||
+                          (point.id == '78B' && stats['point_78b_deadlocked']);
                       final deadlockReason = point.id == '78A'
                           ? (stats['ab106_occupied'] ? 'AB106' : 'AB104')
                           : (stats['ab106_occupied'] ? 'AB106' : 'AB109');
-      
+
                       return Card(
                         child: ListTile(
                           dense: true,
                           title: Row(
                             children: [
-                              Text(point.id, style: const TextStyle(fontSize: 13)),
+                              Text(point.id,
+                                  style: const TextStyle(fontSize: 13)),
                               if (isDeadlocked) ...[
                                 const SizedBox(width: 4),
                                 Container(
@@ -4087,19 +4142,19 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ),
                         ),
                       );
-                          }),
-                          const Divider(height: 32),
-      
-                          // Route Reservations
-                          Text('Active Reservations',
+                    }),
+                    const Divider(height: 32),
+
+                    // Route Reservations
+                    Text('Active Reservations',
                         style: Theme.of(context)
                             .textTheme
                             .titleSmall
                             ?.copyWith(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          ...controller.routeReservations.values.map((reservation) {
-                      final isPendingCancellation =
-                          controller.isRoutePendingCancellation(reservation.signalId);
+                    const SizedBox(height: 8),
+                    ...controller.routeReservations.values.map((reservation) {
+                      final isPendingCancellation = controller
+                          .isRoutePendingCancellation(reservation.signalId);
                       return Card(
                         child: ListTile(
                           dense: true,
@@ -4130,23 +4185,23 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                               : null,
                         ),
                       );
-                          }),
-                          if (controller.routeReservations.isEmpty)
+                    }),
+                    if (controller.routeReservations.isEmpty)
                       const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: Text('No active route reservations',
                             style: TextStyle(fontSize: 12, color: Colors.grey)),
                       ),
-                          const Divider(height: 32),
-      
-                          // Event Log
-                          Text('Event Log',
+                    const Divider(height: 32),
+
+                    // Event Log
+                    Text('Event Log',
                         style: Theme.of(context)
                             .textTheme
                             .titleSmall
                             ?.copyWith(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          Container(
+                    const SizedBox(height: 8),
+                    Container(
                       height: 200,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -4158,24 +4213,28 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                         itemBuilder: (context, index) {
                           final event = controller.eventLog[index];
                           Color textColor = Colors.greenAccent;
-      
+
                           // Color code events based on content
                           if (event.contains('❌') ||
                               event.contains('🚨') ||
                               event.contains('💥')) {
                             textColor = Colors.redAccent;
-                          } else if (event.contains('⚠️') || event.contains('🟡')) {
+                          } else if (event.contains('⚠️') ||
+                              event.contains('🟡')) {
                             textColor = Colors.orangeAccent;
-                          } else if (event.contains('🔒') || event.contains('🔓')) {
+                          } else if (event.contains('🔒') ||
+                              event.contains('🔓')) {
                             textColor = Colors.blueAccent;
-                          } else if (event.contains('🔄') || event.contains('🔧')) {
+                          } else if (event.contains('🔄') ||
+                              event.contains('🔧')) {
                             textColor = Colors.yellowAccent;
-                          } else if (event.contains('✅') || event.contains('🎉')) {
+                          } else if (event.contains('✅') ||
+                              event.contains('🎉')) {
                             textColor = Colors.greenAccent;
                           } else if (event.contains('🔢')) {
                             textColor = Colors.purpleAccent;
                           }
-      
+
                           return Text(
                             event,
                             style: TextStyle(
@@ -4185,12 +4244,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           );
                         },
                       ),
-                          ),
-      
-                          const SizedBox(height: 16),
-      
-                          // Current Time and Date
-                          Card(
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Current Time and Date
+                    Card(
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -4245,12 +4304,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ],
                         ),
                       ),
-                          ),
-      
-                          const SizedBox(height: 16),
-      
-                          // Quick Actions Section
-                          Card(
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Quick Actions Section
+                    Card(
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -4291,7 +4350,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                         horizontal: 8, vertical: 4),
                                   ),
                                 ),
-      
+
                                 // Axle Counter Visibility Toggle
                                 ElevatedButton.icon(
                                   onPressed: () =>
@@ -4307,15 +4366,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                     style: const TextStyle(fontSize: 11),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: controller.axleCountersVisible
-                                        ? Colors.purple
-                                        : Colors.grey,
+                                    backgroundColor:
+                                        controller.axleCountersVisible
+                                            ? Colors.purple
+                                            : Colors.grey,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4),
                                   ),
                                 ),
-      
+
                                 // Reset ACE
                                 ElevatedButton.icon(
                                   onPressed: () => controller.resetACE(),
@@ -4331,10 +4391,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                         horizontal: 8, vertical: 4),
                                   ),
                                 ),
-      
+
                                 // Reset Individual AB Sections
                                 PopupMenuButton<String>(
-                                  icon: const Icon(Icons.cleaning_services, size: 16),
+                                  icon: const Icon(Icons.cleaning_services,
+                                      size: 16),
                                   itemBuilder: (context) => [
                                     const PopupMenuItem(
                                       value: 'AB104',
@@ -4349,7 +4410,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                       child: Text('Reset AB109'),
                                     ),
                                     const PopupMenuItem(
-                                      value: 'AB111', // NEW
+                                      value: 'AB111',
                                       child: Text('Reset AB111'),
                                     ),
                                     const PopupMenuItem(
@@ -4383,13 +4444,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                         Text(
                                           'Reset AB',
                                           style: TextStyle(
-                                              fontSize: 11, color: Colors.white),
+                                              fontSize: 11,
+                                              color: Colors.white),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ),
-      
+
                                 // Export Layout
                                 ElevatedButton.icon(
                                   onPressed: () => _exportLayout(controller),
@@ -4410,651 +4472,683 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           ],
                         ),
                       ),
-                          ),
-      
-                          const SizedBox(height: 16),
-      
-                          // Relay Rack Panel
-                          if (controller.relayRackVisible)
-                      const RelayRackPanel(),
-      
-                          if (controller.relayRackVisible)
-                      const SizedBox(height: 16),
-                  ],
-                );
-              },
-            ),
-          );
-        }
-      
-        Widget _buildStatusCard(String label, String value, Color color) {
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(label),
-                  Text(value,
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-                ],
-              ),
-            ),
-          );
-        }
-      
-        void _showInfo(BuildContext context) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Enhanced Terminal Station'),
-              content: const SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                          Text('🚀 NEW FEATURES:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.green)),
-                          SizedBox(height: 8),
-                          Text('• Signal Visibility Toggle: Show/hide all signals'),
-                          Text('• Visual Train Doors: Black rectangles show open doors'),
-                          Text('• Smart Train Placement: Add trains to safe blocks only'),
-                          Text('• Auto Train Controls: Depart & Emergency Brake buttons'),
-                          Text('• Point Lock/Unlock: Manual control when unlocked'),
-                          Text('• Self-normalizing Points: Auto-return to normal'),
-                          Text(
-                        '• Route Reservations: Green highlights show protected blocks'),
-                          Text(
-                        '• Direction Labels: Clear Eastbound/Westbound road identification'),
-                          Text('• Simulation Timer: Tracks running time'),
-                          Text(
-                        '• Comprehensive Train Controls: Full control in left sidebar'),
-                          Text('• AB Section Deadlocking: Points lock when track occupied'),
-                          Text('• Crossover Detection: AB106 monitors crossover occupancy'),
-                          Text('• Enhanced Collision Recovery: Faster recovery process'),
-                          Text('• Canvas Size Controls: Adjust width and height'),
-                          Text('• Floating Zoom Controls: Easy zoom in/out/reset'),
-                          SizedBox(height: 12),
-                          Text('🔧 BUG FIXES:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.blue)),
-                          SizedBox(height: 8),
-                          Text('✅ C31 Route 1: Yellow reservations only up to block 110'),
-                          Text('✅ C31 Route 2: Now shows block 104 properly'),
-                          Text('✅ C30 Route 1 & 2: Now show block 109 properly'),
-                          Text('✅ C30 Route 2: Now shows block 104 in yellow reservation'),
-                          Text('✅ Auto trains in block 111 now properly reverse'),
-                          Text('✅ Signal C33 only protects eastbound movement'),
-                          Text('✅ Signal C31 only protects eastbound movement'),
-                          Text('✅ Permissive movement logic enhanced'),
-                          Text('✅ No more teleportation or off-screen trains'),
-                          Text(
-                        '✅ Route reservations only show when signal is green and train is using route'),
-                          Text('✅ Collision recovery no longer blocks train movement'),
-                          Text('✅ Points properly route trains through crossovers'),
-                          Text('✅ C31 shows red if block 104 has a train'),
-                          Text('✅ C30 shows red if block 109 has a train'),
-                          SizedBox(height: 12),
-                          Text('🎯 ENHANCEMENTS:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.orange)),
-                          SizedBox(height: 8),
-                          Text('• Visual route reservations with green highlights'),
-                          Text('• Emergency brake for auto trains'),
-                          Text('• Point manual override when unlocked'),
-                          Text('• Enhanced signal protection directions'),
-                          Text('• Better train movement commitment logic'),
-                          Text('• Direction arrows and road names on tracks'),
-                          Text('• Comprehensive train statistics and quick actions'),
-                          Text('• Axle counter system with twin counters on crossover'),
-                          Text('• AB section occupancy detection and visualization'),
-                          Text('• Point deadlocking based on AB section occupancy'),
-                          Text('• Faster collision recovery with visual guidance'),
-                          Text('• Two running rails on crossover tracks'),
-                          Text('• Dynamic canvas sizing with width/height controls'),
-                          Text('• Floating zoom controls in bottom-right corner'),
-                          SizedBox(height: 12),
-                          Text('⚠️ AUTO MODE RESTRICTIONS:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.red)),
-                          SizedBox(height: 8),
-                          Text(
-                        '• Auto trains cannot travel from block 101→103→105 (Westbound Road)'),
-                          Text('• This route is manual mode only'),
-                          Text('• Use manual mode for full directional flexibility'),
-                          SizedBox(height: 12),
-                          Text('🔒 SAFETY FEATURES:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.purple)),
-                          SizedBox(height: 8),
-                          Text('• AB104 occupation deadlocks point 78A'),
-                          Text('• AB109 occupation deadlocks point 78B'),
-                          Text('• AB106 occupation deadlocks both points 78A and 78B'),
-                          Text('• Automatic point unlocking when AB sections clear'),
-                          Text(
-                        '• Visual deadlock indicators on points and in status panel'),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Relay Rack Panel
+                    if (controller.relayRackVisible) const RelayRackPanel(),
+
+                    if (controller.relayRackVisible) const SizedBox(height: 16),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(String label, String value, Color color) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Enhanced Terminal Station'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('🚀 NEW FEATURES:',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.green)),
+              SizedBox(height: 8),
+              Text('• Signal Visibility Toggle: Show/hide all signals'),
+              Text('• Visual Train Doors: Black rectangles show open doors'),
+              Text('• Smart Train Placement: Add trains to safe blocks only'),
+              Text('• Auto Train Controls: Depart & Emergency Brake buttons'),
+              Text('• Point Lock/Unlock: Manual control when unlocked'),
+              Text('• Self-normalizing Points: Auto-return to normal'),
+              Text(
+                  '• Route Reservations: Green highlights show protected blocks'),
+              Text(
+                  '• Direction Labels: Clear Eastbound/Westbound road identification'),
+              Text('• Simulation Timer: Tracks running time'),
+              Text(
+                  '• Comprehensive Train Controls: Full control in left sidebar'),
+              Text('• AB Section Deadlocking: Points lock when track occupied'),
+              Text('• Crossover Detection: AB106 monitors crossover occupancy'),
+              Text('• Enhanced Collision Recovery: Faster recovery process'),
+              Text('• Canvas Size Controls: Adjust width and height'),
+              Text('• Floating Zoom Controls: Easy zoom in/out/reset'),
+              SizedBox(height: 12),
+              Text('🔧 BUG FIXES:',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.blue)),
+              SizedBox(height: 8),
+              Text('✅ C31 Route 1: Yellow reservations only up to block 110'),
+              Text('✅ C31 Route 2: Now shows block 104 properly'),
+              Text('✅ C30 Route 1 & 2: Now show block 109 properly'),
+              Text('✅ C30 Route 2: Now shows block 104 in yellow reservation'),
+              Text('✅ Auto trains in block 111 now properly reverse'),
+              Text('✅ Signal C33 only protects eastbound movement'),
+              Text('✅ Signal C31 only protects eastbound movement'),
+              Text('✅ Permissive movement logic enhanced'),
+              Text('✅ No more teleportation or off-screen trains'),
+              Text(
+                  '✅ Route reservations only show when signal is green and train is using route'),
+              Text('✅ Collision recovery no longer blocks train movement'),
+              Text('✅ Points properly route trains through crossovers'),
+              Text('✅ C31 shows red if block 104 has a train'),
+              Text('✅ C30 shows red if block 109 has a train'),
+              SizedBox(height: 12),
+              Text('🎯 ENHANCEMENTS:',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.orange)),
+              SizedBox(height: 8),
+              Text('• Visual route reservations with green highlights'),
+              Text('• Emergency brake for auto trains'),
+              Text('• Point manual override when unlocked'),
+              Text('• Enhanced signal protection directions'),
+              Text('• Better train movement commitment logic'),
+              Text('• Direction arrows and road names on tracks'),
+              Text('• Comprehensive train statistics and quick actions'),
+              Text('• Axle counter system with twin counters on crossover'),
+              Text('• AB section occupancy detection and visualization'),
+              Text('• Point deadlocking based on AB section occupancy'),
+              Text('• Faster collision recovery with visual guidance'),
+              Text('• Two running rails on crossover tracks'),
+              Text('• Dynamic canvas sizing with width/height controls'),
+              Text('• Floating zoom controls in bottom-right corner'),
+              SizedBox(height: 12),
+              Text('⚠️ AUTO MODE RESTRICTIONS:',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.red)),
+              SizedBox(height: 8),
+              Text(
+                  '• Auto trains cannot travel from block 101→103→105 (Westbound Road)'),
+              Text('• This route is manual mode only'),
+              Text('• Use manual mode for full directional flexibility'),
+              SizedBox(height: 12),
+              Text('🔒 SAFETY FEATURES:',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.purple)),
+              SizedBox(height: 8),
+              Text('• AB104 occupation deadlocks point 78A'),
+              Text('• AB109 occupation deadlocks point 78B'),
+              Text('• AB106 occupation deadlocks both points 78A and 78B'),
+              Text('• Automatic point unlocking when AB sections clear'),
+              Text(
+                  '• Visual deadlock indicators on points and in status panel'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+// === HELPER METHODS ===
+// ============================================================================
+
+  /// Add helper method to check if train is at platform
+  String? _getPlatformForTrain(Train train) {
+    // Platform 1: y=100, x=980-1240
+    if (train.y >= 80 && train.y <= 120 && train.x >= 980 && train.x <= 1240) {
+      return 'P1';
+    }
+    // Platform 2: y=300, x=980-1240
+    if (train.y >= 280 && train.y <= 320 && train.x >= 980 && train.x <= 1240) {
+      return 'P2';
+    }
+    return null;
+  }
+
+  void _exportLayout(TerminalStationController controller) {
+    try {
+      final xmlContent = controller.exportLayoutAsXML();
+      final bytes = utf8.encode(xmlContent);
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Layout Exported')
+          ]),
+          content: SizedBox(
+            width: 600,
+            height: 100,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('XML layout has been generated successfully!',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                const Text('Preview:'),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        xmlContent,
+                        style: const TextStyle(
+                            fontFamily: 'monospace', fontSize: 11),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text('Size: ${(bytes.length / 1024).toStringAsFixed(2)} KB',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content:
+                          Text('Copy feature requires clipboard permission')),
+                );
+              },
+              child: const Text('Copy XML'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.error, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Export Failed')
+          ]),
+          content: Text('Error exporting layout: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+// Helper methods for enhanced train controls
+  String _getTrainTypeName(TrainType type) {
+    switch (type) {
+      case TrainType.m1:
+        return 'M1 (Single)';
+      case TrainType.m2:
+        return 'M2 (Double)';
+      case TrainType.cbtcM1:
+        return 'CBTC M1';
+      case TrainType.cbtcM2:
+        return 'CBTC M2';
+    }
+  }
+
+  String _getCbtcModeName(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return 'Auto (Cyan)';
+      case CbtcMode.pm:
+        return 'PM (Orange)';
+      case CbtcMode.rm:
+        return 'RM (Brown)';
+      case CbtcMode.off:
+        return 'Off (White)';
+      case CbtcMode.storage:
+        return 'Storage (Green)';
+    }
+  }
+
+  Color _getCbtcModeColor(CbtcMode mode) {
+    switch (mode) {
+      case CbtcMode.auto:
+        return Colors.cyan;
+      case CbtcMode.pm:
+        return Colors.orange;
+      case CbtcMode.rm:
+        return Colors.brown;
+      case CbtcMode.off:
+        return Colors.white;
+      case CbtcMode.storage:
+        return Colors.green;
+    }
+  }
+
+  List<DropdownMenuItem<String>> _getDestinationOptions() {
+    return [
+      // Blocks
+      const DropdownMenuItem(value: 'B:100', child: Text('Block 100')),
+      const DropdownMenuItem(value: 'B:102', child: Text('Block 102')),
+      const DropdownMenuItem(value: 'B:104', child: Text('Block 104')),
+      const DropdownMenuItem(value: 'B:106', child: Text('Block 106')),
+      const DropdownMenuItem(value: 'B:108', child: Text('Block 108')),
+      const DropdownMenuItem(value: 'B:110', child: Text('Block 110')),
+      const DropdownMenuItem(value: 'B:112', child: Text('Block 112')),
+      const DropdownMenuItem(value: 'B:114', child: Text('Block 114')),
+      const DropdownMenuItem(value: 'B:101', child: Text('Block 101')),
+      const DropdownMenuItem(value: 'B:103', child: Text('Block 103')),
+      const DropdownMenuItem(value: 'B:105', child: Text('Block 105')),
+      const DropdownMenuItem(value: 'B:107', child: Text('Block 107')),
+      const DropdownMenuItem(value: 'B:109', child: Text('Block 109')),
+      const DropdownMenuItem(value: 'B:111', child: Text('Block 111')),
+      // Stations/Platforms
+      const DropdownMenuItem(
+          value: 'S:Terminal-P1', child: Text('Terminal Station - Platform 1')),
+      const DropdownMenuItem(
+          value: 'S:Terminal-P2', child: Text('Terminal Station - Platform 2')),
+      const DropdownMenuItem(
+          value: 'S:Terminal-Bay',
+          child: Text('Terminal Station - Bay Platform')),
+    ];
+  }
+
+// ============================================================================
+// POINT CONTROL PANEL
+// ============================================================================
+  Widget _buildPointControlPanel(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Point Control Panel',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('Control all 10 points across the network',
+            style: TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: controller.points.entries.map((entry) {
+            final point = entry.value;
+            final isNormal = point.position == PointPosition.normal;
+
+            return ElevatedButton(
+              onPressed:
+                  point.locked ? null : () => controller.swingPoint(point.id),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isNormal ? Colors.green : Colors.orange,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(point.id,
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  Text(
+                    isNormal ? 'NORMAL' : 'REVERSE',
+                    style: const TextStyle(fontSize: 9),
+                  ),
+                  if (point.locked) const Icon(Icons.lock, size: 12),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+// ============================================================================
+// WIFI CONTROL PANEL
+// ============================================================================
+  Widget _buildWiFiControlPanel(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('WiFi Antenna Control',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Spacer(),
+            // Ghost Train Visibility Toggle
+            Consumer<TerminalStationController>(
+              builder: (context, ctrl, _) => IconButton(
+                icon: Icon(ctrl.showGhostTrains
+                    ? Icons.visibility
+                    : Icons.visibility_off),
+                tooltip: 'Toggle Ghost Trains (Shadow Mode)',
+                onPressed: () => ctrl.toggleGhostTrainsVisibility(),
+                color: ctrl.showGhostTrains ? Colors.green : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Text('15 WiFi antennas across all 3 sections',
+            style: TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 12),
+
+        // Group by section
+        _buildWiFiSection('LEFT SECTION',
+            ['W_L1', 'W_L2', 'W_L3', 'W_L4', 'W_L5'], controller),
+        const Divider(),
+        _buildWiFiSection('MIDDLE SECTION',
+            ['W_C1', 'W_C2', 'W_C3', 'W_C4', 'W_C5'], controller),
+        const Divider(),
+        _buildWiFiSection('RIGHT SECTION',
+            ['W_R1', 'W_R2', 'W_R3', 'W_R4', 'W_R5'], controller),
+      ],
+    );
+  }
+
+  Widget _buildWiFiSection(String title, List<String> wifiIds,
+      TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: wifiIds.map((wifiId) {
+            final wifi = controller.wifiAntennas[wifiId];
+            if (wifi == null) return const SizedBox.shrink();
+
+            return Card(
+              color: wifi.isActive ? Colors.green[50] : Colors.grey[200],
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.wifi,
+                          color: wifi.isActive ? Colors.green : Colors.grey,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(wifiId,
+                            style: const TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Switch(
+                      value: wifi.isActive,
+                      onChanged: (value) =>
+                          controller.toggleWifiAntenna(wifiId),
+                      activeColor: Colors.green,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+// ============================================================================
+// TIMETABLE MANAGEMENT PANEL
+// ============================================================================
+  Widget _buildTimetableManagementPanel(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Timetable Management',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+
+        // Timetable Active Toggle
+        Card(
+          color:
+              controller.timetableActive ? Colors.green[50] : Colors.grey[100],
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.timetableActive
+                      ? Icons.schedule
+                      : Icons.schedule_outlined,
+                  color:
+                      controller.timetableActive ? Colors.green : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Timetable Service',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        controller.timetableActive
+                            ? 'Active - Automated Operation'
+                            : 'Inactive',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: controller.timetableActive,
+                  onChanged: (value) => controller.toggleTimetableActive(),
+                  activeColor: Colors.green,
                 ),
               ],
             ),
-          );
-        }
-      
-        // ============================================================================
-        // === HELPER METHODS ===
-        // ============================================================================
-      
-        /// Add helper method to check if train is at platform
-        String? _getPlatformForTrain(Train train) {
-          // Platform 1: y=100, x=980-1240
-          if (train.y >= 80 && train.y <= 120 && train.x >= 980 && train.x <= 1240) {
-            return 'P1';
-          }
-          // Platform 2: y=300, x=980-1240
-          if (train.y >= 280 && train.y <= 320 && train.x >= 980 && train.x <= 1240) {
-            return 'P2';
-          }
-          return null;
-        }
-      
-        void _exportLayout(TerminalStationController controller) {
-          try {
-            final xmlContent = controller.exportLayoutAsXML();
-            final bytes = utf8.encode(xmlContent);
-      
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Row(children: [
-                  Icon(Icons.check_circle, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('Layout Exported')
-                ]),
-                content: SizedBox(
-                  width: 600,
-                  height: 100,
-                  child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                      const Text('XML layout has been generated successfully!',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 16),
-                      const Text('Preview:'),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Generate Ghost Trains Button
+        ElevatedButton.icon(
+          onPressed: () {
+            controller.generateGhostTrainsForAllServices();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      'Generated ${controller.ghostTrains.length} ghost trains')),
+            );
+          },
+          icon: const Icon(Icons.auto_awesome),
+          label: const Text('Generate Ghost Trains'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.purple,
+            foregroundColor: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Text(
+            '${controller.ghostTrains.length} ghost trains | ${controller.getAvailableGhostTrains().length} available',
+            style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+        const SizedBox(height: 12),
+
+        // Train Assignment Section
+        if (controller.trains.isNotEmpty) ...[
+          const Text('Assign Trains to Timetable',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          ...controller.trains.map((train) {
+            final isAssigned = train.assignedTimetableId != null;
+
+            return Card(
+              color: isAssigned ? Colors.blue[50] : null,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 16,
+                          height: 16,
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: SingleChildScrollView(
-                            child: SelectableText(
-                              xmlContent,
-                              style: const TextStyle(
-                                  fontFamily: 'monospace', fontSize: 11),
-                            ),
+                            color: train.color,
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text('Size: ${(bytes.length / 1024).toStringAsFixed(2)} KB',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                          ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                          onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content:
-                                Text('Copy feature requires clipboard permission')),
-                      );
-                          },
-                          child: const Text('Copy XML'),
-                  ),
-                  ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Done'),
-                  ),
-                ],
-              ),
-            );
-          } catch (e) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Row(children: [
-                  Icon(Icons.error, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Export Failed')
-                ]),
-                content: Text('Error exporting layout: $e'),
-                actions: [
-                  TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Close'),
-                  ),
-                ],
-              ),
-            );
-          }
-        }
-      
-        // Helper methods for enhanced train controls
-        String _getTrainTypeName(TrainType type) {
-          switch (type) {
-            case TrainType.m1:
-              return 'M1 (Single)';
-            case TrainType.m2:
-              return 'M2 (Double)';
-            case TrainType.cbtcM1:
-              return 'CBTC M1';
-            case TrainType.cbtcM2:
-              return 'CBTC M2';
-          }
-        }
-      
-        String _getCbtcModeName(CbtcMode mode) {
-          switch (mode) {
-            case CbtcMode.auto:
-              return 'Auto (Cyan)';
-            case CbtcMode.pm:
-              return 'PM (Orange)';
-            case CbtcMode.rm:
-              return 'RM (Brown)';
-            case CbtcMode.off:
-              return 'Off (White)';
-            case CbtcMode.storage:
-              return 'Storage (Green)';
-          }
-        }
-      
-        Color _getCbtcModeColor(CbtcMode mode) {
-          switch (mode) {
-            case CbtcMode.auto:
-              return Colors.cyan;
-            case CbtcMode.pm:
-              return Colors.orange;
-            case CbtcMode.rm:
-              return Colors.brown;
-            case CbtcMode.off:
-              return Colors.white;
-            case CbtcMode.storage:
-              return Colors.green;
-          }
-        }
-      
-        List<DropdownMenuItem<String>> _getDestinationOptions() {
-          return [
-            // Blocks
-            const DropdownMenuItem(value: 'B:100', child: Text('Block 100')),
-            const DropdownMenuItem(value: 'B:102', child: Text('Block 102')),
-            const DropdownMenuItem(value: 'B:104', child: Text('Block 104')),
-            const DropdownMenuItem(value: 'B:106', child: Text('Block 106')),
-            const DropdownMenuItem(value: 'B:108', child: Text('Block 108')),
-            const DropdownMenuItem(value: 'B:110', child: Text('Block 110')),
-            const DropdownMenuItem(value: 'B:112', child: Text('Block 112')),
-            const DropdownMenuItem(value: 'B:114', child: Text('Block 114')),
-            const DropdownMenuItem(value: 'B:101', child: Text('Block 101')),
-            const DropdownMenuItem(value: 'B:103', child: Text('Block 103')),
-            const DropdownMenuItem(value: 'B:105', child: Text('Block 105')),
-            const DropdownMenuItem(value: 'B:107', child: Text('Block 107')),
-            const DropdownMenuItem(value: 'B:109', child: Text('Block 109')),
-            const DropdownMenuItem(value: 'B:111', child: Text('Block 111')),
-            // Stations/Platforms
-            const DropdownMenuItem(
-                value: 'S:Terminal-P1', child: Text('Terminal Station - Platform 1')),
-            const DropdownMenuItem(
-                value: 'S:Terminal-P2', child: Text('Terminal Station - Platform 2')),
-            const DropdownMenuItem(
-                value: 'S:Terminal-Bay', child: Text('Terminal Station - Bay Platform')),
-          ];
-        }
-      
-        // ============================================================================
-        // POINT CONTROL PANEL
-        // ============================================================================
-        Widget _buildPointControlPanel(TerminalStationController controller) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Point Control Panel',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              const Text('Control all 10 points across the network',
-                  style: TextStyle(fontSize: 11, color: Colors.grey)),
-              const SizedBox(height: 12),
-      
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: controller.points.entries.map((entry) {
-                  final point = entry.value;
-                  final isNormal = point.position == PointPosition.normal;
-      
-                  return ElevatedButton(
-                          onPressed: point.locked
-                        ? null
-                        : () => controller.swingPoint(point.id),
-                          style: ElevatedButton.styleFrom(
-                      backgroundColor: isNormal ? Colors.green : Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            train.name,
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold),
                           ),
-                          child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(point.id, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                        if (isAssigned)
+                          const Icon(Icons.check_circle,
+                              color: Colors.green, size: 16),
+                      ],
+                    ),
+                    if (isAssigned) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Assigned to: ${train.assignedTimetableId}',
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      ),
+                      if (train.earlyLateSeconds != null) ...[
                         const SizedBox(height: 2),
                         Text(
-                          isNormal ? 'NORMAL' : 'REVERSE',
-                          style: const TextStyle(fontSize: 9),
+                          train.earlyLateSeconds! > 0
+                              ? 'Running LATE by ${train.earlyLateSeconds}s'
+                              : train.earlyLateSeconds! < 0
+                                  ? 'Running EARLY by ${-train.earlyLateSeconds!}s'
+                                  : 'ON TIME',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: train.earlyLateSeconds! > 0
+                                ? Colors.red
+                                : train.earlyLateSeconds! < 0
+                                    ? Colors.orange
+                                    : Colors.green,
+                          ),
                         ),
-                        if (point.locked)
-                          const Icon(Icons.lock, size: 12),
                       ],
-                          ),
-                  );
-                }).toList(),
-              ),
-            ],
-          );
-        }
-      
-        // ============================================================================
-        // WIFI CONTROL PANEL
-        // ============================================================================
-        Widget _buildWiFiControlPanel(TerminalStationController controller) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Text('WiFi Antenna Control',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  // Ghost Train Visibility Toggle
-                  Consumer<TerminalStationController>(
-                          builder: (context, ctrl, _) => IconButton(
-                      icon: Icon(ctrl.showGhostTrains ? Icons.visibility : Icons.visibility_off),
-                      tooltip: 'Toggle Ghost Trains (Shadow Mode)',
-                      onPressed: () => ctrl.toggleGhostTrainsVisibility(),
-                      color: ctrl.showGhostTrains ? Colors.green : Colors.grey,
-                          ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text('15 WiFi antennas across all 3 sections',
-                  style: TextStyle(fontSize: 11, color: Colors.grey)),
-              const SizedBox(height: 12),
-      
-              // Group by section
-              _buildWiFiSection('LEFT SECTION', ['W_L1', 'W_L2', 'W_L3', 'W_L4', 'W_L5'], controller),
-              const Divider(),
-              _buildWiFiSection('MIDDLE SECTION', ['W_C1', 'W_C2', 'W_C3', 'W_C4', 'W_C5'], controller),
-              const Divider(),
-              _buildWiFiSection('RIGHT SECTION', ['W_R1', 'W_R2', 'W_R3', 'W_R4', 'W_R5'], controller),
-            ],
-          );
-        }
-      
-        Widget _buildWiFiSection(String title, List<String> wifiIds, TerminalStationController controller) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: wifiIds.map((wifiId) {
-                  final wifi = controller.wifiAntennas[wifiId];
-                  if (wifi == null) return const SizedBox.shrink();
-      
-                  return Card(
-                          color: wifi.isActive ? Colors.green[50] : Colors.grey[200],
-                          child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.wifi,
-                                color: wifi.isActive ? Colors.green : Colors.grey,
-                                size: 16,
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!isAssigned &&
+                            controller.getAvailableGhostTrains().isNotEmpty)
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                final ghostTrain =
+                                    controller.getAvailableGhostTrains().first;
+                                controller.assignTrainToTimetableSlot(
+                                    train.id, ghostTrain.id);
+                              },
+                              icon: const Icon(Icons.add_task, size: 14),
+                              label: const Text('Assign',
+                                  style: TextStyle(fontSize: 11)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                               ),
-                              const SizedBox(width: 4),
-                              Text(wifiId, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Switch(
-                            value: wifi.isActive,
-                            onChanged: (value) => controller.toggleWifiAntenna(wifiId),
-                            activeColor: Colors.green,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ],
-                      ),
-                          ),
-                  );
-                }).toList(),
-              ),
-            ],
-          );
-        }
-      
-        // ============================================================================
-        // TIMETABLE MANAGEMENT PANEL
-        // ============================================================================
-        Widget _buildTimetableManagementPanel(TerminalStationController controller) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Timetable Management',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-      
-              // Timetable Active Toggle
-              Card(
-                color: controller.timetableActive ? Colors.green[50] : Colors.grey[100],
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                          children: [
-                      Icon(
-                        controller.timetableActive ? Icons.schedule : Icons.schedule_outlined,
-                        color: controller.timetableActive ? Colors.green : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Timetable Service', style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text(
-                              controller.timetableActive ? 'Active - Automated Operation' : 'Inactive',
-                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                             ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        value: controller.timetableActive,
-                        onChanged: (value) => controller.toggleTimetableActive(),
-                        activeColor: Colors.green,
-                      ),
-                          ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-      
-              // Generate Ghost Trains Button
-              ElevatedButton.icon(
-                onPressed: () {
-                  controller.generateGhostTrainsForAllServices();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Generated ${controller.ghostTrains.length} ghost trains')),
-                  );
-                },
-                icon: const Icon(Icons.auto_awesome),
-                label: const Text('Generate Ghost Trains'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-      
-              Text('${controller.ghostTrains.length} ghost trains | ${controller.getAvailableGhostTrains().length} available',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-              const SizedBox(height: 12),
-      
-              // Train Assignment Section
-              if (controller.trains.isNotEmpty) ...[
-                const Text('Assign Trains to Timetable',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-      
-                ...controller.trains.map((train) {
-                  final isAssigned = train.assignedTimetableId != null;
-      
-                  return Card(
-                          color: isAssigned ? Colors.blue[50] : null,
-                          child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 16,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  color: train.color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  train.name,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              if (isAssigned)
-                                const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                            ],
                           ),
-                          if (isAssigned) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              'Assigned to: ${train.assignedTimetableId}',
-                              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                        if (isAssigned) ...[
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => controller
+                                  .unassignTrainFromTimetable(train.id),
+                              icon: const Icon(Icons.remove_circle, size: 14),
+                              label: const Text('Unassign',
+                                  style: TextStyle(fontSize: 11)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                              ),
                             ),
-                            if (train.earlyLateSeconds != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                train.earlyLateSeconds! > 0
-                                    ? 'Running LATE by ${train.earlyLateSeconds}s'
-                                    : train.earlyLateSeconds! < 0
-                                        ? 'Running EARLY by ${-train.earlyLateSeconds!}s'
-                                        : 'ON TIME',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: train.earlyLateSeconds! > 0
-                                      ? Colors.red
-                                      : train.earlyLateSeconds! < 0
-                                          ? Colors.orange
-                                          : Colors.green,
+                          ),
+                          const SizedBox(width: 4),
+                          if (controller.getAvailableGhostTrains().isNotEmpty)
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  final ghostTrain = controller
+                                      .getAvailableGhostTrains()
+                                      .first;
+                                  controller.reassignTrainToTimetableSlot(
+                                      train.id, ghostTrain.id);
+                                },
+                                icon: const Icon(Icons.swap_horiz, size: 14),
+                                label: const Text('Reassign',
+                                    style: TextStyle(fontSize: 11)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                 ),
                               ),
-                            ],
-                          ],
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (!isAssigned && controller.getAvailableGhostTrains().isNotEmpty)
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      final ghostTrain = controller.getAvailableGhostTrains().first;
-                                      controller.assignTrainToTimetableSlot(train.id, ghostTrain.id);
-                                    },
-                                    icon: const Icon(Icons.add_task, size: 14),
-                                    label: const Text('Assign', style: TextStyle(fontSize: 11)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    ),
-                                  ),
-                                ),
-                              if (isAssigned) ...[
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () => controller.unassignTrainFromTimetable(train.id),
-                                    icon: const Icon(Icons.remove_circle, size: 14),
-                                    label: const Text('Unassign', style: TextStyle(fontSize: 11)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                if (controller.getAvailableGhostTrains().isNotEmpty)
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        final ghostTrain = controller.getAvailableGhostTrains().first;
-                                        controller.reassignTrainToTimetableSlot(train.id, ghostTrain.id);
-                                      },
-                                      icon: const Icon(Icons.swap_horiz, size: 14),
-                                      label: const Text('Reassign', style: TextStyle(fontSize: 11)),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.orange,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ],
-                          ),
+                            ),
                         ],
-                      ),
-                          ),
-                  );
-                }).toList(),
-                  ], // End of ListView children
+                      ],
+                    ),
+                  ],
                 ),
-              ), // End of Expanded
-            ], // End of Column children
-          ); // End of Column
-        },
-      ), // End of Consumer
-    ); // End of Container
+              ),
+            );
+          }).toList(),
+        ],
+      ],
+    );
   }
 }

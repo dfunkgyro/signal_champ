@@ -183,6 +183,13 @@ class Train {
   String? smcDestination; // SMC-assigned destination
   MovementAuthority? movementAuthority; // CBTC movement authority visualization
 
+  // CBTC NCT (Non-Communication Train) state
+  bool isNCT; // NCT state - train flashes red, cannot go auto/PM
+  int transpondersPassed; // Count of transponders passed for activation
+  String? lastTransponderId; // Last transponder ID passed
+  bool terReceived; // Train Entry Request received by VCC (1st transponder)
+  bool directionConfirmed; // Direction confirmed by VCC (2nd transponder)
+
   // Timetable tracking fields
   String? assignedTimetableId; // ID of ghost train timetable slot
   String? assignedServiceId; // ID of TimetableService
@@ -213,6 +220,11 @@ class Train {
     this.cbtcMode = CbtcMode.off,
     this.smcDestination,
     this.movementAuthority,
+    this.isNCT = false, // Default to false for backwards compatibility
+    this.transpondersPassed = 0,
+    this.lastTransponderId,
+    this.terReceived = false,
+    this.directionConfirmed = false,
     this.assignedTimetableId,
     this.assignedServiceId,
     this.earlyLateSeconds,

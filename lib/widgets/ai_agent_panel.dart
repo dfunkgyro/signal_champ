@@ -19,6 +19,7 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
   final List<ChatMessage> _messages = [];
   OpenAIService? _openAIService;
   bool _isProcessing = false;
+  Map<String, dynamic>? _pendingCommand; // Store incomplete command for confirmation
 
   @override
   void initState() {
@@ -65,8 +66,23 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
 
     setState(() => _isProcessing = true);
 
+    // Check if we're waiting for confirmation on a pending command
+    if (_pendingCommand != null) {
+      if (input.toLowerCase() == 'yes' || input.toLowerCase() == 'y') {
+        // Execute the pending command
+        _executePendingCommand(controller);
+        _pendingCommand = null;
+      } else {
+        // Cancel the pending command
+        _addMessage('AI Agent', '❌ Command cancelled.', isAI: true);
+        _pendingCommand = null;
+      }
+      setState(() => _isProcessing = false);
+      return;
+    }
+
     if (_openAIService == null) {
-      // Fallback: Simple pattern matching
+      // Fallback: Simple pattern matching with extrapolation
       _processLocalCommand(input, controller);
     } else {
       // Use OpenAI for natural language processing
@@ -80,6 +96,40 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
     }
 
     setState(() => _isProcessing = false);
+  }
+
+  void _executePendingCommand(TerminalStationController controller) {
+    if (_pendingCommand == null) return;
+
+    final action = _pendingCommand!['action'] as String;
+    switch (action) {
+      case 'set_route':
+        final signalId = _pendingCommand!['signal_id'] as String;
+        final routeId = _pendingCommand!['route_id'] as String;
+        controller.setRoute(signalId, routeId);
+        _addMessage('AI Agent', '✅ Route $routeId set for signal $signalId', isAI: true);
+        break;
+
+      case 'swing_point':
+        final pointId = _pendingCommand!['point_id'] as String;
+        controller.swingPoint(pointId);
+        _addMessage('AI Agent', '✅ Point $pointId swung', isAI: true);
+        break;
+
+      case 'add_train':
+        final blockId = _pendingCommand!['block_id'] as String;
+        final trainType = _pendingCommand!['train_type'] as TrainType;
+        controller.addTrainToBlock(blockId, trainType: trainType);
+        _addMessage('AI Agent', '✅ ${trainType.name.toUpperCase()} train added to block $blockId', isAI: true);
+        break;
+
+      case 'set_destination':
+        final trainId = _pendingCommand!['train_id'] as String;
+        final blockId = _pendingCommand!['block_id'] as String;
+        controller.setTrainDestination(trainId, 'B:$blockId');
+        _addMessage('AI Agent', '✅ Train $trainId destination set to block $blockId', isAI: true);
+        break;
+    }
   }
 
   void _processLocalCommand(String input, TerminalStationController controller) {
@@ -379,8 +429,8 @@ Try saying:
       elevation: isDragging ? 8 : 4,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        width: 350,
-        height: 500,
+        width: 175,  // Half of original 350
+        height: 250, // Half of original 500
         decoration: BoxDecoration(
           color: Colors.grey[900],
           borderRadius: BorderRadius.circular(12),

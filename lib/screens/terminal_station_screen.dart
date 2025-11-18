@@ -6,6 +6,7 @@ import '../controllers/terminal_station_controller.dart';
 import '../controllers/canvas_theme_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
 import '../widgets/ai_agent_panel.dart';
+import '../widgets/relay_rack_panel.dart';
 import 'dart:math' as math;
 
 // ============================================================================
@@ -4388,6 +4389,13 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
 
               const SizedBox(height: 16),
+
+              // Relay Rack Panel
+              if (controller.relayRackVisible)
+                const RelayRackPanel(),
+
+              if (controller.relayRackVisible)
+                const SizedBox(height: 16),
             ],
           );
         },

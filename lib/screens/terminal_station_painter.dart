@@ -1983,7 +1983,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     canvas.drawCircle(Offset(x, y), 25, outlinePaint);
 
     // Build detailed tooltip text based on object type
-    String tooltipText = '$type: $id\n(${x.toStringAsFixed(0)}, ${y.toStringAsFixed(0)})';
+    String tooltipText = '$type: $id\nX: ${x.toStringAsFixed(1)} | Y: ${y.toStringAsFixed(1)}';
 
     // Add detailed information based on type
     if (type == 'Signal') {

@@ -1507,35 +1507,11 @@ class TerminalStationController extends ChangeNotifier {
   void _initializeTimetable() {
     // Create a default timetable with sample services
     final now = DateTime.now();
+    // Timetable starts empty - user must add trains manually
+    // Service trains 001, 002, 003 removed as per user request
     timetable = Timetable(
       services: [
-        TimetableService(
-          id: 'SVC001',
-          trainName: 'Service 001',
-          trainType: TrainType.cbtcM1,
-          startBlock: '100',
-          endBlock: '114',
-          stops: ['106', '110', '114'],
-          scheduledTime: now.add(const Duration(seconds: 10)),
-        ),
-        TimetableService(
-          id: 'SVC002',
-          trainName: 'Service 002',
-          trainType: TrainType.m2,
-          startBlock: '101',
-          endBlock: '111',
-          stops: ['105', '109', '111'],
-          scheduledTime: now.add(const Duration(seconds: 30)),
-        ),
-        TimetableService(
-          id: 'SVC003',
-          trainName: 'Service 003',
-          trainType: TrainType.cbtcM2,
-          startBlock: '102',
-          endBlock: '112',
-          stops: ['106', '110', '112'],
-          scheduledTime: now.add(const Duration(minutes: 1)),
-        ),
+        // No default services - user adds trains manually
       ],
     );
   }
@@ -2556,6 +2532,90 @@ class TerminalStationController extends ChangeNotifier {
 
     _logEvent(
         '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, ${signals.length} signals, ${points.length} points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
+  }
+
+  // ============================================================================
+  // DOUBLE DIAMOND CROSSOVER ROUTING (PLACEHOLDER - INCOMPLETE)
+  // ============================================================================
+
+  /// TODO: Implement double diamond crossover routing logic
+  /// This method should handle train routing through double diamond crossovers
+  ///
+  /// Requirements:
+  /// 1. Define point machines for 77c, 77d, 77e, 77f (left crossover)
+  /// 2. Define point machines for 79c, 79d, 79e, 79f (right crossover)
+  /// 3. Create diamond crossing objects (45° and 135° diamonds)
+  /// 4. Define track circuits for crossover sections
+  /// 5. Implement route calculation through crossovers
+  /// 6. Add speed limits for different routes (straight: 80, cross: 60, turn: 40)
+  /// 7. Handle point locking and route reservation
+  ///
+  /// Route possibilities for each crossover:
+  /// - R77_EW_Straight: East-West straight through (77c:normal, 77d:normal, diamond_45)
+  /// - R77_EW_Cross: East-West crossover (77c:reverse, 77d:reverse, diamond_135)
+  /// - R77_NS_Straight: North-South straight (77e:normal, 77f:normal, diamond_45)
+  /// - R77_NS_Cross: North-South crossover (77e:reverse, 77f:reverse, diamond_135)
+  /// - R77_Turn_NW/NE/SW/SE: Turning movements
+  void _initializeDoubleDiamondCrossovers() {
+    // TODO: Implement point machine definitions
+    // Example structure:
+    // points['77c'] = Point(
+    //   id: '77c',
+    //   x: -575.7,
+    //   y: 173.8,
+    //   type: PointType.leftHand,
+    //   position: PointPosition.normal,
+    // );
+
+    // TODO: Implement diamond crossing objects
+    // diamonds['diamond_45_left'] = Diamond(
+    //   id: 'diamond_45',
+    //   angle: 45,
+    //   x: -500,
+    //   y: 200,
+    //   speedLimit: 25,
+    // );
+
+    // TODO: Implement track circuits for crossover sections
+    // blocks['TR_77A'] = BlockSection(
+    //   id: 'TR_77A',
+    //   startX: -600,
+    //   endX: -550,
+    //   y: 100,
+    //   isCrossover: true,
+    // );
+
+    // TODO: Define routes through crossovers
+    // This will allow trains to actually traverse the double diamond
+
+    _logEvent('⚠️ Double diamond crossover routing NOT IMPLEMENTED - visual only');
+  }
+
+  /// TODO: Calculate route through double diamond crossover
+  /// Returns the route ID if a valid path exists, null otherwise
+  String? _calculateCrossoverRoute(
+    String trainId,
+    String fromBlock,
+    String toBlock,
+    String crossoverId,
+  ) {
+    // TODO: Implement route calculation logic
+    // 1. Determine which crossover (left/middle/right)
+    // 2. Check point positions required
+    // 3. Verify track circuits are clear
+    // 4. Return appropriate route ID (R77_EW_Straight, etc.)
+
+    return null; // Placeholder - not implemented
+  }
+
+  /// TODO: Apply speed limit based on crossover route
+  double _getCrossoverSpeedLimit(String routeId) {
+    // TODO: Return appropriate speed limit based on route type
+    // Straight routes: 80 m/s
+    // Cross routes: 60 m/s
+    // Turn routes: 40 m/s
+
+    return 80.0; // Placeholder - default to straight route speed
   }
 
   // ============================================================================
@@ -5355,10 +5415,136 @@ class TerminalStationController extends ChangeNotifier {
     });
     buffer.writeln('  </ACEResults>');
 
+    // Export Double Diamond Crossovers
+    buffer.writeln('');
+    buffer.writeln('  <!-- DOUBLE DIAMOND CROSSOVER CONFIGURATIONS -->');
+    _exportDoubleDiamondCrossovers(buffer);
+
     buffer.writeln('</RailwayLayout>');
 
     _logEvent('📄 Layout exported to XML (${buffer.length} bytes)');
     return buffer.toString();
+  }
+
+  /// Exports enhanced double diamond crossover configurations
+  void _exportDoubleDiamondCrossovers(StringBuffer buffer) {
+    // LEFT SECTION - Double Diamond Crossover (x=-550 to -450)
+    buffer.writeln('  <DoubleDiamondCrossover id="ddc_77" centerX="-500" centerY="200">');
+    buffer.writeln('    <!-- Points: 76A, 76B, 77A, 77B -->');
+    buffer.writeln('    <Points>');
+    buffer.writeln('      <Point id="77c" type="left_hand" x="-575.7" y="173.8" state="normal">');
+    buffer.writeln('        <Geometry>');
+    buffer.writeln('          <MainRoute angle="0" length="21.2"/>');
+    buffer.writeln('          <DivergingRoute angle="-6.7" length="21.2"/>');
+    buffer.writeln('          <ThrowTime>2000</ThrowTime>');
+    buffer.writeln('        </Geometry>');
+    buffer.writeln('        <Control>');
+    buffer.writeln('          <Relay id="WKR_77c" status="normal"/>');
+    buffer.writeln('          <Detection circuit="DP_77c"/>');
+    buffer.writeln('        </Control>');
+    buffer.writeln('      </Point>');
+    buffer.writeln('      <Point id="77d" type="right_hand" x="-424.3" y="173.8" state="normal">');
+    buffer.writeln('        <Geometry>');
+    buffer.writeln('          <MainRoute angle="180" length="21.2"/>');
+    buffer.writeln('          <DivergingRoute angle="186.7" length="21.2"/>');
+    buffer.writeln('          <ThrowTime>2000</ThrowTime>');
+    buffer.writeln('        </Geometry>');
+    buffer.writeln('        <Control>');
+    buffer.writeln('          <Relay id="WKR_77d" status="normal"/>');
+    buffer.writeln('          <Detection circuit="DP_77d"/>');
+    buffer.writeln('        </Control>');
+    buffer.writeln('      </Point>');
+    buffer.writeln('      <Point id="77e" type="left_hand" x="-523.2" y="273.7" state="normal">');
+    buffer.writeln('        <Geometry>');
+    buffer.writeln('          <MainRoute angle="90" length="21.2"/>');
+    buffer.writeln('          <DivergingRoute angle="83.3" length="21.2"/>');
+    buffer.writeln('          <ThrowTime>2000</ThrowTime>');
+    buffer.writeln('        </Geometry>');
+    buffer.writeln('        <Control>');
+    buffer.writeln('          <Relay id="WKR_77e" status="normal"/>');
+    buffer.writeln('          <Detection circuit="DP_77e"/>');
+    buffer.writeln('        </Control>');
+    buffer.writeln('      </Point>');
+    buffer.writeln('      <Point id="77f" type="right_hand" x="-476.8" y="226.3" state="normal">');
+    buffer.writeln('        <Geometry>');
+    buffer.writeln('          <MainRoute angle="270" length="21.2"/>');
+    buffer.writeln('          <DivergingRoute angle="276.7" length="21.2"/>');
+    buffer.writeln('          <ThrowTime>2000</ThrowTime>');
+    buffer.writeln('        </Geometry>');
+    buffer.writeln('        <Control>');
+    buffer.writeln('          <Relay id="WKR_77f" status="normal"/>');
+    buffer.writeln('          <Detection circuit="DP_77f"/>');
+    buffer.writeln('        </Control>');
+    buffer.writeln('      </Point>');
+    buffer.writeln('    </Points>');
+    buffer.writeln('');
+    buffer.writeln('    <!-- Diamond Crossings -->');
+    buffer.writeln('    <Diamonds>');
+    buffer.writeln('      <Diamond id="diamond_45" angle="45" x="-500" y="200">');
+    buffer.writeln('        <Geometry>');
+    buffer.writeln('          <Leg1 direction="22.5" length="28.4"/>');
+    buffer.writeln('          <Leg2 direction="112.5" length="28.4"/>');
+    buffer.writeln('          <Leg3 direction="202.5" length="28.4"/>');
+    buffer.writeln('          <Leg4 direction="292.5" length="28.4"/>');
+    buffer.writeln('          <CrossingNose gap="42"/>');
+    buffer.writeln('          <CheckRail clearance="48"/>');
+    buffer.writeln('        </Geometry>');
+    buffer.writeln('        <Performance>');
+    buffer.writeln('          <SpeedLimit>25</SpeedLimit>');
+    buffer.writeln('          <MaintenanceFactor>3.0</MaintenanceFactor>');
+    buffer.writeln('        </Performance>');
+    buffer.writeln('      </Diamond>');
+    buffer.writeln('      <Diamond id="diamond_135" angle="135" x="-500" y="200">');
+    buffer.writeln('        <Geometry>');
+    buffer.writeln('          <Leg1 direction="67.5" length="28.4"/>');
+    buffer.writeln('          <Leg2 direction="157.5" length="28.4"/>');
+    buffer.writeln('          <Leg3 direction="247.5" length="28.4"/>');
+    buffer.writeln('          <Leg4 direction="337.5" length="28.4"/>');
+    buffer.writeln('          <CrossingNose gap="42"/>');
+    buffer.writeln('          <CheckRail clearance="48"/>');
+    buffer.writeln('        </Geometry>');
+    buffer.writeln('        <Performance>');
+    buffer.writeln('          <SpeedLimit>60</SpeedLimit>');
+    buffer.writeln('          <MaintenanceFactor>1.5</MaintenanceFactor>');
+    buffer.writeln('        </Performance>');
+    buffer.writeln('      </Diamond>');
+    buffer.writeln('    </Diamonds>');
+    buffer.writeln('');
+    buffer.writeln('    <!-- Track Circuits -->');
+    buffer.writeln('    <TrackCircuits>');
+    buffer.writeln('      <Circuit id="TR_77A" points="77c" occupied="false"/>');
+    buffer.writeln('      <Circuit id="TR_77B" points="77d" occupied="false"/>');
+    buffer.writeln('      <Circuit id="TR_77C" points="77e" occupied="false"/>');
+    buffer.writeln('      <Circuit id="TR_77D" points="77f" occupied="false"/>');
+    buffer.writeln('      <Circuit id="TR_77_D45" points="diamond_45" occupied="false"/>');
+    buffer.writeln('      <Circuit id="TR_77_D135" points="diamond_135" occupied="false"/>');
+    buffer.writeln('    </TrackCircuits>');
+    buffer.writeln('');
+    buffer.writeln('    <!-- Route Possibilities -->');
+    buffer.writeln('    <Routes>');
+    buffer.writeln('      <Route id="R77_EW_Straight" points="77c:normal,77d:normal" diamonds="diamond_45" speed="80"/>');
+    buffer.writeln('      <Route id="R77_EW_Cross" points="77c:reverse,77d:reverse" diamonds="diamond_135" speed="60"/>');
+    buffer.writeln('      <Route id="R77_NS_Straight" points="77e:normal,77f:normal" diamonds="diamond_45" speed="80"/>');
+    buffer.writeln('      <Route id="R77_NS_Cross" points="77e:reverse,77f:reverse" diamonds="diamond_135" speed="60"/>');
+    buffer.writeln('      <Route id="R77_Turn_NW" points="77c:reverse,77e:normal" speed="40"/>');
+    buffer.writeln('      <Route id="R77_Turn_NE" points="77d:reverse,77f:normal" speed="40"/>');
+    buffer.writeln('      <Route id="R77_Turn_SW" points="77e:reverse,77c:normal" speed="40"/>');
+    buffer.writeln('      <Route id="R77_Turn_SE" points="77f:reverse,77d:normal" speed="40"/>');
+    buffer.writeln('    </Routes>');
+    buffer.writeln('  </DoubleDiamondCrossover>');
+    buffer.writeln('');
+
+    // RIGHT SECTION - Double Diamond Crossover (x=1900 to 2000)
+    buffer.writeln('  <DoubleDiamondCrossover id="ddc_79" centerX="1950" centerY="200">');
+    buffer.writeln('    <!-- Points: 79A, 79B, 80A, 80B -->');
+    buffer.writeln('    <Points>');
+    buffer.writeln('      <Point id="79c" type="left_hand" x="1874.3" y="173.8" state="normal"/>');
+    buffer.writeln('      <Point id="79d" type="right_hand" x="2025.7" y="173.8" state="normal"/>');
+    buffer.writeln('      <Point id="79e" type="left_hand" x="1926.8" y="273.7" state="normal"/>');
+    buffer.writeln('      <Point id="79f" type="right_hand" x="1973.2" y="226.3" state="normal"/>');
+    buffer.writeln('    </Points>');
+    buffer.writeln('    <!-- Similar diamond and route configuration as ddc_77 -->');
+    buffer.writeln('  </DoubleDiamondCrossover>');
   }
 
   @override

@@ -1340,6 +1340,9 @@ class TerminalStationController extends ChangeNotifier {
     return point78ADeadlocked || point78BDeadlocked;
   }
 
+  // Public getter for point deadlock status
+  bool get arePointsDeadlocked => _arePointsDeadlocked();
+
   bool _isPointDeadlockedByAB(String pointId) {
     switch (pointId) {
       case '78A':

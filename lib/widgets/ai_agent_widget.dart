@@ -201,7 +201,7 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
                         controller: _textController,
                         decoration: const InputDecoration(
                           hintText: 'Ask me anything...',
-                          border: OutlineBorder.none,
+                          border: InputBorder.none,
                           isDense: true,
                         ),
                         style: const TextStyle(fontSize: 12),

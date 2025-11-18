@@ -189,7 +189,7 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: _getTrainColor(train.type),
+                  color: _getTrainColor(train.trainType),
                   borderRadius: BorderRadius.circular(3),
                 ),
                 child: _DotMatrixText(
@@ -201,7 +201,7 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
               ),
               const SizedBox(width: 8),
               _DotMatrixText(
-                text: train.type.name.toUpperCase(),
+                text: train.trainType.name.toUpperCase(),
                 color: Colors.grey[500]!,
                 fontSize: 10,
               ),
@@ -324,14 +324,14 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
   }
 
   String _getTrainDestination(Train train, TerminalStationController controller) {
-    if (train.destination != null && train.destination!.isNotEmpty) {
+    if (train.smcDestination != null && train.smcDestination!.isNotEmpty) {
       // Parse destination (format: "B:100", "P:Platform 1")
-      if (train.destination!.startsWith('B:')) {
-        return 'BLOCK ${train.destination!.substring(2)}';
-      } else if (train.destination!.startsWith('P:')) {
-        return train.destination!.substring(2).toUpperCase();
+      if (train.smcDestination!.startsWith('B:')) {
+        return 'BLOCK ${train.smcDestination!.substring(2)}';
+      } else if (train.smcDestination!.startsWith('P:')) {
+        return train.smcDestination!.substring(2).toUpperCase();
       }
-      return train.destination!.toUpperCase();
+      return train.smcDestination!.toUpperCase();
     }
     return 'UNKNOWN';
   }
@@ -341,7 +341,7 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
       return 'STATIONARY';
     }
 
-    if (train.destination == null || train.destination!.isEmpty) {
+    if (train.smcDestination == null || train.smcDestination!.isEmpty) {
       return 'N/A';
     }
 
@@ -363,13 +363,13 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
   }
 
   double _calculateDistance(Train train, TerminalStationController controller) {
-    if (train.destination == null || train.destination!.isEmpty) {
+    if (train.smcDestination == null || train.smcDestination!.isEmpty) {
       return -1;
     }
 
     // Parse destination and calculate distance
-    if (train.destination!.startsWith('B:')) {
-      final blockId = train.destination!.substring(2);
+    if (train.smcDestination!.startsWith('B:')) {
+      final blockId = train.smcDestination!.substring(2);
       final block = controller.blocks[blockId];
       if (block != null) {
         final targetX = (block.startX + block.endX) / 2;

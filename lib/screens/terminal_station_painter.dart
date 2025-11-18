@@ -703,10 +703,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     final reservationPaint = Paint()
       ..color = reservationColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
+      ..strokeWidth = 4 // Wider by 1 unit
       ..strokeCap = StrokeCap.round;
 
-    const dashLength = 10.0;
+    const dashLength = 15.0; // Longer dashes
     const gapLength = 5.0;
 
     if (block.id == 'crossover106') {
@@ -758,12 +758,12 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     final reservationPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
+      ..strokeWidth = 4 // Wider by 1 unit
       ..strokeCap = StrokeCap.round;
 
     final dashPath = Path();
     double currentX = block.startX;
-    const dashLength = 10.0;
+    const dashLength = 15.0; // Longer dashes
     const gapLength = 5.0;
 
     while (currentX < block.endX) {
@@ -804,7 +804,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     // Draw two running rails for each block
     // Use red color if traction current is off, otherwise use normal rail color
-    final railColor = controller.tractionCurrentOn
+    // Check traction status at this block's position
+    final railColor = controller.isTractionOnAt(block.startX + (block.endX - block.startX) / 2)
         ? themeData.railColor
         : Colors.red;
 
@@ -846,18 +847,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawCrossoverTrack(Canvas canvas) {
     // Draw ALL 5 crossovers in the expanded network
-    // Use red color if traction current is off
-    final railColor = controller.tractionCurrentOn
-        ? themeData.railColor
-        : Colors.red;
-
-    final outerRailPaint = Paint()
-      ..color = railColor
-      ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
-
-    final innerRailPaint = Paint()
-      ..color = railColor
-      ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
+    // Check traction status for each crossover section independently
 
     final sleeperPaint = Paint()
       ..color = themeData.sleeperColor
@@ -870,17 +860,23 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     // Two crossovers: 135° and 45° creating a diamond pattern
     // Points: 76A, 76B, 77A, 77B
     // ═══════════════════════════════════════════════════════════════
-    _drawDoubleDiamondCrossover(canvas, -550, -450, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
+    final leftRailColor = controller.isTractionOnAt(-500) ? themeData.railColor : Colors.red;
+    final leftOuterPaint = Paint()..color = leftRailColor..strokeWidth = 3 * themeData.strokeWidthMultiplier;
+    final leftInnerPaint = Paint()..color = leftRailColor..strokeWidth = 2 * themeData.strokeWidthMultiplier;
+    _drawDoubleDiamondCrossover(canvas, -550, -450, leftOuterPaint,
+        leftInnerPaint, sleeperPaint, railSpacing);
     _highlightCrossover(canvas, 'crossover_211_212', -500, 200);
 
     // ═══════════════════════════════════════════════════════════════
     // 3. MIDDLE CROSSOVER (original 78A/78B at x=600-800)
     // ═══════════════════════════════════════════════════════════════
-    _drawSingleCrossover(canvas, 600, 100, 700, 200, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, 700, 200, 800, 300, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
+    final midRailColor = controller.isTractionOnAt(700) ? themeData.railColor : Colors.red;
+    final midOuterPaint = Paint()..color = midRailColor..strokeWidth = 3 * themeData.strokeWidthMultiplier;
+    final midInnerPaint = Paint()..color = midRailColor..strokeWidth = 2 * themeData.strokeWidthMultiplier;
+    _drawSingleCrossover(canvas, 600, 100, 700, 200, midOuterPaint,
+        midInnerPaint, sleeperPaint, railSpacing);
+    _drawSingleCrossover(canvas, 700, 200, 800, 300, midOuterPaint,
+        midInnerPaint, sleeperPaint, railSpacing);
     _highlightCrossover(canvas, 'crossover106', 650, 150);
     _highlightCrossover(canvas, 'crossover109', 750, 250);
 
@@ -889,8 +885,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     // Two crossovers: 135° and 45° creating a diamond pattern
     // Points: 79A, 79B, 80A, 80B
     // ═══════════════════════════════════════════════════════════════
-    _drawDoubleDiamondCrossover(canvas, 1900, 2000, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
+    final rightRailColor = controller.isTractionOnAt(1950) ? themeData.railColor : Colors.red;
+    final rightOuterPaint = Paint()..color = rightRailColor..strokeWidth = 3 * themeData.strokeWidthMultiplier;
+    final rightInnerPaint = Paint()..color = rightRailColor..strokeWidth = 2 * themeData.strokeWidthMultiplier;
+    _drawDoubleDiamondCrossover(canvas, 1900, 2000, rightOuterPaint,
+        rightInnerPaint, sleeperPaint, railSpacing);
     _highlightCrossover(canvas, 'crossover_303_304', 1950, 200);
   }
 

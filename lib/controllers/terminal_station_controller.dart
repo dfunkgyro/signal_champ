@@ -519,6 +519,32 @@ class TerminalStationController extends ChangeNotifier {
   CollisionIncident? get currentSpadIncident => _currentSpadIncident;
   String? get spadTrainStopId => _spadTrainStopId;
 
+  // ============================================================================
+  // NEW FEATURES - Tooltip, Grid, Traction Current, AI Agent, Relay Rack
+  // ============================================================================
+
+  // Tooltip system
+  Map<String, dynamic>? hoveredObject;
+  bool tooltipsEnabled = true;
+
+  // Grid system
+  bool gridVisible = false;
+  double gridSpacing = 100.0;
+
+  // Traction current system
+  bool tractionCurrentOn = true;
+
+  // AI Agent
+  bool aiAgentVisible = false;
+  Offset aiAgentPosition = const Offset(50, 50);
+
+  // Relay rack panel
+  bool relayRackVisible = false;
+
+  // Point machine state (for relay rack WKR status)
+  Map<String, String> pointMachineStates = {}; // pointId -> 'normal', 'reverse', 'mid'
+  Map<String, DateTime> pointThrowStartTimes = {}; // Track when points started moving
+
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
     // Eastbound trains (direction > 0) are entering when moving right
@@ -623,6 +649,97 @@ class TerminalStationController extends ChangeNotifier {
         ? '📡 WiFi $wifiId ENABLED'
         : '📡 WiFi $wifiId DISABLED');
     notifyListeners();
+  }
+
+  // ============================================================================
+  // NEW FEATURE TOGGLES - Grid, Traction, Tooltips, AI Agent, Relay Rack
+  // ============================================================================
+
+  void toggleGrid() {
+    gridVisible = !gridVisible;
+    _logEvent(gridVisible ? '🔲 Grid ENABLED' : '🔲 Grid DISABLED');
+    notifyListeners();
+  }
+
+  void toggleTractionCurrent() {
+    tractionCurrentOn = !tractionCurrentOn;
+    if (!tractionCurrentOn) {
+      // Apply emergency brake to all trains
+      for (var train in trains) {
+        train.emergencyBrake = true;
+        train.speed = 0;
+        train.targetSpeed = 0;
+      }
+      _logEvent('⚡ TRACTION CURRENT OFF - All trains emergency braked');
+    } else {
+      // Release emergency brake (but trains won't move until signals allow)
+      for (var train in trains) {
+        train.emergencyBrake = false;
+      }
+      _logEvent('⚡ TRACTION CURRENT ON - Normal operations resumed');
+    }
+    notifyListeners();
+  }
+
+  void toggleTooltips() {
+    tooltipsEnabled = !tooltipsEnabled;
+    _logEvent(tooltipsEnabled ? '💬 Tooltips ENABLED' : '💬 Tooltips DISABLED');
+    notifyListeners();
+  }
+
+  void toggleAiAgent() {
+    aiAgentVisible = !aiAgentVisible;
+    _logEvent(aiAgentVisible ? '🤖 AI Agent ENABLED' : '🤖 AI Agent DISABLED');
+    notifyListeners();
+  }
+
+  void toggleRelayRack() {
+    relayRackVisible = !relayRackVisible;
+    _logEvent(relayRackVisible ? '🔌 Relay Rack ENABLED' : '🔌 Relay Rack DISABLED');
+    notifyListeners();
+  }
+
+  void updateAiAgentPosition(Offset newPosition) {
+    aiAgentPosition = newPosition;
+    notifyListeners();
+  }
+
+  void setHoveredObject(Map<String, dynamic>? object) {
+    hoveredObject = object;
+    notifyListeners();
+  }
+
+  // Get relay status for signals (GR - proceed relay)
+  String getSignalGRStatus(String signalId) {
+    final signal = signals[signalId];
+    if (signal == null) return 'Unknown';
+    return signal.aspect == SignalAspect.green ? 'Up' : 'Down';
+  }
+
+  // Get relay status for points (WKR - point machine relay)
+  String getPointWKRStatus(String pointId) {
+    // Check if point is currently throwing (mid state)
+    final throwStartTime = pointThrowStartTimes[pointId];
+    if (throwStartTime != null) {
+      final elapsed = DateTime.now().difference(throwStartTime).inMilliseconds;
+      if (elapsed < 2000) { // Points take 2 seconds to throw
+        return 'Mid';
+      } else {
+        // Throwing complete, remove from tracking
+        pointThrowStartTimes.remove(pointId);
+      }
+    }
+
+    final point = points[pointId];
+    if (point == null) return 'Unknown';
+    return point.position == PointPosition.normal ? 'Normal' : 'Reverse';
+  }
+
+  // Get relay status for track blocks (TR - track relay)
+  String getBlockTRStatus(String blockId) {
+    final block = blocks[blockId];
+    if (block == null) return 'Unknown';
+    return block.occupied ? 'Occupied' : 'Clear';
   }
 
   // ============================================================================
@@ -781,6 +898,48 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     _logEvent('🔄 All collisions force-resolved by user');
+    notifyListeners();
+  }
+
+  // SIMPLIFIED COLLISION RECOVERY - Single button, moves trains 20 units back
+  void executeSimplifiedCollisionRecovery() {
+    if (!collisionAlarmActive || currentCollisionIncident == null) return;
+
+    final trainsInvolved = currentCollisionIncident!.trainsInvolved;
+
+    // Find the trains involved
+    final collisionTrains = trains.where((t) => trainsInvolved.contains(t.id)).toList();
+
+    if (collisionTrains.length >= 2) {
+      // Move each train 20 units backwards in opposite directions
+      for (var train in collisionTrains) {
+        // Move 20 units opposite to current direction
+        if (train.direction > 0) {
+          // Was moving right, move left
+          train.x -= 20;
+        } else {
+          // Was moving left, move right
+          train.x += 20;
+        }
+
+        // Release emergency brake but keep train stopped
+        train.emergencyBrake = false;
+        train.speed = 0;
+        train.targetSpeed = 0;
+
+        _logEvent('🔄 ${train.name} moved 20 units back for collision recovery');
+      }
+    }
+
+    // Auto-generate collision report (no acknowledgment needed)
+    _logEvent('📋 Collision report generated automatically');
+
+    // Clear collision state
+    _activeCollisionRecoveries.clear();
+    collisionAlarmActive = false;
+    currentCollisionIncident = null;
+
+    _logEvent('✅ Simplified collision recovery complete');
     notifyListeners();
   }
 
@@ -1824,20 +1983,26 @@ class TerminalStationController extends ChangeNotifier {
         BlockSection(id: 'crossover_303_304', startX: 1900, endX: 2050, y: 200);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // POINTS - 6 points total for 3 crossovers
+    // POINTS - 10 points total (4 for each double diamond crossover + 2 for middle)
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Left section points (crossover_211_212)
+    // Left section points - DOUBLE DIAMOND CROSSOVER (4 points)
+    // 135-degree and 45-degree crossovers
+    points['76A'] = Point(id: '76A', x: -550, y: 100);  // Additional point for double diamond
+    points['76B'] = Point(id: '76B', x: -550, y: 300);  // Additional point for double diamond
     points['77A'] = Point(id: '77A', x: -450, y: 100);
-    points['77B'] = Point(id: '77B', x: -450, y: 300);  // FIXED: Aligned to start of crossover instead of end
+    points['77B'] = Point(id: '77B', x: -450, y: 300);
 
-    // Middle points (crossover106/109)
+    // Middle points (crossover106/109) - Standard crossover
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
-    // Right section points (crossover_303_304)
-    points['79A'] = Point(id: '79A', x: 1900, y: 100);  // FIXED: Repositioned for crossover_303_304
-    points['79B'] = Point(id: '79B', x: 1900, y: 300);  // FIXED: Aligned to start of crossover
+    // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
+    // 135-degree and 45-degree crossovers
+    points['79A'] = Point(id: '79A', x: 1900, y: 100);
+    points['79B'] = Point(id: '79B', x: 1900, y: 300);
+    points['80A'] = Point(id: '80A', x: 2000, y: 100);  // Additional point for double diamond
+    points['80B'] = Point(id: '80B', x: 2000, y: 300);  // Additional point for double diamond
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)
@@ -2960,6 +3125,9 @@ class TerminalStationController extends ChangeNotifier {
           '❌ Points deadlocked: Train occupying critical block (104, 106, 107, or 109)');
       return;
     }
+
+    // Track point throw start time for relay rack "mid" state
+    pointThrowStartTimes[pointId] = DateTime.now();
 
     // Toggle position
     point.position = point.position == PointPosition.normal

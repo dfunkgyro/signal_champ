@@ -262,6 +262,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     canvas.translate(
         cameraOffsetX, cameraOffsetY); // FIXED: Use Y offset for panning
 
+    // Draw grid first (if enabled)
+    if (controller.gridVisible) {
+      _drawGrid(canvas, size);
+    }
+
     _drawTracks(canvas);
     _drawRouteReservations(canvas);
     _drawPlatforms(canvas);
@@ -280,6 +285,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawLabels(canvas);
 
     drawCollisionEffects(canvas, controller, animationTick);
+
+    // Draw tooltip last (if hovered object exists)
+    if (controller.tooltipsEnabled && controller.hoveredObject != null) {
+      _drawTooltip(canvas);
+    }
 
     canvas.restore();
   }
@@ -793,12 +803,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     );
 
     // Draw two running rails for each block
+    // Use red color if traction current is off, otherwise use normal rail color
+    final railColor = controller.tractionCurrentOn
+        ? themeData.railColor
+        : Colors.red;
+
     final outerRailPaint = Paint()
-      ..color = themeData.railColor
+      ..color = railColor
       ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
 
     final innerRailPaint = Paint()
-      ..color = themeData.railColor
+      ..color = railColor
       ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
 
     const railSpacing = 12.0;
@@ -831,12 +846,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawCrossoverTrack(Canvas canvas) {
     // Draw ALL 5 crossovers in the expanded network
+    // Use red color if traction current is off
+    final railColor = controller.tractionCurrentOn
+        ? themeData.railColor
+        : Colors.red;
+
     final outerRailPaint = Paint()
-      ..color = themeData.railColor
+      ..color = railColor
       ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
 
     final innerRailPaint = Paint()
-      ..color = themeData.railColor
+      ..color = railColor
       ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
 
     final sleeperPaint = Paint()
@@ -846,13 +866,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     const railSpacing = 12.0;
 
     // ═══════════════════════════════════════════════════════════════
-    // 2. LEFT SECTION CROSSOVER (x=-450, connects blocks 211↔212)
+    // 2. LEFT SECTION - DOUBLE DIAMOND CROSSOVER (x=-550 to -450, connects blocks 211↔212)
+    // Two crossovers: 135° and 45° creating a diamond pattern
+    // Points: 76A, 76B, 77A, 77B
     // ═══════════════════════════════════════════════════════════════
-    _drawSingleCrossover(canvas, -450, 100, -350, 200, outerRailPaint,
+    _drawDoubleDiamondCrossover(canvas, -550, -450, outerRailPaint,
         innerRailPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, -350, 200, -250, 300, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover_211_212', -350, 200);
+    _highlightCrossover(canvas, 'crossover_211_212', -500, 200);
 
     // ═══════════════════════════════════════════════════════════════
     // 3. MIDDLE CROSSOVER (original 78A/78B at x=600-800)
@@ -865,13 +885,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _highlightCrossover(canvas, 'crossover109', 750, 250);
 
     // ═══════════════════════════════════════════════════════════════
-    // 4. RIGHT SECTION CROSSOVER (x=1950, connects blocks 302↔305)
+    // 4. RIGHT SECTION - DOUBLE DIAMOND CROSSOVER (x=1900 to 2000, connects blocks 302↔305)
+    // Two crossovers: 135° and 45° creating a diamond pattern
+    // Points: 79A, 79B, 80A, 80B
     // ═══════════════════════════════════════════════════════════════
-    _drawSingleCrossover(canvas, 1950, 100, 2050, 200, outerRailPaint,
+    _drawDoubleDiamondCrossover(canvas, 1900, 2000, outerRailPaint,
         innerRailPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, 2050, 200, 2150, 300, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover_302_305', 2050, 200);
+    _highlightCrossover(canvas, 'crossover_303_304', 1950, 200);
   }
 
   // Helper method to draw a single crossover segment with 45° angle
@@ -907,6 +927,34 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       canvas.drawLine(
           Offset(x - 10, y + 10), Offset(x + 10, y - 10), sleeperPaint);
     }
+  }
+
+  // Helper method to draw a double diamond crossover with 135° and 45° angles
+  void _drawDoubleDiamondCrossover(
+      Canvas canvas,
+      double startX,
+      double endX,
+      Paint outerPaint,
+      Paint innerPaint,
+      Paint sleeperPaint,
+      double railSpacing) {
+    // Calculate positions
+    final midX = (startX + endX) / 2;
+    final upperY = 100.0;
+    final midY = 200.0;
+    final lowerY = 300.0;
+
+    // First crossover: upper-left to lower-right (135° - main diagonal)
+    _drawSingleCrossover(canvas, startX, upperY, midX, midY, outerPaint,
+        innerPaint, sleeperPaint, railSpacing);
+    _drawSingleCrossover(canvas, midX, midY, endX, lowerY, outerPaint,
+        innerPaint, sleeperPaint, railSpacing);
+
+    // Second crossover: lower-left to upper-right (45° - opposite diagonal)
+    _drawSingleCrossover(canvas, startX, lowerY, midX, midY, outerPaint,
+        innerPaint, sleeperPaint, railSpacing);
+    _drawSingleCrossover(canvas, midX, midY, endX, upperY, outerPaint,
+        innerPaint, sleeperPaint, railSpacing);
   }
 
   // Helper method to highlight occupied crossover blocks
@@ -1784,6 +1832,123 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       textPainter.paint(
           canvas, Offset(train.x - textPainter.width / 2, train.y - 30));
     }
+  }
+
+  // ============================================================================
+  // GRID DRAWING
+  // ============================================================================
+  void _drawGrid(Canvas canvas, Size size) {
+    final gridPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.2)
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke;
+
+    final spacing = controller.gridSpacing;
+
+    // Calculate grid bounds (expand beyond visible area)
+    final gridStartX = -3500.0;
+    final gridEndX = 3500.0;
+    final gridStartY = -600.0;
+    final gridEndY = 600.0;
+
+    // Draw vertical lines
+    for (double x = gridStartX; x <= gridEndX; x += spacing) {
+      canvas.drawLine(
+        Offset(x, gridStartY),
+        Offset(x, gridEndY),
+        gridPaint,
+      );
+    }
+
+    // Draw horizontal lines
+    for (double y = gridStartY; y <= gridEndY; y += spacing) {
+      canvas.drawLine(
+        Offset(gridStartX, y),
+        Offset(gridEndX, y),
+        gridPaint,
+      );
+    }
+  }
+
+  // ============================================================================
+  // TOOLTIP DRAWING
+  // ============================================================================
+  void _drawTooltip(Canvas canvas) {
+    final hovered = controller.hoveredObject;
+    if (hovered == null) return;
+
+    final type = hovered['type'] as String?;
+    final id = hovered['id'] as String?;
+    final x = hovered['x'] as double?;
+    final y = hovered['y'] as double?;
+
+    if (type == null || id == null || x == null || y == null) return;
+
+    // Draw highlight around hovered object
+    final highlightPaint = Paint()
+      ..color = Colors.yellow.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(Offset(x, y), 25, highlightPaint);
+
+    final outlinePaint = Paint()
+      ..color = Colors.yellow
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    canvas.drawCircle(Offset(x, y), 25, outlinePaint);
+
+    // Draw tooltip box
+    final tooltipText = '$type: $id\n(${x.toStringAsFixed(0)}, ${y.toStringAsFixed(0)})';
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: tooltipText,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    final tooltipPadding = 8.0;
+    final tooltipWidth = textPainter.width + tooltipPadding * 2;
+    final tooltipHeight = textPainter.height + tooltipPadding * 2;
+    final tooltipX = x + 30;
+    final tooltipY = y - tooltipHeight / 2;
+
+    // Draw tooltip background
+    final tooltipBgPaint = Paint()
+      ..color = Colors.black.withOpacity(0.8)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(tooltipX, tooltipY, tooltipWidth, tooltipHeight),
+        const Radius.circular(4),
+      ),
+      tooltipBgPaint,
+    );
+
+    // Draw tooltip border
+    final tooltipBorderPaint = Paint()
+      ..color = Colors.yellow
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(tooltipX, tooltipY, tooltipWidth, tooltipHeight),
+        const Radius.circular(4),
+      ),
+      tooltipBorderPaint,
+    );
+
+    // Draw text
+    textPainter.paint(canvas, Offset(tooltipX + tooltipPadding, tooltipY + tooltipPadding));
   }
 
   @override

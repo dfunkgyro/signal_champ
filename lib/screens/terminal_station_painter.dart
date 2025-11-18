@@ -3,7 +3,8 @@ import 'dart:math' as math;
 import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../controllers/canvas_theme_controller.dart';
-import 'package:rail_champ/models/railway_model.dart' show WifiAntenna, Transponder, TransponderType;
+import 'package:rail_champ/models/railway_model.dart'
+    show WifiAntenna, Transponder, TransponderType;
 
 // Collision Visual Effects Mixin
 mixin CollisionVisualEffects {
@@ -228,22 +229,22 @@ mixin CollisionVisualEffects {
 class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   final TerminalStationController controller;
   final double cameraOffsetX;
-  final double cameraOffsetY;  // FIXED: Add Y offset parameter
+  final double cameraOffsetY; // FIXED: Add Y offset parameter
   final double zoom;
   final int animationTick;
   final double canvasWidth;
   final double canvasHeight;
-  final CanvasThemeData themeData;  // NEW: Canvas theme support
+  final CanvasThemeData themeData; // NEW: Canvas theme support
 
   TerminalStationPainter({
     required this.controller,
     required this.cameraOffsetX,
-    required this.cameraOffsetY,  // FIXED: Add Y offset parameter
+    required this.cameraOffsetY, // FIXED: Add Y offset parameter
     required this.zoom,
     required this.animationTick,
     required this.canvasWidth,
     required this.canvasHeight,
-    required this.themeData,  // NEW: Canvas theme support
+    required this.themeData, // NEW: Canvas theme support
   });
 
   @override
@@ -252,12 +253,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     final backgroundPaint = Paint()
       ..color = themeData.canvasBackgroundColor
       ..style = PaintingStyle.fill;
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
+    canvas.drawRect(
+        Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
 
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
     canvas.scale(zoom);
-    canvas.translate(cameraOffsetX, cameraOffsetY);  // FIXED: Use Y offset for panning
+    canvas.translate(
+        cameraOffsetX, cameraOffsetY); // FIXED: Use Y offset for panning
 
     _drawTracks(canvas);
     _drawRouteReservations(canvas);
@@ -270,7 +273,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawABOccupations(canvas);
     _drawWiFiAntennas(canvas); // FIXED: Draw WiFi coverage zones
     _drawTransponders(canvas); // FIXED: Draw track transponders
-    _drawMovementAuthorities(canvas); // Draw movement authority arrows before trains
+    _drawMovementAuthorities(
+        canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
     _drawDirectionLabels(canvas);
     _drawLabels(canvas);
@@ -292,7 +296,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             : Colors.grey.withOpacity(0.05)
         ..style = PaintingStyle.fill;
 
-      canvas.drawCircle(Offset(antenna.x, antenna.y), 350.0, rangePaint); // 350 unit range
+      canvas.drawCircle(
+          Offset(antenna.x, antenna.y), 350.0, rangePaint); // 350 unit range
 
       // Draw range outline
       final rangeOutline = Paint()
@@ -840,8 +845,6 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     const railSpacing = 12.0;
 
-    
-
     // ═══════════════════════════════════════════════════════════════
     // 2. LEFT SECTION CROSSOVER (x=-450, connects blocks 211↔212)
     // ═══════════════════════════════════════════════════════════════
@@ -869,15 +872,19 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawSingleCrossover(canvas, 2050, 200, 2150, 300, outerRailPaint,
         innerRailPaint, sleeperPaint, railSpacing);
     _highlightCrossover(canvas, 'crossover_302_305', 2050, 200);
-
-    
   }
 
   // Helper method to draw a single crossover segment with 45° angle
-  void _drawSingleCrossover(Canvas canvas, double startX, double startY,
-      double endX, double endY, Paint outerPaint, Paint innerPaint,
-      Paint sleeperPaint, double railSpacing) {
-
+  void _drawSingleCrossover(
+      Canvas canvas,
+      double startX,
+      double startY,
+      double endX,
+      double endY,
+      Paint outerPaint,
+      Paint innerPaint,
+      Paint sleeperPaint,
+      double railSpacing) {
     // Calculate perpendicular offset for rail spacing at 45° angle
     final offset = railSpacing / math.sqrt(2);
 
@@ -903,7 +910,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   // Helper method to highlight occupied crossover blocks
-  void _highlightCrossover(Canvas canvas, String blockId, double centerX, double centerY) {
+  void _highlightCrossover(
+      Canvas canvas, String blockId, double centerX, double centerY) {
     final block = controller.blocks[blockId];
     if (block != null && block.occupied) {
       final highlightPaint = Paint()
@@ -951,7 +959,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       ..color = Colors.red
       ..style = PaintingStyle.fill;
 
-    canvas.drawRect(const Rect.fromLTWH(1190, 285, 20, 30), bufferPaint);
+    canvas.drawRect(const Rect.fromLTWH(3400, 285, 20, 30), bufferPaint);
 
     final stripePaint = Paint()
       ..color = Colors.yellow
@@ -959,8 +967,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     for (int i = 0; i < 5; i++) {
       canvas.drawLine(
-        Offset(1190 + (i * 5), 285),
-        Offset(1195 + (i * 5), 315),
+        Offset(3400 + (i * 5), 285),
+        Offset(3410 + (i * 5), 315),
         stripePaint,
       );
     }
@@ -1054,24 +1062,24 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       if (isUpper) {
         // Upper track point (y=100)
         if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(x - 7.5, y + 17, 50, 12), gapPaint);
+          canvas.drawRect(Rect.fromLTWH(x - 7.5, y + 15.2, 50, 13), gapPaint);
         } else {
           final path = Path()
-            ..moveTo(x + 5, y - 22.5)
-            ..lineTo(x + 50, y - 22.5)
-            ..lineTo(x + 50, y + 23)
+            ..moveTo(x - 7, y - 25)
+            ..lineTo(x + 43, y - 25)
+            ..lineTo(x + 43, y + 21)
             ..close();
           canvas.drawPath(path, gapPaint);
         }
       } else {
         // Lower track point (y=300)
         if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(x - 62.5, y - 19, 50, 12), gapPaint);
+          canvas.drawRect(Rect.fromLTWH(x - 142.5, y - 28.3, 50, 13), gapPaint);
         } else {
           final path = Path()
-            ..moveTo(x, y - 21)
-            ..lineTo(x + 37, y + 17.5)
-            ..lineTo(x, y + 17.5)
+            ..moveTo(x - 140, y - 23)
+            ..lineTo(x - 103, y + 20)
+            ..lineTo(x - 140, y + 20)
             ..close();
           canvas.drawPath(path, gapPaint);
         }
@@ -1099,7 +1107,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     // ═══════════════════════════════════════════════════════════════
     else if (point.id == '78A') {
       if (point.position == PointPosition.normal) {
-        canvas.drawRect(Rect.fromLTWH(592.5, 114, 50, 12), gapPaint);
+        canvas.drawRect(Rect.fromLTWH(592.5, 115, 50, 12), gapPaint);
       } else {
         final path = Path()
           ..moveTo(597, 77.5)
@@ -1110,7 +1118,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
     } else if (point.id == '78B') {
       if (point.position == PointPosition.normal) {
-        canvas.drawRect(Rect.fromLTWH(757.5, 274, 50, 12), gapPaint);
+        canvas.drawRect(Rect.fromLTWH(757.5, 272.4, 50, 12), gapPaint);
       } else {
         final path = Path()
           ..moveTo(760, 279)
@@ -1328,7 +1336,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
   void _drawMovementAuthorities(Canvas canvas) {
     // Get current time for animation
-    final animationOffset = (DateTime.now().millisecondsSinceEpoch % 2000) / 2000.0;
+    final animationOffset =
+        (DateTime.now().millisecondsSinceEpoch % 2000) / 2000.0;
 
     for (var train in controller.trains) {
       // Only draw for CBTC trains with movement authority
@@ -1345,10 +1354,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final isEastbound = train.direction > 0;
 
       // Calculate start and end positions for the green arrow path
-      final startX = isEastbound ? trainX + 35 : trainX - 35; // Start just ahead of train
-      final endX = isEastbound
-          ? trainX + ma.maxDistance
-          : trainX - ma.maxDistance;
+      final startX =
+          isEastbound ? trainX + 35 : trainX - 35; // Start just ahead of train
+      final endX =
+          isEastbound ? trainX + ma.maxDistance : trainX - ma.maxDistance;
 
       // Draw base green path with gradient
       final gradient = LinearGradient(
@@ -1781,7 +1790,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   bool shouldRepaint(TerminalStationPainter oldDelegate) {
     return oldDelegate.controller != controller ||
         oldDelegate.cameraOffsetX != cameraOffsetX ||
-        oldDelegate.cameraOffsetY != cameraOffsetY ||  // FIXED: Check Y offset for repaint
+        oldDelegate.cameraOffsetY !=
+            cameraOffsetY || // FIXED: Check Y offset for repaint
         oldDelegate.zoom != zoom ||
         oldDelegate.animationTick != animationTick ||
         oldDelegate.canvasWidth != canvasWidth ||

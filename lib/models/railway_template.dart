@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'terminal_station_models.dart';
+import '../screens/terminal_station_models.dart';
 
 /// Template categories for railway layout elements
 enum TemplateCategory {

@@ -1203,8 +1203,10 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void _initializeAxleCounters() {
-    // LEFT SECTION AXLE COUNTERS (200-215)
-    // Upper track (200-214) eastbound
+    // LEFT SECTION AXLE COUNTERS (196-215) - Extended with buffer stops
+    // Upper track (196-214) eastbound
+    axleCounters['ac198'] = AxleCounter(id: 'ac198', blockId: '198', x: -1750, y: 120);
+    axleCounters['ac196'] = AxleCounter(id: 'ac196', blockId: '196', x: -1650, y: 120);
     axleCounters['ac200'] = AxleCounter(id: 'ac200', blockId: '200', x: -1500, y: 120);
     axleCounters['ac202'] = AxleCounter(id: 'ac202', blockId: '202', x: -1300, y: 120);
     axleCounters['ac204'] = AxleCounter(id: 'ac204', blockId: '204', x: -1100, y: 120);
@@ -1214,7 +1216,9 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac212'] = AxleCounter(id: 'ac212', blockId: '212', x: -300, y: 120);
     axleCounters['ac214'] = AxleCounter(id: 'ac214', blockId: '214', x: -100, y: 120);
 
-    // Lower track (201-215) westbound
+    // Lower track (197-215) westbound
+    axleCounters['ac199'] = AxleCounter(id: 'ac199', blockId: '199', x: -1750, y: 320);
+    axleCounters['ac197'] = AxleCounter(id: 'ac197', blockId: '197', x: -1650, y: 320);
     axleCounters['ac201'] = AxleCounter(id: 'ac201', blockId: '201', x: -1500, y: 320);
     axleCounters['ac203'] = AxleCounter(id: 'ac203', blockId: '203', x: -1300, y: 320);
     axleCounters['ac205'] = AxleCounter(id: 'ac205', blockId: '205', x: -1100, y: 320);
@@ -1224,9 +1228,8 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac213'] = AxleCounter(id: 'ac213', blockId: '213', x: -300, y: 320);
     axleCounters['ac215'] = AxleCounter(id: 'ac215', blockId: '215', x: -100, y: 320);
 
-    // Left section crossover
-    axleCounters['ac_cx_left'] = AxleCounter(id: 'ac_cx_left', blockId: 'crossover_left', x: -950, y: 200);
-    axleCounters['ac_cx211_212'] = AxleCounter(id: 'ac_cx211_212', blockId: 'crossover_211_212', x: -400, y: 200);
+    // Left section crossover - crossover_left removed, only crossover_211_212 remains
+    axleCounters['ac_cx211_212'] = AxleCounter(id: 'ac_cx211_212', blockId: 'crossover_211_212', x: -375, y: 200);
 
     // MIDDLE SECTION AXLE COUNTERS (100-115) - Original
     axleCounters['ac100'] = AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
@@ -1257,8 +1260,8 @@ class TerminalStationController extends ChangeNotifier {
       twinLabel: 'ac107',
     );
 
-    // RIGHT SECTION AXLE COUNTERS (300-315)
-    // Upper track (300-314) eastbound
+    // RIGHT SECTION AXLE COUNTERS (300-319) - Extended with buffer stops
+    // Upper track (300-318) eastbound
     axleCounters['ac300'] = AxleCounter(id: 'ac300', blockId: '300', x: 1700, y: 120);
     axleCounters['ac302'] = AxleCounter(id: 'ac302', blockId: '302', x: 1900, y: 120);
     axleCounters['ac304'] = AxleCounter(id: 'ac304', blockId: '304', x: 2100, y: 120);
@@ -1267,8 +1270,10 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac310'] = AxleCounter(id: 'ac310', blockId: '310', x: 2700, y: 120);
     axleCounters['ac312'] = AxleCounter(id: 'ac312', blockId: '312', x: 2900, y: 120);
     axleCounters['ac314'] = AxleCounter(id: 'ac314', blockId: '314', x: 3100, y: 120);
+    axleCounters['ac316'] = AxleCounter(id: 'ac316', blockId: '316', x: 3250, y: 120);
+    axleCounters['ac318'] = AxleCounter(id: 'ac318', blockId: '318', x: 3350, y: 120);
 
-    // Lower track (301-315) westbound
+    // Lower track (301-319) westbound
     axleCounters['ac301'] = AxleCounter(id: 'ac301', blockId: '301', x: 1700, y: 320);
     axleCounters['ac303'] = AxleCounter(id: 'ac303', blockId: '303', x: 1900, y: 320);
     axleCounters['ac305'] = AxleCounter(id: 'ac305', blockId: '305', x: 2100, y: 320);
@@ -1277,10 +1282,11 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac311'] = AxleCounter(id: 'ac311', blockId: '311', x: 2700, y: 320);
     axleCounters['ac313'] = AxleCounter(id: 'ac313', blockId: '313', x: 2900, y: 320);
     axleCounters['ac315'] = AxleCounter(id: 'ac315', blockId: '315', x: 3100, y: 320);
+    axleCounters['ac317'] = AxleCounter(id: 'ac317', blockId: '317', x: 3250, y: 320);
+    axleCounters['ac319'] = AxleCounter(id: 'ac319', blockId: '319', x: 3350, y: 320);
 
-    // Right section crossovers
-    axleCounters['ac_cx302_305'] = AxleCounter(id: 'ac_cx302_305', blockId: 'crossover_302_305', x: 2000, y: 200);
-    axleCounters['ac_cx_right'] = AxleCounter(id: 'ac_cx_right', blockId: 'crossover_right', x: 3150, y: 200);
+    // Right section crossover - UPDATED to match renamed crossover
+    axleCounters['ac_cx303_304'] = AxleCounter(id: 'ac_cx303_304', blockId: 'crossover_303_304', x: 1975, y: 200);
 
     _logEvent('🔢 Initialized ${axleCounters.length} axle counters across all sections');
   }
@@ -1722,9 +1728,11 @@ class TerminalStationController extends ChangeNotifier {
     // Total canvas: 3200 units wide (-1600 to 3200)
 
     // ═══════════════════════════════════════════════════════════════════════
-    // LEFT SECTION (-1600 to 0) - Mirror of terminal
+    // LEFT SECTION (-1800 to 0) - Extended with buffer stops
     // ═══════════════════════════════════════════════════════════════════════
     // Upper track (y=100) - Eastbound →
+    blocks['198'] = BlockSection(id: '198', startX: -1800, endX: -1700, y: 100);  // NEW: Buffer approach
+    blocks['196'] = BlockSection(id: '196', startX: -1700, endX: -1600, y: 100);  // NEW: Buffer stop
     blocks['200'] = BlockSection(id: '200', startX: -1600, endX: -1400, y: 100);
     blocks['202'] = BlockSection(id: '202', startX: -1400, endX: -1200, y: 100);
     blocks['204'] = BlockSection(id: '204', startX: -1200, endX: -1000, y: 100);
@@ -1735,6 +1743,8 @@ class TerminalStationController extends ChangeNotifier {
     blocks['214'] = BlockSection(id: '214', startX: -200, endX: 0, y: 100);
 
     // Lower track (y=300) - Westbound ←
+    blocks['199'] = BlockSection(id: '199', startX: -1800, endX: -1700, y: 300);  // NEW: Buffer approach
+    blocks['197'] = BlockSection(id: '197', startX: -1700, endX: -1600, y: 300);  // NEW: Buffer stop
     blocks['201'] = BlockSection(id: '201', startX: -1600, endX: -1400, y: 300);
     blocks['203'] = BlockSection(id: '203', startX: -1400, endX: -1200, y: 300);
     blocks['205'] = BlockSection(id: '205', startX: -1200, endX: -1000, y: 300);
@@ -1768,7 +1778,7 @@ class TerminalStationController extends ChangeNotifier {
     blocks['115'] = BlockSection(id: '115', startX: 1400, endX: 1600, y: 300);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // RIGHT SECTION (1600 to 3200) - Mirror of terminal
+    // RIGHT SECTION (1600 to 3400) - Extended with buffer stops
     // ═══════════════════════════════════════════════════════════════════════
     // Upper track (y=100) - Eastbound →
     blocks['300'] = BlockSection(id: '300', startX: 1600, endX: 1800, y: 100);
@@ -1779,6 +1789,8 @@ class TerminalStationController extends ChangeNotifier {
     blocks['310'] = BlockSection(id: '310', startX: 2600, endX: 2800, y: 100);
     blocks['312'] = BlockSection(id: '312', startX: 2800, endX: 3000, y: 100);
     blocks['314'] = BlockSection(id: '314', startX: 3000, endX: 3200, y: 100);
+    blocks['316'] = BlockSection(id: '316', startX: 3200, endX: 3300, y: 100);  // NEW: Buffer approach
+    blocks['318'] = BlockSection(id: '318', startX: 3300, endX: 3400, y: 100);  // NEW: Buffer stop
 
     // Lower track (y=300) - Westbound ←
     blocks['301'] = BlockSection(id: '301', startX: 1600, endX: 1800, y: 300);
@@ -1789,17 +1801,16 @@ class TerminalStationController extends ChangeNotifier {
     blocks['311'] = BlockSection(id: '311', startX: 2600, endX: 2800, y: 300);
     blocks['313'] = BlockSection(id: '313', startX: 2800, endX: 3000, y: 300);
     blocks['315'] = BlockSection(id: '315', startX: 3000, endX: 3200, y: 300);
+    blocks['317'] = BlockSection(id: '317', startX: 3200, endX: 3300, y: 300);  // NEW: Buffer approach
+    blocks['319'] = BlockSection(id: '319', startX: 3300, endX: 3400, y: 300);  // NEW: Buffer stop
 
     // ═══════════════════════════════════════════════════════════════════════
-    // CROSSOVERS - 5 total for flexible routing
+    // CROSSOVERS - 4 total for flexible routing
     // ═══════════════════════════════════════════════════════════════════════
-    // Left End Crossover (connects upper to lower for turnaround)
-    blocks['crossover_left'] =
-        BlockSection(id: 'crossover_left', startX: -1000, endX: -900, y: 200);
-
-    // Left Section Crossover (connects blocks 211↔212)
+    // Left Section Crossover (connects blocks 211↔212) - MOVED from 206-207 area
+    // Allows train from block 209→211 (lower track) to cross to block 212 (upper track)
     blocks['crossover_211_212'] =
-        BlockSection(id: 'crossover_211_212', startX: -450, endX: -350, y: 200);
+        BlockSection(id: 'crossover_211_212', startX: -450, endX: -300, y: 200);
 
     // Middle Crossover (original 78A/78B)
     blocks['crossover106'] =
@@ -1807,36 +1818,26 @@ class TerminalStationController extends ChangeNotifier {
     blocks['crossover109'] =
         BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
 
-    // Right Section Crossover (connects blocks 302↔305)
-    blocks['crossover_302_305'] =
-        BlockSection(id: 'crossover_302_305', startX: 1950, endX: 2050, y: 200);
-
-    // Right End Crossover (connects upper to lower for turnaround)
-    blocks['crossover_right'] =
-        BlockSection(id: 'crossover_right', startX: 3100, endX: 3200, y: 200);
+    // Right Section Crossover (connects blocks 303↔304) - MOVED from 314 area
+    // Allows train from block 301→303 (lower track) to cross to block 304 (upper track)
+    blocks['crossover_303_304'] =
+        BlockSection(id: 'crossover_303_304', startX: 1900, endX: 2050, y: 200);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // POINTS - 10 points total for 5 crossovers
+    // POINTS - 6 points total for 3 crossovers
     // ═══════════════════════════════════════════════════════════════════════
-    // Left end points (crossover_left)
-    points['76A'] = Point(id: '76A', x: -1000, y: 100);
-    points['76B'] = Point(id: '76B', x: -900, y: 300);
 
     // Left section points (crossover_211_212)
     points['77A'] = Point(id: '77A', x: -450, y: 100);
-    points['77B'] = Point(id: '77B', x: -350, y: 300);
+    points['77B'] = Point(id: '77B', x: -450, y: 300);  // FIXED: Aligned to start of crossover instead of end
 
     // Middle points (crossover106/109)
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
-    // Right section points (crossover_302_305)
-    points['79A'] = Point(id: '79A', x: 1950, y: 100);
-    points['79B'] = Point(id: '79B', x: 2050, y: 300);
-
-    // Right end points (crossover_right)
-    points['80A'] = Point(id: '80A', x: 3100, y: 100);
-    points['80B'] = Point(id: '80B', x: 3200, y: 300);
+    // Right section points (crossover_303_304)
+    points['79A'] = Point(id: '79A', x: 1900, y: 100);  // FIXED: Repositioned for crossover_303_304
+    points['79B'] = Point(id: '79B', x: 1900, y: 300);  // FIXED: Aligned to start of crossover
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)
@@ -1851,7 +1852,7 @@ class TerminalStationController extends ChangeNotifier {
     platforms.add(Platform(
         id: 'P3', name: 'Central Terminal Platform 1', startX: 800, endX: 1200, y: 100));
     platforms.add(Platform(
-        id: 'P4', name: 'Central Terminal Platform 2', startX: 800, endX: 1200, y: 300));
+        id: 'P4', name: 'Central Terminal Platform 2', startX: 1000, endX: 1200, y: 300));  // FIXED: Moved to x: 1000
 
     // Right End Station
     platforms.add(Platform(
@@ -1867,7 +1868,7 @@ class TerminalStationController extends ChangeNotifier {
     // Upper track eastbound signals
     signals['L01'] = Signal(
       id: 'L01',
-      x: -1500,
+      x: -1710,  // FIXED: 10 units from end of block 198 (before block 200)
       y: 80,
       routes: [
         SignalRoute(
@@ -1883,8 +1884,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L02'] = Signal(
       id: 'L02',
-      x: -1100,
-      y: 80,
+      x: -1010,  // FIXED: 10 units from end of block 204 (before block 202)
+      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'L02_R1',
@@ -1899,7 +1900,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L03'] = Signal(
       id: 'L03',
-      x: -700,
+      x: -810,  // FIXED: 10 units from end of block 206 (before block 208)
       y: 80,
       routes: [
         SignalRoute(
@@ -1916,7 +1917,7 @@ class TerminalStationController extends ChangeNotifier {
     signals['L04'] = Signal(
       id: 'L04',
       x: -100,
-      y: 80,
+      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'L04_R1',
@@ -1933,7 +1934,7 @@ class TerminalStationController extends ChangeNotifier {
     signals['L05'] = Signal(
       id: 'L05',
       x: -200,
-      y: 320,
+      y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
           id: 'L05_R1',
@@ -1948,8 +1949,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L06'] = Signal(
       id: 'L06',
-      x: -600,
-      y: 320,
+      x: -1010,  // FIXED: 10 units from end of block 205 (before block 203)
+      y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
           id: 'L06_R1',
@@ -1964,14 +1965,14 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L07'] = Signal(
       id: 'L07',
-      x: -1100,
+      x: -1710,  // FIXED: 10 units from end of block 199 (before block 201)
       y: 320,
       routes: [
         SignalRoute(
           id: 'L07_R1',
           name: 'West Loop',
           requiredBlocksClear: ['205', '203', '201'],
-          requiredPointPositions: {'76B': PointPosition.normal},
+          requiredPointPositions: {},  // FIXED: Removed reference to deleted point 76B
           pathBlocks: ['205', '203', '201'],
           protectedBlocks: ['205', '203', '201'],
         ),
@@ -1998,7 +1999,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C33'] = Signal(
       id: 'C33',
-      x: 1200,
+      x: 1190,  // FIXED: 10 units from end of block 110 (before block 112)
       y: 80,
       routes: [
         SignalRoute(
@@ -2030,8 +2031,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C02'] = Signal(
       id: 'C02',
-      x: 1500,
-      y: 80,
+      x: 990,  // FIXED: 10 units from end of block 108 (before block 106)
+      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'C02_R1',
@@ -2063,7 +2064,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C03'] = Signal(
       id: 'C03',
-      x: 1500,
+      x: 1190,  // FIXED: 10 units from end of block 111 (before block 113)
       y: 320,
       routes: [
         SignalRoute(
@@ -2079,8 +2080,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C04'] = Signal(
       id: 'C04',
-      x: 100,
-      y: 320,
+      x: 390,  // FIXED: 10 units from end of block 103 (before block 101)
+      y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
           id: 'C04_R1',
@@ -2097,7 +2098,7 @@ class TerminalStationController extends ChangeNotifier {
     // Upper track eastbound signals
     signals['R01'] = Signal(
       id: 'R01',
-      x: 1650,
+      x: 1790,  // FIXED: 10 units from end of block 300 (before block 312)
       y: 80,
       routes: [
         SignalRoute(
@@ -2113,8 +2114,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R02'] = Signal(
       id: 'R02',
-      x: 2100,
-      y: 80,
+      x: 2590,  // FIXED: 10 units from end of block 308 (before block 306)
+      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'R02_R1',
@@ -2129,7 +2130,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R03'] = Signal(
       id: 'R03',
-      x: 2700,
+      x: 2790,  // FIXED: 10 units from end of block 310 (before block 302)
       y: 80,
       routes: [
         SignalRoute(
@@ -2145,16 +2146,16 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R04'] = Signal(
       id: 'R04',
-      x: 3100,
-      y: 80,
+      x: 3290,  // FIXED: 10 units from end of block 316 (before block 314)
+      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'R04_R1',
           name: 'East Loop Entry',
-          requiredBlocksClear: ['314', 'crossover_right'],
-          requiredPointPositions: {'80A': PointPosition.reverse},
-          pathBlocks: ['314', 'crossover_right'],
-          protectedBlocks: ['314', 'crossover_right'],
+          requiredBlocksClear: ['314', '316'],
+          requiredPointPositions: {},  // FIXED: Removed reference to deleted point 80A
+          pathBlocks: ['314', '316'],
+          protectedBlocks: ['314', '316'],
         ),
       ],
     );
@@ -2162,7 +2163,7 @@ class TerminalStationController extends ChangeNotifier {
     // Lower track westbound signals
     signals['R05'] = Signal(
       id: 'R05',
-      x: 3100,
+      x: 2790,  // FIXED: 10 units from end of block 311 (before block 313)
       y: 320,
       routes: [
         SignalRoute(
@@ -2178,7 +2179,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R06'] = Signal(
       id: 'R06',
-      x: 2600,
+      x: 2590,  // FIXED: 10 units from end of block 309 (before block 307)
       y: 320,
       routes: [
         SignalRoute(
@@ -2194,7 +2195,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R07'] = Signal(
       id: 'R07',
-      x: 2100,
+      x: 1990,  // FIXED: 10 units from end of block 303 (before block 301)
       y: 320,
       routes: [
         SignalRoute(
@@ -2210,8 +2211,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R08'] = Signal(
       id: 'R08',
-      x: 1700,
-      y: 320,
+      x: 1590,  // FIXED: 10 units from end of block 115 (before block 113)
+      y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
           id: 'R08_R1',
@@ -2224,31 +2225,31 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
-    // TRAIN STOPS for all signals
-    trainStops['TL01'] = TrainStop(id: 'TL01', signalId: 'L01', x: -1500, y: 120);
-    trainStops['TL02'] = TrainStop(id: 'TL02', signalId: 'L02', x: -1100, y: 120);
-    trainStops['TL03'] = TrainStop(id: 'TL03', signalId: 'L03', x: -700, y: 120);
-    trainStops['TL04'] = TrainStop(id: 'TL04', signalId: 'L04', x: -100, y: 120);
-    trainStops['TL05'] = TrainStop(id: 'TL05', signalId: 'L05', x: -200, y: 340);
-    trainStops['TL06'] = TrainStop(id: 'TL06', signalId: 'L06', x: -600, y: 340);
-    trainStops['TL07'] = TrainStop(id: 'TL07', signalId: 'L07', x: -1100, y: 340);
+    // TRAIN STOPS for all signals - UPDATED to match new signal positions
+    trainStops['TL01'] = TrainStop(id: 'TL01', signalId: 'L01', x: -1710, y: 120);
+    trainStops['TL02'] = TrainStop(id: 'TL02', signalId: 'L02', x: -1010, y: 340);
+    trainStops['TL03'] = TrainStop(id: 'TL03', signalId: 'L03', x: -810, y: 120);
+    trainStops['TL04'] = TrainStop(id: 'TL04', signalId: 'L04', x: -100, y: 340);
+    trainStops['TL05'] = TrainStop(id: 'TL05', signalId: 'L05', x: -200, y: 120);
+    trainStops['TL06'] = TrainStop(id: 'TL06', signalId: 'L06', x: -1010, y: 120);
+    trainStops['TL07'] = TrainStop(id: 'TL07', signalId: 'L07', x: -1710, y: 340);
 
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
-    trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1220, y: 120);
-    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 1000, y: 340);
+    trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1190, y: 120);
+    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 995, y: 340);  // FIXED: Moved to x: 995
     trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 50, y: 120);
-    trainStops['TC02'] = TrainStop(id: 'TC02', signalId: 'C02', x: 1500, y: 120);
-    trainStops['TC03'] = TrainStop(id: 'TC03', signalId: 'C03', x: 1500, y: 340);
-    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 100, y: 340);
+    trainStops['TC02'] = TrainStop(id: 'TC02', signalId: 'C02', x: 990, y: 340);
+    trainStops['TC03'] = TrainStop(id: 'TC03', signalId: 'C03', x: 1190, y: 340);
+    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 390, y: 120);
 
-    trainStops['TR01'] = TrainStop(id: 'TR01', signalId: 'R01', x: 1650, y: 120);
-    trainStops['TR02'] = TrainStop(id: 'TR02', signalId: 'R02', x: 2100, y: 120);
-    trainStops['TR03'] = TrainStop(id: 'TR03', signalId: 'R03', x: 2700, y: 120);
-    trainStops['TR04'] = TrainStop(id: 'TR04', signalId: 'R04', x: 3100, y: 120);
-    trainStops['TR05'] = TrainStop(id: 'TR05', signalId: 'R05', x: 3100, y: 340);
-    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2600, y: 340);
-    trainStops['TR07'] = TrainStop(id: 'TR07', signalId: 'R07', x: 2100, y: 340);
-    trainStops['TR08'] = TrainStop(id: 'TR08', signalId: 'R08', x: 1700, y: 340);
+    trainStops['TR01'] = TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
+    trainStops['TR02'] = TrainStop(id: 'TR02', signalId: 'R02', x: 2590, y: 340);
+    trainStops['TR03'] = TrainStop(id: 'TR03', signalId: 'R03', x: 2790, y: 120);
+    trainStops['TR04'] = TrainStop(id: 'TR04', signalId: 'R04', x: 3290, y: 340);
+    trainStops['TR05'] = TrainStop(id: 'TR05', signalId: 'R05', x: 2790, y: 340);
+    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2590, y: 340);
+    trainStops['TR07'] = TrainStop(id: 'TR07', signalId: 'R07', x: 1990, y: 340);
+    trainStops['TR08'] = TrainStop(id: 'TR08', signalId: 'R08', x: 1590, y: 120);
 
     // ═══════════════════════════════════════════════════════════════════════
     // CBTC INFRASTRUCTURE - WiFi and Transponders with individual control

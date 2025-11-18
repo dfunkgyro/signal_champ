@@ -281,6 +281,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawMovementAuthorities(
         canvas); // Draw movement authority arrows before trains
     _drawTrains(canvas);
+    _drawGhostTrains(canvas); // Draw ghost trains in shadow mode if visible
     _drawDirectionLabels(canvas);
     _drawLabels(canvas);
 
@@ -1522,18 +1523,18 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
       final pathPaint = Paint()
         ..shader = gradient.createShader(Rect.fromPoints(
-          Offset(startX, trainY - 25),
-          Offset(endX, trainY - 25),
+          Offset(startX, trainY - 5), // Centered on track
+          Offset(endX, trainY + 5), // Centered on track
         ))
         ..style = PaintingStyle.fill;
 
-      // Draw the main authority path as a rounded rectangle
+      // Draw the main authority path as a rounded rectangle centered on the track
       final pathRect = RRect.fromRectAndRadius(
         Rect.fromLTRB(
           isEastbound ? startX : endX,
-          trainY - 25,
+          trainY - 5, // Centered on track (5 units above train center)
           isEastbound ? endX : startX,
-          trainY - 15,
+          trainY + 5, // Centered on track (5 units below train center)
         ),
         const Radius.circular(3),
       );
@@ -1561,7 +1562,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ..strokeCap = StrokeCap.round;
 
         final arrowSize = 6.0;
-        final arrowY = trainY - 20;
+        final arrowY = trainY; // Centered on track
 
         if (isEastbound) {
           // Right-pointing arrow
@@ -1932,6 +1933,111 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
 
       canvas.restore();
+    }
+  }
+
+  void _drawGhostTrains(Canvas canvas) {
+    // Only draw ghost trains if visibility is enabled
+    if (!controller.showGhostTrains || controller.ghostTrains.isEmpty) return;
+
+    for (var ghost in controller.ghostTrains) {
+      // Draw ghost train as semi-transparent shadow
+      final ghostPaint = Paint()
+        ..color = Colors.purple.withOpacity(0.3)
+        ..style = PaintingStyle.fill;
+
+      final outlinePaint = Paint()
+        ..color = Colors.purple.withOpacity(0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round;
+
+      // Determine if M2 type (double unit)
+      final isM2 = ghost.trainType == TrainType.m2 || ghost.trainType == TrainType.cbtcM2;
+
+      if (isM2) {
+        // Draw two cars for M2 ghost train
+        // First car
+        final car1Rect = RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(ghost.x - 13, ghost.y),
+            width: 20,
+            height: 12,
+          ),
+          const Radius.circular(4),
+        );
+        canvas.drawRRect(car1Rect, ghostPaint);
+        canvas.drawRRect(car1Rect, outlinePaint);
+
+        // Second car
+        final car2Rect = RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(ghost.x + 13, ghost.y),
+            width: 20,
+            height: 12,
+          ),
+          const Radius.circular(4),
+        );
+        canvas.drawRRect(car2Rect, ghostPaint);
+        canvas.drawRRect(car2Rect, outlinePaint);
+      } else {
+        // Draw single car for M1 ghost train
+        final carRect = RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(ghost.x, ghost.y),
+            width: 22,
+            height: 12,
+          ),
+          const Radius.circular(4),
+        );
+        canvas.drawRRect(carRect, ghostPaint);
+        canvas.drawRRect(carRect, outlinePaint);
+      }
+
+      // Draw "GHOST" label above train
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: '👻',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.purple.withOpacity(0.7),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(ghost.x - textPainter.width / 2, ghost.y - 20),
+      );
+
+      // Draw service ID label
+      if (ghost.serviceId.isNotEmpty) {
+        final serviceTextPainter = TextPainter(
+          text: TextSpan(
+            text: ghost.serviceId.substring(0, math.min(8, ghost.serviceId.length)),
+            style: TextStyle(
+              fontSize: 8,
+              color: Colors.purple.withOpacity(0.6),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        serviceTextPainter.layout();
+        serviceTextPainter.paint(
+          canvas,
+          Offset(ghost.x - serviceTextPainter.width / 2, ghost.y + 10),
+        );
+      }
+
+      // Draw door indicator if doors are open
+      if (ghost.doorsOpen) {
+        final doorPaint = Paint()
+          ..color = Colors.yellow.withOpacity(0.6)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(ghost.x, ghost.y - 10), 3, doorPaint);
+      }
     }
   }
 

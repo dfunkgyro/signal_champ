@@ -5,7 +5,8 @@ import '../screens/terminal_station_models.dart';
 import '../services/openai_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Floating AI Agent panel for natural language railway control
+/// Floating Signalling System Manager panel for natural language railway control
+/// (formerly known as AI Agent)
 class AIAgentPanel extends StatefulWidget {
   const AIAgentPanel({Key? key}) : super(key: key);
 
@@ -25,7 +26,7 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
   void initState() {
     super.initState();
     _initializeOpenAI();
-    _addMessage('AI Agent', 'Hello! I can help you control the railway. Try commands like:\n• "Set route L01 to route 1"\n• "Swing point 76A"\n• "Add M1 train to block 100"', isAI: true);
+    _addMessage('Signalling Manager', 'Hello! I am the Signalling System Manager. I can help you control the railway. Try commands like:\n• "Set route L01 to route 1"\n• "Swing point 76A"\n• "Add M1 train to block 100"', isAI: true);
   }
 
   void _initializeOpenAI() {
@@ -509,65 +510,68 @@ Try saying:
   }
 
   Widget _buildPanel(TerminalStationController controller, {bool isDragging = false}) {
+    final designType = controller.signallingSystemManagerDesignType;
+    final themeColor = controller.signallingSystemManagerColor;
+    final compactMode = controller.signallingSystemManagerCompactMode;
+
     return Opacity(
-      opacity: isDragging ? 0.7 : controller.aiAgentOpacity,
+      opacity: isDragging ? 0.7 : controller.signallingSystemManagerOpacity,
       child: Material(
         elevation: isDragging ? 8 : 4,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(designType == 3 ? 0 : 12),
         child: Stack(
           children: [
             Container(
-              width: controller.aiAgentWidth,
-              height: controller.aiAgentHeight,
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue, width: 2),
-              ),
+              width: controller.signallingSystemManagerWidth,
+              height: controller.signallingSystemManagerHeight,
+              decoration: _getDesignDecoration(designType, themeColor),
               child: Column(
                 children: [
                   // Header with drag handle and controls
                   Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10),
-                      ),
-                    ),
+                    padding: EdgeInsets.all(compactMode ? 4 : 8),
+                    decoration: _getHeaderDecoration(designType, themeColor),
                     child: Column(
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.drag_indicator, color: Colors.white, size: 20),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.smart_toy, color: Colors.white, size: 20),
-                            const SizedBox(width: 8),
-                            const Expanded(
+                            Icon(Icons.drag_indicator, color: Colors.white, size: compactMode ? 16 : 20),
+                            SizedBox(width: compactMode ? 2 : 4),
+                            Icon(_getDesignIcon(designType), color: Colors.white, size: compactMode ? 16 : 20),
+                            SizedBox(width: compactMode ? 4 : 8),
+                            Expanded(
                               child: Text(
-                                'AI Assistant',
+                                compactMode ? 'SSM' : 'Signalling System Manager',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: compactMode ? 12 : 14,
                                 ),
                               ),
                             ),
+                            // Settings button
+                            IconButton(
+                              icon: const Icon(Icons.settings, color: Colors.white70),
+                              onPressed: () => _showSettingsDialog(context, controller),
+                              iconSize: compactMode ? 14 : 16,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            SizedBox(width: compactMode ? 2 : 4),
                             // Opacity control
-                            SizedBox(
+                            if (!compactMode) SizedBox(
                               width: 80,
                               child: Row(
                                 children: [
                                   const Icon(Icons.opacity, color: Colors.white70, size: 14),
                                   Expanded(
                                     child: Slider(
-                                      value: controller.aiAgentOpacity,
+                                      value: controller.signallingSystemManagerOpacity,
                                       min: 0.1,
                                       max: 1.0,
                                       activeColor: Colors.white,
                                       inactiveColor: Colors.white30,
-                                      onChanged: (value) => controller.updateAiAgentOpacity(value),
+                                      onChanged: (value) => controller.updateSignallingSystemManagerOpacity(value),
                                     ),
                                   ),
                                 ],
@@ -575,8 +579,8 @@ Try saying:
                             ),
                             IconButton(
                               icon: const Icon(Icons.close, color: Colors.white),
-                              onPressed: () => controller.toggleAiAgent(),
-                              iconSize: 18,
+                              onPressed: () => controller.toggleSignallingSystemManager(),
+                              iconSize: compactMode ? 14 : 18,
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
@@ -707,6 +711,225 @@ Try saying:
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Design helper methods
+  IconData _getDesignIcon(int designType) {
+    switch (designType) {
+      case 0: return Icons.traffic; // Modern
+      case 1: return Icons.train; // Railway
+      case 2: return Icons.commute; // Professional
+      case 3: return Icons.directions_railway; // Classic
+      default: return Icons.traffic;
+    }
+  }
+
+  BoxDecoration _getDesignDecoration(int designType, Color themeColor) {
+    switch (designType) {
+      case 0: // Modern - Dark with colored border
+        return BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: themeColor, width: 2),
+        );
+      case 1: // Railway - Industrial look
+        return BoxDecoration(
+          color: Colors.grey[850],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: themeColor, width: 3),
+          boxShadow: [
+            BoxShadow(
+              color: themeColor.withOpacity(0.3),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        );
+      case 2: // Professional - Clean gradient
+        return BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.grey[900]!, Colors.grey[800]!],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: themeColor, width: 1),
+        );
+      case 3: // Classic - Sharp edges, bold borders
+        return BoxDecoration(
+          color: Colors.black87,
+          border: Border.all(color: themeColor, width: 4),
+        );
+      default:
+        return BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: themeColor, width: 2),
+        );
+    }
+  }
+
+  BoxDecoration _getHeaderDecoration(int designType, Color themeColor) {
+    switch (designType) {
+      case 0: // Modern
+        return BoxDecoration(
+          color: themeColor,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
+          ),
+        );
+      case 1: // Railway - Metallic look
+        return BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              themeColor,
+              themeColor.withOpacity(0.7),
+            ],
+          ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(6),
+            topRight: Radius.circular(6),
+          ),
+        );
+      case 2: // Professional - Subtle gradient
+        return BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [themeColor, themeColor.withOpacity(0.8)],
+          ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(14),
+            topRight: Radius.circular(14),
+          ),
+        );
+      case 3: // Classic - Solid color, no rounding
+        return BoxDecoration(
+          color: themeColor,
+        );
+      default:
+        return BoxDecoration(
+          color: themeColor,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
+          ),
+        );
+    }
+  }
+
+  void _showSettingsDialog(BuildContext context, TerminalStationController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Signalling System Manager Settings'),
+        content: SizedBox(
+          width: 350,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Color Picker
+              const Text('Theme Color', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _colorOption(controller, Colors.blue, 'Blue'),
+                  _colorOption(controller, Colors.green, 'Green'),
+                  _colorOption(controller, Colors.orange, 'Orange'),
+                  _colorOption(controller, Colors.red, 'Red'),
+                  _colorOption(controller, Colors.purple, 'Purple'),
+                  _colorOption(controller, Colors.teal, 'Teal'),
+                  _colorOption(controller, Colors.amber, 'Amber'),
+                  _colorOption(controller, Colors.indigo, 'Indigo'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              // Design Type
+              const Text('Design Style', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              _designTypeOption(controller, 0, 'Modern', Icons.traffic),
+              _designTypeOption(controller, 1, 'Railway', Icons.train),
+              _designTypeOption(controller, 2, 'Professional', Icons.commute),
+              _designTypeOption(controller, 3, 'Classic', Icons.directions_railway),
+              const SizedBox(height: 16),
+              const Divider(),
+              // Additional Options
+              const Text('Options', style: TextStyle(fontWeight: FontWeight.bold)),
+              SwitchListTile(
+                title: const Text('Compact Mode'),
+                value: controller.signallingSystemManagerCompactMode,
+                onChanged: (value) {
+                  controller.toggleSignallingSystemManagerCompactMode();
+                  Navigator.of(context).pop();
+                  _showSettingsDialog(context, controller);
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Auto-scroll'),
+                value: controller.signallingSystemManagerAutoScroll,
+                onChanged: (value) {
+                  controller.toggleSignallingSystemManagerAutoScroll();
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _colorOption(TerminalStationController controller, Color color, String label) {
+    final isSelected = controller.signallingSystemManagerColor == color;
+    return InkWell(
+      onTap: () => controller.updateSignallingSystemManagerColor(color),
+      child: Container(
+        width: 70,
+        height: 50,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.transparent,
+            width: 3,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _designTypeOption(TerminalStationController controller, int type, String label, IconData icon) {
+    final isSelected = controller.signallingSystemManagerDesignType == type;
+    return Card(
+      color: isSelected ? controller.signallingSystemManagerColor.withOpacity(0.2) : null,
+      child: ListTile(
+        leading: Icon(icon, color: isSelected ? controller.signallingSystemManagerColor : null),
+        title: Text(label),
+        trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
+        onTap: () => controller.updateSignallingSystemManagerDesignType(type),
       ),
     );
   }

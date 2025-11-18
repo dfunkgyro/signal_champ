@@ -510,6 +510,7 @@ class TerminalStationController extends ChangeNotifier {
   Timer? _timetableTimer;
   bool timetableActive = false;
   final List<GhostTrain> ghostTrains = []; // Invisible scheduled trains for timetable
+  bool showGhostTrains = false; // Visibility toggle for ghost trains (hidden by default)
 
   bool _spadAlarmActive = false;
   CollisionIncident? _currentSpadIncident;
@@ -537,12 +538,28 @@ class TerminalStationController extends ChangeNotifier {
   bool tractionCentralOn = true; // Central section: -200 <= x <= 1800
   bool tractionEastOn = true;    // East section: x > 1800
 
-  // AI Agent
-  bool aiAgentVisible = false;
-  Offset aiAgentPosition = const Offset(50, 50);
-  double aiAgentOpacity = 1.0;
-  double aiAgentWidth = 175.0;
-  double aiAgentHeight = 250.0;
+  // Signalling System Manager (formerly AI Agent)
+  bool signallingSystemManagerVisible = false;
+  Offset signallingSystemManagerPosition = const Offset(50, 50);
+  double signallingSystemManagerOpacity = 1.0;
+  double signallingSystemManagerWidth = 175.0;
+  double signallingSystemManagerHeight = 250.0;
+  Color signallingSystemManagerColor = Colors.blue; // Customizable color
+  int signallingSystemManagerDesignType = 0; // 0-3: Different design styles
+  bool signallingSystemManagerCompactMode = false; // Compact view option
+  bool signallingSystemManagerAutoScroll = true; // Auto-scroll chat
+
+  // Legacy aliases for backward compatibility
+  bool get aiAgentVisible => signallingSystemManagerVisible;
+  set aiAgentVisible(bool value) => signallingSystemManagerVisible = value;
+  Offset get aiAgentPosition => signallingSystemManagerPosition;
+  set aiAgentPosition(Offset value) => signallingSystemManagerPosition = value;
+  double get aiAgentOpacity => signallingSystemManagerOpacity;
+  set aiAgentOpacity(double value) => signallingSystemManagerOpacity = value;
+  double get aiAgentWidth => signallingSystemManagerWidth;
+  set aiAgentWidth(double value) => signallingSystemManagerWidth = value;
+  double get aiAgentHeight => signallingSystemManagerHeight;
+  set aiAgentHeight(double value) => signallingSystemManagerHeight = value;
 
   // Camera controls for search and follow
   double cameraOffsetX = 0;
@@ -845,9 +862,21 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleGhostTrainsVisibility() {
+    showGhostTrains = !showGhostTrains;
+    _logEvent(showGhostTrains ? '👻 Ghost Trains VISIBLE' : '👻 Ghost Trains HIDDEN');
+    notifyListeners();
+  }
+
   void toggleAiAgent() {
-    aiAgentVisible = !aiAgentVisible;
-    _logEvent(aiAgentVisible ? '🤖 AI Agent ENABLED' : '🤖 AI Agent DISABLED');
+    signallingSystemManagerVisible = !signallingSystemManagerVisible;
+    _logEvent(signallingSystemManagerVisible ? '🚦 Signalling System Manager ENABLED' : '🚦 Signalling System Manager DISABLED');
+    notifyListeners();
+  }
+
+  void toggleSignallingSystemManager() {
+    signallingSystemManagerVisible = !signallingSystemManagerVisible;
+    _logEvent(signallingSystemManagerVisible ? '🚦 Signalling System Manager ENABLED' : '🚦 Signalling System Manager DISABLED');
     notifyListeners();
   }
 
@@ -858,18 +887,58 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void updateAiAgentPosition(Offset newPosition) {
-    aiAgentPosition = newPosition;
+    signallingSystemManagerPosition = newPosition;
+    notifyListeners();
+  }
+
+  void updateSignallingSystemManagerPosition(Offset newPosition) {
+    signallingSystemManagerPosition = newPosition;
     notifyListeners();
   }
 
   void updateAiAgentSize(double width, double height) {
-    aiAgentWidth = width.clamp(150.0, 600.0);
-    aiAgentHeight = height.clamp(200.0, 800.0);
+    signallingSystemManagerWidth = width.clamp(150.0, 600.0);
+    signallingSystemManagerHeight = height.clamp(200.0, 800.0);
+    notifyListeners();
+  }
+
+  void updateSignallingSystemManagerSize(double width, double height) {
+    signallingSystemManagerWidth = width.clamp(150.0, 600.0);
+    signallingSystemManagerHeight = height.clamp(200.0, 800.0);
     notifyListeners();
   }
 
   void updateAiAgentOpacity(double opacity) {
-    aiAgentOpacity = opacity.clamp(0.1, 1.0);
+    signallingSystemManagerOpacity = opacity.clamp(0.1, 1.0);
+    notifyListeners();
+  }
+
+  void updateSignallingSystemManagerOpacity(double opacity) {
+    signallingSystemManagerOpacity = opacity.clamp(0.1, 1.0);
+    notifyListeners();
+  }
+
+  void updateSignallingSystemManagerColor(Color color) {
+    signallingSystemManagerColor = color;
+    _logEvent('🎨 Signalling System Manager color changed');
+    notifyListeners();
+  }
+
+  void updateSignallingSystemManagerDesignType(int designType) {
+    signallingSystemManagerDesignType = designType.clamp(0, 3);
+    _logEvent('🎨 Signalling System Manager design changed to type $designType');
+    notifyListeners();
+  }
+
+  void toggleSignallingSystemManagerCompactMode() {
+    signallingSystemManagerCompactMode = !signallingSystemManagerCompactMode;
+    _logEvent(signallingSystemManagerCompactMode ? '📦 Compact mode ENABLED' : '📦 Compact mode DISABLED');
+    notifyListeners();
+  }
+
+  void toggleSignallingSystemManagerAutoScroll() {
+    signallingSystemManagerAutoScroll = !signallingSystemManagerAutoScroll;
+    _logEvent(signallingSystemManagerAutoScroll ? '📜 Auto-scroll ENABLED' : '📜 Auto-scroll DISABLED');
     notifyListeners();
   }
 
@@ -1540,11 +1609,100 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
 
+    // Limit to 4 blocks ahead maximum for CBTC trains
+    final blocksAhead = _countBlocksAhead(train, maxDistance);
+    if (blocksAhead > 4) {
+      // Find the end of the 4th block ahead
+      final fourthBlockEnd = _getFourthBlockEndPosition(train);
+      if (fourthBlockEnd != null && fourthBlockEnd < maxDistance) {
+        maxDistance = fourthBlockEnd;
+        limitReason = 'CBTC limit: 4 blocks max';
+      }
+    }
+
     return MovementAuthority(
       maxDistance: maxDistance.clamp(0.0, 2000.0),
       limitReason: limitReason,
       hasDestination: hasDestination,
     );
+  }
+
+  // Count how many blocks are ahead within a given distance
+  int _countBlocksAhead(Train train, double distance) {
+    int count = 0;
+    final trainPos = train.x;
+    final direction = train.direction;
+
+    for (var block in blocks.values) {
+      bool isAhead = false;
+
+      if (direction > 0) {
+        // Eastbound - check blocks to the right
+        if (block.startX > trainPos && block.startX <= trainPos + distance) {
+          isAhead = true;
+        }
+      } else {
+        // Westbound - check blocks to the left
+        if (block.endX < trainPos && block.endX >= trainPos - distance) {
+          isAhead = true;
+        }
+      }
+
+      if (isAhead) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
+  // Get the end position of the 4th block ahead
+  double? _getFourthBlockEndPosition(Train train) {
+    final trainPos = train.x;
+    final direction = train.direction;
+
+    // Collect blocks ahead and sort by distance
+    final blocksAhead = <MapEntry<String, BlockSection>>[];
+
+    for (var entry in blocks.entries) {
+      final block = entry.value;
+      bool isAhead = false;
+
+      if (direction > 0) {
+        // Eastbound - check blocks to the right
+        if (block.startX > trainPos) {
+          isAhead = true;
+        }
+      } else {
+        // Westbound - check blocks to the left
+        if (block.endX < trainPos) {
+          isAhead = true;
+        }
+      }
+
+      if (isAhead) {
+        blocksAhead.add(entry);
+      }
+    }
+
+    // Sort by distance from train
+    blocksAhead.sort((a, b) {
+      final distA = direction > 0
+          ? a.value.startX - trainPos
+          : trainPos - a.value.endX;
+      final distB = direction > 0
+          ? b.value.startX - trainPos
+          : trainPos - b.value.endX;
+      return distA.compareTo(distB);
+    });
+
+    // Get the 4th block if it exists
+    if (blocksAhead.length >= 4) {
+      final fourthBlock = blocksAhead[3].value;
+      return direction > 0 ? fourthBlock.endX : fourthBlock.startX;
+    }
+
+    return null;
   }
 
   // ============================================================================
@@ -3170,6 +3328,37 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
+  // Auto door open for trains at platforms in automatic mode
+  void _checkAutoTrainDoorsAtPlatforms() {
+    for (var train in trains) {
+      // Only auto-open for trains in automatic mode
+      if (train.controlMode != TrainControlMode.automatic) continue;
+
+      // Skip if doors are already open
+      if (train.doorsOpen) continue;
+
+      // Check if train is at a platform
+      for (var platform in platforms) {
+        final atPlatform = train.x >= platform.startX &&
+                          train.x <= platform.endX &&
+                          (train.y - platform.y).abs() < 20;
+
+        if (atPlatform) {
+          // Check if train is stopped or nearly stopped
+          if (train.speed.abs() < 0.5) {
+            // Auto-open doors
+            train.doorsOpen = true;
+            train.doorsOpenedAt = DateTime.now();
+            train.manualStop = true; // Keep train stopped while doors open
+            _logEvent('🚪 ${train.name} doors AUTO-OPENED at ${platform.name}');
+            notifyListeners();
+            break;
+          }
+        }
+      }
+    }
+  }
+
   void _checkDoorAutoClose() {
     final now = DateTime.now();
     for (var train in trains) {
@@ -4511,7 +4700,8 @@ class TerminalStationController extends ChangeNotifier {
 
     tickCount++;
     _clearExpiredReservations();
-    _checkDoorAutoClose();
+    _checkAutoTrainDoorsAtPlatforms(); // Auto-open doors for trains at platforms
+    _checkDoorAutoClose(); // Auto-close doors after 20 seconds
 
     // Check AB-based point deadlocks every simulation tick
     _arePointsDeadlocked();

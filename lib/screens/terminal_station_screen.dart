@@ -14,6 +14,8 @@ import 'dart:math' as math;
 // ============================================================================
 
 import 'terminal_station_painter.dart';
+import '../widgets/railway_search_bar.dart';
+import '../widgets/mini_map_widget.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -3771,9 +3773,31 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       child: Consumer<TerminalStationController>(
         builder: (context, controller, _) {
           final stats = controller.getStats();
-          return ListView(
-            padding: const EdgeInsets.all(16),
+          return Column(
             children: [
+              // Search Bar at the top
+              const RailwaySearchBar(),
+
+              // Mini Map
+              MiniMapWidget(
+                canvasWidth: _canvasWidth,
+                canvasHeight: _canvasHeight,
+                cameraOffsetX: _cameraOffsetX,
+                cameraOffsetY: _cameraOffsetY,
+                cameraZoom: _zoom,
+                onNavigate: (x, y) {
+                  setState(() {
+                    _cameraOffsetX = -x * _zoom + MediaQuery.of(context).size.width / 2;
+                    _cameraOffsetY = -y * _zoom + MediaQuery.of(context).size.height / 2;
+                  });
+                },
+              ),
+
+              // Rest of the status panel content
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
               // Simulation Running Time
               Card(
                 color: Colors.blue[50],
@@ -4762,15 +4786,13 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const Spacer(),
             // Ghost Train Visibility Toggle
-            IconButton(
-              icon: Icon(_showGhostTrains ? Icons.visibility : Icons.visibility_off),
-              tooltip: 'Toggle Ghost Trains',
-              onPressed: () {
-                setState(() {
-                  _showGhostTrains = !_showGhostTrains;
-                });
-              },
-              color: _showGhostTrains ? Colors.green : Colors.grey,
+            Consumer<TerminalStationController>(
+              builder: (context, ctrl, _) => IconButton(
+                icon: Icon(ctrl.showGhostTrains ? Icons.visibility : Icons.visibility_off),
+                tooltip: 'Toggle Ghost Trains (Shadow Mode)',
+                onPressed: () => ctrl.toggleGhostTrainsVisibility(),
+                color: ctrl.showGhostTrains ? Colors.green : Colors.grey,
+              ),
             ),
           ],
         ),
@@ -5026,8 +5048,13 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
             );
           }).toList(),
-        ],
-      ],
-    );
+                  ], // End of ListView children
+                ),
+              ), // End of Expanded
+            ], // End of Column children
+          ); // End of Column
+        },
+      ), // End of Consumer
+    ); // End of Container
   }
 }

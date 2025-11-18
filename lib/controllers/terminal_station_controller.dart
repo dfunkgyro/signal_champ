@@ -4512,27 +4512,50 @@ class TerminalStationController extends ChangeNotifier {
   // ========== EXISTING METHODS ==========
 
   void _updateTrainYPosition(Train train) {
+    final point76A = points['76A'];
+    final point76B = points['76B'];
     final point78A = points['78A'];
     final point78B = points['78B'];
+    final point80A = points['80A'];
+    final point80B = points['80B'];
 
-    if (train.x < 600) {
-      if (train.y > 200) {
-        train.y = 300;
+    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-550 to -450, points 76A, 76B)
+    if (train.x >= -550 && train.x < -450) {
+      if (point76A?.position == PointPosition.reverse &&
+          point76B?.position == PointPosition.reverse) {
+        // 135-degree crossover - train transitioning between upper and lower tracks
+        double progress = (train.x + 550) / 100;  // 0 to 1 over the crossover
+        if (train.direction > 0) {
+          // Moving right: upper track (y=100) to lower track (y=300)
+          train.y = 100 + (200 * progress);
+          train.rotation = 2.356; // 135 degrees in radians
+        } else {
+          // Moving left: lower track (y=300) to upper track (y=100)
+          train.y = 300 - (200 * progress);
+          train.rotation = -2.356; // -135 degrees in radians
+        }
       } else {
-        train.y = 100;
+        // Points in normal position - stay on current track
+        if (train.y < 200) {
+          train.y = 100;
+        } else {
+          train.y = 300;
+        }
+        train.rotation = 0.0;
       }
-      train.rotation = 0.0;
-    } else if (train.x >= 600 && train.x < 800) {
+    }
+    // CENTER SECTION DOUBLE CROSSOVER (x=600 to 800, points 78A, 78B) - EXISTING CODE
+    else if (train.x >= 600 && train.x < 800) {
       if (point78A?.position == PointPosition.reverse &&
           point78B?.position == PointPosition.reverse) {
         if (train.x < 700) {
           double progress = (train.x - 600) / 100;
           train.y = 100 + (100 * progress);
-          train.rotation = 0.785398;
+          train.rotation = 0.785398;  // 45 degrees
         } else {
           double progress = (train.x - 700) / 100;
           train.y = 200 + (100 * progress);
-          train.rotation = 0.785398;
+          train.rotation = 0.785398;  // 45 degrees
         }
       } else {
         if (train.y < 200) {
@@ -4542,7 +4565,34 @@ class TerminalStationController extends ChangeNotifier {
         }
         train.rotation = 0.0;
       }
-    } else {
+    }
+    // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (x=1900 to 2000, points 80A, 80B)
+    else if (train.x >= 1900 && train.x < 2000) {
+      if (point80A?.position == PointPosition.reverse &&
+          point80B?.position == PointPosition.reverse) {
+        // 135-degree crossover - train transitioning between upper and lower tracks
+        double progress = (train.x - 1900) / 100;  // 0 to 1 over the crossover
+        if (train.direction > 0) {
+          // Moving right: upper track (y=100) to lower track (y=300)
+          train.y = 100 + (200 * progress);
+          train.rotation = 2.356; // 135 degrees in radians
+        } else {
+          // Moving left: lower track (y=300) to upper track (y=100)
+          train.y = 300 - (200 * progress);
+          train.rotation = -2.356; // -135 degrees in radians
+        }
+      } else {
+        // Points in normal position - stay on current track
+        if (train.y < 200) {
+          train.y = 100;
+        } else {
+          train.y = 300;
+        }
+        train.rotation = 0.0;
+      }
+    }
+    // ALL OTHER SECTIONS - maintain straight tracks
+    else {
       if (train.y > 200) {
         train.y = 300;
       } else {
@@ -4584,9 +4634,47 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   bool _isValidJunctionMove(Train train, String fromBlockId, String toBlockId) {
+    final point76A = points['76A'];
+    final point76B = points['76B'];
     final point78A = points['78A'];
     final point78B = points['78B'];
+    final point80A = points['80A'];
+    final point80B = points['80B'];
 
+    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (blocks 211, 212, crossover_211_212)
+    if (train.direction > 0) {
+      // Eastbound through left crossover
+      if (fromBlockId == '210' && toBlockId == 'crossover_211_212') {
+        return point76A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_211_212' && toBlockId == '212') {
+        return point76B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == '211' && toBlockId == 'crossover_211_212') {
+        return point76B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_211_212' && toBlockId == '213') {
+        return point76A?.position == PointPosition.reverse;
+      }
+    }
+
+    if (train.direction < 0) {
+      // Westbound through left crossover
+      if (fromBlockId == '212' && toBlockId == 'crossover_211_212') {
+        return point76B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_211_212' && toBlockId == '210') {
+        return point76A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == '213' && toBlockId == 'crossover_211_212') {
+        return point76A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_211_212' && toBlockId == '211') {
+        return point76B?.position == PointPosition.reverse;
+      }
+    }
+
+    // CENTER SECTION DOUBLE CROSSOVER (blocks 106, 108, 107, 109, crossover106, crossover109)
     if (train.direction > 0) {
       if (fromBlockId == '106' && toBlockId == 'crossover106') {
         return point78A?.position == PointPosition.reverse;
@@ -4626,6 +4714,39 @@ class TerminalStationController extends ChangeNotifier {
       }
       if (fromBlockId == 'crossover109' && toBlockId == '107') {
         return point78B?.position == PointPosition.reverse;
+      }
+    }
+
+    // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (blocks 302, 304, 303, 305, crossover_303_304)
+    if (train.direction > 0) {
+      // Eastbound through right crossover
+      if (fromBlockId == '302' && toBlockId == 'crossover_303_304') {
+        return point80A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_303_304' && toBlockId == '304') {
+        return point80B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == '303' && toBlockId == 'crossover_303_304') {
+        return point80B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_303_304' && toBlockId == '305') {
+        return point80A?.position == PointPosition.reverse;
+      }
+    }
+
+    if (train.direction < 0) {
+      // Westbound through right crossover
+      if (fromBlockId == '304' && toBlockId == 'crossover_303_304') {
+        return point80B?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_303_304' && toBlockId == '302') {
+        return point80A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == '305' && toBlockId == 'crossover_303_304') {
+        return point80A?.position == PointPosition.reverse;
+      }
+      if (fromBlockId == 'crossover_303_304' && toBlockId == '303') {
+        return point80B?.position == PointPosition.reverse;
       }
     }
 

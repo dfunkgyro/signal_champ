@@ -531,8 +531,11 @@ class TerminalStationController extends ChangeNotifier {
   bool gridVisible = false;
   double gridSpacing = 100.0;
 
-  // Traction current system
-  bool tractionCurrentOn = true;
+  // Traction current system - split into 3 sections
+  bool tractionCurrentOn = true; // For backwards compatibility
+  bool tractionWestOn = true;    // West section: x < -200
+  bool tractionCentralOn = true; // Central section: -200 <= x <= 1800
+  bool tractionEastOn = true;    // East section: x > 1800
 
   // AI Agent
   bool aiAgentVisible = false;
@@ -681,6 +684,10 @@ class TerminalStationController extends ChangeNotifier {
 
   void toggleTractionCurrent() {
     tractionCurrentOn = !tractionCurrentOn;
+    tractionWestOn = tractionCurrentOn;
+    tractionCentralOn = tractionCurrentOn;
+    tractionEastOn = tractionCurrentOn;
+
     if (!tractionCurrentOn) {
       // Apply emergency brake to all trains
       for (var train in trains) {
@@ -688,15 +695,94 @@ class TerminalStationController extends ChangeNotifier {
         train.speed = 0;
         train.targetSpeed = 0;
       }
-      _logEvent('⚡ TRACTION CURRENT OFF - All trains emergency braked');
+      _logEvent('⚡ TRACTION CURRENT OFF (ALL SECTIONS) - All trains emergency braked');
     } else {
       // Release emergency brake (but trains won't move until signals allow)
       for (var train in trains) {
         train.emergencyBrake = false;
       }
-      _logEvent('⚡ TRACTION CURRENT ON - Normal operations resumed');
+      _logEvent('⚡ TRACTION CURRENT ON (ALL SECTIONS) - Normal operations resumed');
     }
     notifyListeners();
+  }
+
+  void toggleTractionWest() {
+    tractionWestOn = !tractionWestOn;
+    if (!tractionWestOn) {
+      // Apply emergency brake to trains in west section (x < -200)
+      for (var train in trains) {
+        if (train.x < -200) {
+          train.emergencyBrake = true;
+          train.speed = 0;
+          train.targetSpeed = 0;
+        }
+      }
+      _logEvent('⚡ TRACTION CURRENT OFF (WEST SECTION) - West trains emergency braked');
+    } else {
+      // Release emergency brake for west trains
+      for (var train in trains) {
+        if (train.x < -200) {
+          train.emergencyBrake = false;
+        }
+      }
+      _logEvent('⚡ TRACTION CURRENT ON (WEST SECTION) - West section resumed');
+    }
+    notifyListeners();
+  }
+
+  void toggleTractionCentral() {
+    tractionCentralOn = !tractionCentralOn;
+    if (!tractionCentralOn) {
+      // Apply emergency brake to trains in central section (-200 <= x <= 1800)
+      for (var train in trains) {
+        if (train.x >= -200 && train.x <= 1800) {
+          train.emergencyBrake = true;
+          train.speed = 0;
+          train.targetSpeed = 0;
+        }
+      }
+      _logEvent('⚡ TRACTION CURRENT OFF (CENTRAL SECTION) - Central trains emergency braked');
+    } else {
+      // Release emergency brake for central trains
+      for (var train in trains) {
+        if (train.x >= -200 && train.x <= 1800) {
+          train.emergencyBrake = false;
+        }
+      }
+      _logEvent('⚡ TRACTION CURRENT ON (CENTRAL SECTION) - Central section resumed');
+    }
+    notifyListeners();
+  }
+
+  void toggleTractionEast() {
+    tractionEastOn = !tractionEastOn;
+    if (!tractionEastOn) {
+      // Apply emergency brake to trains in east section (x > 1800)
+      for (var train in trains) {
+        if (train.x > 1800) {
+          train.emergencyBrake = true;
+          train.speed = 0;
+          train.targetSpeed = 0;
+        }
+      }
+      _logEvent('⚡ TRACTION CURRENT OFF (EAST SECTION) - East trains emergency braked');
+    } else {
+      // Release emergency brake for east trains
+      for (var train in trains) {
+        if (train.x > 1800) {
+          train.emergencyBrake = false;
+        }
+      }
+      _logEvent('⚡ TRACTION CURRENT ON (EAST SECTION) - East section resumed');
+    }
+    notifyListeners();
+  }
+
+  // Check if traction is on for a specific position
+  bool isTractionOnAt(double x) {
+    if (x < -200) return tractionWestOn;
+    if (x > 1800) return tractionEastOn;
+    return tractionCentralOn;
   }
 
   void toggleTooltips() {
@@ -2516,19 +2602,114 @@ class TerminalStationController extends ChangeNotifier {
     wifiAntennas['W_R4'] = WifiAntenna(id: 'W_R4', x: 2600, y: 200, isActive: true);
     wifiAntennas['W_R5'] = WifiAntenna(id: 'W_R5', x: 3000, y: 200, isActive: true);
 
-    // Transponders at platforms and key locations
-    transponders['TP_L1'] = Transponder(id: 'TP_L1', type: TransponderType.t1, x: -1200, y: 100, description: 'West Terminal Platform 1');
-    transponders['TP_L2'] = Transponder(id: 'TP_L2', type: TransponderType.t2, x: -1200, y: 300, description: 'West Terminal Platform 2');
-    transponders['TP_L3'] = Transponder(id: 'TP_L3', type: TransponderType.t3, x: -450, y: 200, description: 'West Crossover');
+    // ═══════════════════════════════════════════════════════════════════════
+    // TRANSPONDER TAGS - Comprehensive CBTC positioning system
+    // ═══════════════════════════════════════════════════════════════════════
 
-    transponders['TP_C1'] = Transponder(id: 'TP_C1', type: TransponderType.t1, x: 800, y: 100, description: 'Central Terminal Platform 1');
-    transponders['TP_C2'] = Transponder(id: 'TP_C2', type: TransponderType.t2, x: 800, y: 300, description: 'Central Terminal Platform 2');
-    transponders['TP_C3'] = Transponder(id: 'TP_C3', type: TransponderType.t3, x: 700, y: 200, description: 'Central Crossover');
+    // T6: Accurate stopping tags - 25 units from end of each platform
+    // West Terminal Platforms (endX: -800)
+    transponders['T6_P1'] = Transponder(id: 'T6_P1', type: TransponderType.t6, x: -800 + 25, y: 100, description: 'T6 - Accurate Stopping Tag P1');
+    transponders['T6_P2'] = Transponder(id: 'T6_P2', type: TransponderType.t6, x: -800 + 25, y: 300, description: 'T6 - Accurate Stopping Tag P2');
 
-    transponders['TP_R1'] = Transponder(id: 'TP_R1', type: TransponderType.t1, x: 2400, y: 100, description: 'East Terminal Platform 1');
-    transponders['TP_R2'] = Transponder(id: 'TP_R2', type: TransponderType.t2, x: 2400, y: 300, description: 'East Terminal Platform 2');
-    transponders['TP_R3'] = Transponder(id: 'TP_R3', type: TransponderType.t3, x: 2000, y: 200, description: 'East Crossover');
-    transponders['TP_R4'] = Transponder(id: 'TP_R4', type: TransponderType.t1, x: 3100, y: 200, description: 'East Loop');
+    // Central Terminal Platforms (endX: 1200)
+    transponders['T6_P3'] = Transponder(id: 'T6_P3', type: TransponderType.t6, x: 1200 + 25, y: 100, description: 'T6 - Accurate Stopping Tag P3');
+    transponders['T6_P4'] = Transponder(id: 'T6_P4', type: TransponderType.t6, x: 1200 + 25, y: 300, description: 'T6 - Accurate Stopping Tag P4');
+
+    // East Terminal Platforms (endX: 2800)
+    transponders['T6_P5'] = Transponder(id: 'T6_P5', type: TransponderType.t6, x: 2800 + 25, y: 100, description: 'T6 - Accurate Stopping Tag P5');
+    transponders['T6_P6'] = Transponder(id: 'T6_P6', type: TransponderType.t6, x: 2800 + 25, y: 300, description: 'T6 - Accurate Stopping Tag P6');
+
+    // T1 tags at extreme ends (before stations)
+    transponders['T1_WEST_END_UP'] = Transponder(id: 'T1_WEST_END_UP', type: TransponderType.t1, x: -1400, y: 100, description: 'T1 - West End Tag Upper');
+    transponders['T1_WEST_END_LOW'] = Transponder(id: 'T1_WEST_END_LOW', type: TransponderType.t1, x: -1400, y: 300, description: 'T1 - West End Tag Lower');
+    transponders['T1_EAST_END_UP'] = Transponder(id: 'T1_EAST_END_UP', type: TransponderType.t1, x: 3000, y: 100, description: 'T1 - East End Tag Upper');
+    transponders['T1_EAST_END_LOW'] = Transponder(id: 'T1_EAST_END_LOW', type: TransponderType.t1, x: 3000, y: 300, description: 'T1 - East End Tag Lower');
+
+    // T1 tags at crossover junctions
+    // West crossover (-550 to -450)
+    transponders['T1_XO_WEST_1'] = Transponder(id: 'T1_XO_WEST_1', type: TransponderType.t1, x: -550, y: 100, description: 'T1 - West Crossover Tag');
+    transponders['T1_XO_WEST_2'] = Transponder(id: 'T1_XO_WEST_2', type: TransponderType.t1, x: -550, y: 300, description: 'T1 - West Crossover Tag');
+    transponders['T1_XO_WEST_3'] = Transponder(id: 'T1_XO_WEST_3', type: TransponderType.t1, x: -450, y: 100, description: 'T1 - West Crossover Tag');
+    transponders['T1_XO_WEST_4'] = Transponder(id: 'T1_XO_WEST_4', type: TransponderType.t1, x: -450, y: 300, description: 'T1 - West Crossover Tag');
+
+    // Middle crossover (600 to 800)
+    transponders['T1_XO_MID_1'] = Transponder(id: 'T1_XO_MID_1', type: TransponderType.t1, x: 600, y: 100, description: 'T1 - Middle Crossover Tag');
+    transponders['T1_XO_MID_2'] = Transponder(id: 'T1_XO_MID_2', type: TransponderType.t1, x: 600, y: 300, description: 'T1 - Middle Crossover Tag');
+    transponders['T1_XO_MID_3'] = Transponder(id: 'T1_XO_MID_3', type: TransponderType.t1, x: 800, y: 100, description: 'T1 - Middle Crossover Tag');
+    transponders['T1_XO_MID_4'] = Transponder(id: 'T1_XO_MID_4', type: TransponderType.t1, x: 800, y: 300, description: 'T1 - Middle Crossover Tag');
+
+    // East crossover (1900 to 2000)
+    transponders['T1_XO_EAST_1'] = Transponder(id: 'T1_XO_EAST_1', type: TransponderType.t1, x: 1900, y: 100, description: 'T1 - East Crossover Tag');
+    transponders['T1_XO_EAST_2'] = Transponder(id: 'T1_XO_EAST_2', type: TransponderType.t1, x: 1900, y: 300, description: 'T1 - East Crossover Tag');
+    transponders['T1_XO_EAST_3'] = Transponder(id: 'T1_XO_EAST_3', type: TransponderType.t1, x: 2000, y: 100, description: 'T1 - East Crossover Tag');
+    transponders['T1_XO_EAST_4'] = Transponder(id: 'T1_XO_EAST_4', type: TransponderType.t1, x: 2000, y: 300, description: 'T1 - East Crossover Tag');
+
+    // Transponder pattern between West and Central stations
+    // Pattern: T1, T1, T1, T2 (cross border), T3 (border), T2 (cross border), T1, T1, T1
+    // Distance from West end of P1 (-800) to Central start of P3 (800) = 1600 units
+    final westToCentralDist = 1600.0;
+    final westToCentralStart = -800.0 + 25; // After P1 T6 tag
+    final spacing1 = westToCentralDist / 10; // Divide into 10 segments for 9 tags
+
+    transponders['T1_WC_1_UP'] = Transponder(id: 'T1_WC_1_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 1, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_1_LOW'] = Transponder(id: 'T1_WC_1_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 1, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T1_WC_2_UP'] = Transponder(id: 'T1_WC_2_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 2, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_2_LOW'] = Transponder(id: 'T1_WC_2_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 2, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T1_WC_3_UP'] = Transponder(id: 'T1_WC_3_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 3, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_3_LOW'] = Transponder(id: 'T1_WC_3_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 3, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T2_WC_1_UP'] = Transponder(id: 'T2_WC_1_UP', type: TransponderType.t2, x: westToCentralStart + spacing1 * 4, y: 100, description: 'T2 - Cross Border Tag');
+    transponders['T2_WC_1_LOW'] = Transponder(id: 'T2_WC_1_LOW', type: TransponderType.t2, x: westToCentralStart + spacing1 * 4, y: 300, description: 'T2 - Cross Border Tag');
+
+    transponders['T3_WC_UP'] = Transponder(id: 'T3_WC_UP', type: TransponderType.t3, x: westToCentralStart + spacing1 * 5, y: 100, description: 'T3 - Border Tag');
+    transponders['T3_WC_LOW'] = Transponder(id: 'T3_WC_LOW', type: TransponderType.t3, x: westToCentralStart + spacing1 * 5, y: 300, description: 'T3 - Border Tag');
+
+    transponders['T2_WC_2_UP'] = Transponder(id: 'T2_WC_2_UP', type: TransponderType.t2, x: westToCentralStart + spacing1 * 6, y: 100, description: 'T2 - Cross Border Tag');
+    transponders['T2_WC_2_LOW'] = Transponder(id: 'T2_WC_2_LOW', type: TransponderType.t2, x: westToCentralStart + spacing1 * 6, y: 300, description: 'T2 - Cross Border Tag');
+
+    transponders['T1_WC_4_UP'] = Transponder(id: 'T1_WC_4_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 7, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_4_LOW'] = Transponder(id: 'T1_WC_4_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 7, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T1_WC_5_UP'] = Transponder(id: 'T1_WC_5_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 8, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_5_LOW'] = Transponder(id: 'T1_WC_5_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 8, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T1_WC_6_UP'] = Transponder(id: 'T1_WC_6_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 9, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_6_LOW'] = Transponder(id: 'T1_WC_6_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 9, y: 300, description: 'T1 - Crossover Tag');
+
+    // Transponder pattern between Central and East stations
+    // Distance from Central end of P3 (1200) to East start of P5 (2400) = 1200 units
+    final centralToEastDist = 1200.0;
+    final centralToEastStart = 1200.0 + 25; // After P3 T6 tag
+    final spacing2 = centralToEastDist / 10;
+
+    transponders['T1_CE_1_UP'] = Transponder(id: 'T1_CE_1_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 1, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_1_LOW'] = Transponder(id: 'T1_CE_1_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 1, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T1_CE_2_UP'] = Transponder(id: 'T1_CE_2_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 2, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_2_LOW'] = Transponder(id: 'T1_CE_2_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 2, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T1_CE_3_UP'] = Transponder(id: 'T1_CE_3_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 3, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_3_LOW'] = Transponder(id: 'T1_CE_3_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 3, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T2_CE_1_UP'] = Transponder(id: 'T2_CE_1_UP', type: TransponderType.t2, x: centralToEastStart + spacing2 * 4, y: 100, description: 'T2 - Cross Border Tag');
+    transponders['T2_CE_1_LOW'] = Transponder(id: 'T2_CE_1_LOW', type: TransponderType.t2, x: centralToEastStart + spacing2 * 4, y: 300, description: 'T2 - Cross Border Tag');
+
+    transponders['T3_CE_UP'] = Transponder(id: 'T3_CE_UP', type: TransponderType.t3, x: centralToEastStart + spacing2 * 5, y: 100, description: 'T3 - Border Tag');
+    transponders['T3_CE_LOW'] = Transponder(id: 'T3_CE_LOW', type: TransponderType.t3, x: centralToEastStart + spacing2 * 5, y: 300, description: 'T3 - Border Tag');
+
+    transponders['T2_CE_2_UP'] = Transponder(id: 'T2_CE_2_UP', type: TransponderType.t2, x: centralToEastStart + spacing2 * 6, y: 100, description: 'T2 - Cross Border Tag');
+    transponders['T2_CE_2_LOW'] = Transponder(id: 'T2_CE_2_LOW', type: TransponderType.t2, x: centralToEastStart + spacing2 * 6, y: 300, description: 'T2 - Cross Border Tag');
+
+    transponders['T1_CE_4_UP'] = Transponder(id: 'T1_CE_4_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 7, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_4_LOW'] = Transponder(id: 'T1_CE_4_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 7, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T1_CE_5_UP'] = Transponder(id: 'T1_CE_5_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 8, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_5_LOW'] = Transponder(id: 'T1_CE_5_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 8, y: 300, description: 'T1 - Crossover Tag');
+
+    transponders['T1_CE_6_UP'] = Transponder(id: 'T1_CE_6_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 9, y: 100, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_6_LOW'] = Transponder(id: 'T1_CE_6_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 9, y: 300, description: 'T1 - Crossover Tag');
 
     _logEvent(
         '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, ${signals.length} signals, ${points.length} points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
@@ -3246,6 +3427,16 @@ class TerminalStationController extends ChangeNotifier {
     train.targetSpeed = 0;
     train.speed = 0;
     _logEvent('🛑 ${train.name} EMERGENCY BRAKE - engaged');
+    notifyListeners();
+  }
+
+  void emergencyBrakeAll() {
+    for (var train in trains) {
+      train.emergencyBrake = true;
+      train.targetSpeed = 0;
+      train.speed = 0;
+    }
+    _logEvent('🚨 EMERGENCY BRAKE ALL - All trains stopped');
     notifyListeners();
   }
 

@@ -703,6 +703,8 @@ class TerminalStationController extends ChangeNotifier {
             train.terReceived = false;
             train.directionConfirmed = false;
             train.lastTransponderId = null;
+            train.tractionLostAt = null; // Clear traction tracking
+            train.tractionLossWarned = false;
             _logEvent('🚨 NCT ALERT: ${train.name} lost WiFi communication (antenna $wifiId disabled)');
             _logEvent('ℹ️  Switch to RM mode and pass over 2 transponders to reactivate');
           }
@@ -4227,6 +4229,8 @@ class TerminalStationController extends ChangeNotifier {
       train.terReceived = false;
       train.directionConfirmed = false;
       train.lastTransponderId = null;
+      train.tractionLostAt = null; // Clear traction tracking
+      train.tractionLossWarned = false;
       _logEvent('🚨 NCT ALERT: ${train.name} is now a Non-Communication Train (was in OFF mode)');
       _logEvent('ℹ️  Switch to RM mode and pass over 2 transponders to activate');
     }
@@ -4369,6 +4373,8 @@ class TerminalStationController extends ChangeNotifier {
               // Second transponder: Direction confirmed, NCT cleared
               train.directionConfirmed = true;
               train.isNCT = false; // Clear NCT state
+              train.tractionLostAt = null; // Clear traction tracking
+              train.tractionLossWarned = false;
               _logEvent('✅ ${train.name} ACTIVE: Direction confirmed, NCT state cleared (Transponder ${transponder.id})');
               _logEvent('🚄 ${train.name} can now enter AUTO or PM mode');
             } else if (train.transpondersPassed > 2) {
@@ -4486,6 +4492,51 @@ class TerminalStationController extends ChangeNotifier {
         continue;
       }
 
+      // 5. CBTC TRACTION LOSS - Check for traction current in train's area
+      if (train.isCbtcTrain && train.cbtcMode != CbtcMode.off && train.cbtcMode != CbtcMode.storage) {
+        final hasTraction = isTractionOnAt(train.x);
+
+        if (!hasTraction) {
+          // Traction current lost - emergency brake immediately
+          if (!train.emergencyBrake) {
+            train.emergencyBrake = true;
+            train.targetSpeed = 0;
+            _logEvent('🚨 ${train.name} EMERGENCY BRAKE: Traction current lost');
+          }
+
+          // Start or continue 30-second countdown to NCT
+          if (train.tractionLostAt == null) {
+            train.tractionLostAt = DateTime.now();
+            train.tractionLossWarned = false;
+            _logEvent('⚠️  ${train.name} traction lost - 30 seconds until NCT state');
+          } else {
+            // Check if 30 seconds have elapsed
+            final elapsed = DateTime.now().difference(train.tractionLostAt!);
+            if (elapsed.inSeconds >= 30 && !train.isNCT) {
+              // Enter NCT state
+              train.isNCT = true;
+              train.transpondersPassed = 0;
+              train.terReceived = false;
+              train.directionConfirmed = false;
+              _logEvent('🚨 NCT ALERT: ${train.name} traction not restored - now in NCT state');
+              _logEvent('ℹ️  ${train.name} must use RM mode and pass 2 transponders to re-activate');
+            } else if (elapsed.inSeconds >= 15 && !train.tractionLossWarned) {
+              // Warn at 15 seconds remaining
+              train.tractionLossWarned = true;
+              _logEvent('⚠️  ${train.name} traction still off - ${30 - elapsed.inSeconds} seconds until NCT');
+            }
+          }
+        } else {
+          // Traction current restored
+          if (train.tractionLostAt != null && !train.isNCT) {
+            _logEvent('✅ ${train.name} traction current restored');
+            train.tractionLostAt = null;
+            train.tractionLossWarned = false;
+            // Keep emergency brake - driver must manually reset
+          }
+        }
+      }
+
       // ========== NORMAL MOVEMENT LOGIC ==========
 
       // ========== CBTC TRAIN BEHAVIOR ==========
@@ -4566,8 +4617,12 @@ class TerminalStationController extends ChangeNotifier {
           if (train.manualStop) {
             train.targetSpeed = 0;
           } else {
-            // Allow free movement - targetSpeed controlled by user
-            // No signal checks, no train stop checks
+            // Allow free movement - maintain targetSpeed set by departTrain()
+            // No signal checks, no train stop checks, no speed restrictions
+            // User controls movement via Go/Stop buttons
+            if (train.targetSpeed == 0) {
+              train.targetSpeed = 2.0; // Ensure train can move when Go is pressed
+            }
           }
         } else if (train.cbtcMode == CbtcMode.storage || train.cbtcMode == CbtcMode.off) {
           // Storage or Off mode - train should not move

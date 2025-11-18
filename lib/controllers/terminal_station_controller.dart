@@ -2257,7 +2257,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C04'] = Signal(
       id: 'C04',
-      x: 390,  // FIXED: 10 units from end of block 103 (before block 101)
+      x: 290,  // MOVED: 100 units left from 390 to avoid conflict with C31
       y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
@@ -2356,7 +2356,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R06'] = Signal(
       id: 'R06',
-      x: 2590,  // FIXED: 10 units from end of block 309 (before block 307)
+      x: 2490,  // MOVED: 100 units left from 2590 to avoid conflict with R02
       y: 320,
       routes: [
         SignalRoute(
@@ -2417,14 +2417,14 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 50, y: 120);
     trainStops['TC02'] = TrainStop(id: 'TC02', signalId: 'C02', x: 990, y: 340);
     trainStops['TC03'] = TrainStop(id: 'TC03', signalId: 'C03', x: 1190, y: 340);
-    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 390, y: 120);
+    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 290, y: 120);  // MOVED: Match C04 signal position
 
     trainStops['TR01'] = TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
     trainStops['TR02'] = TrainStop(id: 'TR02', signalId: 'R02', x: 2590, y: 340);
     trainStops['TR03'] = TrainStop(id: 'TR03', signalId: 'R03', x: 2790, y: 120);
     trainStops['TR04'] = TrainStop(id: 'TR04', signalId: 'R04', x: 3290, y: 340);
     trainStops['TR05'] = TrainStop(id: 'TR05', signalId: 'R05', x: 2790, y: 340);
-    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2590, y: 340);
+    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2490, y: 340);  // MOVED: Match R06 signal position
     trainStops['TR07'] = TrainStop(id: 'TR07', signalId: 'R07', x: 1990, y: 340);
     trainStops['TR08'] = TrainStop(id: 'TR08', signalId: 'R08', x: 1590, y: 120);
 

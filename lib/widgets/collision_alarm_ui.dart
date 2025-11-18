@@ -1,6 +1,7 @@
 // MA1 v3.0 - Collision Alarm UI Components
 import 'package:flutter/material.dart';
 import '../screens/collision_analysis_system.dart';
+import '../services/sound_service.dart';
 
 // ============================================================================
 // COLLISION ALARM WIDGET (Red Flashing Banner)
@@ -35,6 +36,7 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Color?> _colorAnimation;
+  final SoundService _soundService = SoundService();
 
   @override
   void initState() {
@@ -48,6 +50,11 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
       begin: widget.isSPAD ? Colors.orange.shade900 : Colors.red.shade900,
       end: widget.isSPAD ? Colors.orange.shade600 : Colors.red.shade600,
     ).animate(_controller);
+
+    // Play alarm sound if alarm is active on init
+    if (widget.isActive && widget.currentIncident != null) {
+      _soundService.playAlarm();
+    }
   }
 
   @override
@@ -59,11 +66,23 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
         end: widget.isSPAD ? Colors.orange.shade600 : Colors.red.shade600,
       ).animate(_controller);
     }
+
+    // Handle alarm sound state changes
+    if (widget.isActive != oldWidget.isActive) {
+      if (widget.isActive && widget.currentIncident != null) {
+        // Alarm became active - start playing sound
+        _soundService.playAlarm();
+      } else {
+        // Alarm became inactive - stop playing sound
+        _soundService.stopAlarm();
+      }
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _soundService.stopAlarm();
     super.dispose();
   }
 
@@ -197,7 +216,10 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
                 const SizedBox(width: 8),
               ],
               ElevatedButton.icon(
-                onPressed: widget.onDismiss,
+                onPressed: () {
+                  _soundService.stopAlarm();
+                  widget.onDismiss();
+                },
                 icon: const Icon(Icons.check_circle),
                 label: const Text('Acknowledge'),
                 style: ElevatedButton.styleFrom(

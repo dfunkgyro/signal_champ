@@ -840,14 +840,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     const railSpacing = 12.0;
 
-    // ═══════════════════════════════════════════════════════════════
-    // 1. LEFT END CROSSOVER (x=-1000, connects y=100 to y=300)
-    // ═══════════════════════════════════════════════════════════════
-    _drawSingleCrossover(canvas, -450, 200, -900, 100, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, -350, 300, -800, 200, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover_left', -950, 150);
+    
 
     // ═══════════════════════════════════════════════════════════════
     // 2. LEFT SECTION CROSSOVER (x=-450, connects blocks 211↔212)
@@ -877,14 +870,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         innerRailPaint, sleeperPaint, railSpacing);
     _highlightCrossover(canvas, 'crossover_302_305', 2050, 200);
 
-    // ═══════════════════════════════════════════════════════════════
-    // 5. RIGHT END CROSSOVER (x=3100, connects y=100 to y=300)
-    // ═══════════════════════════════════════════════════════════════
-    _drawSingleCrossover(canvas, 1950, 200, 3200, 100, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, 2050, 300, 3300, 200, outerRailPaint,
-        innerRailPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover_right', 3200, 200);
+    
   }
 
   // Helper method to draw a single crossover segment with 45° angle

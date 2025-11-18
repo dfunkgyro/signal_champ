@@ -194,11 +194,9 @@ class SearchThumbnailOverlay extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildInfoRow('Aspect', signal.currentAspect.name.toUpperCase(),
-            _getSignalColor(signal.currentAspect)),
+        _buildInfoRow('Aspect', signal.aspect.name.toUpperCase(),
+            _getSignalColor(signal.aspect)),
         _buildInfoRow('Position', '(${signal.x.toInt()}, ${signal.y.toInt()})', Colors.grey[400]!),
-        if (signal.controlledBlocks.isNotEmpty)
-          _buildInfoRow('Controls', signal.controlledBlocks.join(', '), Colors.blue[300]!),
         _buildInfoRow('Routes', '${signal.routes.length} available', Colors.green[300]!),
       ],
     );
@@ -223,11 +221,11 @@ class SearchThumbnailOverlay extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildInfoRow('Position Status', point.isNormal ? 'NORMAL' : 'REVERSE',
-            point.isNormal ? Colors.green[300]! : Colors.orange[300]!),
+        _buildInfoRow('Position Status', point.position == PointPosition.normal ? 'NORMAL' : 'REVERSE',
+            point.position == PointPosition.normal ? Colors.green[300]! : Colors.orange[300]!),
         _buildInfoRow('Location', '(${point.x.toInt()}, ${point.y.toInt()})', Colors.grey[400]!),
-        _buildInfoRow('Locked', point.isLocked ? 'YES' : 'NO',
-            point.isLocked ? Colors.red[300]! : Colors.green[300]!),
+        _buildInfoRow('Locked', point.locked ? 'YES' : 'NO',
+            point.locked ? Colors.red[300]! : Colors.green[300]!),
       ],
     );
   }
@@ -310,12 +308,10 @@ class SearchThumbnailOverlay extends StatelessWidget {
     switch (aspect) {
       case SignalAspect.red:
         return Colors.red[300]!;
-      case SignalAspect.yellow:
-        return Colors.yellow[300]!;
       case SignalAspect.green:
         return Colors.green[300]!;
-      case SignalAspect.doubleYellow:
-        return Colors.orange[300]!;
+      case SignalAspect.blue:
+        return Colors.blue[300]!;
     }
   }
 }

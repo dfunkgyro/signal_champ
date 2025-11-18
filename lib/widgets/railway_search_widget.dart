@@ -102,7 +102,7 @@ class _RailwaySearchWidgetState extends State<RailwaySearchWidget> {
         results.add(RailwaySearchResult(
           id: id,
           type: 'signal',
-          displayName: 'Signal $id (${signal.currentAspect.name})',
+          displayName: 'Signal $id (${signal.aspect.name})',
           x: signal.x,
           y: signal.y,
           data: signal,
@@ -132,7 +132,7 @@ class _RailwaySearchWidgetState extends State<RailwaySearchWidget> {
         results.add(RailwaySearchResult(
           id: id,
           type: 'point',
-          displayName: 'Point $id (${point.isNormal ? "Normal" : "Reverse"})',
+          displayName: 'Point $id (${point.position == PointPosition.normal ? "Normal" : "Reverse"})',
           x: point.x,
           y: point.y,
           data: point,

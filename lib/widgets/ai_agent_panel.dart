@@ -346,7 +346,7 @@ Examples:
         if (signal != null) {
           controller.panToPosition(signal.x, signal.y, zoom: 1.5);
           controller.highlightItem(signalId, 'signal');
-          _addMessage('AI Agent', '🔍 Found Signal $signalId (${signal.currentAspect.name})', isAI: true);
+          _addMessage('AI Agent', '🔍 Found Signal $signalId (${signal.aspect.name})', isAI: true);
         } else {
           _addMessage('AI Agent', '❌ Signal $signalId not found', isAI: true);
         }
@@ -367,7 +367,7 @@ Examples:
         if (point != null) {
           controller.panToPosition(point.x, point.y, zoom: 1.5);
           controller.highlightItem(pointId, 'point');
-          _addMessage('AI Agent', '🔍 Found Point $pointId (${point.isNormal ? "Normal" : "Reverse"})', isAI: true);
+          _addMessage('AI Agent', '🔍 Found Point $pointId (${point.position == PointPosition.normal ? "Normal" : "Reverse"})', isAI: true);
         } else {
           _addMessage('AI Agent', '❌ Point $pointId not found', isAI: true);
         }

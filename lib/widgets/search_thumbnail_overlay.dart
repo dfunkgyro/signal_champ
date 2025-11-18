@@ -173,15 +173,15 @@ class SearchThumbnailOverlay extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildInfoRow('Type', train.type.name.toUpperCase(), Colors.blue[300]!),
+        _buildInfoRow('Type', train.trainType.name.toUpperCase(), Colors.blue[300]!),
         _buildInfoRow('Speed', '${train.speed.abs().toStringAsFixed(1)} km/h',
             train.speed == 0 ? Colors.red[300]! : Colors.green[300]!),
         _buildInfoRow('Position', '(${train.x.toInt()}, ${train.y.toInt()})', Colors.grey[400]!),
         _buildInfoRow('Control', train.controlMode.name.toUpperCase(), Colors.orange[300]!),
         if (train.currentBlockId != null)
           _buildInfoRow('Block', train.currentBlockId!, Colors.purple[300]!),
-        if (train.destination != null && train.destination!.isNotEmpty)
-          _buildInfoRow('Destination', train.destination!, Colors.cyan[300]!),
+        if (train.smcDestination != null && train.smcDestination!.isNotEmpty)
+          _buildInfoRow('Destination', train.smcDestination!, Colors.cyan[300]!),
         if (train.emergencyBrake)
           _buildInfoRow('Status', 'EMERGENCY BRAKE', Colors.red[300]!),
         if (train.doorsOpen)

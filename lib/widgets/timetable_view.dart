@@ -209,7 +209,7 @@ class _TimetableViewState extends State<TimetableView> {
             width: 100,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: _getTrainColor(train.type).withOpacity(0.3),
+              color: _getTrainColor(train.trainType).withOpacity(0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(4),
                 bottomLeft: Radius.circular(4),
@@ -227,7 +227,7 @@ class _TimetableViewState extends State<TimetableView> {
                   ),
                 ),
                 Text(
-                  train.type.name.toUpperCase(),
+                  train.trainType.name.toUpperCase(),
                   style: TextStyle(
                     color: Colors.grey[400],
                     fontSize: 10,
@@ -265,7 +265,7 @@ class _TimetableViewState extends State<TimetableView> {
       painter: _TimelinePainter(
         startHour: startHour,
         duration: duration,
-        color: _getTrainColor(train.type),
+        color: _getTrainColor(train.trainType),
         isActive: train.speed > 0,
         isEmergency: train.emergencyBrake,
         currentHour: currentHour,

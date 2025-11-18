@@ -87,7 +87,7 @@ class _RailwaySearchWidgetState extends State<RailwaySearchWidget> {
         results.add(RailwaySearchResult(
           id: train.id,
           type: 'train',
-          displayName: 'Train ${train.id} (${train.type.name.toUpperCase()})',
+          displayName: 'Train ${train.id} (${train.trainType.name.toUpperCase()})',
           x: train.x,
           y: train.y,
           data: train,

@@ -3700,6 +3700,12 @@ class TerminalStationController extends ChangeNotifier {
   // ============================================================================
 
   void _updateSignalAspects() {
+    // In CBTC mode, all signals remain blue (moving block signaling)
+    // Skip traditional fixed-block signal aspect updates
+    if (cbtcModeActive) {
+      return;
+    }
+
     for (var signal in signals.values) {
       if (signal.routeState != RouteState.set) {
         signal.aspect = SignalAspect.red;
@@ -4175,8 +4181,9 @@ class TerminalStationController extends ChangeNotifier {
       // ========== NORMAL MOVEMENT LOGIC ==========
 
       // ========== CBTC TRAIN BEHAVIOR ==========
-      if (train.isCbtcTrain) {
-        if (train.cbtcMode == CbtcMode.auto) {
+      // When CBTC mode is globally active, ALL trains use CBTC behavior
+      if (train.isCbtcTrain || cbtcModeActive) {
+        if (train.cbtcMode == CbtcMode.auto || cbtcModeActive) {
           // CBTC Auto mode: Ignore signals and train stops, but check obstacles
           if (train.manualStop) {
             train.targetSpeed = 0;
@@ -4210,6 +4217,11 @@ class TerminalStationController extends ChangeNotifier {
               } else {
                 train.targetSpeed = 2.0;
               }
+            }
+
+            // CBTC Auto routing: Automatically throw points as train approaches
+            if (cbtcModeActive && train.smcDestination != null) {
+              _autoRouteTrainInCbtc(train);
             }
           }
         } else if (train.cbtcMode == CbtcMode.pm) {
@@ -4730,6 +4742,163 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     return null;
+  }
+
+  /// Automatically route CBTC train by throwing points and setting routes
+  void _autoRouteTrainInCbtc(Train train) {
+    if (train.smcDestination == null) return;
+
+    // Parse destination (format: "B:blockId" or just "blockId")
+    final destinationBlock = train.smcDestination!.startsWith('B:')
+        ? train.smcDestination!.substring(2)
+        : train.smcDestination!;
+
+    // Find points ahead of the train within 100 units
+    for (var point in points.values) {
+      if (point.locked) continue; // Skip locked points
+
+      final distanceToPoint = (point.x - train.x) * train.direction;
+
+      // Only consider points ahead within 100 units
+      if (distanceToPoint > 0 && distanceToPoint < 100) {
+        // Determine required point position based on destination
+        final requiredPosition = _calculateRequiredPointPosition(
+          train, point, destinationBlock);
+
+        if (requiredPosition != null && point.position != requiredPosition) {
+          // Check if point can be swung (not deadlocked)
+          if (!_isPointDeadlockedByAB(point.id) && _arePointsMovable()) {
+            // Automatically throw the point
+            point.position = requiredPosition;
+            _logEvent('🔀 CBTC Auto: Point ${point.id} swung to ${requiredPosition.name.toUpperCase()} for ${train.name}');
+            notifyListeners();
+          }
+        }
+      }
+    }
+
+    // Find signals ahead and automatically set routes if needed
+    final signalAhead = _getSignalAhead(train);
+    if (signalAhead != null && signalAhead.routeState != RouteState.set) {
+      final distanceToSignal = (signalAhead.x - train.x).abs();
+
+      // Only auto-set route if signal is within 150 units
+      if (distanceToSignal < 150) {
+        // Find appropriate route based on destination
+        for (var route in signalAhead.routes) {
+          if (_isRouteTowardDestination(train, route, destinationBlock)) {
+            // Attempt to set the route
+            if (!_checkRouteConflicts(signalAhead.id, route)) {
+              continue;
+            }
+
+            bool blocksClear = true;
+            for (var blockId in route.requiredBlocksClear) {
+              if (blocks[blockId]?.occupied == true &&
+                  blocks[blockId]?.occupyingTrainId != train.id) {
+                blocksClear = false;
+                break;
+              }
+            }
+
+            if (blocksClear) {
+              // Set the route
+              signalAhead.routeState = RouteState.set;
+              signalAhead.activeRouteId = route.id;
+              signalAhead.aspect = SignalAspect.blue; // Keep blue in CBTC mode
+
+              _logEvent('🔀 CBTC Auto: Route ${route.id} set for ${train.name} to reach $destinationBlock');
+              notifyListeners();
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /// Calculate required point position to reach destination
+  PointPosition? _calculateRequiredPointPosition(
+      Train train, Point point, String destinationBlock) {
+    // Simple routing logic based on point location and destination
+    // This is a simplified version - can be enhanced with more sophisticated routing
+
+    final trainY = train.y;
+    final destinationY = blocks[destinationBlock]?.y ?? trainY;
+
+    // For points 76A/76B (left crossover)
+    if (point.id == '76A' || point.id == '77A') {
+      if (destinationY > 200) {
+        return PointPosition.reverse; // Route to upper track
+      } else {
+        return PointPosition.normal; // Route to lower track
+      }
+    }
+
+    // For points 76B/77B (left crossover upper)
+    if (point.id == '76B' || point.id == '77B') {
+      if (destinationY > 200) {
+        return PointPosition.reverse; // Route to upper track
+      } else {
+        return PointPosition.normal; // Route to lower track
+      }
+    }
+
+    // For points 78A/78B (middle crossover)
+    if (point.id == '78A' || point.id == '78B') {
+      if (destinationY > 200) {
+        return PointPosition.reverse; // Route to upper track
+      } else {
+        return PointPosition.normal; // Route to lower track
+      }
+    }
+
+    // For points 79A/79B/80A/80B (right crossover)
+    if (point.id == '79A' || point.id == '79B' ||
+        point.id == '80A' || point.id == '80B') {
+      if (destinationY > 200) {
+        return PointPosition.reverse; // Route to upper track
+      } else {
+        return PointPosition.normal; // Route to lower track
+      }
+    }
+
+    return null; // No specific requirement
+  }
+
+  /// Check if route leads toward destination
+  bool _isRouteTowardDestination(Train train, SignalRoute route, String destinationBlock) {
+    // Check if any of the route's required blocks or protected blocks
+    // are on the path to the destination
+    final allBlocks = [...route.requiredBlocksClear, ...route.protectedBlocks];
+
+    for (var blockId in allBlocks) {
+      if (blockId == destinationBlock) {
+        return true; // Route directly leads to destination
+      }
+
+      // Check if block is on the path to destination
+      if (_isBlockOnPathToDestination(blockId, destinationBlock, train.direction)) {
+        return true;
+      }
+    }
+
+    return allBlocks.isNotEmpty; // If no specific match, allow if route has blocks
+  }
+
+  /// Check if block is on path to destination
+  bool _isBlockOnPathToDestination(String blockId, String destinationBlock, int direction) {
+    // Simple heuristic: check if block number is between current and destination
+    final blockNum = int.tryParse(blockId);
+    final destNum = int.tryParse(destinationBlock);
+
+    if (blockNum == null || destNum == null) return true;
+
+    if (direction > 0) {
+      return blockNum <= destNum; // Going east
+    } else {
+      return blockNum >= destNum; // Going west
+    }
   }
 
   void _reEnableTrainStops() {

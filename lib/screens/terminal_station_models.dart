@@ -7,7 +7,7 @@ import 'collision_analysis_system.dart' as collision_system;
 
 enum PointPosition { normal, reverse }
 
-enum SignalAspect { red, green }
+enum SignalAspect { red, green, blue }
 
 enum RouteState { unset, setting, set, releasing }
 

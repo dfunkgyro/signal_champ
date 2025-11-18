@@ -632,9 +632,21 @@ class TerminalStationController extends ChangeNotifier {
       return;
     }
     cbtcModeActive = active;
-    _logEvent(active
-        ? '🚄 CBTC Mode ACTIVATED - Moving block signaling enabled'
-        : '🚄 CBTC Mode DEACTIVATED - Fixed block signaling');
+
+    // Set all signals to blue when CBTC mode is active
+    if (active) {
+      for (final signal in signals.values) {
+        signal.aspect = SignalAspect.blue;
+      }
+      _logEvent('🚄 CBTC Mode ACTIVATED - Moving block signaling enabled, all signals BLUE');
+    } else {
+      // Restore normal signal aspects when CBTC mode is deactivated
+      for (final signal in signals.values) {
+        signal.aspect = SignalAspect.red;
+      }
+      _logEvent('🚄 CBTC Mode DEACTIVATED - Fixed block signaling, signals restored');
+    }
+
     notifyListeners();
   }
 
@@ -3973,36 +3985,49 @@ class TerminalStationController extends ChangeNotifier {
                   reservation.reservedBlocks.contains(nextBlock));
             }
 
-            if (signalAhead == null) {
-              train.targetSpeed = 2.0;
-            } else if (signalAhead.aspect == SignalAspect.red &&
-                !hasPassedSignalThreshold &&
-                !hasRouteReservation) {
-              final distanceToSignal = (signalAhead.x - train.x).abs();
-              if (distanceToSignal < 100 && distanceToSignal > 0) {
-                if (train.targetSpeed > 0) {
-                  _logStopReason(train, signalAhead, 'approaching red signal');
+            // CBTC trains in AUTO/PM mode ignore fixed block signals
+            // They only check for obstacles via movement authority
+            if (signalAhead != null) {
+              // If signal is blue (CBTC mode), proceed regardless
+              // Otherwise, only stop if route is not set AND signal is red
+              if (signalAhead.aspect == SignalAspect.blue) {
+                // CBTC mode active - proceed through blue signal
+                train.targetSpeed = 2.0;
+              } else if (signalAhead.aspect == SignalAspect.red &&
+                  !hasPassedSignalThreshold &&
+                  !hasRouteReservation) {
+                // Fixed block mode - respect red signals
+                final distanceToSignal = (signalAhead.x - train.x).abs();
+                if (distanceToSignal < 100 && distanceToSignal > 0) {
+                  if (train.targetSpeed > 0) {
+                    _logStopReason(train, signalAhead, 'approaching red signal');
+                  }
+                  train.targetSpeed = 0;
+                  train.hasCommittedToMove = false;
                 }
-                train.targetSpeed = 0;
-                train.hasCommittedToMove = false;
+              } else {
+                // Signal is green or has route reservation - proceed
+                train.targetSpeed = 2.0;
+
+                if ((signalAhead.aspect == SignalAspect.green ||
+                        signalAhead.aspect == SignalAspect.blue ||
+                        hasRouteReservation) &&
+                    !train.hasCommittedToMove) {
+                  final hasPassed = train.direction > 0
+                      ? train.x >= signalAhead.x
+                      : train.x <= signalAhead.x;
+
+                  if (hasPassed) {
+                    train.lastPassedSignalId = signalAhead.id;
+                    train.hasCommittedToMove = true;
+                    _logEvent(
+                        '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+                  }
+                }
               }
             } else {
+              // No signal ahead - proceed
               train.targetSpeed = 2.0;
-
-              if ((signalAhead.aspect == SignalAspect.green ||
-                      hasRouteReservation) &&
-                  !train.hasCommittedToMove) {
-                final hasPassed = train.direction > 0
-                    ? train.x >= signalAhead.x
-                    : train.x <= signalAhead.x;
-
-                if (hasPassed) {
-                  train.lastPassedSignalId = signalAhead.id;
-                  train.hasCommittedToMove = true;
-                  _logEvent(
-                      '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
-                }
-              }
             }
           }
         }

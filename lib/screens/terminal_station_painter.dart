@@ -1054,7 +1054,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       if (isUpper) {
         // Upper track point (y=100)
         if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(x - 7.5, y + 14, 50, 12), gapPaint);
+          canvas.drawRect(Rect.fromLTWH(x - 7.5, y + 20, 50, 12), gapPaint);
         } else {
           final path = Path()
             ..moveTo(x + 5, y - 22.5)
@@ -1066,7 +1066,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       } else {
         // Lower track point (y=300)
         if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(x - 42.5, y - 25, 50, 12), gapPaint);
+          canvas.drawRect(Rect.fromLTWH(x - 42.5, y - 30, 50, 12), gapPaint);
         } else {
           final path = Path()
             ..moveTo(x, y - 21)

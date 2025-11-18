@@ -843,9 +843,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     // ═══════════════════════════════════════════════════════════════
     // 1. LEFT END CROSSOVER (x=-1000, connects y=100 to y=300)
     // ═══════════════════════════════════════════════════════════════
-    _drawSingleCrossover(canvas, -1000, 100, -900, 200, outerRailPaint,
+    _drawSingleCrossover(canvas, -450, 200, -900, 100, outerRailPaint,
         innerRailPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, -900, 200, -800, 300, outerRailPaint,
+    _drawSingleCrossover(canvas, -350, 300, -800, 200, outerRailPaint,
         innerRailPaint, sleeperPaint, railSpacing);
     _highlightCrossover(canvas, 'crossover_left', -950, 150);
 
@@ -880,9 +880,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     // ═══════════════════════════════════════════════════════════════
     // 5. RIGHT END CROSSOVER (x=3100, connects y=100 to y=300)
     // ═══════════════════════════════════════════════════════════════
-    _drawSingleCrossover(canvas, 3100, 100, 3200, 200, outerRailPaint,
+    _drawSingleCrossover(canvas, 1950, 200, 3200, 100, outerRailPaint,
         innerRailPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, 3200, 200, 3300, 300, outerRailPaint,
+    _drawSingleCrossover(canvas, 2050, 300, 3300, 200, outerRailPaint,
         innerRailPaint, sleeperPaint, railSpacing);
     _highlightCrossover(canvas, 'crossover_right', 3200, 200);
   }
@@ -1068,7 +1068,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       if (isUpper) {
         // Upper track point (y=100)
         if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(x - 7.5, y + 12, 50, 12), gapPaint);
+          canvas.drawRect(Rect.fromLTWH(x - 7.5, y + 14, 50, 12), gapPaint);
         } else {
           final path = Path()
             ..moveTo(x + 5, y - 22.5)
@@ -1080,7 +1080,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       } else {
         // Lower track point (y=300)
         if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(x - 42.5, y - 23, 50, 12), gapPaint);
+          canvas.drawRect(Rect.fromLTWH(x - 42.5, y - 25, 50, 12), gapPaint);
         } else {
           final path = Path()
             ..moveTo(x, y - 21)
@@ -1106,7 +1106,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     else if (point.id == '77A') {
       drawGap(-450, 100, true, point.position == PointPosition.normal);
     } else if (point.id == '77B') {
-      drawGap(-350, 300, false, point.position == PointPosition.normal);
+      drawGap(-150, 300, false, point.position == PointPosition.normal);
     }
     // ═══════════════════════════════════════════════════════════════
     // MIDDLE CROSSOVER POINTS (78A, 78B) - Original
@@ -1140,7 +1140,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     else if (point.id == '79A') {
       drawGap(1950, 100, true, point.position == PointPosition.normal);
     } else if (point.id == '79B') {
-      drawGap(2050, 300, false, point.position == PointPosition.normal);
+      drawGap(2250, 300, false, point.position == PointPosition.normal);
     }
     // ═══════════════════════════════════════════════════════════════
     // RIGHT END CROSSOVER POINTS (80A, 80B)

@@ -1236,18 +1236,42 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       canvas.drawPath(path, headPaint);
     }
 
-    final lightColor = signal.aspect == SignalAspect.green
-        ? themeData.signalGreenColor
-        : themeData.signalRedColor;
+    // Check if there's a CBTC train approaching this signal
+    bool cbtcTrainApproaching = false;
+    if (controller.cbtcModeActive) {
+      for (var train in controller.trains) {
+        if (train.isCbtcTrain) {
+          final distanceToSignal = (signal.x - train.x).abs();
+          // If CBTC train is within 300 units of signal, show blue aspect
+          if (distanceToSignal < 300) {
+            cbtcTrainApproaching = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // Determine signal light color
+    Color lightColor;
+    if (cbtcTrainApproaching) {
+      // Blue aspect for CBTC trains - indicates "proceed, CBTC control active"
+      lightColor = Colors.blue;
+    } else if (signal.aspect == SignalAspect.green) {
+      lightColor = themeData.signalGreenColor;
+    } else {
+      lightColor = themeData.signalRedColor;
+    }
+
     final lightPaint = Paint()
       ..color = lightColor
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 6, lightPaint);
 
-    if (themeData.showGlow && signal.aspect == SignalAspect.green) {
+    // Add glow effect for green or blue signals
+    if (themeData.showGlow && (signal.aspect == SignalAspect.green || cbtcTrainApproaching)) {
       final glowPaint = Paint()
-        ..color = themeData.signalGreenColor.withOpacity(0.4)
+        ..color = lightColor.withOpacity(0.4)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
 
       canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 12, glowPaint);
@@ -1572,13 +1596,47 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         ..color = train.color
         ..style = PaintingStyle.fill;
 
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
-          const Radius.circular(6),
-        ),
-        bodyPaint,
-      );
+      // Draw M2 trains as two coupled units
+      if (train.trainType == TrainType.m2 || train.trainType == TrainType.cbtcM2) {
+        // First unit (leading)
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+
+        // Coupling (small connector)
+        final couplingPaint = Paint()
+          ..color = Colors.grey[700]!
+          ..strokeWidth = 3;
+        final couplingOffset = train.direction > 0 ? 30 : -30;
+        canvas.drawLine(
+          Offset(train.x + couplingOffset, train.y),
+          Offset(train.x + couplingOffset + (train.direction > 0 ? 10 : -10), train.y),
+          couplingPaint,
+        );
+
+        // Second unit (trailing)
+        final secondUnitOffset = train.direction > 0 ? 40 : -40;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x + secondUnitOffset - 30, train.y - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+      } else {
+        // Single unit train (M1)
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          bodyPaint,
+        );
+      }
 
       final outlinePaint = Paint()
         ..color = train.controlMode == TrainControlMode.manual
@@ -1587,13 +1645,36 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         ..style = PaintingStyle.stroke
         ..strokeWidth = train.controlMode == TrainControlMode.manual ? 3 : 2;
 
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
-          const Radius.circular(6),
-        ),
-        outlinePaint,
-      );
+      // Draw outline for M2 trains (both units)
+      if (train.trainType == TrainType.m2 || train.trainType == TrainType.cbtcM2) {
+        // First unit outline
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+
+        // Second unit outline
+        final secondUnitOffset = train.direction > 0 ? 40 : -40;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x + secondUnitOffset - 30, train.y - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+      } else {
+        // Single unit outline
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 30, train.y - 15, 60, 30),
+            const Radius.circular(6),
+          ),
+          outlinePaint,
+        );
+      }
 
       if (train.doorsOpen) {
         final doorPaint = Paint()
@@ -1634,9 +1715,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             Rect.fromLTWH(train.x + 10, train.y - 10, 12, 8), windowPaint);
       }
 
+      // Draw wheels for M2 trains (4 wheels total, 2 per unit)
       final wheelPaint = Paint()..color = Colors.black;
       canvas.drawCircle(Offset(train.x - 18, train.y + 15), 6, wheelPaint);
       canvas.drawCircle(Offset(train.x + 18, train.y + 15), 6, wheelPaint);
+
+      if (train.trainType == TrainType.m2 || train.trainType == TrainType.cbtcM2) {
+        // Second unit wheels
+        final secondUnitOffset = train.direction > 0 ? 40 : -40;
+        canvas.drawCircle(Offset(train.x + secondUnitOffset - 18, train.y + 15), 6, wheelPaint);
+        canvas.drawCircle(Offset(train.x + secondUnitOffset + 18, train.y + 15), 6, wheelPaint);
+      }
 
       final arrowPaint = Paint()
         ..color = train.direction > 0 ? Colors.green : Colors.orange

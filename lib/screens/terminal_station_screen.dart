@@ -5,6 +5,7 @@ import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../controllers/canvas_theme_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
+import '../widgets/ai_agent_widget.dart';
 import 'dart:math' as math;
 
 // ============================================================================
@@ -152,6 +153,13 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   right: 20,
                   bottom: 20,
                   child: _buildFloatingZoomControls(),
+                ),
+
+                // Layer 2.5: Floating Feature Toggle Panel (NEW)
+                Positioned(
+                  left: 20,
+                  bottom: 20,
+                  child: _buildFloatingFeatureToggles(),
                 ),
 
                 // Layer 3: Left Sidebar (higher z-order)
@@ -381,6 +389,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 },
               ),
             ),
+
+          // Layer 9: AI Agent Widget (draggable, highest layer)
+          const AIAgentWidget(),
         ],
       ),
     );
@@ -447,6 +458,150 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // NEW: Floating feature toggle panel
+  Widget _buildFloatingFeatureToggles() {
+    return Consumer<TerminalStationController>(
+      builder: (context, controller, child) {
+        return Card(
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Features',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const Divider(),
+
+                // Grid Toggle
+                _buildFeatureToggle(
+                  icon: Icons.grid_on,
+                  label: 'Grid',
+                  value: controller.gridVisible,
+                  activeColor: Colors.blue,
+                  onChanged: (value) => controller.toggleGrid(),
+                ),
+
+                // Traction Current Toggle
+                _buildFeatureToggle(
+                  icon: Icons.power,
+                  label: 'Traction',
+                  value: controller.tractionCurrentOn,
+                  activeColor: Colors.green,
+                  onChanged: (value) => controller.toggleTractionCurrent(),
+                ),
+
+                // Tooltips Toggle
+                _buildFeatureToggle(
+                  icon: Icons.info_outline,
+                  label: 'Tooltips',
+                  value: controller.tooltipsEnabled,
+                  activeColor: Colors.orange,
+                  onChanged: (value) => controller.toggleTooltips(),
+                ),
+
+                // AI Agent Toggle
+                _buildFeatureToggle(
+                  icon: Icons.smart_toy,
+                  label: 'AI Agent',
+                  value: controller.aiAgentVisible,
+                  activeColor: Colors.purple,
+                  onChanged: (value) => controller.toggleAiAgent(),
+                ),
+
+                // Relay Rack Toggle
+                _buildFeatureToggle(
+                  icon: Icons.electrical_services,
+                  label: 'Relay Rack',
+                  value: controller.relayRackVisible,
+                  activeColor: Colors.amber,
+                  onChanged: (value) => controller.toggleRelayRack(),
+                ),
+
+                const Divider(),
+
+                // Simplified Collision Recovery Button
+                if (controller.collisionAlarmActive)
+                  ElevatedButton.icon(
+                    onPressed: () => controller.executeSimplifiedCollisionRecovery(),
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Recovery', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: const Size(140, 36),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFeatureToggle({
+    required IconData icon,
+    required String label,
+    required bool value,
+    required Color activeColor,
+    required Function(bool) onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: value ? activeColor : Colors.grey,
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: value ? Colors.black87 : Colors.grey,
+                fontWeight: value ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: activeColor,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
       ),
     );
   }

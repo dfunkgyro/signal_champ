@@ -1966,21 +1966,23 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
     // CROSSOVERS - 4 total for flexible routing
     // ═══════════════════════════════════════════════════════════════════════
-    // Left Section Crossover (connects blocks 211↔212) - MOVED from 206-207 area
-    // Allows train from block 209→211 (lower track) to cross to block 212 (upper track)
+    // Left Section DOUBLE DIAMOND Crossover (connects blocks 211↔212)
+    // Points: 76A(-550,100), 76B(-550,300), 77A(-450,100), 77B(-450,300)
+    // Covers x=-550 to x=-450
     blocks['crossover_211_212'] =
-        BlockSection(id: 'crossover_211_212', startX: -450, endX: -300, y: 200);
+        BlockSection(id: 'crossover_211_212', startX: -550, endX: -450, y: 200);
 
-    // Middle Crossover (original 78A/78B)
+    // Middle Crossover (original 78A/78B) - Standard crossover
     blocks['crossover106'] =
         BlockSection(id: 'crossover106', startX: 600, endX: 700, y: 150);
     blocks['crossover109'] =
         BlockSection(id: 'crossover109', startX: 700, endX: 800, y: 250);
 
-    // Right Section Crossover (connects blocks 303↔304) - MOVED from 314 area
-    // Allows train from block 301→303 (lower track) to cross to block 304 (upper track)
+    // Right Section DOUBLE DIAMOND Crossover (connects blocks 303↔304)
+    // Points: 79A(1900,100), 79B(1900,300), 80A(2000,100), 80B(2000,300)
+    // Covers x=1900 to x=2000
     blocks['crossover_303_304'] =
-        BlockSection(id: 'crossover_303_304', startX: 1900, endX: 2050, y: 200);
+        BlockSection(id: 'crossover_303_304', startX: 1900, endX: 2000, y: 200);
 
     // ═══════════════════════════════════════════════════════════════════════
     // POINTS - 10 points total (4 for each double diamond crossover + 2 for middle)
@@ -3879,19 +3881,21 @@ class TerminalStationController extends ChangeNotifier {
       // ========== NORMAL MOVEMENT LOGIC ==========
 
       // ========== CBTC TRAIN BEHAVIOR ==========
-      if (train.isCbtcTrain) {
+      if (train.isCbtcTrain && cbtcModeActive) {
+        // CBTC trains IGNORE ALL SIGNALS when CBTC mode is active
+        // They only respond to physical obstacles (trains/occupied blocks)
         if (train.cbtcMode == CbtcMode.auto) {
           // CBTC Auto mode: Ignore signals and train stops, but check obstacles
           if (train.manualStop) {
             train.targetSpeed = 0;
           } else {
             // Check for trains ahead (stop 20 units before)
-            final trainAhead = _getTrainAhead(train, 50.0);
+            final trainAhead = _getTrainAhead(train, 200.0); // Extended look-ahead for moving block
             if (trainAhead != null) {
               final distance = (trainAhead.x - train.x).abs();
-              if (distance < 20.0) {
+              if (distance < 200.0) { // CBTC maintains 200-unit separation
                 train.targetSpeed = 0;
-                _logEvent('🛑 CBTC ${train.name} stopped: Train ahead within 20 units');
+                _logEvent('🛑 CBTC ${train.name} stopped: Train ahead within 200 units');
               } else {
                 train.targetSpeed = 2.0;
               }
@@ -3918,20 +3922,21 @@ class TerminalStationController extends ChangeNotifier {
           }
         } else if (train.cbtcMode == CbtcMode.pm) {
           // CBTC PM (Protective Manual) mode: Manual control with auto emergency brake
+          // Still ignores signals, only responds to obstacles
           if (train.manualStop) {
             train.targetSpeed = 0;
           } else {
-            // Check for obstacles within 20 units and auto emergency brake
-            final trainAhead = _getTrainAhead(train, 30.0);
+            // Check for obstacles within 200 units and auto emergency brake
+            final trainAhead = _getTrainAhead(train, 200.0);
             if (trainAhead != null) {
               final distance = (trainAhead.x - train.x).abs();
-              if (distance < 20.0) {
+              if (distance < 200.0) {
                 train.emergencyBrake = true;
-                _logEvent('⚠️ CBTC PM ${train.name}: Emergency brake - Train ahead within 20 units');
+                _logEvent('⚠️ CBTC PM ${train.name}: Emergency brake - Train ahead within 200 units');
               }
             }
 
-            final occupiedAB = _getOccupiedABAhead(train, 30.0);
+            final occupiedAB = _getOccupiedABAhead(train, 50.0);
             if (occupiedAB != null) {
               final abPosition = _getABPosition(occupiedAB);
               if (abPosition != null) {
@@ -3944,65 +3949,22 @@ class TerminalStationController extends ChangeNotifier {
             }
           }
         } else {
-          // Other CBTC modes (RM, off, storage) - use normal signal-based logic
+          // Other CBTC modes (RM, off, storage) - STILL IGNORE SIGNALS
+          // CBTC trains never stop at signals when CBTC mode is active
           if (train.manualStop) {
             train.targetSpeed = 0;
-          } else if (train.controlMode == TrainControlMode.manual) {
-            // Manual mode - allow movement
           } else {
-            // Use standard automatic mode logic below
-            Signal? signalAhead = _getSignalAhead(train);
-
-            // Enhanced permissive movement logic with direction protection
-            bool hasPassedSignalThreshold = false;
-            if (signalAhead != null && train.lastPassedSignalId == signalAhead.id) {
-              final distancePastSignal =
-                  (train.x - signalAhead.x) * train.direction;
-              hasPassedSignalThreshold = distancePastSignal > 4;
-            }
-
-            // Enhanced direction-based signal protection
-            signalAhead = _filterSignalByDirection(train, signalAhead);
-
-            // Check if train has route reservation for the block ahead
-            bool hasRouteReservation = false;
-            final nextBlock = _getNextBlockForTrain(train);
-            if (nextBlock != null) {
-              hasRouteReservation = routeReservations.values.any((reservation) =>
-                  reservation.trainId == train.id &&
-                  reservation.reservedBlocks.contains(nextBlock));
-            }
-
-            if (signalAhead == null) {
-              train.targetSpeed = 2.0;
-            } else if (signalAhead.aspect == SignalAspect.red &&
-                !hasPassedSignalThreshold &&
-                !hasRouteReservation) {
-              final distanceToSignal = (signalAhead.x - train.x).abs();
-              if (distanceToSignal < 100 && distanceToSignal > 0) {
-                if (train.targetSpeed > 0) {
-                  _logStopReason(train, signalAhead, 'approaching red signal');
-                }
+            // CBTC trains ignore signals completely, only check for physical obstacles
+            final trainAhead = _getTrainAhead(train, 200.0);
+            if (trainAhead != null) {
+              final distance = (trainAhead.x - train.x).abs();
+              if (distance < 200.0) {
                 train.targetSpeed = 0;
-                train.hasCommittedToMove = false;
+              } else {
+                train.targetSpeed = 2.0;
               }
             } else {
               train.targetSpeed = 2.0;
-
-              if ((signalAhead.aspect == SignalAspect.green ||
-                      hasRouteReservation) &&
-                  !train.hasCommittedToMove) {
-                final hasPassed = train.direction > 0
-                    ? train.x >= signalAhead.x
-                    : train.x <= signalAhead.x;
-
-                if (hasPassed) {
-                  train.lastPassedSignalId = signalAhead.id;
-                  train.hasCommittedToMove = true;
-                  _logEvent(
-                      '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
-                }
-              }
             }
           }
         }

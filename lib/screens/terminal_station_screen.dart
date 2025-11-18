@@ -7,6 +7,7 @@ import '../controllers/canvas_theme_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
 import '../widgets/ai_agent_panel.dart';
 import '../widgets/relay_rack_panel.dart';
+import 'scenario_marketplace_screen.dart';
 import 'dart:math' as math;
 
 // ============================================================================
@@ -132,6 +133,18 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       appBar: AppBar(
         title: const Text('Railway Simulator'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard_customize),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ScenarioMarketplaceScreen(),
+                ),
+              );
+            },
+            tooltip: 'Scenario Builder & Marketplace',
+          ),
           IconButton(
             icon: Icon(
               _showTopPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,

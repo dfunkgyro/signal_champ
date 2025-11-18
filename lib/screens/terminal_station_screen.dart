@@ -5,6 +5,7 @@ import 'terminal_station_models.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../controllers/canvas_theme_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
+import '../widgets/ai_agent_panel.dart';
 import 'dart:math' as math;
 
 // ============================================================================
@@ -381,6 +382,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 },
               ),
             ),
+
+          // AI Agent Panel - floating draggable assistant (Layer 9)
+          Consumer<TerminalStationController>(
+            builder: (context, controller, _) {
+              return controller.aiAgentVisible
+                  ? const AIAgentPanel()
+                  : const SizedBox.shrink();
+            },
+          ),
         ],
       ),
     );

@@ -26,7 +26,8 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
     super.dispose();
   }
 
-  void _sendMessage(BuildContext context, TerminalStationController controller) async {
+  void _sendMessage(
+      BuildContext context, TerminalStationController controller) async {
     final message = _textController.text.trim();
     if (message.isEmpty) return;
 
@@ -38,7 +39,8 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
     _textController.clear();
 
     // Process the command
-    final response = await _processNaturalLanguageCommand(context, message, controller);
+    final response =
+        await _processNaturalLanguageCommand(context, message, controller);
 
     setState(() {
       _chatHistory.add({'role': 'assistant', 'message': response});
@@ -57,7 +59,9 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
 
     // SSM Troubleshooting commands
     if (lowerCommand.contains('start') &&
-        (lowerCommand.contains('troubleshoot') || lowerCommand.contains('help') || lowerCommand.contains('ssm'))) {
+        (lowerCommand.contains('troubleshoot') ||
+            lowerCommand.contains('help') ||
+            lowerCommand.contains('ssm'))) {
       intentService.startSession();
       if (intentService.currentIntent != null) {
         return 'Starting SSM troubleshooting session:\n\n${intentService.currentIntent!.cleanQuestion}\n\nRespond with "yes" or "no".';
@@ -73,7 +77,8 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
           if (intentService.currentIntent!.isTerminal) {
             return '${intentService.currentIntent!.cleanQuestion}\n\nEnd of troubleshooting path. Type "start troubleshooting" to begin a new session.';
           }
-          return intentService.currentIntent!.cleanQuestion + '\n\nRespond with "yes" or "no".';
+          return intentService.currentIntent!.cleanQuestion +
+              '\n\nRespond with "yes" or "no".';
         }
         return 'Troubleshooting complete. Type "start troubleshooting" to begin again.';
       } else if (lowerCommand == 'no' || lowerCommand == 'n') {
@@ -82,7 +87,8 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
           if (intentService.currentIntent!.isTerminal) {
             return '${intentService.currentIntent!.cleanQuestion}\n\nEnd of troubleshooting path. Type "start troubleshooting" to begin a new session.';
           }
-          return intentService.currentIntent!.cleanQuestion + '\n\nRespond with "yes" or "no".';
+          return intentService.currentIntent!.cleanQuestion +
+              '\n\nRespond with "yes" or "no".';
         }
         return 'Troubleshooting complete. Type "start troubleshooting" to begin again.';
       } else if (lowerCommand.contains('back')) {
@@ -91,7 +97,8 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
           return 'Going back:\n\n${intentService.currentIntent!.cleanQuestion}\n\nRespond with "yes" or "no".';
         }
         return 'Already at the beginning.';
-      } else if (lowerCommand.contains('reset') || lowerCommand.contains('restart')) {
+      } else if (lowerCommand.contains('reset') ||
+          lowerCommand.contains('restart')) {
         intentService.resetSession();
         return 'Troubleshooting session reset. Type "start troubleshooting" to begin.';
       }
@@ -117,7 +124,8 @@ Be concise and helpful. If user wants troubleshooting, guide them to type "start
 For yes/no questions in troubleshooting, expect "yes" or "no" responses.
 ''';
 
-        final aiResponse = await connectionService.openAiService!.processCommand(
+        final aiResponse =
+            await connectionService.openAiService!.processCommand(
           command,
           systemPrompt,
           timeout: const Duration(seconds: 10),
@@ -184,7 +192,8 @@ Try: "start troubleshooting" to begin!
     );
   }
 
-  Widget _buildAgentContainer(TerminalStationController controller, {bool isDragging = false}) {
+  Widget _buildAgentContainer(TerminalStationController controller,
+      {bool isDragging = false}) {
     return Material(
       elevation: isDragging ? 8 : 4,
       borderRadius: BorderRadius.circular(12),
@@ -252,7 +261,9 @@ Try: "start troubleshooting" to begin!
                       final chat = _chatHistory[index];
                       final isUser = chat['role'] == 'user';
                       return Align(
-                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           padding: const EdgeInsets.all(8),

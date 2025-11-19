@@ -985,6 +985,11 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Disable auto-follow mode (alias for stopFollowingTrain for clarity)
+  void disableAutoFollow() {
+    stopFollowingTrain();
+  }
+
   void highlightItem(String itemId, String itemType) {
     highlightedItemId = itemId;
     highlightedItemType = itemType;

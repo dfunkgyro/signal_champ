@@ -12,6 +12,9 @@ import '../services/connection_service.dart';
 import '../services/sound_service.dart';
 import '../services/scenario_service.dart';
 import '../services/intent_service.dart';
+import '../services/widget_preferences_service.dart';
+import '../services/speech_recognition_service.dart';
+import '../services/text_to_speech_service.dart';
 import '../widgets/connection_indicator.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
@@ -56,20 +59,39 @@ Future<void> main() async {
     debugPrint('Running in fallback mode without Supabase');
   }
 
+  // Initialize new services
+  final widgetPrefsService = WidgetPreferencesService();
+  await widgetPrefsService.initialize();
+
+  final speechRecognitionService = SpeechRecognitionService();
+  await speechRecognitionService.initialize();
+
+  final ttsService = TextToSpeechService();
+  await ttsService.initialize();
+
   runApp(RailChampApp(
     supabaseClient: supabaseClient,
     openAiApiKey: openAiApiKey,
+    widgetPrefsService: widgetPrefsService,
+    speechRecognitionService: speechRecognitionService,
+    ttsService: ttsService,
   ));
 }
 
 class RailChampApp extends StatelessWidget {
   final SupabaseClient? supabaseClient;
   final String? openAiApiKey;
+  final WidgetPreferencesService widgetPrefsService;
+  final SpeechRecognitionService speechRecognitionService;
+  final TextToSpeechService ttsService;
 
   const RailChampApp({
     Key? key,
     this.supabaseClient,
     this.openAiApiKey,
+    required this.widgetPrefsService,
+    required this.speechRecognitionService,
+    required this.ttsService,
   }) : super(key: key);
 
   @override
@@ -98,6 +120,10 @@ class RailChampApp extends StatelessWidget {
             return intentService;
           },
         ),
+        // NEW: Widget customization and voice services
+        ChangeNotifierProvider.value(value: widgetPrefsService),
+        ChangeNotifierProvider.value(value: speechRecognitionService),
+        ChangeNotifierProvider.value(value: ttsService),
       ],
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) {

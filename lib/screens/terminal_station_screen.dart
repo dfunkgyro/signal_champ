@@ -17,6 +17,7 @@ import 'dart:math' as math;
 import 'terminal_station_painter.dart';
 import '../widgets/railway_search_bar.dart';
 import '../widgets/mini_map_widget.dart';
+import '../services/widget_preferences_service.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -129,15 +130,23 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   // NEW: Zoom control methods
   void _zoomIn() {
-    setState(() {
-      _zoom = (_zoom * 1.2).clamp(0.3, 3.0);
-    });
+    final newZoom = (_controller.cameraZoom * 1.2).clamp(0.3, 3.0);
+    _controller.updateCameraPosition(
+      _controller.cameraOffsetX,
+      _controller.cameraOffsetY,
+      newZoom,
+    );
+    _controller.disableAutoFollow();
   }
 
   void _zoomOut() {
-    setState(() {
-      _zoom = (_zoom / 1.2).clamp(0.3, 3.0);
-    });
+    final newZoom = (_controller.cameraZoom / 1.2).clamp(0.3, 3.0);
+    _controller.updateCameraPosition(
+      _controller.cameraOffsetX,
+      _controller.cameraOffsetY,
+      newZoom,
+    );
+    _controller.disableAutoFollow();
   }
 
   void _resetZoom() {
@@ -3503,12 +3512,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 // Handle click on signals or points
                 _handleCanvasClick(controller, canvasX, canvasY);
               },
+              onPanStart: (details) {
+                // Disable auto-follow immediately when user starts panning
+                _controller.disableAutoFollow();
+              },
               onPanUpdate: (details) {
-                setState(() {
-                  _cameraOffsetX += details.delta.dx / _zoom;
-                  _cameraOffsetY +=
-                      details.delta.dy / _zoom; // FIXED: Add Y-axis panning
-                });
+                _controller.updateCameraPosition(
+                  _controller.cameraOffsetX + details.delta.dx / _controller.cameraZoom,
+                  _controller.cameraOffsetY + details.delta.dy / _controller.cameraZoom,
+                  _controller.cameraZoom,
+                );
               },
               child: Consumer<CanvasThemeController>(
                 builder: (context, canvasThemeController, _) {
@@ -3858,19 +3871,22 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
 
               // Mini Map
-              MiniMapWidget(
+              MiniMapWidgetEnhanced(
                 canvasWidth: _canvasWidth,
                 canvasHeight: _canvasHeight,
                 cameraOffsetX: _cameraOffsetX,
                 cameraOffsetY: _cameraOffsetY,
                 cameraZoom: _zoom,
+                viewportWidth: viewportWidth,
+                viewportHeight: viewportHeight,
                 onNavigate: (x, y) {
-                  setState(() {
-                    _cameraOffsetX =
-                        -x * _zoom + MediaQuery.of(context).size.width / 2;
-                    _cameraOffsetY =
-                        -y * _zoom + MediaQuery.of(context).size.height / 2;
-                  });
+                  _controller.panToPosition(
+                    x,
+                    y,
+                    viewportWidth: viewportWidth,
+                    viewportHeight: viewportHeight,
+                  );
+                  _controller.disableAutoFollow();
                 },
               ),
 

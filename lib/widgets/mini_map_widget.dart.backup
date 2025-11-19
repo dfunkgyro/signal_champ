@@ -1,37 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
-import '../services/widget_preferences_service.dart';
 
-/// Enhanced Mini map widget with customization and fixed coordinate system
-class MiniMapWidgetEnhanced extends StatelessWidget {
+/// Mini map widget for quick navigation around the railway canvas
+class MiniMapWidget extends StatelessWidget {
   final double canvasWidth;
   final double canvasHeight;
   final double cameraOffsetX;
   final double cameraOffsetY;
   final double cameraZoom;
-  final double viewportWidth;  // NEW: Actual viewport width
-  final double viewportHeight; // NEW: Actual viewport height
   final Function(double x, double y) onNavigate;
 
-  const MiniMapWidgetEnhanced({
+  const MiniMapWidget({
     Key? key,
     required this.canvasWidth,
     required this.canvasHeight,
     required this.cameraOffsetX,
     required this.cameraOffsetY,
     required this.cameraZoom,
-    required this.viewportWidth,
-    required this.viewportHeight,
     required this.onNavigate,
   }) : super(key: key);
 
   /// Handle tap on minimap with improved accuracy
-  void _handleTap(TapDownDetails details, BuildContext context, double mapWidth, double mapHeight) {
+  void _handleTap(TapDownDetails details, BuildContext context) {
     try {
       final RenderBox box = context.findRenderObject() as RenderBox;
       final localPosition = box.globalToLocal(details.globalPosition);
 
+      // Constants for minimap dimensions
+      const mapWidth = 280.0;
+      const mapHeight = 140.0;
       const headerHeight = 40.0;
       const margin = 8.0;
 
@@ -42,39 +40,32 @@ class MiniMapWidgetEnhanced extends StatelessWidget {
       // Validate click is within map bounds
       if (adjustedX >= 0 && adjustedX <= mapWidth &&
           adjustedY >= 0 && adjustedY <= mapHeight) {
+        // Calculate ratios with bounds checking
+        final xRatio = (adjustedX / mapWidth).clamp(0.0, 1.0);
+        final yRatio = (adjustedY / mapHeight).clamp(0.0, 1.0);
 
-        // Convert from minimap coordinates to canvas coordinates
-        // Account for centered origin
-        final xRatio = (adjustedX / mapWidth) - 0.5; // -0.5 to 0.5
-        final yRatio = (adjustedY / mapHeight) - 0.5; // -0.5 to 0.5
-
-        // Calculate target position on canvas (centered coordinates)
+        // Calculate target position on canvas
         final targetX = xRatio * canvasWidth;
         final targetY = yRatio * canvasHeight;
 
         onNavigate(targetX, targetY);
       }
     } catch (e) {
+      // Silently handle tap errors to prevent crashes
       debugPrint('MiniMap tap error: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<TerminalStationController, WidgetPreferencesService>(
-      builder: (context, controller, prefs, _) {
-        final mapWidth = prefs.minimapWidth;
-        final mapHeight = prefs.minimapHeight;
-
+    return Consumer<TerminalStationController>(
+      builder: (context, controller, _) {
         return Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: prefs.minimapBackgroundColor,
+            color: Colors.grey[900],
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: prefs.minimapBorderColor,
-              width: prefs.minimapBorderWidth,
-            ),
+            border: Border.all(color: Colors.blue, width: 2),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -83,13 +74,13 @@ class MiniMapWidgetEnhanced extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: prefs.minimapHeaderColor,
+                  color: Colors.blue,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(6),
                     topRight: Radius.circular(6),
                   ),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.map, color: Colors.white, size: 16),
@@ -109,19 +100,17 @@ class MiniMapWidgetEnhanced extends StatelessWidget {
               // Mini map canvas
               GestureDetector(
                 onTapDown: (details) {
-                  _handleTap(details, context, mapWidth, mapHeight);
+                  _handleTap(details, context);
                 },
                 child: CustomPaint(
-                  size: Size(mapWidth, mapHeight),
-                  painter: MiniMapPainterEnhanced(
+                  size: const Size(280, 140),
+                  painter: MiniMapPainter(
                     controller: controller,
                     canvasWidth: canvasWidth,
                     canvasHeight: canvasHeight,
                     cameraOffsetX: cameraOffsetX,
                     cameraOffsetY: cameraOffsetY,
                     cameraZoom: cameraZoom,
-                    viewportWidth: viewportWidth,
-                    viewportHeight: viewportHeight,
                   ),
                 ),
               ),
@@ -188,25 +177,21 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-class MiniMapPainterEnhanced extends CustomPainter {
+class MiniMapPainter extends CustomPainter {
   final TerminalStationController controller;
   final double canvasWidth;
   final double canvasHeight;
   final double cameraOffsetX;
   final double cameraOffsetY;
   final double cameraZoom;
-  final double viewportWidth;
-  final double viewportHeight;
 
-  MiniMapPainterEnhanced({
+  MiniMapPainter({
     required this.controller,
     required this.canvasWidth,
     required this.canvasHeight,
     required this.cameraOffsetX,
     required this.cameraOffsetY,
     required this.cameraZoom,
-    required this.viewportWidth,
-    required this.viewportHeight,
   });
 
   @override
@@ -217,19 +202,14 @@ class MiniMapPainterEnhanced extends CustomPainter {
       return;
     }
 
+    final scaleX = size.width / canvasWidth;
+    final scaleY = size.height / canvasHeight;
+
     // Background
     canvas.drawRect(
       Offset.zero & size,
       Paint()..color = Colors.grey[850]!,
     );
-
-    // CRITICAL FIX: Center the coordinate system like main canvas
-    canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-
-    // Calculate scale factors
-    final scaleX = size.width / canvasWidth;
-    final scaleY = size.height / canvasHeight;
 
     // Draw blocks as rectangles
     for (final block in controller.blocks.values) {
@@ -282,35 +262,26 @@ class MiniMapPainterEnhanced extends CustomPainter {
       );
     }
 
-    // CRITICAL FIX: Draw viewport rectangle with correct dimensions
-    if (cameraZoom > 0 && viewportWidth > 0 && viewportHeight > 0) {
-      // Calculate viewport size in canvas coordinates
-      final viewportCanvasWidth = viewportWidth / cameraZoom;
-      final viewportCanvasHeight = viewportHeight / cameraZoom;
+    // Draw viewport rectangle with validation
+    if (cameraZoom > 0) {
+      final viewportWidth = size.width / cameraZoom;
+      final viewportHeight = size.height / cameraZoom;
+      final viewportX = -cameraOffsetX / cameraZoom;
+      final viewportY = -cameraOffsetY / cameraZoom;
 
-      // Calculate viewport position (centered on camera offset)
-      final viewportX = cameraOffsetX * scaleX;
-      final viewportY = cameraOffsetY * scaleY;
-
-      // Calculate viewport size in minimap coordinates
-      final viewportMinimapWidth = viewportCanvasWidth * scaleX;
-      final viewportMinimapHeight = viewportCanvasHeight * scaleY;
-
-      // Draw viewport rectangle centered on camera position
       canvas.drawRect(
-        Rect.fromCenter(
-          center: Offset(viewportX, viewportY),
-          width: viewportMinimapWidth,
-          height: viewportMinimapHeight,
+        Rect.fromLTWH(
+          viewportX * scaleX,
+          viewportY * scaleY,
+          viewportWidth * scaleX,
+          viewportHeight * scaleY,
         ),
         Paint()
           ..color = Colors.white.withOpacity(0.3)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
+          ..strokeWidth = 1,
       );
     }
-
-    canvas.restore();
   }
 
   /// Helper method to draw error state
@@ -335,20 +306,18 @@ class MiniMapPainterEnhanced extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(MiniMapPainterEnhanced oldDelegate) {
-    // Only repaint if something actually changed
+  bool shouldRepaint(MiniMapPainter oldDelegate) {
+    // Only repaint if something actually changed - major performance optimization
     return oldDelegate.cameraOffsetX != cameraOffsetX ||
         oldDelegate.cameraOffsetY != cameraOffsetY ||
         oldDelegate.cameraZoom != cameraZoom ||
         oldDelegate.canvasWidth != canvasWidth ||
         oldDelegate.canvasHeight != canvasHeight ||
-        oldDelegate.viewportWidth != viewportWidth ||
-        oldDelegate.viewportHeight != viewportHeight ||
         _hasControllerDataChanged(oldDelegate);
   }
 
   /// Check if controller data has changed (trains, signals, etc.)
-  bool _hasControllerDataChanged(MiniMapPainterEnhanced oldDelegate) {
+  bool _hasControllerDataChanged(MiniMapPainter oldDelegate) {
     // Compare train count and positions
     if (controller.trains.length != oldDelegate.controller.trains.length) {
       return true;

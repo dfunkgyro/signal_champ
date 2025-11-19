@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Permissions for speech recognition and microphone -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access for voice commands and speech recognition features.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app uses speech recognition to provide voice-controlled railway operations and AI assistant features.</string>
 </dict>
 </plist>

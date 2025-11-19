@@ -1,14 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Authentication service for handling user login, Google Sign-In, and guest mode
 class AuthService extends ChangeNotifier {
   final SupabaseClient _supabase;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
 
   User? _currentUser;
   bool _isGuest = false;
@@ -32,8 +28,8 @@ class AuthService extends ChangeNotifier {
   String get displayName {
     if (_isGuest) return 'Guest User';
     return _currentUser?.userMetadata?['full_name'] ??
-           _currentUser?.email?.split('@')[0] ??
-           'User';
+        _currentUser?.email?.split('@')[0] ??
+        'User';
   }
 
   Future<void> _initialize() async {
@@ -45,7 +41,8 @@ class AuthService extends ChangeNotifier {
         final AuthChangeEvent event = data.event;
         final Session? session = data.session;
 
-        if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.tokenRefreshed) {
+        if (event == AuthChangeEvent.signedIn ||
+            event == AuthChangeEvent.tokenRefreshed) {
           _currentUser = session?.user;
           _isGuest = false;
           _updateConnectionStatus('Connected to Supabase', true);
@@ -87,7 +84,8 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Sign up with email and password
-  Future<AuthResult> signUpWithEmail(String email, String password, {String? fullName}) async {
+  Future<AuthResult> signUpWithEmail(String email, String password,
+      {String? fullName}) async {
     try {
       _updateConnectionStatus('Creating account...', false);
 
@@ -102,7 +100,8 @@ class AuthService extends ChangeNotifier {
         _isGuest = false;
         await _setGuestMode(false);
         _updateConnectionStatus('Connected to Supabase', true);
-        return AuthResult(success: true, message: 'Account created successfully');
+        return AuthResult(
+            success: true, message: 'Account created successfully');
       } else {
         _updateConnectionStatus('Sign up failed', false);
         return AuthResult(success: false, message: 'Sign up failed');
@@ -144,39 +143,14 @@ class AuthService extends ChangeNotifier {
     try {
       _updateConnectionStatus('Signing in with Google...', false);
 
-      // Sign in with Google
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        _updateConnectionStatus('Google sign in cancelled', false);
-        return AuthResult(success: false, message: 'Google sign in cancelled');
-      }
-
-      final googleAuth = await googleUser.authentication;
-      final accessToken = googleAuth.accessToken;
-      final idToken = googleAuth.idToken;
-
-      if (accessToken == null || idToken == null) {
-        _updateConnectionStatus('Failed to get Google credentials', false);
-        return AuthResult(success: false, message: 'Failed to get Google credentials');
-      }
-
-      // Sign in to Supabase with Google credentials
-      final response = await _supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-        accessToken: accessToken,
+      // Sign in with Google via Supabase
+      final response = await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'io.supabase.railchamp://login-callback/',
       );
 
-      if (response.user != null) {
-        _currentUser = response.user;
-        _isGuest = false;
-        await _setGuestMode(false);
-        _updateConnectionStatus('Connected to Supabase', true);
-        return AuthResult(success: true, message: 'Signed in with Google successfully');
-      } else {
-        _updateConnectionStatus('Google sign in failed', false);
-        return AuthResult(success: false, message: 'Google sign in failed');
-      }
+      _updateConnectionStatus('Google sign in initiated', false);
+      return AuthResult(success: true, message: 'Google sign in initiated');
     } catch (e) {
       debugPrint('Google sign in error: $e');
       _updateConnectionStatus('Google sign in error', false);
@@ -202,7 +176,6 @@ class AuthService extends ChangeNotifier {
     try {
       if (!_isGuest) {
         await _supabase.auth.signOut();
-        await _googleSignIn.signOut();
       }
       _currentUser = null;
       _isGuest = false;

@@ -63,9 +63,18 @@ post_install do |installer|
 
       # Handle Swift version compatibility
       config.build_settings['SWIFT_VERSION'] = '5.0'
+      config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
 
       # Prevent warnings about deprecated UIWebView
       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+
+      # Fix for speech_to_text and flutter_tts compatibility
+      if target.name == 'speech_to_text' || target.name == 'flutter_tts' || target.name == 'text_to_speech'
+        # Disable Swift concurrency checks for older Xcode
+        config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
+        # Suppress specific warnings for these packages
+        config.build_settings['OTHER_SWIFT_FLAGS'] = '$(inherited) -suppress-warnings'
+      end
     end
   end
 end

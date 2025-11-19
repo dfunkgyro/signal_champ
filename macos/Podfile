@@ -62,6 +62,18 @@ post_install do |installer|
 
       # Fix module stability issues
       config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+
+      # Swift-specific fixes for speech/TTS packages
+      config.build_settings['SWIFT_VERSION'] = '5.0'
+      config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+
+      # Fix for speech_to_text and flutter_tts compatibility
+      if target.name == 'speech_to_text' || target.name == 'flutter_tts' || target.name == 'text_to_speech'
+        # Disable Swift concurrency checks for older Xcode
+        config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
+        # Suppress specific warnings for these packages
+        config.build_settings['OTHER_SWIFT_FLAGS'] = '$(inherited) -suppress-warnings'
+      end
     end
   end
 end

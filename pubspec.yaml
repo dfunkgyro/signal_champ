@@ -60,8 +60,10 @@ dependencies:
   audioplayers: ^5.2.1
 
   # Speech Recognition & TTS
-  speech_to_text: ^7.0.0
-  flutter_tts: ^4.2.0
+  # Using Xcode 14.2 compatible versions (no Swift concurrency issues)
+  speech_to_text: 6.6.2  # Last stable version before Swift concurrency
+  flutter_tts: 4.1.0     # Stable version without switch statement warnings
+  text_to_speech: ^0.2.3 # Additional TTS with better cross-platform support
 
   # Performance
   flutter_cache_manager: ^3.4.1

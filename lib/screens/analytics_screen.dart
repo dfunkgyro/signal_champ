@@ -113,7 +113,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              analyticsService.getAppUsageStats();
               connectionService.checkAllConnections();
             },
           ),
@@ -121,7 +120,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await analyticsService.getAppUsageStats();
           await connectionService.checkAllConnections();
         },
         child: ListView(
@@ -137,10 +135,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
             // Location Card
             _buildLocationCard(analyticsService),
-            const SizedBox(height: 16),
-
-            // App Usage Card
-            _buildAppUsageCard(analyticsService),
             const SizedBox(height: 16),
 
             // Analytics Summary Card
@@ -231,7 +225,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+          child:
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
         ),
         Text(
           status,
@@ -332,9 +327,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             if (position != null) ...[
               _buildInfoRow('Latitude', position.latitude.toStringAsFixed(6)),
               _buildInfoRow('Longitude', position.longitude.toStringAsFixed(6)),
-              _buildInfoRow('Accuracy', '${position.accuracy.toStringAsFixed(1)}m'),
-              _buildInfoRow('Altitude', '${position.altitude.toStringAsFixed(1)}m'),
-              _buildInfoRow('Speed', '${position.speed.toStringAsFixed(1)} m/s'),
+              _buildInfoRow(
+                  'Accuracy', '${position.accuracy.toStringAsFixed(1)}m'),
+              if (position.altitude > 0)
+                _buildInfoRow(
+                    'Altitude', '${position.altitude.toStringAsFixed(1)}m'),
+              if (position.speed > 0)
+                _buildInfoRow(
+                    'Speed', '${position.speed.toStringAsFixed(1)} m/s'),
             ] else
               const Text('Location not available'),
             const SizedBox(height: 8),
@@ -347,85 +347,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 icon: const Icon(Icons.location_on),
                 label: const Text('Enable Location'),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppUsageCard(AnalyticsService analyticsService) {
-    final appUsageStats = analyticsService.appUsageStats;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.access_time, color: Colors.blue),
-                const SizedBox(width: 8),
-                const Text(
-                  'App Usage Statistics',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(),
-            if (!analyticsService.isAppUsagePermissionGranted) ...[
-              const Text('Permission not granted'),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  final granted = await analyticsService.requestAppUsagePermission();
-                  if (!granted && mounted) {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Permission Required'),
-                        content: const Text(
-                          'Please grant Usage Access permission in Settings:\n\n'
-                          'Settings > Apps > Special Access > Usage Access',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('OK'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.settings),
-                label: const Text('Request Permission'),
-              ),
-            ] else if (appUsageStats.isEmpty) ...[
-              const Text('No usage data available'),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: () => analyticsService.getAppUsageStats(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Load Usage Stats'),
-              ),
-            ] else ...[
-              Text('Total Apps: ${appUsageStats.length}'),
-              const SizedBox(height: 8),
-              ...appUsageStats.take(5).map((app) {
-                final hours = app.usage.inHours;
-                final minutes = app.usage.inMinutes % 60;
-                return ListTile(
-                  dense: true,
-                  title: Text(app.appName),
-                  subtitle: Text(app.packageName),
-                  trailing: Text('${hours}h ${minutes}m'),
-                );
-              }),
-            ],
           ],
         ),
       ),
@@ -473,14 +394,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       'Location Enabled',
                       summary['location_enabled'].toString(),
                     ),
-                    _buildInfoRow(
-                      'App Usage Permission',
-                      summary['app_usage_permission'].toString(),
-                    ),
                     if (summary['total_events'] != null)
                       _buildInfoRow(
                         'Total Events (30 days)',
                         summary['total_events'].toString(),
+                      ),
+                    if (summary['current_position'] != null)
+                      _buildInfoRow(
+                        'Last Location',
+                        '${summary['current_position']['latitude']?.toStringAsFixed(4)}, '
+                            '${summary['current_position']['longitude']?.toStringAsFixed(4)}',
                       ),
                   ],
                 );

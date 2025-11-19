@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/connection_service.dart';
 import '../services/auth_service.dart';
+import 'connection_debug_panel.dart';
 
 /// Widget to display connection status for AI and Supabase
 class ConnectionIndicator extends StatelessWidget {
@@ -32,41 +33,45 @@ class ConnectionIndicator extends StatelessWidget {
         connectionService.isAiConnected ||
         authService.isConnected;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isConnected
-            ? Colors.green.withOpacity(0.1)
-            : Colors.orange.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isConnected ? Colors.green : Colors.orange,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isConnected ? Icons.cloud_done : Icons.cloud_off,
-            size: 14,
+    return InkWell(
+      onTap: () => _showDebugPanel(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isConnected
+              ? Colors.green.withOpacity(0.1)
+              : Colors.orange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
             color: isConnected ? Colors.green : Colors.orange,
+            width: 1,
           ),
-          const SizedBox(width: 4),
-          if (connectionService.fallbackMode)
-            const Text(
-              'Offline',
-              style: TextStyle(fontSize: 10, color: Colors.orange),
-            )
-          else
-            Text(
-              'Online',
-              style: TextStyle(
-                fontSize: 10,
-                color: isConnected ? Colors.green : Colors.orange,
-              ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isConnected ? Icons.cloud_done : Icons.cloud_off,
+              size: 14,
+              color: isConnected ? Colors.green : Colors.orange,
             ),
-        ],
+            const SizedBox(width: 4),
+            if (connectionService.fallbackMode)
+              const Text(
+                'Offline',
+                style: TextStyle(fontSize: 10, color: Colors.orange),
+              )
+            else
+              Text(
+                'Online',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isConnected ? Colors.green : Colors.orange,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -134,8 +139,33 @@ class ConnectionIndicator extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 8),
+          // Debug button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _showDebugPanel(context),
+              icon: const Icon(Icons.bug_report, size: 14),
+              label: const Text(
+                'Debug',
+                style: TextStyle(fontSize: 10),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  void _showDebugPanel(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const ConnectionDebugPanel(),
     );
   }
 

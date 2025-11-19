@@ -3,16 +3,14 @@ import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../screens/terminal_station_models.dart';
 import '../theme/design_tokens.dart';
-import '../services/widget_preferences_service.dart';
-import '../services/speech_recognition_service.dart';
 
-/// Enhanced Search bar widget with voice recognition and customization
-class RailwaySearchBarEnhanced extends StatefulWidget {
+/// Search bar widget for railway system - allows searching blocks, signals, tracks, stations, platforms, axle counters, tags, crossovers, and trains
+class RailwaySearchBar extends StatefulWidget {
   final Function(double x, double y)? onNavigate;
   final double? viewportWidth;
   final double? viewportHeight;
 
-  const RailwaySearchBarEnhanced({
+  const RailwaySearchBar({
     Key? key,
     this.onNavigate,
     this.viewportWidth,
@@ -20,16 +18,15 @@ class RailwaySearchBarEnhanced extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<RailwaySearchBarEnhanced> createState() => _RailwaySearchBarEnhancedState();
+  State<RailwaySearchBar> createState() => _RailwaySearchBarState();
 }
 
-class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
+class _RailwaySearchBarState extends State<RailwaySearchBar> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   List<SearchResult> _searchResults = [];
   bool _showResults = false;
   int _selectedIndex = -1;
-  bool _isListeningForWakeWord = false;
 
   @override
   void dispose() {
@@ -284,93 +281,17 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
     });
   }
 
-  /// Start voice search
-  Future<void> _startVoiceSearch(
-    SpeechRecognitionService speechService,
-    TerminalStationController controller,
-    WidgetPreferencesService prefs,
-  ) async {
-    if (!prefs.voiceEnabled) {
-      _showSnackBar('Voice search is disabled in settings');
-      return;
-    }
-
-    if (!speechService.isAvailable) {
-      final initialized = await speechService.initialize();
-      if (!initialized) {
-        _showSnackBar('Speech recognition not available');
-        return;
-      }
-    }
-
-    await speechService.startListening(
-      onResult: (text) {
-        setState(() {
-          _searchController.text = text;
-        });
-        _performSearch(text, controller);
-      },
-    );
-  }
-
-  /// Start wake word listening
-  Future<void> _toggleWakeWordListening(
-    SpeechRecognitionService speechService,
-    TerminalStationController controller,
-    WidgetPreferencesService prefs,
-  ) async {
-    if (!prefs.wakeWordEnabled) {
-      _showSnackBar('Wake word is disabled in settings');
-      return;
-    }
-
-    if (!speechService.isAvailable) {
-      final initialized = await speechService.initialize();
-      if (!initialized) {
-        _showSnackBar('Speech recognition not available');
-        return;
-      }
-    }
-
-    if (_isListeningForWakeWord) {
-      await speechService.stopListening();
-      setState(() {
-        _isListeningForWakeWord = false;
-      });
-    } else {
-      await speechService.startWakeWordListening(
-        onWakeWordDetected: (wakeWord) async {
-          if (wakeWord.contains('search')) {
-            // Stop wake word listening and start search listening
-            setState(() {
-              _isListeningForWakeWord = false;
-            });
-            await _startVoiceSearch(speechService, controller, prefs);
-          }
-        },
-      );
-      setState(() {
-        _isListeningForWakeWord = true;
-      });
-    }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+  // Note: Keyboard navigation is handled via TextField's onSubmitted
+  // Arrow key navigation would require RawKeyboardListener wrapping
+  // For now, users can press Enter to select the highlighted result
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Consumer3<TerminalStationController, WidgetPreferencesService, SpeechRecognitionService>(
-      builder: (context, controller, prefs, speechService, _) {
+    return Consumer<TerminalStationController>(
+      builder: (context, controller, _) {
         return Container(
           padding: AppSpacing.compactPadding,
           decoration: BoxDecoration(
@@ -396,13 +317,12 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Search input with modern design and voice button
+              // Search input with modern design
               TextField(
                 controller: _searchController,
                 focusNode: _focusNode,
                 style: AppTypography.body.copyWith(
                   color: isDark ? Colors.white : Colors.black87,
-                  fontSize: prefs.searchBarTextSize,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search railway elements...',
@@ -411,55 +331,11 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
                   ),
                   prefixIcon: Icon(
                     Icons.search_rounded,
-                    color: prefs.searchBarColor,
+                    color: theme.colorScheme.primary,
                     size: AppIconSize.sm,
                   ),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Voice search button
-                      if (prefs.voiceEnabled)
-                        IconButton(
-                          icon: Icon(
-                            speechService.isListening
-                                ? Icons.mic
-                                : Icons.mic_none,
-                            color: speechService.isListening
-                                ? Colors.red
-                                : prefs.searchBarColor,
-                            size: AppIconSize.sm,
-                          ),
-                          onPressed: () => _startVoiceSearch(
-                            speechService,
-                            controller,
-                            prefs,
-                          ),
-                          tooltip: 'Voice search',
-                        ),
-                      // Wake word toggle button
-                      if (prefs.wakeWordEnabled)
-                        IconButton(
-                          icon: Icon(
-                            _isListeningForWakeWord
-                                ? Icons.hearing
-                                : Icons.hearing_disabled,
-                            color: _isListeningForWakeWord
-                                ? Colors.green
-                                : Colors.grey,
-                            size: AppIconSize.sm,
-                          ),
-                          onPressed: () => _toggleWakeWordListening(
-                            speechService,
-                            controller,
-                            prefs,
-                          ),
-                          tooltip: _isListeningForWakeWord
-                              ? 'Wake word active'
-                              : 'Enable wake word',
-                        ),
-                      // Clear button
-                      if (_searchController.text.isNotEmpty)
-                        IconButton(
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
                           icon: Icon(
                             Icons.clear_rounded,
                             color: isDark ? AppColors.grey400 : Colors.grey[700],
@@ -470,9 +346,12 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
                             _performSearch('', controller);
                           },
                           tooltip: 'Clear search',
+                        )
+                      : Icon(
+                          Icons.tune_rounded,
+                          color: isDark ? AppColors.grey600 : Colors.grey[400],
+                          size: AppIconSize.sm,
                         ),
-                    ],
-                  ),
                   filled: true,
                   fillColor: isDark ? AppColors.grey800 : Colors.grey[100],
                   border: OutlineInputBorder(
@@ -482,7 +361,7 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: AppBorderRadius.medium,
                     borderSide: BorderSide(
-                      color: prefs.searchBarColor,
+                      color: theme.colorScheme.primary,
                       width: 2,
                     ),
                   ),
@@ -498,50 +377,6 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
                   }
                 },
               ),
-
-              // Voice status indicator
-              if (speechService.isListening || _isListeningForWakeWord)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            _isListeningForWakeWord ? Colors.green : Colors.red,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _isListeningForWakeWord
-                            ? 'Listening for "search for..."'
-                            : 'Listening...',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: _isListeningForWakeWord ? Colors.green : Colors.red,
-                        ),
-                      ),
-                      if (speechService.lastWords.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '"${speechService.lastWords}"',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey[400],
-                              fontStyle: FontStyle.italic,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
 
               // Search results dropdown with modern styling
               if (_showResults && _searchResults.isNotEmpty)
@@ -571,7 +406,7 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
 
                         return Material(
                           color: isSelected
-                              ? prefs.searchBarColor.withOpacity(0.15)
+                              ? theme.colorScheme.primary.withOpacity(0.15)
                               : Colors.transparent,
                           child: InkWell(
                             onTap: () => _selectResult(result, controller),

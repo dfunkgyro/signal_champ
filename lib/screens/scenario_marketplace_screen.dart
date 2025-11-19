@@ -71,7 +71,7 @@ class _ScenarioMarketplaceScreenState extends State<ScenarioMarketplaceScreen>
               children: [
                 _buildFeaturedTab(),
                 _buildCommunityTab(),
-                _buildMyScenarios Tab(),
+                _buildMyScenariosTab(),
               ],
             ),
           ),
@@ -129,8 +129,8 @@ class _ScenarioMarketplaceScreenState extends State<ScenarioMarketplaceScreen>
 
                 // Difficulty filter
                 FilterChip(
-                  label:
-                      Text(_filterDifficulty?.displayName ?? 'All Difficulties'),
+                  label: Text(
+                      _filterDifficulty?.displayName ?? 'All Difficulties'),
                   avatar: _filterDifficulty != null
                       ? Container(
                           width: 12,
@@ -372,7 +372,8 @@ class _ScenarioMarketplaceScreenState extends State<ScenarioMarketplaceScreen>
                   ? Image.network(
                       scenario.thumbnailUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildPlaceholderThumbnail(),
+                      errorBuilder: (_, __, ___) =>
+                          _buildPlaceholderThumbnail(),
                     )
                   : _buildPlaceholderThumbnail(),
             ),
@@ -512,8 +513,7 @@ class _ScenarioMarketplaceScreenState extends State<ScenarioMarketplaceScreen>
     var filtered = scenarios;
 
     if (_filterCategory != null) {
-      filtered =
-          filtered.where((s) => s.category == _filterCategory).toList();
+      filtered = filtered.where((s) => s.category == _filterCategory).toList();
     }
 
     if (_filterDifficulty != null) {
@@ -682,7 +682,8 @@ class _ScenarioMarketplaceScreenState extends State<ScenarioMarketplaceScreen>
             },
           ),
           ListTile(
-            leading: Icon(scenario.isPublic ? Icons.cloud_off : Icons.cloud_upload),
+            leading:
+                Icon(scenario.isPublic ? Icons.cloud_off : Icons.cloud_upload),
             title: Text(scenario.isPublic ? 'Unpublish' : 'Publish'),
             onTap: () {
               Navigator.pop(context);

@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:app_usage/app_usage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -12,10 +11,8 @@ class AnalyticsService extends ChangeNotifier {
   final SupabaseClient _supabase;
 
   Position? _currentPosition;
-  List<AppUsageInfo> _appUsageStats = [];
   Map<String, dynamic> _deviceInfo = {};
   bool _isLocationEnabled = false;
-  bool _isAppUsagePermissionGranted = false;
   String _analyticsStatus = 'Not initialized';
 
   AnalyticsService(this._supabase) {
@@ -24,10 +21,8 @@ class AnalyticsService extends ChangeNotifier {
 
   // Getters
   Position? get currentPosition => _currentPosition;
-  List<AppUsageInfo> get appUsageStats => _appUsageStats;
   Map<String, dynamic> get deviceInfo => _deviceInfo;
   bool get isLocationEnabled => _isLocationEnabled;
-  bool get isAppUsagePermissionGranted => _isAppUsagePermissionGranted;
   String get analyticsStatus => _analyticsStatus;
 
   Future<void> _initialize() async {
@@ -194,96 +189,6 @@ class AnalyticsService extends ChangeNotifier {
     }
   }
 
-  /// Request app usage permission
-  Future<bool> requestAppUsagePermission() async {
-    try {
-      if (Platform.isAndroid) {
-        // For Android, check if we have usage stats permission
-        final endDate = DateTime.now();
-        final startDate = endDate.subtract(const Duration(hours: 1));
-
-        try {
-          await AppUsage().getAppUsage(startDate, endDate);
-          _isAppUsagePermissionGranted = true;
-          notifyListeners();
-          return true;
-        } catch (e) {
-          // If we get an exception, we need to request permission
-          debugPrint('App usage permission not granted. Please grant permission in settings.');
-          // On Android, this requires the user to manually grant permission in Settings
-          // You should guide the user to Settings > Apps > Special Access > Usage Access
-          return false;
-        }
-      } else {
-        // iOS doesn't have app usage tracking in the same way
-        return false;
-      }
-    } catch (e) {
-      debugPrint('Error requesting app usage permission: $e');
-      return false;
-    }
-  }
-
-  /// Get app usage statistics
-  Future<List<AppUsageInfo>> getAppUsageStats({Duration? duration}) async {
-    try {
-      final endDate = DateTime.now();
-      final startDate = endDate.subtract(duration ?? const Duration(days: 1));
-
-      final usageStats = await AppUsage().getAppUsage(startDate, endDate);
-      _appUsageStats = usageStats;
-      notifyListeners();
-
-      // Log to analytics
-      await logEvent('app_usage_checked', parameters: {
-        'duration_days': duration?.inDays ?? 1,
-        'apps_count': usageStats.length,
-      });
-
-      return usageStats;
-    } catch (e) {
-      debugPrint('Error getting app usage: $e');
-      return [];
-    }
-  }
-
-  /// Get this app's usage statistics
-  Future<Map<String, dynamic>> getThisAppUsageStats() async {
-    try {
-      final endDate = DateTime.now();
-      final startDate = endDate.subtract(const Duration(days: 7));
-
-      final usageStats = await AppUsage().getAppUsage(startDate, endDate);
-
-      // Find this app's stats
-      final thisAppPackage = Platform.isAndroid
-          ? 'com.example.rail_champ' // Update with your actual package name
-          : 'rail_champ';
-
-      final thisAppStats = usageStats.firstWhere(
-        (app) => app.packageName.contains(thisAppPackage),
-        orElse: () => AppUsageInfo(
-          packageName: thisAppPackage,
-          appName: 'Rail Champ',
-          usage: const Duration(seconds: 0),
-          startDate: startDate,
-          endDate: endDate,
-        ),
-      );
-
-      return {
-        'app_name': thisAppStats.appName,
-        'package_name': thisAppStats.packageName,
-        'total_usage': thisAppStats.usage.inMinutes,
-        'start_date': thisAppStats.startDate.toIso8601String(),
-        'end_date': thisAppStats.endDate.toIso8601String(),
-      };
-    } catch (e) {
-      debugPrint('Error getting this app usage: $e');
-      return {};
-    }
-  }
-
   /// Log a custom event to Supabase
   Future<void> logEvent(String name, {Map<String, dynamic>? parameters}) async {
     try {
@@ -331,7 +236,11 @@ class AnalyticsService extends ChangeNotifier {
       final response = await _supabase
           .from('analytics_events')
           .select('event_name, count(*)')
-          .gte('timestamp', DateTime.now().subtract(const Duration(days: 30)).toIso8601String());
+          .gte(
+              'timestamp',
+              DateTime.now()
+                  .subtract(const Duration(days: 30))
+                  .toIso8601String());
 
       return {
         'location_enabled': _isLocationEnabled,
@@ -342,7 +251,6 @@ class AnalyticsService extends ChangeNotifier {
               }
             : null,
         'device_info': _deviceInfo,
-        'app_usage_permission': _isAppUsagePermissionGranted,
         'total_events': response?.length ?? 0,
       };
     } catch (e) {
@@ -356,7 +264,6 @@ class AnalyticsService extends ChangeNotifier {
               }
             : null,
         'device_info': _deviceInfo,
-        'app_usage_permission': _isAppUsagePermissionGranted,
         'error': e.toString(),
       };
     }

@@ -2,13 +2,124 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
-import 'openai_service.dart';
+import 'openai_service.dart'; // Add this import
+import 'dart:convert';
+
+/// Response from OpenAI API
+class OpenAIResponse {
+  final bool success;
+  final String content;
+  final String error;
+  final String userFriendlyError;
+
+  OpenAIResponse({
+    required this.success,
+    required this.content,
+    required this.error,
+    required this.userFriendlyError,
+  });
+}
+
+/// Service for interacting with OpenAI API
+class OpenAIservice {
+  final String apiKey;
+  final String baseUrl = 'https://api.openai.com/v1';
+
+  OpenAIservice({required this.apiKey});
+
+  /// Process a natural language command using OpenAI
+  Future<OpenAIResponse> processCommand(
+    String command,
+    String systemPrompt, {
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    try {
+      final client = http.Client();
+      final uri = Uri.parse('$baseUrl/chat/completions');
+
+      final response = await client
+          .post(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $apiKey',
+            },
+            body: jsonEncode({
+              'model': 'gpt-3.5-turbo',
+              'messages': [
+                {
+                  'role': 'system',
+                  'content': systemPrompt,
+                },
+                {
+                  'role': 'user',
+                  'content': command,
+                },
+              ],
+              'max_tokens': 500,
+              'temperature': 0.7,
+            }),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final content = data['choices'][0]['message']['content'] as String;
+
+        return OpenAIResponse(
+          success: true,
+          content: content.trim(),
+          error: '',
+          userFriendlyError: '',
+        );
+      } else {
+        return OpenAIResponse(
+          success: false,
+          content: '',
+          error: 'HTTP ${response.statusCode}: ${response.body}',
+          userFriendlyError: 'Unable to process request. Please try again.',
+        );
+      }
+    } on TimeoutException {
+      return OpenAIResponse(
+        success: false,
+        content: '',
+        error: 'Request timeout',
+        userFriendlyError: 'Request took too long. Please try again.',
+      );
+    } catch (e) {
+      return OpenAIResponse(
+        success: false,
+        content: '',
+        error: e.toString(),
+        userFriendlyError:
+            'An error occurred. Please check your connection and try again.',
+      );
+    }
+  }
+
+  /// Check if the API key is valid
+  Future<bool> validateApiKey() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/models'),
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+}
 
 /// Service for monitoring connection status to AI and Supabase with fallback logic
 class ConnectionService extends ChangeNotifier {
   final SupabaseClient _supabase;
   final String? _openAiApiKey;
-  final OpenAIService? _openAiService;
+  OpenAIservice? _openAiService; // Add this field
 
   bool _isSupabaseConnected = false;
   bool _isAiConnected = false;
@@ -22,10 +133,11 @@ class ConnectionService extends ChangeNotifier {
   bool _fallbackMode = false;
 
   ConnectionService(this._supabase, {String? openAiApiKey})
-      : _openAiApiKey = openAiApiKey,
-        _openAiService = (openAiApiKey != null && openAiApiKey.isNotEmpty)
-            ? OpenAIService(apiKey: openAiApiKey)
-            : null {
+      : _openAiApiKey = openAiApiKey {
+    // Initialize OpenAI service if API key is provided
+    if (_openAiApiKey != null && _openAiApiKey!.isNotEmpty) {
+      _openAiService = OpenAIservice(apiKey: _openAiApiKey!);
+    }
     _startPeriodicChecks();
   }
 
@@ -39,7 +151,7 @@ class ConnectionService extends ChangeNotifier {
   bool get fallbackMode => _fallbackMode;
   bool get isFullyConnected => _isSupabaseConnected && _isAiConnected;
   bool get isPartiallyConnected => _isSupabaseConnected || _isAiConnected;
-  OpenAIService? get openAiService => _openAiService;
+  OpenAIservice? get openAiService => _openAiService; // Add this getter
 
   /// Start periodic connection checks
   void _startPeriodicChecks() {
@@ -117,14 +229,12 @@ class ConnectionService extends ChangeNotifier {
       notifyListeners();
 
       // Try to make a simple API call to check connection
-      final response = await http
-          .get(
-            Uri.parse('https://api.openai.com/v1/models'),
-            headers: {
-              'Authorization': 'Bearer $_openAiApiKey',
-            },
-          )
-          .timeout(const Duration(seconds: 5));
+      final response = await http.get(
+        Uri.parse('https://api.openai.com/v1/models'),
+        headers: {
+          'Authorization': 'Bearer $_openAiApiKey',
+        },
+      ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         _isAiConnected = true;

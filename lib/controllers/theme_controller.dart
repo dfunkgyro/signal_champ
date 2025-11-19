@@ -15,38 +15,38 @@ enum AppTheme {
 class ThemeController extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   AppTheme _currentTheme = AppTheme.railway;
-  
+
   ThemeMode get themeMode => _themeMode;
   AppTheme get currentTheme => _currentTheme;
-  
+
   ThemeController() {
     _loadPreferences();
   }
-  
+
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final themeModeIndex = prefs.getInt('theme_mode') ?? 0;
     final themeIndex = prefs.getInt('app_theme') ?? 0;
-    
+
     _themeMode = ThemeMode.values[themeModeIndex];
     _currentTheme = AppTheme.values[themeIndex];
     notifyListeners();
   }
-  
+
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('theme_mode', mode.index);
     notifyListeners();
   }
-  
+
   Future<void> setAppTheme(AppTheme theme) async {
     _currentTheme = theme;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('app_theme', theme.index);
     notifyListeners();
   }
-  
+
   ThemeData getLightTheme() {
     return ThemeData(
       useMaterial3: true,
@@ -57,7 +57,7 @@ class ThemeController extends ChangeNotifier {
       ),
     );
   }
-  
+
   ThemeData getDarkTheme() {
     final colorScheme = _getColorScheme(_currentTheme, Brightness.dark);
 
@@ -75,7 +75,7 @@ class ThemeController extends ChangeNotifier {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.black.withOpacity(0.3),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: AppElevation.level2,
         shape: RoundedRectangleBorder(
           borderRadius: AppBorderRadius.medium,
@@ -118,7 +118,7 @@ class ThemeController extends ChangeNotifier {
       ),
     );
   }
-  
+
   ColorScheme _getColorScheme(AppTheme theme, Brightness brightness) {
     switch (theme) {
       case AppTheme.railway:
@@ -137,7 +137,7 @@ class ThemeController extends ChangeNotifier {
         return _highContrastScheme(brightness);
     }
   }
-  
+
   ColorScheme _railwayScheme(Brightness brightness) {
     if (brightness == Brightness.dark) {
       return ColorScheme.dark(
@@ -191,7 +191,7 @@ class ThemeController extends ChangeNotifier {
       );
     }
   }
-  
+
   ColorScheme _sunsetScheme(Brightness brightness) {
     return ColorScheme.fromSeed(
       seedColor: const Color(0xFFFF5722),
@@ -200,7 +200,7 @@ class ThemeController extends ChangeNotifier {
       secondary: const Color(0xFFFF9800),
     );
   }
-  
+
   ColorScheme _forestScheme(Brightness brightness) {
     return ColorScheme.fromSeed(
       seedColor: const Color(0xFF388E3C),
@@ -209,7 +209,7 @@ class ThemeController extends ChangeNotifier {
       secondary: const Color(0xFF8BC34A),
     );
   }
-  
+
   ColorScheme _oceanScheme(Brightness brightness) {
     return ColorScheme.fromSeed(
       seedColor: const Color(0xFF0097A7),
@@ -218,7 +218,7 @@ class ThemeController extends ChangeNotifier {
       secondary: const Color(0xFF00BCD4),
     );
   }
-  
+
   ColorScheme _monochromeScheme(Brightness brightness) {
     if (brightness == Brightness.dark) {
       return ColorScheme.dark(
@@ -277,7 +277,7 @@ class ThemeController extends ChangeNotifier {
       );
     }
   }
-  
+
   Map<String, Color> getCustomColors() {
     switch (_currentTheme) {
       case AppTheme.railway:

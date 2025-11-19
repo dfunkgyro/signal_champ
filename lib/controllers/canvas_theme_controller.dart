@@ -199,39 +199,39 @@ class CanvasThemeController extends ChangeNotifier {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // SUPER FUTURISTIC THEME - Neon, glowing, high-tech aesthetic
+  // SUPER FUTURISTIC THEME - Enhanced neon cyberpunk aesthetic with vivid colors
   // ══════════════════════════════════════════════════════════════════════════
   CanvasThemeData _getSuperFuturisticTheme() {
     return const CanvasThemeData(
-      trackColor: Color(0xFF1A1A2E),            // Dark blue-black
-      trackOccupiedColor: Color(0xFFE94560),    // Neon pink
-      railColor: Color(0xFF00FFF5),             // Cyan neon
-      sleeperColor: Color(0xFF16213E),          // Dark blue
-      platformColor: Color(0xFF0F3460),         // Dark blue
-      platformEdgeColor: Color(0xFF00FFF5),     // Cyan neon
-      signalPoleColor: Color(0xFF16213E),       // Dark blue
-      signalRedColor: Color(0xFFFF0080),        // Neon pink
-      signalGreenColor: Color(0xFF00FF41),      // Neon green
-      signalYellowColor: Color(0xFFFFFF00),     // Bright yellow
-      pointNormalColor: Color(0xFF00FFF5),      // Cyan neon
-      pointReverseColor: Color(0xFF00FF41),     // Neon green
-      pointLockedColor: Color(0xFF8000FF),      // Neon purple
-      pointDeadlockColor: Color(0xFFFF0080),    // Neon pink
-      pointGapColor: Color(0xFF0F3460),         // Dark blue
-      trainBodyColor: Color(0xFF00FFF5),        // Cyan neon
-      trainWindowColor: Color(0xFFFFFF00),      // Bright yellow
-      trainDoorColor: Color(0xFF00FF41),        // Neon green
-      canvasBackgroundColor: Color(0xFF0F0F1E), // Near black
-      wifiAntennaColor: Color(0xFF8000FF),      // Neon purple
-      wifiCoverageColor: Color(0xFF8000FF),     // Neon purple with opacity
-      transponderColor: Color(0xFFFF0080),      // Neon pink
-      movementAuthorityColor: Color(0xFF00FF41),// Neon green
-      labelTextColor: Color(0xFF00FFF5),        // Cyan neon
-      labelBackgroundColor: Color(0xFF1A1A2E),  // Dark blue-black
+      trackColor: Color(0xFF1A1F2E),            // Deep space blue
+      trackOccupiedColor: Color(0xFFFF00FF),    // Bright neon magenta
+      railColor: Color(0xFF00FFFF),             // Electric cyan
+      sleeperColor: Color(0xFF0D1117),          // Almost black with blue tint
+      platformColor: Color(0xFF1E2738),         // Dark slate blue
+      platformEdgeColor: Color(0xFF00FFFF),     // Electric cyan glow
+      signalPoleColor: Color(0xFF0F1419),       // Near black
+      signalRedColor: Color(0xFFFF0055),        // Neon hot pink
+      signalGreenColor: Color(0xFF00FF88),      // Neon mint green
+      signalYellowColor: Color(0xFFFFFF00),     // Laser yellow
+      pointNormalColor: Color(0xFF00DDFF),      // Bright cyan
+      pointReverseColor: Color(0xFF00FF88),     // Neon mint
+      pointLockedColor: Color(0xFFAA00FF),      // Vivid purple
+      pointDeadlockColor: Color(0xFFFF0055),    // Neon hot pink
+      pointGapColor: Color(0xFF1E2738),         // Dark slate
+      trainBodyColor: Color(0xFF00FFFF),        // Electric cyan body
+      trainWindowColor: Color(0xFFFFFF00),      // Laser yellow windows
+      trainDoorColor: Color(0xFFFF00FF),        // Magenta doors for accent
+      canvasBackgroundColor: Color(0xFF000000), // Pure black for maximum contrast
+      wifiAntennaColor: Color(0xFFAA00FF),      // Vivid purple
+      wifiCoverageColor: Color(0xFFAA00FF),     // Purple glow with opacity
+      transponderColor: Color(0xFFFF0055),      // Hot pink
+      movementAuthorityColor: Color(0xFF00FF88),// Neon mint
+      labelTextColor: Color(0xFF00FFFF),        // Electric cyan text
+      labelBackgroundColor: Color(0xFF0F1419),  // Near black with transparency
       labelFontSize: 11.0,
-      showGlow: true,
-      showShadows: false,
-      strokeWidthMultiplier: 1.2,
+      showGlow: true,                            // Enhanced glow effects
+      showShadows: false,                        // No shadows in cyberpunk
+      strokeWidthMultiplier: 1.3,                // Thicker lines for neon effect
     );
   }
 

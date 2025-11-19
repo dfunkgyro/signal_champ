@@ -951,9 +951,20 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void panToPosition(double x, double y, {double? zoom}) {
-    cameraOffsetX = -x;
-    cameraOffsetY = -y;
+  void panToPosition(double x, double y, {double? zoom, double? viewportWidth, double? viewportHeight}) {
+    // If viewport dimensions are provided, center the position in viewport
+    if (viewportWidth != null && viewportHeight != null) {
+      final targetZoom = zoom ?? cameraZoom;
+      // Calculate offset to center item in viewport
+      // Camera offset = -(item position) + (viewport center / zoom)
+      cameraOffsetX = -x + (viewportWidth / 2) / targetZoom;
+      cameraOffsetY = -y + (viewportHeight / 2) / targetZoom;
+    } else {
+      // Legacy behavior - simple offset
+      cameraOffsetX = -x;
+      cameraOffsetY = -y;
+    }
+
     if (zoom != null) {
       cameraZoom = zoom.clamp(0.3, 3.0);
     }

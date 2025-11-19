@@ -24,8 +24,13 @@ dependencies:
   confetti: ^0.7.0
   lottie: ^3.2.2
 
+  # Charts & Visualization
+  fl_chart: ^1.1.1
+  syncfusion_flutter_charts: ^31.2.5
+
+
   # AI & Cloud
-  http: ^1.5.0
+  http: ^1.6.0
   supabase_flutter: ^2.10.3
 
   # Authentication

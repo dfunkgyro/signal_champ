@@ -57,7 +57,7 @@ dependencies:
   timeago: ^3.7.1
 
   # Audio
-  audioplayers: ^6.1.0
+  audioplayers: ^5.2.1
 
   # Speech Recognition & TTS
   speech_to_text: ^7.0.0

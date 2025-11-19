@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../screens/terminal_station_models.dart';
@@ -18,9 +19,12 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
+  final List<String> _commandHistory = [];
+  int _historyIndex = -1;
   OpenAIService? _openAIService;
   bool _isProcessing = false;
   Map<String, dynamic>? _pendingCommand; // Store incomplete command for confirmation
+  final FocusNode _inputFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -32,14 +36,25 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
   void _initializeOpenAI() {
     try {
       final apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
-      if (apiKey.isNotEmpty && apiKey != 'your_api_key_here') {
-        _openAIService = OpenAIService(
-          apiKey: apiKey,
-          model: dotenv.env['OPENAI_MODEL'] ?? 'gpt-3.5-turbo',
-        );
+      if (apiKey.isEmpty) {
+        _addMessage('System', 'ℹ️ OpenAI API key not found. Using local command processing only.\n\nTo enable AI features, create assets/.env file with:\nOPENAI_API_KEY=your_key_here', isAI: true);
+        return;
       }
+
+      if (apiKey == 'your_api_key_here' || apiKey == 'sk-') {
+        _addMessage('System', '⚠️ Invalid API key format. Please update assets/.env file with a valid OpenAI API key.', isAI: true);
+        return;
+      }
+
+      _openAIService = OpenAIService(
+        apiKey: apiKey,
+        model: dotenv.env['OPENAI_MODEL'] ?? 'gpt-3.5-turbo',
+      );
+
+      debugPrint('✅ OpenAI service initialized with model: ${dotenv.env['OPENAI_MODEL'] ?? 'gpt-3.5-turbo'}');
     } catch (e) {
-      _addMessage('System', 'API key not configured. Create assets/.env file with OPENAI_API_KEY', isAI: true);
+      _addMessage('System', '❌ Error initializing OpenAI: ${e.toString()}\n\nFalling back to local command processing.', isAI: true);
+      debugPrint('OpenAI initialization error: $e');
     }
   }
 
@@ -47,20 +62,70 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
     setState(() {
       _messages.add(ChatMessage(sender: sender, text: text, isAI: isAI));
     });
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+
+    // Only auto-scroll if the setting is enabled
+    final controller = Provider.of<TerminalStationController>(context, listen: false);
+    if (controller.signallingSystemManagerAutoScroll) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients && mounted) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  /// Navigate command history with up/down arrows
+  void _navigateHistory(bool up) {
+    if (_commandHistory.isEmpty) return;
+
+    setState(() {
+      if (up) {
+        if (_historyIndex < _commandHistory.length - 1) {
+          _historyIndex++;
+          _inputController.text = _commandHistory[_commandHistory.length - 1 - _historyIndex];
+          _inputController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _inputController.text.length),
+          );
+        }
+      } else {
+        if (_historyIndex > 0) {
+          _historyIndex--;
+          _inputController.text = _commandHistory[_commandHistory.length - 1 - _historyIndex];
+          _inputController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _inputController.text.length),
+          );
+        } else if (_historyIndex == 0) {
+          _historyIndex = -1;
+          _inputController.clear();
+        }
       }
+    });
+  }
+
+  /// Clear chat history
+  void _clearChat() {
+    setState(() {
+      _messages.clear();
+      _addMessage('System', '🗑️ Chat history cleared.', isAI: true);
     });
   }
 
   Future<void> _processCommand(TerminalStationController controller) async {
     final input = _inputController.text.trim();
     if (input.isEmpty) return;
+
+    // Add to command history
+    if (input != _commandHistory.lastOrNull) {
+      _commandHistory.add(input);
+      if (_commandHistory.length > 50) {
+        _commandHistory.removeAt(0); // Keep max 50 commands
+      }
+    }
+    _historyIndex = -1;
 
     _addMessage('You', input);
     _inputController.clear();
@@ -86,13 +151,26 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
       // Fallback: Simple pattern matching with extrapolation
       _processLocalCommand(input, controller);
     } else {
-      // Use OpenAI for natural language processing
-      final command = await _openAIService!.parseRailwayCommand(input);
+      // Use OpenAI for natural language processing with timeout
+      try {
+        final command = await _openAIService!.parseRailwayCommand(input).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            _addMessage('AI Agent', '⏱️ Request timed out. Falling back to local processing...', isAI: true);
+            _processLocalCommand(input, controller);
+            return null;
+          },
+        );
 
-      if (command != null) {
-        _executeCommand(command, controller);
-      } else {
-        _addMessage('AI Agent', 'I couldn\'t understand that command. Please try again.', isAI: true);
+        if (command != null) {
+          _executeCommand(command, controller);
+        } else {
+          // Fallback to local command processing if OpenAI couldn't parse
+          _processLocalCommand(input, controller);
+        }
+      } catch (e) {
+        _addMessage('AI Agent', '❌ API Error: ${e.toString()}\n\nFalling back to local processing...', isAI: true);
+        _processLocalCommand(input, controller);
       }
     }
 
@@ -549,6 +627,16 @@ Try saying:
                                 ),
                               ),
                             ),
+                            // Clear chat button
+                            if (!compactMode) IconButton(
+                              icon: const Icon(Icons.delete_sweep, color: Colors.white70),
+                              onPressed: _clearChat,
+                              iconSize: 16,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              tooltip: 'Clear chat',
+                            ),
+                            if (!compactMode) const SizedBox(width: 4),
                             // Settings button
                             IconButton(
                               icon: const Icon(Icons.settings, color: Colors.white70),
@@ -556,6 +644,7 @@ Try saying:
                               iconSize: compactMode ? 14 : 16,
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
+                              tooltip: 'Settings',
                             ),
                             SizedBox(width: compactMode ? 2 : 4),
                             // Opacity control
@@ -611,24 +700,37 @@ Try saying:
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _inputController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Enter command...',
-                        hintStyle: TextStyle(color: Colors.grey[500]),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none,
+                    child: RawKeyboardListener(
+                      focusNode: _inputFocusNode,
+                      onKey: (event) {
+                        if (event is RawKeyDownEvent) {
+                          if (event.logicalKey.keyLabel == 'Arrow Up') {
+                            _navigateHistory(true);
+                          } else if (event.logicalKey.keyLabel == 'Arrow Down') {
+                            _navigateHistory(false);
+                          }
+                        }
+                      },
+                      child: TextField(
+                        controller: _inputController,
+                        style: const TextStyle(color: Colors.white),
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: 'Enter command... (↑↓ for history)',
+                          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[800],
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                         ),
-                        filled: true,
-                        fillColor: Colors.grey[800],
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
+                        onSubmitted: (_) => _processCommand(controller),
                       ),
-                      onSubmitted: (_) => _processCommand(controller),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -654,8 +756,15 @@ Try saying:
               bottom: 0,
               child: GestureDetector(
                 onPanUpdate: (details) {
-                  final newWidth = controller.aiAgentWidth + details.delta.dx;
-                  final newHeight = controller.aiAgentHeight + details.delta.dy;
+                  // Add bounds checking to prevent panel from becoming unusable
+                  const minWidth = 150.0;
+                  const maxWidth = 600.0;
+                  const minHeight = 200.0;
+                  const maxHeight = 800.0;
+
+                  final newWidth = (controller.aiAgentWidth + details.delta.dx).clamp(minWidth, maxWidth);
+                  final newHeight = (controller.aiAgentHeight + details.delta.dy).clamp(minHeight, maxHeight);
+
                   controller.updateAiAgentSize(newWidth, newHeight);
                 },
                 child: Container(
@@ -938,6 +1047,7 @@ Try saying:
   void dispose() {
     _inputController.dispose();
     _scrollController.dispose();
+    _inputFocusNode.dispose();
     super.dispose();
   }
 }

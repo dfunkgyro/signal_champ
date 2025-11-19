@@ -21,6 +21,41 @@ class MiniMapWidget extends StatelessWidget {
     required this.onNavigate,
   }) : super(key: key);
 
+  /// Handle tap on minimap with improved accuracy
+  void _handleTap(TapDownDetails details, BuildContext context) {
+    try {
+      final RenderBox box = context.findRenderObject() as RenderBox;
+      final localPosition = box.globalToLocal(details.globalPosition);
+
+      // Constants for minimap dimensions
+      const mapWidth = 280.0;
+      const mapHeight = 140.0;
+      const headerHeight = 40.0;
+      const margin = 8.0;
+
+      // Adjust for header, margin and padding
+      final adjustedX = localPosition.dx - margin;
+      final adjustedY = localPosition.dy - headerHeight - margin;
+
+      // Validate click is within map bounds
+      if (adjustedX >= 0 && adjustedX <= mapWidth &&
+          adjustedY >= 0 && adjustedY <= mapHeight) {
+        // Calculate ratios with bounds checking
+        final xRatio = (adjustedX / mapWidth).clamp(0.0, 1.0);
+        final yRatio = (adjustedY / mapHeight).clamp(0.0, 1.0);
+
+        // Calculate target position on canvas
+        final targetX = xRatio * canvasWidth;
+        final targetY = yRatio * canvasHeight;
+
+        onNavigate(targetX, targetY);
+      }
+    } catch (e) {
+      // Silently handle tap errors to prevent crashes
+      debugPrint('MiniMap tap error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<TerminalStationController>(
@@ -65,25 +100,7 @@ class MiniMapWidget extends StatelessWidget {
               // Mini map canvas
               GestureDetector(
                 onTapDown: (details) {
-                  final RenderBox box = context.findRenderObject() as RenderBox;
-                  final localPosition = box.globalToLocal(details.globalPosition);
-
-                  // Calculate the position relative to the mini map
-                  const mapWidth = 280.0;
-                  const mapHeight = 140.0;
-
-                  // Adjust for header and padding
-                  final adjustedY = localPosition.dy - 40; // Subtract header height
-
-                  if (adjustedY >= 0 && adjustedY <= mapHeight) {
-                    final xRatio = localPosition.dx / mapWidth;
-                    final yRatio = adjustedY / mapHeight;
-
-                    final targetX = xRatio * canvasWidth;
-                    final targetY = yRatio * canvasHeight;
-
-                    onNavigate(targetX, targetY);
-                  }
+                  _handleTap(details, context);
                 },
                 child: CustomPaint(
                   size: const Size(280, 140),
@@ -98,19 +115,28 @@ class MiniMapWidget extends StatelessWidget {
                 ),
               ),
 
-              // Legend
+              // Legend and Stats
               Container(
                 padding: const EdgeInsets.all(8),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  alignment: WrapAlignment.center,
+                child: Column(
                   children: [
-                    _LegendItem(color: Colors.blue, label: 'Tracks'),
-                    _LegendItem(color: Colors.green, label: 'Signals'),
-                    _LegendItem(color: Colors.red, label: 'Trains'),
-                    _LegendItem(color: Colors.orange, label: 'Points'),
-                    _LegendItem(color: Colors.white, label: 'Viewport'),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        _LegendItem(color: Colors.blue, label: 'Tracks'),
+                        _LegendItem(color: Colors.green, label: 'Signals'),
+                        _LegendItem(color: Colors.red, label: 'Trains'),
+                        _LegendItem(color: Colors.orange, label: 'Points'),
+                        _LegendItem(color: Colors.white, label: 'Viewport'),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Zoom: ${cameraZoom.toStringAsFixed(1)}x | Trains: ${controller.trains.length}',
+                      style: const TextStyle(color: Colors.white60, fontSize: 9),
+                    ),
                   ],
                 ),
               ),
@@ -170,6 +196,12 @@ class MiniMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Validate canvas dimensions to prevent division by zero
+    if (canvasWidth <= 0 || canvasHeight <= 0) {
+      _drawErrorState(canvas, size, 'Invalid canvas dimensions');
+      return;
+    }
+
     final scaleX = size.width / canvasWidth;
     final scaleY = size.height / canvasHeight;
 
@@ -230,28 +262,79 @@ class MiniMapPainter extends CustomPainter {
       );
     }
 
-    // Draw viewport rectangle
-    final viewportWidth = size.width / cameraZoom;
-    final viewportHeight = size.height / cameraZoom;
-    final viewportX = -cameraOffsetX / cameraZoom;
-    final viewportY = -cameraOffsetY / cameraZoom;
+    // Draw viewport rectangle with validation
+    if (cameraZoom > 0) {
+      final viewportWidth = size.width / cameraZoom;
+      final viewportHeight = size.height / cameraZoom;
+      final viewportX = -cameraOffsetX / cameraZoom;
+      final viewportY = -cameraOffsetY / cameraZoom;
 
+      canvas.drawRect(
+        Rect.fromLTWH(
+          viewportX * scaleX,
+          viewportY * scaleY,
+          viewportWidth * scaleX,
+          viewportHeight * scaleY,
+        ),
+        Paint()
+          ..color = Colors.white.withOpacity(0.3)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
+    }
+  }
+
+  /// Helper method to draw error state
+  void _drawErrorState(Canvas canvas, Size size, String message) {
     canvas.drawRect(
-      Rect.fromLTWH(
-        viewportX * scaleX,
-        viewportY * scaleY,
-        viewportWidth * scaleX,
-        viewportHeight * scaleY,
+      Offset.zero & size,
+      Paint()..color = Colors.grey[850]!,
+    );
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: message,
+        style: const TextStyle(color: Colors.red, fontSize: 10),
       ),
-      Paint()
-        ..color = Colors.white.withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout(maxWidth: size.width);
+    textPainter.paint(
+      canvas,
+      Offset((size.width - textPainter.width) / 2, (size.height - textPainter.height) / 2),
     );
   }
 
   @override
   bool shouldRepaint(MiniMapPainter oldDelegate) {
-    return true; // Always repaint for real-time updates
+    // Only repaint if something actually changed - major performance optimization
+    return oldDelegate.cameraOffsetX != cameraOffsetX ||
+        oldDelegate.cameraOffsetY != cameraOffsetY ||
+        oldDelegate.cameraZoom != cameraZoom ||
+        oldDelegate.canvasWidth != canvasWidth ||
+        oldDelegate.canvasHeight != canvasHeight ||
+        _hasControllerDataChanged(oldDelegate);
+  }
+
+  /// Check if controller data has changed (trains, signals, etc.)
+  bool _hasControllerDataChanged(MiniMapPainter oldDelegate) {
+    // Compare train count and positions
+    if (controller.trains.length != oldDelegate.controller.trains.length) {
+      return true;
+    }
+
+    // Compare block occupancy states
+    if (controller.blocks.length != oldDelegate.controller.blocks.length) {
+      return true;
+    }
+
+    for (final block in controller.blocks.values) {
+      final oldBlock = oldDelegate.controller.blocks[block.id];
+      if (oldBlock == null || oldBlock.occupied != block.occupied) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

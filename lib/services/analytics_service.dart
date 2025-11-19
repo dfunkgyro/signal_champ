@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:app_usage/app_usage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -8,8 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 
 /// Comprehensive analytics service for tracking app usage, location, and events
+/// Uses Supabase for all analytics storage and tracking
 class AnalyticsService extends ChangeNotifier {
-  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
   final SupabaseClient _supabase;
 
   Position? _currentPosition;
@@ -39,8 +38,8 @@ class AnalyticsService extends ChangeNotifier {
       // Get device info
       await _getDeviceInfo();
 
-      // Set default analytics properties
-      await _analytics.setAnalyticsCollectionEnabled(true);
+      // Log initialization event
+      await logEvent('analytics_initialized');
 
       _analyticsStatus = 'Initialized';
       notifyListeners();
@@ -285,15 +284,9 @@ class AnalyticsService extends ChangeNotifier {
     }
   }
 
-  /// Log a custom event
+  /// Log a custom event to Supabase
   Future<void> logEvent(String name, {Map<String, dynamic>? parameters}) async {
     try {
-      await _analytics.logEvent(
-        name: name,
-        parameters: parameters,
-      );
-
-      // Also save to Supabase
       await _supabase.from('analytics_events').insert({
         'event_name': name,
         'parameters': parameters,
@@ -305,14 +298,13 @@ class AnalyticsService extends ChangeNotifier {
     }
   }
 
-  /// Log screen view
+  /// Log screen view to Supabase
   Future<void> logScreenView(String screenName) async {
     try {
-      await _analytics.logScreenView(screenName: screenName);
-
       await _supabase.from('analytics_events').insert({
         'event_name': 'screen_view',
         'parameters': {'screen_name': screenName},
+        'device_info': _deviceInfo,
         'timestamp': DateTime.now().toIso8601String(),
       });
     } catch (e) {
@@ -320,10 +312,14 @@ class AnalyticsService extends ChangeNotifier {
     }
   }
 
-  /// Set user properties
+  /// Set user properties in Supabase
   Future<void> setUserProperty(String name, String value) async {
     try {
-      await _analytics.setUserProperty(name: name, value: value);
+      await _supabase.from('user_properties').upsert({
+        'property_name': name,
+        'property_value': value,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
     } catch (e) {
       debugPrint('Error setting user property: $e');
     }

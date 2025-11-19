@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:upgrader/upgrader.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/canvas_theme_controller.dart';
@@ -12,6 +11,7 @@ import '../services/analytics_service.dart';
 import '../services/connection_service.dart';
 import '../services/sound_service.dart';
 import '../services/scenario_service.dart';
+import '../services/intent_service.dart';
 import '../widgets/connection_indicator.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
@@ -39,13 +39,6 @@ Future<void> main() async {
     if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
       await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
       supabaseClient = Supabase.instance.client;
-    }
-
-    // Initialize Firebase for Analytics
-    try {
-      await Firebase.initializeApp();
-    } catch (e) {
-      debugPrint('Firebase initialization error (optional): $e');
     }
 
     // Initialize Sound Service
@@ -98,6 +91,13 @@ class RailChampApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AchievementsService(client)),
         ChangeNotifierProvider(create: (_) => ScenarioService(client)),
         ChangeNotifierProvider(create: (_) => TerminalStationController()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final intentService = IntentService();
+            intentService.loadIntents(); // Load SSM intents on startup
+            return intentService;
+          },
+        ),
       ],
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) {
@@ -151,7 +151,6 @@ class MainScreenWithUpgrader extends StatelessWidget {
     return UpgradeAlert(
       upgrader: Upgrader(
         durationUntilAlertAgain: const Duration(days: 1),
-        shouldPopScope: () => true,
       ),
       child: const MainScreen(),
     );

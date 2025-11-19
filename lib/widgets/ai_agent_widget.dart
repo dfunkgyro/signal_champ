@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
+import '../services/intent_service.dart';
+import '../services/connection_service.dart';
+import '../services/openai_service.dart';
 
 /// AI Agent Widget - Floating draggable AI assistant for natural language control
-/// Provides advice and allows control of all simulation elements
+/// Provides SSM troubleshooting guidance and allows control of all simulation elements
 class AIAgentWidget extends StatefulWidget {
   const AIAgentWidget({Key? key}) : super(key: key);
 
@@ -15,6 +18,7 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
   final TextEditingController _textController = TextEditingController();
   final List<Map<String, String>> _chatHistory = [];
   bool _isExpanded = false;
+  bool _isProcessing = false;
 
   @override
   void dispose() {
@@ -22,47 +26,115 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
     super.dispose();
   }
 
-  void _sendMessage(TerminalStationController controller) {
+  void _sendMessage(BuildContext context, TerminalStationController controller) async {
     final message = _textController.text.trim();
     if (message.isEmpty) return;
 
     setState(() {
       _chatHistory.add({'role': 'user', 'message': message});
+      _isProcessing = true;
     });
 
+    _textController.clear();
+
     // Process the command
-    final response = _processNaturalLanguageCommand(message, controller);
+    final response = await _processNaturalLanguageCommand(context, message, controller);
 
     setState(() {
       _chatHistory.add({'role': 'assistant', 'message': response});
-      _textController.clear();
+      _isProcessing = false;
     });
   }
 
-  String _processNaturalLanguageCommand(String command, TerminalStationController controller) {
+  Future<String> _processNaturalLanguageCommand(
+    BuildContext context,
+    String command,
+    TerminalStationController controller,
+  ) async {
     final lowerCommand = command.toLowerCase();
+    final intentService = context.read<IntentService>();
+    final connectionService = context.read<ConnectionService>();
 
-    // Route setting commands
-    if (lowerCommand.contains('set route') || lowerCommand.contains('route to')) {
-      return 'Route setting via AI agent will be implemented with OpenAI integration.';
+    // SSM Troubleshooting commands
+    if (lowerCommand.contains('start') &&
+        (lowerCommand.contains('troubleshoot') || lowerCommand.contains('help') || lowerCommand.contains('ssm'))) {
+      intentService.startSession();
+      if (intentService.currentIntent != null) {
+        return 'Starting SSM troubleshooting session:\n\n${intentService.currentIntent!.cleanQuestion}\n\nRespond with "yes" or "no".';
+      }
+      return 'Troubleshooting intents not loaded. Please try again.';
     }
 
-    // Point commands
-    if (lowerCommand.contains('throw point') || lowerCommand.contains('swing point')) {
-      return 'Point control will be implemented with OpenAI integration.';
+    // Yes/No responses for SSM troubleshooting
+    if (intentService.currentIntent != null) {
+      if (lowerCommand == 'yes' || lowerCommand == 'y') {
+        intentService.answerCurrentIntent(true);
+        if (intentService.currentIntent != null) {
+          if (intentService.currentIntent!.isTerminal) {
+            return '${intentService.currentIntent!.cleanQuestion}\n\nEnd of troubleshooting path. Type "start troubleshooting" to begin a new session.';
+          }
+          return intentService.currentIntent!.cleanQuestion + '\n\nRespond with "yes" or "no".';
+        }
+        return 'Troubleshooting complete. Type "start troubleshooting" to begin again.';
+      } else if (lowerCommand == 'no' || lowerCommand == 'n') {
+        intentService.answerCurrentIntent(false);
+        if (intentService.currentIntent != null) {
+          if (intentService.currentIntent!.isTerminal) {
+            return '${intentService.currentIntent!.cleanQuestion}\n\nEnd of troubleshooting path. Type "start troubleshooting" to begin a new session.';
+          }
+          return intentService.currentIntent!.cleanQuestion + '\n\nRespond with "yes" or "no".';
+        }
+        return 'Troubleshooting complete. Type "start troubleshooting" to begin again.';
+      } else if (lowerCommand.contains('back')) {
+        intentService.goBack();
+        if (intentService.currentIntent != null) {
+          return 'Going back:\n\n${intentService.currentIntent!.cleanQuestion}\n\nRespond with "yes" or "no".';
+        }
+        return 'Already at the beginning.';
+      } else if (lowerCommand.contains('reset') || lowerCommand.contains('restart')) {
+        intentService.resetSession();
+        return 'Troubleshooting session reset. Type "start troubleshooting" to begin.';
+      }
     }
 
-    // Train commands
-    if (lowerCommand.contains('add train')) {
-      return 'Train creation will be implemented with OpenAI integration.';
+    // Use OpenAI for more complex queries if available
+    if (connectionService.openAiService != null) {
+      try {
+        // Get context from intent service
+        final aiContext = intentService.getAIContext();
+
+        final systemPrompt = '''
+You are an AI assistant for a railway signaling simulation app.
+You can help with:
+1. SSM (Signal & Systems Maintenance) troubleshooting using guided flowcharts
+2. Controlling trains and signals in the simulation
+3. Explaining railway signaling concepts
+
+Current context:
+$aiContext
+
+Be concise and helpful. If user wants troubleshooting, guide them to type "start troubleshooting".
+For yes/no questions in troubleshooting, expect "yes" or "no" responses.
+''';
+
+        final aiResponse = await connectionService.openAiService!.processCommand(
+          command,
+          systemPrompt,
+          timeout: const Duration(seconds: 10),
+        );
+
+        if (aiResponse.success) {
+          return aiResponse.content;
+        } else {
+          return 'AI Error: ${aiResponse.userFriendlyError}';
+        }
+      } catch (e) {
+        // Fall back to basic command processing
+        debugPrint('OpenAI error: $e');
+      }
     }
 
-    // Status queries
-    if (lowerCommand.contains('why') || lowerCommand.contains('status')) {
-      return 'System status analysis will be implemented with OpenAI integration.';
-    }
-
-    // Traction control
+    // Basic command processing fallback
     if (lowerCommand.contains('traction')) {
       controller.toggleTractionCurrent();
       return controller.tractionCurrentOn
@@ -70,7 +142,22 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
           : 'Traction current disabled. All trains have emergency braked.';
     }
 
-    return 'AI agent with OpenAI integration will be added in the next phase. For now, use the control panel buttons.';
+    // Help command
+    if (lowerCommand.contains('help')) {
+      return '''
+AI Assistant Commands:
+• "start troubleshooting" - Begin SSM troubleshooting
+• "yes" or "no" - Answer troubleshooting questions
+• "back" - Go to previous question
+• "reset" - Restart troubleshooting
+• Ask any railway-related question
+• "traction" - Toggle traction current
+
+Try: "start troubleshooting" to begin!
+''';
+    }
+
+    return 'I can help with SSM troubleshooting and railway operations. Type "help" for commands or "start troubleshooting" to begin.';
   }
 
   @override
@@ -205,15 +292,23 @@ class _AIAgentWidgetState extends State<AIAgentWidget> {
                           isDense: true,
                         ),
                         style: const TextStyle(fontSize: 12),
-                        onSubmitted: (_) => _sendMessage(controller),
+                        onSubmitted: (_) => _sendMessage(context, controller),
+                        enabled: !_isProcessing,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.send, size: 20),
-                      onPressed: () => _sendMessage(controller),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
+                    if (_isProcessing)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.send, size: 20),
+                        onPressed: () => _sendMessage(context, controller),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
                   ],
                 ),
               ),

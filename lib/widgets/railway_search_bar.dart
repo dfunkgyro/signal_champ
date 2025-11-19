@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../screens/terminal_station_models.dart';
+import '../theme/design_tokens.dart';
 
 /// Search bar widget for railway system - allows searching blocks, signals, tracks, stations, platforms, axle counters, tags, crossovers, and trains
 class RailwaySearchBar extends StatefulWidget {
   final Function(double x, double y)? onNavigate;
+  final double? viewportWidth;
+  final double? viewportHeight;
 
-  const RailwaySearchBar({Key? key, this.onNavigate}) : super(key: key);
+  const RailwaySearchBar({
+    Key? key,
+    this.onNavigate,
+    this.viewportWidth,
+    this.viewportHeight,
+  }) : super(key: key);
 
   @override
   State<RailwaySearchBar> createState() => _RailwaySearchBarState();
@@ -186,8 +194,14 @@ class _RailwaySearchBarState extends State<RailwaySearchBar> {
   }
 
   void _selectResult(SearchResult result, TerminalStationController controller) {
-    // Navigate to the item with smooth animation
-    controller.panToPosition(result.x, result.y, zoom: 1.5);
+    // Navigate to the item with smooth animation, centering it in viewport
+    controller.panToPosition(
+      result.x,
+      result.y,
+      zoom: 1.5,
+      viewportWidth: widget.viewportWidth,
+      viewportHeight: widget.viewportHeight,
+    );
     controller.highlightItem(result.id, result.type.toLowerCase());
 
     // Show thumbnail tooltip
@@ -273,44 +287,88 @@ class _RailwaySearchBarState extends State<RailwaySearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Consumer<TerminalStationController>(
       builder: (context, controller, _) {
         return Container(
-          padding: const EdgeInsets.all(8),
+          padding: AppSpacing.compactPadding,
           decoration: BoxDecoration(
-            color: Colors.grey[900],
+            gradient: isDark
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.grey900,
+                      AppColors.grey850,
+                    ],
+                  )
+                : null,
+            color: isDark ? null : theme.colorScheme.surface,
             border: Border(
-              bottom: BorderSide(color: Colors.grey[700]!, width: 1),
+              bottom: BorderSide(
+                color: isDark ? AppColors.grey700 : theme.dividerColor,
+                width: 1,
+              ),
             ),
+            boxShadow: AppElevation.getShadow(AppElevation.level2),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Search input
+              // Search input with modern design
               TextField(
                 controller: _searchController,
                 focusNode: _focusNode,
-                style: const TextStyle(color: Colors.white),
+                style: AppTypography.body.copyWith(
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
                 decoration: InputDecoration(
-                  hintText: 'Search blocks, signals, trains, platforms...',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                  hintText: 'Search railway elements...',
+                  hintStyle: AppTypography.body.copyWith(
+                    color: isDark ? AppColors.grey500 : Colors.grey[600],
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: theme.colorScheme.primary,
+                    size: AppIconSize.sm,
+                  ),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          icon: Icon(
+                            Icons.clear_rounded,
+                            color: isDark ? AppColors.grey400 : Colors.grey[700],
+                            size: AppIconSize.sm,
+                          ),
                           onPressed: () {
                             _searchController.clear();
                             _performSearch('', controller);
                           },
+                          tooltip: 'Clear search',
                         )
-                      : null,
+                      : Icon(
+                          Icons.tune_rounded,
+                          color: isDark ? AppColors.grey600 : Colors.grey[400],
+                          size: AppIconSize.sm,
+                        ),
                   filled: true,
-                  fillColor: Colors.grey[800],
+                  fillColor: isDark ? AppColors.grey800 : Colors.grey[100],
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: AppBorderRadius.medium,
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppBorderRadius.medium,
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
                 ),
                 onChanged: (value) => _performSearch(value, controller),
                 onSubmitted: (value) {
@@ -320,44 +378,151 @@ class _RailwaySearchBarState extends State<RailwaySearchBar> {
                 },
               ),
 
-              // Search results dropdown
+              // Search results dropdown with modern styling
               if (_showResults && _searchResults.isNotEmpty)
                 Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  constraints: const BoxConstraints(maxHeight: 300),
+                  margin: EdgeInsets.only(top: AppSpacing.sm),
+                  constraints: const BoxConstraints(maxHeight: 350),
                   decoration: BoxDecoration(
-                    color: Colors.grey[850],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[700]!),
+                    color: isDark ? AppColors.grey850 : Colors.white,
+                    borderRadius: AppBorderRadius.medium,
+                    border: Border.all(
+                      color: isDark ? AppColors.grey700 : Colors.grey[300]!,
+                    ),
+                    boxShadow: AppElevation.getShadow(AppElevation.level4),
                   ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _searchResults.length,
-                    itemBuilder: (context, index) {
-                      final result = _searchResults[index];
-                      final isSelected = index == _selectedIndex;
+                  child: ClipRRect(
+                    borderRadius: AppBorderRadius.medium,
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: _searchResults.length,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        color: isDark ? AppColors.grey800 : Colors.grey[200],
+                      ),
+                      itemBuilder: (context, index) {
+                        final result = _searchResults[index];
+                        final isSelected = index == _selectedIndex;
 
-                      return Container(
-                        color: isSelected ? Colors.blue.withOpacity(0.3) : null,
-                        child: ListTile(
-                          dense: true,
-                          leading: Icon(result.icon, color: result.color, size: 20),
-                          title: Text(
-                            result.name,
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                        return Material(
+                          color: isSelected
+                              ? theme.colorScheme.primary.withOpacity(0.15)
+                              : Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _selectResult(result, controller),
+                            onHover: (hovering) {
+                              if (hovering) {
+                                setState(() => _selectedIndex = index);
+                              }
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.sm,
+                              ),
+                              child: Row(
+                                children: [
+                                  // Icon with colored background
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: result.color.withOpacity(0.15),
+                                      borderRadius: AppBorderRadius.small,
+                                    ),
+                                    child: Icon(
+                                      result.icon,
+                                      color: result.color,
+                                      size: AppIconSize.sm,
+                                    ),
+                                  ),
+                                  SizedBox(width: AppSpacing.md),
+
+                                  // Text content
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          result.name,
+                                          style: AppTypography.body.copyWith(
+                                            color: isDark ? Colors.white : Colors.black87,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: AppSpacing.xs / 2),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: AppSpacing.sm,
+                                                vertical: AppSpacing.xs / 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: result.color.withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(
+                                                  AppBorderRadius.xs,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                result.type,
+                                                style: AppTypography.captionSmall.copyWith(
+                                                  color: result.color,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: AppSpacing.sm),
+                                            Expanded(
+                                              child: Text(
+                                                result.subtitle,
+                                                style: AppTypography.caption.copyWith(
+                                                  color: isDark
+                                                      ? AppColors.grey400
+                                                      : Colors.grey[600],
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Position coordinates
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.sm,
+                                      vertical: AppSpacing.xs,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? AppColors.grey800
+                                          : Colors.grey[100],
+                                      borderRadius: AppBorderRadius.small,
+                                    ),
+                                    child: Text(
+                                      '${result.x.toInt()}, ${result.y.toInt()}',
+                                      style: AppTypography.captionSmall.copyWith(
+                                        color: isDark
+                                            ? AppColors.grey500
+                                            : Colors.grey[700],
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          subtitle: Text(
-                            '${result.type} - ${result.subtitle}',
-                            style: TextStyle(color: Colors.grey[400], fontSize: 11),
-                          ),
-                          trailing: Text(
-                            '(${result.x.toInt()}, ${result.y.toInt()})',
-                            style: TextStyle(color: Colors.grey[500], fontSize: 10),
-                          ),
-                          onTap: () => _selectResult(result, controller),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ),
             ],

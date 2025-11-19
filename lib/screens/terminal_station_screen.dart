@@ -28,6 +28,7 @@ class TerminalStationScreen extends StatefulWidget {
 class _TerminalStationScreenState extends State<TerminalStationScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
+  late TerminalStationController _controller;
   int _animationTick = 0;
   double _cameraOffsetX = 0;
   double _cameraOffsetY = 0; // FIXED: Add Y-axis panning support
@@ -50,6 +51,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   @override
   void initState() {
     super.initState();
+
+    // Initialize controller and add camera sync listener
+    _controller = context.read<TerminalStationController>();
+    _controller.addListener(_syncCameraState);
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 16),
@@ -59,13 +65,26 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             _animationTick++;
           });
         }
-        context.read<TerminalStationController>().updateSimulation();
+        _controller.updateSimulation();
       });
     _animationController.repeat();
   }
 
+  /// Syncs local camera state with controller's camera state
+  /// This enables search and other features to pan/zoom the viewport
+  void _syncCameraState() {
+    if (mounted) {
+      setState(() {
+        _cameraOffsetX = _controller.cameraOffsetX;
+        _cameraOffsetY = _controller.cameraOffsetY;
+        _zoom = _controller.cameraZoom;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_syncCameraState);
     _animationController.dispose();
     super.dispose();
   }
@@ -3822,10 +3841,21 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       child: Consumer<TerminalStationController>(
         builder: (context, controller, _) {
           final stats = controller.getStats();
+
+          // Calculate viewport dimensions for search navigation
+          final screenSize = MediaQuery.of(context).size;
+          final leftPanelWidth = _showLeftPanel ? 320.0 : 0.0;
+          final rightPanelWidth = _showRightPanel ? 320.0 : 0.0;
+          final viewportWidth = screenSize.width - leftPanelWidth - rightPanelWidth;
+          final viewportHeight = screenSize.height - kToolbarHeight;
+
           return Column(
             children: [
-              // Search Bar at the top
-              const RailwaySearchBar(),
+              // Search Bar at the top with viewport dimensions for navigation
+              RailwaySearchBar(
+                viewportWidth: viewportWidth,
+                viewportHeight: viewportHeight,
+              ),
 
               // Mini Map
               MiniMapWidget(

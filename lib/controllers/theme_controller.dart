@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/design_tokens.dart';
 
 enum AppTheme {
   railway,
@@ -58,12 +59,62 @@ class ThemeController extends ChangeNotifier {
   }
   
   ThemeData getDarkTheme() {
+    final colorScheme = _getColorScheme(_currentTheme, Brightness.dark);
+
     return ThemeData(
       useMaterial3: true,
-      colorScheme: _getColorScheme(_currentTheme, Brightness.dark),
-      appBarTheme: const AppBarTheme(
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: AppColors.surfaceDark, // OLED black
+      cardColor: AppColors.surfaceDarkElevated,
+      dialogBackgroundColor: AppColors.surfaceDarkElevated,
+      appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
+        backgroundColor: AppColors.surfaceDark,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black.withOpacity(0.3),
+      ),
+      cardTheme: CardTheme(
+        elevation: AppElevation.level2,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppBorderRadius.medium,
+        ),
+        color: AppColors.surfaceDarkElevated,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          elevation: AppElevation.level2,
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.md,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: AppBorderRadius.medium,
+          ),
+          textStyle: AppTypography.button,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.grey800,
+        border: OutlineInputBorder(
+          borderRadius: AppBorderRadius.medium,
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppBorderRadius.medium,
+          borderSide: BorderSide(
+            color: colorScheme.primary,
+            width: 2,
+          ),
+        ),
+      ),
+      dividerColor: AppColors.grey800,
+      dividerTheme: DividerThemeData(
+        color: AppColors.grey800,
+        thickness: 1,
+        space: AppSpacing.sm,
       ),
     );
   }
@@ -88,23 +139,57 @@ class ThemeController extends ChangeNotifier {
   }
   
   ColorScheme _railwayScheme(Brightness brightness) {
-    return ColorScheme.fromSeed(
-      seedColor: const Color(0xFF1976D2),
-      brightness: brightness,
-      primary: const Color(0xFF1976D2),
-      secondary: const Color(0xFFFF6F00),
-    );
+    if (brightness == Brightness.dark) {
+      return ColorScheme.dark(
+        primary: const Color(0xFF42A5F5), // Brighter blue for visibility
+        primaryContainer: const Color(0xFF1565C0),
+        secondary: const Color(0xFFFF9E40), // Warm orange
+        secondaryContainer: const Color(0xFFE65100),
+        surface: AppColors.surfaceDark,
+        onSurface: Colors.white,
+        surfaceTint: Colors.transparent,
+        error: AppColors.error,
+        onError: Colors.white,
+        background: AppColors.surfaceDark,
+        onBackground: Colors.white,
+      );
+    } else {
+      return ColorScheme.light(
+        primary: const Color(0xFF1976D2),
+        primaryContainer: const Color(0xFFBBDEFB),
+        secondary: const Color(0xFFFF6F00),
+        secondaryContainer: const Color(0xFFFFE0B2),
+        surface: Colors.white,
+        onSurface: Colors.black87,
+        error: AppColors.error,
+      );
+    }
   }
-  
+
   ColorScheme _midnightScheme(Brightness brightness) {
-    return ColorScheme.fromSeed(
-      seedColor: const Color(0xFF0D47A1),
-      brightness: brightness,
-      primary: brightness == Brightness.dark 
-          ? const Color(0xFF64B5F6) 
-          : const Color(0xFF0D47A1),
-      secondary: const Color(0xFF9575CD),
-    );
+    if (brightness == Brightness.dark) {
+      return ColorScheme.dark(
+        primary: const Color(0xFF90CAF9), // Light blue for dark bg
+        primaryContainer: const Color(0xFF0D47A1),
+        secondary: const Color(0xFFB39DDB), // Soft purple
+        secondaryContainer: const Color(0xFF512DA8),
+        surface: AppColors.black, // Pure black for OLED
+        onSurface: const Color(0xFFE3F2FD),
+        surfaceTint: Colors.transparent,
+        error: AppColors.errorLight,
+        background: AppColors.black,
+        onBackground: const Color(0xFFE3F2FD),
+      );
+    } else {
+      return ColorScheme.light(
+        primary: const Color(0xFF0D47A1),
+        primaryContainer: const Color(0xFFE3F2FD),
+        secondary: const Color(0xFF7E57C2),
+        secondaryContainer: const Color(0xFFEDE7F6),
+        surface: Colors.white,
+        onSurface: Colors.black87,
+      );
+    }
   }
   
   ColorScheme _sunsetScheme(Brightness brightness) {
@@ -136,32 +221,59 @@ class ThemeController extends ChangeNotifier {
   
   ColorScheme _monochromeScheme(Brightness brightness) {
     if (brightness == Brightness.dark) {
-      return const ColorScheme.dark(
-        primary: Color(0xFFEEEEEE),
-        secondary: Color(0xFFBDBDBD),
+      return ColorScheme.dark(
+        primary: AppColors.grey300,
+        primaryContainer: AppColors.grey700,
+        secondary: AppColors.grey400,
+        secondaryContainer: AppColors.grey600,
+        surface: AppColors.surfaceDark,
+        onSurface: AppColors.grey100,
+        surfaceTint: Colors.transparent,
+        background: AppColors.black,
+        onBackground: AppColors.grey100,
+        error: AppColors.grey500,
       );
     } else {
-      return const ColorScheme.light(
-        primary: Color(0xFF212121),
-        secondary: Color(0xFF757575),
+      return ColorScheme.light(
+        primary: AppColors.grey900,
+        primaryContainer: AppColors.grey200,
+        secondary: AppColors.grey700,
+        secondaryContainer: AppColors.grey300,
+        surface: Colors.white,
+        onSurface: AppColors.grey900,
+        background: AppColors.grey50,
+        onBackground: AppColors.grey900,
       );
     }
   }
-  
+
   ColorScheme _highContrastScheme(Brightness brightness) {
     if (brightness == Brightness.dark) {
-      return const ColorScheme.dark(
-        primary: Color(0xFFFFFF00),
-        secondary: Color(0xFF00FFFF),
-        background: Color(0xFF000000),
-        surface: Color(0xFF000000),
+      return ColorScheme.dark(
+        primary: const Color(0xFFFFEB3B), // Bright yellow
+        primaryContainer: const Color(0xFFF57F17),
+        secondary: const Color(0xFF00E5FF), // Cyan
+        secondaryContainer: const Color(0xFF00B8D4),
+        surface: AppColors.black, // Pure black
+        onSurface: Colors.white,
+        surfaceTint: Colors.transparent,
+        background: AppColors.black,
+        onBackground: Colors.white,
+        error: const Color(0xFFFF1744), // Bright red
+        onError: Colors.white,
       );
     } else {
       return const ColorScheme.light(
-        primary: Color(0xFF000000),
-        secondary: Color(0xFF0000FF),
-        background: Color(0xFFFFFFFF),
+        primary: Color(0xFF000000), // Pure black
+        primaryContainer: Color(0xFFE0E0E0),
+        secondary: Color(0xFF0D47A1), // Dark blue
+        secondaryContainer: Color(0xFFBBDEFB),
         surface: Color(0xFFFFFFFF),
+        onSurface: Color(0xFF000000),
+        background: Color(0xFFFFFFFF),
+        onBackground: Color(0xFF000000),
+        error: Color(0xFFD32F2F),
+        onError: Color(0xFFFFFFFF),
       );
     }
   }

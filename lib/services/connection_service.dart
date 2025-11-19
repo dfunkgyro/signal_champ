@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+import 'openai_service.dart';
 
 /// Service for monitoring connection status to AI and Supabase with fallback logic
 class ConnectionService extends ChangeNotifier {
   final SupabaseClient _supabase;
   final String? _openAiApiKey;
+  final OpenAIService? _openAiService;
 
   bool _isSupabaseConnected = false;
   bool _isAiConnected = false;
@@ -20,7 +22,10 @@ class ConnectionService extends ChangeNotifier {
   bool _fallbackMode = false;
 
   ConnectionService(this._supabase, {String? openAiApiKey})
-      : _openAiApiKey = openAiApiKey {
+      : _openAiApiKey = openAiApiKey,
+        _openAiService = (openAiApiKey != null && openAiApiKey.isNotEmpty)
+            ? OpenAIService(apiKey: openAiApiKey)
+            : null {
     _startPeriodicChecks();
   }
 
@@ -34,6 +39,7 @@ class ConnectionService extends ChangeNotifier {
   bool get fallbackMode => _fallbackMode;
   bool get isFullyConnected => _isSupabaseConnected && _isAiConnected;
   bool get isPartiallyConnected => _isSupabaseConnected || _isAiConnected;
+  OpenAIService? get openAiService => _openAiService;
 
   /// Start periodic connection checks
   void _startPeriodicChecks() {

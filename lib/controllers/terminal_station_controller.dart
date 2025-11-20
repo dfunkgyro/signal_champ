@@ -6170,25 +6170,34 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('    <SignalsVisible>$signalsVisible</SignalsVisible>');
     buffer.writeln('  </Metadata>');
 
-    // Export Blocks
+    // Export Blocks (iterate over copy to avoid concurrent modification)
     buffer.writeln('  <Blocks>');
-    blocks.forEach((id, block) {
+    final blockEntries = blocks.entries.toList();
+    for (var entry in blockEntries) {
+      final id = entry.key;
+      final block = entry.value;
       buffer.writeln(
           '    <Block id="$id" startX="${block.startX}" endX="${block.endX}" y="${block.y}" occupied="${block.occupied}" occupyingTrain="${block.occupyingTrainId ?? 'none'}" />');
-    });
+    }
     buffer.writeln('  </Blocks>');
 
-    // Export Points
+    // Export Points (iterate over copy to avoid concurrent modification)
     buffer.writeln('  <Points>');
-    points.forEach((id, point) {
+    final pointEntries = points.entries.toList();
+    for (var entry in pointEntries) {
+      final id = entry.key;
+      final point = entry.value;
       buffer.writeln(
           '    <Point id="$id" x="${point.x}" y="${point.y}" position="${point.position.name}" locked="${point.locked}" lockedByAB="${point.lockedByAB}" />');
-    });
+    }
     buffer.writeln('  </Points>');
 
-    // Export Signals
+    // Export Signals (iterate over copy to avoid concurrent modification)
     buffer.writeln('  <Signals>');
-    signals.forEach((id, signal) {
+    final signalEntries = signals.entries.toList();
+    for (var entry in signalEntries) {
+      final id = entry.key;
+      final signal = entry.value;
       buffer.writeln(
           '    <Signal id="$id" x="${signal.x}" y="${signal.y}" aspect="${signal.aspect.name}" state="${signal.routeState.name}">');
       for (var route in signal.routes) {
@@ -6204,7 +6213,7 @@ class TerminalStationController extends ChangeNotifier {
         buffer.writeln('      </Route>');
       }
       buffer.writeln('    </Signal>');
-    });
+    }
     buffer.writeln('  </Signals>');
 
     // Export Platforms
@@ -6225,28 +6234,37 @@ class TerminalStationController extends ChangeNotifier {
     ;
     buffer.writeln('  </Trains>');
 
-    // Export Route Reservations
+    // Export Route Reservations (iterate over copy to avoid concurrent modification)
     buffer.writeln('  <RouteReservations>');
-    routeReservations.forEach((id, reservation) {
+    final reservationEntries = routeReservations.entries.toList();
+    for (var entry in reservationEntries) {
+      final id = entry.key;
+      final reservation = entry.value;
       buffer.writeln(
           '    <Reservation id="$id" signal="${reservation.signalId}" train="${reservation.trainId}" blocks="${reservation.reservedBlocks.join(', ')}" />');
-    });
+    }
     buffer.writeln('  </RouteReservations>');
 
-    // Export Train Stops
+    // Export Train Stops (iterate over copy to avoid concurrent modification)
     buffer.writeln('  <TrainStops>');
-    trainStops.forEach((id, trainStop) {
+    final trainStopEntries = trainStops.entries.toList();
+    for (var entry in trainStopEntries) {
+      final id = entry.key;
+      final trainStop = entry.value;
       buffer.writeln(
           '    <TrainStop id="$id" signal="${trainStop.signalId}" x="${trainStop.x}" y="${trainStop.y}" enabled="${trainStop.enabled}" active="${trainStop.active}" />');
-    });
+    }
     buffer.writeln('  </TrainStops>');
 
-    // Export Axle Counters
+    // Export Axle Counters (iterate over copy to avoid concurrent modification)
     buffer.writeln('  <AxleCounters>');
-    axleCounters.forEach((id, counter) {
+    final counterEntries = axleCounters.entries.toList();
+    for (var entry in counterEntries) {
+      final id = entry.key;
+      final counter = entry.value;
       buffer.writeln(
           '    <AxleCounter id="$id" block="${counter.blockId}" x="${counter.x}" y="${counter.y}" count="${counter.count}" isTwin="${counter.isTwin}" twinLabel="${counter.twinLabel ?? ''}" />');
-    });
+    }
     buffer.writeln('  </AxleCounters>');
 
     // Export ACE Results

@@ -20,7 +20,7 @@ class Achievement {
 }
 
 class AchievementsService extends ChangeNotifier {
-  final SupabaseClient _supabase;
+  final SupabaseClient? _supabase;
   final List<Achievement> _earnedAchievements = [];
   
   AchievementsService(this._supabase);
@@ -71,11 +71,13 @@ class AchievementsService extends ChangeNotifier {
   ];
   
   Future<void> loadEarnedAchievements() async {
+    if (_supabase == null) return;
+
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final userId = _supabase!.auth.currentUser?.id;
       if (userId == null) return;
-      
-      final response = await _supabase
+
+      final response = await _supabase!
           .from('user_achievements')
           .select('achievement_id')
           .eq('user_id', userId);
@@ -115,11 +117,13 @@ class AchievementsService extends ChangeNotifier {
   }
   
   Future<void> _awardAchievement(Achievement achievement) async {
+    if (_supabase == null) return;
+
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final userId = _supabase!.auth.currentUser?.id;
       if (userId == null) return;
-      
-      await _supabase
+
+      await _supabase!
           .from('user_achievements')
           .insert({
             'user_id': userId,

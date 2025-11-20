@@ -117,7 +117,7 @@ class OpenAIservice {
 
 /// Service for monitoring connection status to AI and Supabase with fallback logic
 class ConnectionService extends ChangeNotifier {
-  final SupabaseClient _supabase;
+  final SupabaseClient? _supabase;
   final String? _openAiApiKey;
   OpenAIservice? _openAiService; // Add this field
 
@@ -174,12 +174,21 @@ class ConnectionService extends ChangeNotifier {
 
   /// Check Supabase connection
   Future<bool> checkSupabaseConnection() async {
+    if (_supabase == null) {
+      _isSupabaseConnected = false;
+      _supabaseStatus = 'No Supabase client (offline mode)';
+      _lastSupabaseCheck = DateTime.now();
+      _fallbackMode = true;
+      notifyListeners();
+      return false;
+    }
+
     try {
       _supabaseStatus = 'Checking...';
       notifyListeners();
 
       // Try to perform a simple query
-      final response = await _supabase
+      final response = await _supabase!
           .from('connection_test')
           .select('id')
           .limit(1)
@@ -194,7 +203,7 @@ class ConnectionService extends ChangeNotifier {
     } catch (e) {
       // Try auth status as fallback
       try {
-        final session = _supabase.auth.currentSession;
+        final session = _supabase!.auth.currentSession;
         if (session != null) {
           _isSupabaseConnected = true;
           _supabaseStatus = 'Connected (limited) ✓';

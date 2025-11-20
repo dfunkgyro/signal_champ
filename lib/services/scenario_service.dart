@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/scenario_models.dart';
 
 class ScenarioService extends ChangeNotifier {
-  final SupabaseClient _client;
+  final SupabaseClient? _client;
   final _uuid = const Uuid();
 
   List<RailwayScenario> _myScenarios = [];
@@ -29,12 +29,18 @@ class ScenarioService extends ChangeNotifier {
     required ScenarioDifficulty difficulty,
     bool isPublic = false,
   }) async {
+    if (_client == null) {
+      _error = 'No Supabase connection available';
+      notifyListeners();
+      return null;
+    }
+
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      final user = _client.auth.currentUser;
+      final user = _client!.auth.currentUser;
       if (user == null) {
         throw Exception('User not authenticated');
       }
@@ -52,7 +58,7 @@ class ScenarioService extends ChangeNotifier {
         updatedAt: DateTime.now(),
       );
 
-      final data = await _client
+      final data = await _client!
           .from('scenarios')
           .insert(scenario.toJson())
           .select()
@@ -75,6 +81,12 @@ class ScenarioService extends ChangeNotifier {
 
   /// Update an existing scenario
   Future<bool> updateScenario(RailwayScenario scenario) async {
+    if (_client == null) {
+      _error = 'No Supabase connection available';
+      notifyListeners();
+      return false;
+    }
+
     try {
       _isLoading = true;
       _error = null;
@@ -84,7 +96,7 @@ class ScenarioService extends ChangeNotifier {
         updatedAt: DateTime.now(),
       );
 
-      await _client
+      await _client!
           .from('scenarios')
           .update(updatedScenario.toJson())
           .eq('id', scenario.id);
@@ -109,12 +121,18 @@ class ScenarioService extends ChangeNotifier {
 
   /// Delete a scenario
   Future<bool> deleteScenario(String scenarioId) async {
+    if (_client == null) {
+      _error = 'No Supabase connection available';
+      notifyListeners();
+      return false;
+    }
+
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      await _client.from('scenarios').delete().eq('id', scenarioId);
+      await _client!.from('scenarios').delete().eq('id', scenarioId);
 
       _myScenarios.removeWhere((s) => s.id == scenarioId);
 
@@ -132,12 +150,19 @@ class ScenarioService extends ChangeNotifier {
 
   /// Load user's scenarios
   Future<void> loadMyScenarios() async {
+    if (_client == null) {
+      _myScenarios = [];
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      final user = _client.auth.currentUser;
+      final user = _client!.auth.currentUser;
       if (user == null) {
         _myScenarios = [];
         _isLoading = false;
@@ -145,7 +170,7 @@ class ScenarioService extends ChangeNotifier {
         return;
       }
 
-      final data = await _client
+      final data = await _client!
           .from('scenarios')
           .select()
           .eq('author_id', user.id)
@@ -171,12 +196,19 @@ class ScenarioService extends ChangeNotifier {
     String? searchQuery,
     int limit = 50,
   }) async {
+    if (_client == null) {
+      _communityScenarios = [];
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      var query = _client.from('scenarios').select().eq('is_public', true);
+      var query = _client!.from('scenarios').select().eq('is_public', true);
 
       if (category != null) {
         query = query.eq('category', category.name);
@@ -209,12 +241,19 @@ class ScenarioService extends ChangeNotifier {
 
   /// Load featured scenarios
   Future<void> loadFeaturedScenarios() async {
+    if (_client == null) {
+      _featuredScenarios = [];
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      final data = await _client
+      final data = await _client!
           .from('scenarios')
           .select()
           .eq('is_featured', true)
@@ -237,8 +276,14 @@ class ScenarioService extends ChangeNotifier {
 
   /// Get a single scenario by ID
   Future<RailwayScenario?> getScenario(String scenarioId) async {
+    if (_client == null) {
+      _error = 'No Supabase connection available';
+      notifyListeners();
+      return null;
+    }
+
     try {
-      final data = await _client
+      final data = await _client!
           .from('scenarios')
           .select()
           .eq('id', scenarioId)
@@ -254,8 +299,10 @@ class ScenarioService extends ChangeNotifier {
 
   /// Increment download count
   Future<void> incrementDownloads(String scenarioId) async {
+    if (_client == null) return;
+
     try {
-      await _client.rpc('increment_scenario_downloads', params: {
+      await _client!.rpc('increment_scenario_downloads', params: {
         'scenario_id': scenarioId,
       });
     } catch (e) {
@@ -265,14 +312,20 @@ class ScenarioService extends ChangeNotifier {
 
   /// Rate a scenario
   Future<bool> rateScenario(String scenarioId, double rating) async {
+    if (_client == null) {
+      _error = 'No Supabase connection available';
+      notifyListeners();
+      return false;
+    }
+
     try {
-      final user = _client.auth.currentUser;
+      final user = _client!.auth.currentUser;
       if (user == null) {
         throw Exception('User not authenticated');
       }
 
       // Insert or update rating
-      await _client.from('scenario_ratings').upsert({
+      await _client!.from('scenario_ratings').upsert({
         'scenario_id': scenarioId,
         'user_id': user.id,
         'rating': rating,
@@ -280,7 +333,7 @@ class ScenarioService extends ChangeNotifier {
       });
 
       // Recalculate average rating
-      await _client.rpc('update_scenario_rating', params: {
+      await _client!.rpc('update_scenario_rating', params: {
         'scenario_id': scenarioId,
       });
 
@@ -294,8 +347,14 @@ class ScenarioService extends ChangeNotifier {
 
   /// Publish a scenario (make it public)
   Future<bool> publishScenario(String scenarioId) async {
+    if (_client == null) {
+      _error = 'No Supabase connection available';
+      notifyListeners();
+      return false;
+    }
+
     try {
-      await _client
+      await _client!
           .from('scenarios')
           .update({'is_public': true, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', scenarioId);
@@ -320,8 +379,14 @@ class ScenarioService extends ChangeNotifier {
 
   /// Unpublish a scenario (make it private)
   Future<bool> unpublishScenario(String scenarioId) async {
+    if (_client == null) {
+      _error = 'No Supabase connection available';
+      notifyListeners();
+      return false;
+    }
+
     try {
-      await _client
+      await _client!
           .from('scenarios')
           .update({'is_public': false, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', scenarioId);
@@ -346,11 +411,17 @@ class ScenarioService extends ChangeNotifier {
 
   /// Duplicate a scenario
   Future<RailwayScenario?> duplicateScenario(String scenarioId) async {
+    if (_client == null) {
+      _error = 'No Supabase connection available';
+      notifyListeners();
+      return null;
+    }
+
     try {
       final original = await getScenario(scenarioId);
       if (original == null) return null;
 
-      final user = _client.auth.currentUser;
+      final user = _client!.auth.currentUser;
       if (user == null) {
         throw Exception('User not authenticated');
       }
@@ -369,7 +440,7 @@ class ScenarioService extends ChangeNotifier {
         ratingCount: 0,
       );
 
-      final data = await _client
+      final data = await _client!
           .from('scenarios')
           .insert(duplicate.toJson())
           .select()

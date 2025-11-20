@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// Service for managing text-to-speech (TTS)
@@ -89,6 +90,15 @@ class TextToSpeechService extends ChangeNotifier {
   /// Load available voices
   Future<void> _loadVoices() async {
     try {
+      // WORKAROUND: Skip loading voices on macOS due to AVSpeechSynthesisVoiceQuality enum crash
+      // Issue: flutter_tts 4.1.0 has compatibility issues with certain macOS SDK versions
+      // The getVoices call crashes with: "unexpected enum case 'AVSpeechSynthesisVoiceQuality(rawValue: 0)'"
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS) {
+        debugPrint('Skipping voice loading on macOS to avoid AVSpeechSynthesisVoiceQuality crash');
+        _voices = [];
+        return;
+      }
+
       final voicesList = await _tts.getVoices;
       if (voicesList is List) {
         _voices = voicesList.map((voice) {

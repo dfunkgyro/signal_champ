@@ -6715,6 +6715,183 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   // ============================================================================
+  // COMPONENT CREATION (EDIT MODE)
+  // ============================================================================
+
+  /// Create a new signal at specified position
+  void createSignal(String id, double x, double y, {SignalDirection direction = SignalDirection.east}) {
+    if (signals.containsKey(id)) {
+      _logEvent('❌ Signal $id already exists');
+      return;
+    }
+
+    // Create signal with default routes (user can configure later)
+    signals[id] = Signal(
+      id: id,
+      x: x,
+      y: y,
+      direction: direction,
+      routes: [
+        SignalRoute(id: '${id}_R1', name: 'Route 1'),
+      ],
+      aspect: SignalAspect.red,
+    );
+
+    _logEvent('✅ Created signal $id at ($x, $y)');
+    notifyListeners();
+  }
+
+  /// Create a new point at specified position
+  void createPoint(String id, double x, double y) {
+    if (points.containsKey(id)) {
+      _logEvent('❌ Point $id already exists');
+      return;
+    }
+
+    points[id] = Point(
+      id: id,
+      x: x,
+      y: y,
+      position: PointPosition.normal,
+    );
+
+    _logEvent('✅ Created point $id at ($x, $y)');
+    notifyListeners();
+  }
+
+  /// Create a new platform at specified position
+  void createPlatform(String id, String name, double x, double y, {double length = 200}) {
+    if (platforms.any((p) => p.id == id)) {
+      _logEvent('❌ Platform $id already exists');
+      return;
+    }
+
+    platforms.add(Platform(
+      id: id,
+      name: name,
+      startX: x,
+      endX: x + length,
+      y: y,
+    ));
+
+    _logEvent('✅ Created platform $name ($id) at ($x, $y)');
+    notifyListeners();
+  }
+
+  /// Create a new train stop at specified position
+  void createTrainStop(String id, double x, double y, {String? signalId}) {
+    if (trainStops.containsKey(id)) {
+      _logEvent('❌ Train stop $id already exists');
+      return;
+    }
+
+    // If no signal specified, try to find nearest signal
+    String effectiveSignalId = signalId ?? _findNearestSignal(x, y) ?? 'AUTO';
+
+    trainStops[id] = TrainStop(
+      id: id,
+      signalId: effectiveSignalId,
+      x: x,
+      y: y,
+      enabled: true,
+    );
+
+    _logEvent('✅ Created train stop $id at ($x, $y) linked to signal $effectiveSignalId');
+    notifyListeners();
+  }
+
+  /// Create a new buffer stop at specified position
+  void createBufferStop(String id, double x, double y) {
+    if (bufferStops.containsKey(id)) {
+      _logEvent('❌ Buffer stop $id already exists');
+      return;
+    }
+
+    bufferStops[id] = BufferStop(
+      id: id,
+      x: x,
+      y: y,
+    );
+
+    _logEvent('✅ Created buffer stop $id at ($x, $y)');
+    notifyListeners();
+  }
+
+  /// Create a new axle counter at specified position
+  void createAxleCounter(String id, double x, double y, String blockId) {
+    if (axleCounters.containsKey(id)) {
+      _logEvent('❌ Axle counter $id already exists');
+      return;
+    }
+
+    axleCounters[id] = AxleCounter(
+      id: id,
+      blockId: blockId,
+      x: x,
+      y: y,
+    );
+
+    // Reinitialize ACE with new counter
+    ace = AxleCounterEvaluator(axleCounters);
+
+    _logEvent('✅ Created axle counter $id at ($x, $y) for block $blockId');
+    notifyListeners();
+  }
+
+  /// Create a new transponder at specified position
+  void createTransponder(String id, double x, double y, {TransponderType type = TransponderType.location}) {
+    if (transponders.containsKey(id)) {
+      _logEvent('❌ Transponder $id already exists');
+      return;
+    }
+
+    transponders[id] = Transponder(
+      id: id,
+      x: x,
+      y: y,
+      type: type,
+    );
+
+    _logEvent('✅ Created transponder $id (${type.name}) at ($x, $y)');
+    notifyListeners();
+  }
+
+  /// Create a new WiFi antenna at specified position
+  void createWifiAntenna(String id, double x, double y, {double range = 300}) {
+    if (wifiAntennas.containsKey(id)) {
+      _logEvent('❌ WiFi antenna $id already exists');
+      return;
+    }
+
+    wifiAntennas[id] = WifiAntenna(
+      id: id,
+      x: x,
+      y: y,
+      range: range,
+      active: true,
+    );
+
+    _logEvent('✅ Created WiFi antenna $id at ($x, $y) with range ${range}m');
+    notifyListeners();
+  }
+
+  /// Helper: Find nearest signal to a position
+  String? _findNearestSignal(double x, double y) {
+    String? nearestId;
+    double nearestDistance = double.infinity;
+
+    for (var signal in signals.values) {
+      final distance = math.sqrt(math.pow(signal.x - x, 2) + math.pow(signal.y - y, 2));
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestId = signal.id;
+      }
+    }
+
+    return nearestDistance < 500 ? nearestId : null; // Within 500 units
+  }
+
+  // ============================================================================
   // SCENARIO LOADING
   // ============================================================================
 

@@ -214,8 +214,8 @@ class EditModeToolbar extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              // TODO: Actually create the component
-              controller.logEvent('➕ Added $componentType $newId');
+              // Create the component at origin (0, 0) - user can drag to position
+              _createComponent(controller, componentType, newId);
               Navigator.pop(context);
             },
             child: const Text('Add'),
@@ -223,6 +223,83 @@ class EditModeToolbar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Create a component using the controller's factory methods
+  void _createComponent(TerminalStationController controller, String componentType, String id) {
+    // Default position at (0, 0) - user will drag to desired location
+    const double x = 0.0;
+    const double y = 0.0;
+
+    try {
+      switch (componentType.toLowerCase()) {
+        case 'signal':
+          controller.createSignal(id, x, y);
+          // Auto-select the new signal so user can immediately drag it
+          controller.selectComponent(id, 'signal');
+          break;
+
+        case 'point':
+          controller.createPoint(id, x, y);
+          controller.selectComponent(id, 'point');
+          break;
+
+        case 'platform':
+          // Use ID as name for now - user can rename later
+          controller.createPlatform(id, id.toUpperCase(), x, y);
+          controller.selectComponent(id, 'platform');
+          break;
+
+        case 'trainstop':
+          controller.createTrainStop(id, x, y);
+          controller.selectComponent(id, 'trainstop');
+          break;
+
+        case 'bufferstop':
+          controller.createBufferStop(id, x, y);
+          controller.selectComponent(id, 'bufferstop');
+          break;
+
+        case 'axlecounter':
+          // Find a default block - use first available or '100'
+          String blockId = controller.blocks.keys.isNotEmpty
+              ? controller.blocks.keys.first
+              : '100';
+          controller.createAxleCounter(id, x, y, blockId);
+          controller.selectComponent(id, 'axlecounter');
+          break;
+
+        case 'transponder':
+          controller.createTransponder(id, x, y);
+          controller.selectComponent(id, 'transponder');
+          break;
+
+        case 'wifiantenna':
+          controller.createWifiAntenna(id, x, y);
+          controller.selectComponent(id, 'wifiantenna');
+          break;
+
+        default:
+          controller.logEvent('❌ Unknown component type: $componentType');
+      }
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ Created $componentType $id - Drag to position it!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      controller.logEvent('❌ Error creating $componentType: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Failed to create $componentType: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   /// Confirm before deleting a component

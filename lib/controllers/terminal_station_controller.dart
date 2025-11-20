@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
-import 'package:rail_champ/models/railway_model.dart' show WifiAntenna, Transponder, TransponderType;  // FIXED: Only import WiFi/Transponder types
+import 'package:rail_champ/models/railway_model.dart'
+    show
+        WifiAntenna,
+        Transponder,
+        TransponderType; // FIXED: Only import WiFi/Transponder types
 import 'package:rail_champ/models/scenario_models.dart';
 import 'package:rail_champ/controllers/edit_commands.dart';
 import 'dart:async';
@@ -15,8 +19,8 @@ import 'dart:math' as math;
 class AxleCounter {
   final String id;
   final String blockId;
-  double x;  // Made mutable for edit mode
-  double y;  // Made mutable for edit mode
+  double x; // Made mutable for edit mode
+  double y; // Made mutable for edit mode
   int count;
   DateTime? lastDetectionTime;
   bool d1Active;
@@ -26,7 +30,7 @@ class AxleCounter {
   final String? twinLabel;
   String? lastTrainDetected;
   DateTime? lastTrainDetectionTime;
-  bool flipped;  // Added for edit mode - swaps D1/D2 orientation
+  bool flipped; // Added for edit mode - swaps D1/D2 orientation
 
   AxleCounter({
     required this.id,
@@ -42,7 +46,7 @@ class AxleCounter {
     this.twinLabel,
     this.lastTrainDetected,
     this.lastTrainDetectionTime,
-    this.flipped = false,  // Default to false
+    this.flipped = false, // Default to false
   });
 }
 
@@ -350,7 +354,8 @@ class AxleCounterEvaluator {
   }
 
   // Enhanced axle counter update with bidirectional tracking and wheel count
-  void updateAxleCounter(String counterId, int direction, bool isEntering, {int wheelCount = 2}) {
+  void updateAxleCounter(String counterId, int direction, bool isEntering,
+      {int wheelCount = 2}) {
     final counter = axleCounters[counterId];
     if (counter == null) return;
 
@@ -513,8 +518,10 @@ class TerminalStationController extends ChangeNotifier {
   Timetable? timetable;
   Timer? _timetableTimer;
   bool timetableActive = false;
-  final List<GhostTrain> ghostTrains = []; // Invisible scheduled trains for timetable
-  bool showGhostTrains = false; // Visibility toggle for ghost trains (hidden by default)
+  final List<GhostTrain> ghostTrains =
+      []; // Invisible scheduled trains for timetable
+  bool showGhostTrains =
+      false; // Visibility toggle for ghost trains (hidden by default)
 
   bool _spadAlarmActive = false;
   CollisionIncident? _currentSpadIncident;
@@ -539,7 +546,8 @@ class TerminalStationController extends ChangeNotifier {
   // Edit Mode system
   bool editModeEnabled = false;
   double editModeGridSize = 10.0; // Snap-to-grid size in edit mode
-  String? selectedComponentType; // Type of selected component (signal, point, etc.)
+  String?
+      selectedComponentType; // Type of selected component (signal, point, etc.)
   String? selectedComponentId; // ID of selected component
   late CommandHistory commandHistory; // Undo/redo history
   Map<String, BufferStop> bufferStops = {}; // Buffer stops
@@ -547,9 +555,9 @@ class TerminalStationController extends ChangeNotifier {
 
   // Traction current system - split into 3 sections
   bool tractionCurrentOn = true; // For backwards compatibility
-  bool tractionWestOn = true;    // West section: x < -200
+  bool tractionWestOn = true; // West section: x < -200
   bool tractionCentralOn = true; // Central section: -200 <= x <= 1800
-  bool tractionEastOn = true;    // East section: x > 1800
+  bool tractionEastOn = true; // East section: x > 1800
 
   // Signalling System Manager (formerly AI Agent)
   bool signallingSystemManagerVisible = false;
@@ -580,20 +588,24 @@ class TerminalStationController extends ChangeNotifier {
   double cameraZoom = 0.8;
   String? followingTrainId; // ID of train being followed
   String? highlightedItemId; // ID of currently highlighted item
-  String? highlightedItemType; // Type of highlighted item (train, signal, block, point)
+  String?
+      highlightedItemType; // Type of highlighted item (train, signal, block, point)
 
   // Relay rack panel
   bool relayRackVisible = false;
 
   // Point machine state (for relay rack WKR status)
-  Map<String, String> pointMachineStates = {}; // pointId -> 'normal', 'reverse', 'mid'
-  Map<String, DateTime> pointThrowStartTimes = {}; // Track when points started moving
+  Map<String, String> pointMachineStates =
+      {}; // pointId -> 'normal', 'reverse', 'mid'
+  Map<String, DateTime> pointThrowStartTimes =
+      {}; // Track when points started moving
 
   // Block closing system - closed blocks emergency brake auto trains
   Map<String, bool> closedBlocks = {}; // blockId -> true if closed
 
   // Point reservation system - reserved points stay in position
-  Map<String, PointPosition> reservedPoints = {}; // pointId -> reserved position
+  Map<String, PointPosition> reservedPoints =
+      {}; // pointId -> reserved position
 
   bool _isTrainEnteringSection(String counterId, Train train) {
     // Simple logic based on train direction
@@ -624,7 +636,8 @@ class TerminalStationController extends ChangeNotifier {
 
     if (nearestCounter != null) {
       final isEntering = _isTrainEnteringSection(nearestCounter, train);
-      ace.updateAxleCounter(nearestCounter, train.direction, isEntering, wheelCount: train.wheelCount);
+      ace.updateAxleCounter(nearestCounter, train.direction, isEntering,
+          wheelCount: train.wheelCount);
       notifyListeners();
     }
   }
@@ -669,7 +682,7 @@ class TerminalStationController extends ChangeNotifier {
   void toggleCbtcDevices(bool enabled) {
     cbtcDevicesEnabled = enabled;
     if (!enabled) {
-      cbtcModeActive = false;  // Disable mode if devices are disabled
+      cbtcModeActive = false; // Disable mode if devices are disabled
     }
     _logEvent(enabled
         ? '📡 CBTC devices ENABLED (Transponders + WiFi)'
@@ -689,13 +702,15 @@ class TerminalStationController extends ChangeNotifier {
       for (final signal in signals.values) {
         signal.aspect = SignalAspect.blue;
       }
-      _logEvent('🚄 CBTC Mode ACTIVATED - Moving block signaling enabled, all signals BLUE');
+      _logEvent(
+          '🚄 CBTC Mode ACTIVATED - Moving block signaling enabled, all signals BLUE');
     } else {
       // Restore normal signal aspects when CBTC mode is deactivated
       for (final signal in signals.values) {
         signal.aspect = SignalAspect.red;
       }
-      _logEvent('🚄 CBTC Mode DEACTIVATED - Fixed block signaling, signals restored');
+      _logEvent(
+          '🚄 CBTC Mode DEACTIVATED - Fixed block signaling, signals restored');
     }
 
     notifyListeners();
@@ -708,30 +723,28 @@ class TerminalStationController extends ChangeNotifier {
       return;
     }
     wifi.isActive = !wifi.isActive;
-    _logEvent(wifi.isActive
-        ? '📡 WiFi $wifiId ENABLED'
-        : '📡 WiFi $wifiId DISABLED');
+    _logEvent(
+        wifi.isActive ? '📡 WiFi $wifiId ENABLED' : '📡 WiFi $wifiId DISABLED');
 
     // If WiFi is turned OFF, check for CBTC trains in range and set them to NCT
     if (!wifi.isActive) {
       const wifiRange = 300.0; // WiFi coverage range
       for (var train in trains) {
         if (!train.isCbtcTrain) continue;
-        if (train.cbtcMode == CbtcMode.off || train.cbtcMode == CbtcMode.storage) continue;
+        if (train.cbtcMode == CbtcMode.off ||
+            train.cbtcMode == CbtcMode.storage) continue;
 
         // Check if train is within range of this WiFi antenna
         final distance = math.sqrt(
-          math.pow(train.x - wifi.x, 2) + math.pow(train.y - wifi.y, 2)
-        );
+            math.pow(train.x - wifi.x, 2) + math.pow(train.y - wifi.y, 2));
 
         if (distance <= wifiRange) {
           // Check if train has other WiFi coverage
           bool hasOtherWifi = false;
           for (var otherWifi in wifiAntennas.values) {
             if (otherWifi.id == wifiId || !otherWifi.isActive) continue;
-            final otherDistance = math.sqrt(
-              math.pow(train.x - otherWifi.x, 2) + math.pow(train.y - otherWifi.y, 2)
-            );
+            final otherDistance = math.sqrt(math.pow(train.x - otherWifi.x, 2) +
+                math.pow(train.y - otherWifi.y, 2));
             if (otherDistance <= wifiRange) {
               hasOtherWifi = true;
               break;
@@ -747,8 +760,10 @@ class TerminalStationController extends ChangeNotifier {
             train.lastTransponderId = null;
             train.tractionLostAt = null; // Clear traction tracking
             train.tractionLossWarned = false;
-            _logEvent('🚨 NCT ALERT: ${train.name} lost WiFi communication (antenna $wifiId disabled)');
-            _logEvent('ℹ️  Switch to RM mode and pass over 2 transponders to reactivate');
+            _logEvent(
+                '🚨 NCT ALERT: ${train.name} lost WiFi communication (antenna $wifiId disabled)');
+            _logEvent(
+                'ℹ️  Switch to RM mode and pass over 2 transponders to reactivate');
           }
         }
       }
@@ -780,13 +795,15 @@ class TerminalStationController extends ChangeNotifier {
         train.speed = 0;
         train.targetSpeed = 0;
       }
-      _logEvent('⚡ TRACTION CURRENT OFF (ALL SECTIONS) - All trains emergency braked');
+      _logEvent(
+          '⚡ TRACTION CURRENT OFF (ALL SECTIONS) - All trains emergency braked');
     } else {
       // Release emergency brake (but trains won't move until signals allow)
       for (var train in trains) {
         train.emergencyBrake = false;
       }
-      _logEvent('⚡ TRACTION CURRENT ON (ALL SECTIONS) - Normal operations resumed');
+      _logEvent(
+          '⚡ TRACTION CURRENT ON (ALL SECTIONS) - Normal operations resumed');
     }
     notifyListeners();
   }
@@ -802,7 +819,8 @@ class TerminalStationController extends ChangeNotifier {
           train.targetSpeed = 0;
         }
       }
-      _logEvent('⚡ TRACTION CURRENT OFF (WEST SECTION) - West trains emergency braked');
+      _logEvent(
+          '⚡ TRACTION CURRENT OFF (WEST SECTION) - West trains emergency braked');
     } else {
       // Release emergency brake for west trains
       for (var train in trains) {
@@ -826,7 +844,8 @@ class TerminalStationController extends ChangeNotifier {
           train.targetSpeed = 0;
         }
       }
-      _logEvent('⚡ TRACTION CURRENT OFF (CENTRAL SECTION) - Central trains emergency braked');
+      _logEvent(
+          '⚡ TRACTION CURRENT OFF (CENTRAL SECTION) - Central trains emergency braked');
     } else {
       // Release emergency brake for central trains
       for (var train in trains) {
@@ -834,7 +853,8 @@ class TerminalStationController extends ChangeNotifier {
           train.emergencyBrake = false;
         }
       }
-      _logEvent('⚡ TRACTION CURRENT ON (CENTRAL SECTION) - Central section resumed');
+      _logEvent(
+          '⚡ TRACTION CURRENT ON (CENTRAL SECTION) - Central section resumed');
     }
     notifyListeners();
   }
@@ -850,7 +870,8 @@ class TerminalStationController extends ChangeNotifier {
           train.targetSpeed = 0;
         }
       }
-      _logEvent('⚡ TRACTION CURRENT OFF (EAST SECTION) - East trains emergency braked');
+      _logEvent(
+          '⚡ TRACTION CURRENT OFF (EAST SECTION) - East trains emergency braked');
     } else {
       // Release emergency brake for east trains
       for (var train in trains) {
@@ -878,25 +899,31 @@ class TerminalStationController extends ChangeNotifier {
 
   void toggleGhostTrainsVisibility() {
     showGhostTrains = !showGhostTrains;
-    _logEvent(showGhostTrains ? '👻 Ghost Trains VISIBLE' : '👻 Ghost Trains HIDDEN');
+    _logEvent(
+        showGhostTrains ? '👻 Ghost Trains VISIBLE' : '👻 Ghost Trains HIDDEN');
     notifyListeners();
   }
 
   void toggleAiAgent() {
     signallingSystemManagerVisible = !signallingSystemManagerVisible;
-    _logEvent(signallingSystemManagerVisible ? '🚦 Signalling System Manager ENABLED' : '🚦 Signalling System Manager DISABLED');
+    _logEvent(signallingSystemManagerVisible
+        ? '🚦 Signalling System Manager ENABLED'
+        : '🚦 Signalling System Manager DISABLED');
     notifyListeners();
   }
 
   void toggleSignallingSystemManager() {
     signallingSystemManagerVisible = !signallingSystemManagerVisible;
-    _logEvent(signallingSystemManagerVisible ? '🚦 Signalling System Manager ENABLED' : '🚦 Signalling System Manager DISABLED');
+    _logEvent(signallingSystemManagerVisible
+        ? '🚦 Signalling System Manager ENABLED'
+        : '🚦 Signalling System Manager DISABLED');
     notifyListeners();
   }
 
   void toggleRelayRack() {
     relayRackVisible = !relayRackVisible;
-    _logEvent(relayRackVisible ? '🔌 Relay Rack ENABLED' : '🔌 Relay Rack DISABLED');
+    _logEvent(
+        relayRackVisible ? '🔌 Relay Rack ENABLED' : '🔌 Relay Rack DISABLED');
     notifyListeners();
   }
 
@@ -940,19 +967,24 @@ class TerminalStationController extends ChangeNotifier {
 
   void updateSignallingSystemManagerDesignType(int designType) {
     signallingSystemManagerDesignType = designType.clamp(0, 3);
-    _logEvent('🎨 Signalling System Manager design changed to type $designType');
+    _logEvent(
+        '🎨 Signalling System Manager design changed to type $designType');
     notifyListeners();
   }
 
   void toggleSignallingSystemManagerCompactMode() {
     signallingSystemManagerCompactMode = !signallingSystemManagerCompactMode;
-    _logEvent(signallingSystemManagerCompactMode ? '📦 Compact mode ENABLED' : '📦 Compact mode DISABLED');
+    _logEvent(signallingSystemManagerCompactMode
+        ? '📦 Compact mode ENABLED'
+        : '📦 Compact mode DISABLED');
     notifyListeners();
   }
 
   void toggleSignallingSystemManagerAutoScroll() {
     signallingSystemManagerAutoScroll = !signallingSystemManagerAutoScroll;
-    _logEvent(signallingSystemManagerAutoScroll ? '📜 Auto-scroll ENABLED' : '📜 Auto-scroll DISABLED');
+    _logEvent(signallingSystemManagerAutoScroll
+        ? '📜 Auto-scroll ENABLED'
+        : '📜 Auto-scroll DISABLED');
     notifyListeners();
   }
 
@@ -964,7 +996,8 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void panToPosition(double x, double y, {double? zoom, double? viewportWidth, double? viewportHeight}) {
+  void panToPosition(double x, double y,
+      {double? zoom, double? viewportWidth, double? viewportHeight}) {
     // If viewport dimensions are provided, center the position in viewport
     if (viewportWidth != null && viewportHeight != null) {
       final targetZoom = zoom ?? cameraZoom;
@@ -1061,7 +1094,8 @@ class TerminalStationController extends ChangeNotifier {
     final throwStartTime = pointThrowStartTimes[pointId];
     if (throwStartTime != null) {
       final elapsed = DateTime.now().difference(throwStartTime).inMilliseconds;
-      if (elapsed < 2000) { // Points take 2 seconds to throw
+      if (elapsed < 2000) {
+        // Points take 2 seconds to throw
         return 'Mid';
       } else {
         // Throwing complete, remove from tracking
@@ -1140,7 +1174,8 @@ class TerminalStationController extends ChangeNotifier {
     // Reverse direction if moving forward
     if (train.direction > 0) {
       train.direction = -1;
-      _logEvent('🔄 ${train.name} reversing for collision recovery (moving 20 units back)');
+      _logEvent(
+          '🔄 ${train.name} reversing for collision recovery (moving 20 units back)');
     }
 
     train.emergencyBrake = false;
@@ -1151,7 +1186,8 @@ class TerminalStationController extends ChangeNotifier {
 
     // Check if train has reached target position (20 units back from collision)
     if (train.x <= targetPosition) {
-      _logEvent('✅ ${train.name} reached safe position (20 units back from collision)');
+      _logEvent(
+          '✅ ${train.name} reached safe position (20 units back from collision)');
       train.x = targetPosition; // Snap to exact position
       train.targetSpeed = 0;
       train.speed = 0;
@@ -1247,7 +1283,8 @@ class TerminalStationController extends ChangeNotifier {
     final trainsInvolved = currentCollisionIncident!.trainsInvolved;
 
     // Find the trains involved
-    final collisionTrains = trains.where((t) => trainsInvolved.contains(t.id)).toList();
+    final collisionTrains =
+        trains.where((t) => trainsInvolved.contains(t.id)).toList();
 
     if (collisionTrains.length >= 2) {
       // Move each train 20 units backwards in opposite directions
@@ -1266,7 +1303,8 @@ class TerminalStationController extends ChangeNotifier {
         train.speed = 0;
         train.targetSpeed = 0;
 
-        _logEvent('🔄 ${train.name} moved 20 units back for collision recovery');
+        _logEvent(
+            '🔄 ${train.name} moved 20 units back for collision recovery');
       }
     }
 
@@ -1440,8 +1478,10 @@ class TerminalStationController extends ChangeNotifier {
         if (distance < 50) {
           // Train is near the axle counter
           // Respect flipped property - swap D1/D2 logic when flipped
-          final d1Trigger = counter.flipped ? (train.direction < 0) : (train.direction > 0);
-          final d2Trigger = counter.flipped ? (train.direction > 0) : (train.direction < 0);
+          final d1Trigger =
+              counter.flipped ? (train.direction < 0) : (train.direction > 0);
+          final d2Trigger =
+              counter.flipped ? (train.direction > 0) : (train.direction < 0);
 
           if (!counter.d1Active && d1Trigger) {
             counter.d1Active = true;
@@ -1460,8 +1500,10 @@ class TerminalStationController extends ChangeNotifier {
           }
         } else {
           // Reset detection when train moves away
-          final d1Trigger = counter.flipped ? (train.direction < 0) : (train.direction > 0);
-          final d2Trigger = counter.flipped ? (train.direction > 0) : (train.direction < 0);
+          final d1Trigger =
+              counter.flipped ? (train.direction < 0) : (train.direction > 0);
+          final d2Trigger =
+              counter.flipped ? (train.direction > 0) : (train.direction < 0);
 
           if (counter.d1Active && d1Trigger) {
             counter.d1Active = false;
@@ -1486,8 +1528,8 @@ class TerminalStationController extends ChangeNotifier {
       // Only calculate for CBTC trains in AUTO, PM, or RM modes
       if (!train.isCbtcEquipped ||
           (train.cbtcMode != CbtcMode.auto &&
-           train.cbtcMode != CbtcMode.pm &&
-           train.cbtcMode != CbtcMode.rm)) {
+              train.cbtcMode != CbtcMode.pm &&
+              train.cbtcMode != CbtcMode.rm)) {
         train.movementAuthority = null;
         continue;
       }
@@ -1546,9 +1588,8 @@ class TerminalStationController extends ChangeNotifier {
             ? otherPos + otherTrain.movementAuthority!.maxDistance
             : otherPos - otherTrain.movementAuthority!.maxDistance;
 
-        final distanceToOtherMa = direction > 0
-            ? otherMaEnd - trainPos
-            : trainPos - otherMaEnd;
+        final distanceToOtherMa =
+            direction > 0 ? otherMaEnd - trainPos : trainPos - otherMaEnd;
 
         if (distanceToOtherMa > 0) {
           final limitDistance = distanceToOtherMa - 200;
@@ -1727,12 +1768,10 @@ class TerminalStationController extends ChangeNotifier {
 
     // Sort by distance from train
     blocksAhead.sort((a, b) {
-      final distA = direction > 0
-          ? a.value.startX - trainPos
-          : trainPos - a.value.endX;
-      final distB = direction > 0
-          ? b.value.startX - trainPos
-          : trainPos - b.value.endX;
+      final distA =
+          direction > 0 ? a.value.startX - trainPos : trainPos - a.value.endX;
+      final distB =
+          direction > 0 ? b.value.startX - trainPos : trainPos - b.value.endX;
       return distA.compareTo(distB);
     });
 
@@ -1838,7 +1877,8 @@ class TerminalStationController extends ChangeNotifier {
   // ============================================================================
 
   TerminalStationController() {
-    commandHistory = CommandHistory(); // Initialize command history for undo/redo
+    commandHistory =
+        CommandHistory(); // Initialize command history for undo/redo
     _initializeLayout();
     _initializeClock();
     _initializeTimetable();
@@ -1848,42 +1888,71 @@ class TerminalStationController extends ChangeNotifier {
   void _initializeAxleCounters() {
     // LEFT SECTION AXLE COUNTERS (196-215) - Extended with buffer stops
     // Upper track (196-214) eastbound
-    axleCounters['ac198'] = AxleCounter(id: 'ac198', blockId: '198', x: -1750, y: 120);
-    axleCounters['ac196'] = AxleCounter(id: 'ac196', blockId: '196', x: -1650, y: 120);
-    axleCounters['ac200'] = AxleCounter(id: 'ac200', blockId: '200', x: -1500, y: 120);
-    axleCounters['ac202'] = AxleCounter(id: 'ac202', blockId: '202', x: -1300, y: 120);
-    axleCounters['ac204'] = AxleCounter(id: 'ac204', blockId: '204', x: -1100, y: 120);
-    axleCounters['ac206'] = AxleCounter(id: 'ac206', blockId: '206', x: -900, y: 120);
-    axleCounters['ac208'] = AxleCounter(id: 'ac208', blockId: '208', x: -700, y: 120);
-    axleCounters['ac210'] = AxleCounter(id: 'ac210', blockId: '210', x: -500, y: 120);
-    axleCounters['ac212'] = AxleCounter(id: 'ac212', blockId: '212', x: -300, y: 120);
-    axleCounters['ac214'] = AxleCounter(id: 'ac214', blockId: '214', x: -100, y: 120);
+    axleCounters['ac198'] =
+        AxleCounter(id: 'ac198', blockId: '198', x: -1750, y: 120);
+    axleCounters['ac196'] =
+        AxleCounter(id: 'ac196', blockId: '196', x: -1650, y: 120);
+    axleCounters['ac200'] =
+        AxleCounter(id: 'ac200', blockId: '200', x: -1500, y: 120);
+    axleCounters['ac202'] =
+        AxleCounter(id: 'ac202', blockId: '202', x: -1300, y: 120);
+    axleCounters['ac204'] =
+        AxleCounter(id: 'ac204', blockId: '204', x: -1100, y: 120);
+    axleCounters['ac206'] =
+        AxleCounter(id: 'ac206', blockId: '206', x: -900, y: 120);
+    axleCounters['ac208'] =
+        AxleCounter(id: 'ac208', blockId: '208', x: -700, y: 120);
+    axleCounters['ac210'] =
+        AxleCounter(id: 'ac210', blockId: '210', x: -500, y: 120);
+    axleCounters['ac212'] =
+        AxleCounter(id: 'ac212', blockId: '212', x: -300, y: 120);
+    axleCounters['ac214'] =
+        AxleCounter(id: 'ac214', blockId: '214', x: -100, y: 120);
 
     // Lower track (197-215) westbound
-    axleCounters['ac199'] = AxleCounter(id: 'ac199', blockId: '199', x: -1750, y: 320);
-    axleCounters['ac197'] = AxleCounter(id: 'ac197', blockId: '197', x: -1650, y: 320);
-    axleCounters['ac201'] = AxleCounter(id: 'ac201', blockId: '201', x: -1500, y: 320);
-    axleCounters['ac203'] = AxleCounter(id: 'ac203', blockId: '203', x: -1300, y: 320);
-    axleCounters['ac205'] = AxleCounter(id: 'ac205', blockId: '205', x: -1100, y: 320);
-    axleCounters['ac207'] = AxleCounter(id: 'ac207', blockId: '207', x: -900, y: 320);
-    axleCounters['ac209'] = AxleCounter(id: 'ac209', blockId: '209', x: -700, y: 320);
-    axleCounters['ac211'] = AxleCounter(id: 'ac211', blockId: '211', x: -500, y: 320);
-    axleCounters['ac213'] = AxleCounter(id: 'ac213', blockId: '213', x: -300, y: 320);
-    axleCounters['ac215'] = AxleCounter(id: 'ac215', blockId: '215', x: -100, y: 320);
+    axleCounters['ac199'] =
+        AxleCounter(id: 'ac199', blockId: '199', x: -1750, y: 320);
+    axleCounters['ac197'] =
+        AxleCounter(id: 'ac197', blockId: '197', x: -1650, y: 320);
+    axleCounters['ac201'] =
+        AxleCounter(id: 'ac201', blockId: '201', x: -1500, y: 320);
+    axleCounters['ac203'] =
+        AxleCounter(id: 'ac203', blockId: '203', x: -1300, y: 320);
+    axleCounters['ac205'] =
+        AxleCounter(id: 'ac205', blockId: '205', x: -1100, y: 320);
+    axleCounters['ac207'] =
+        AxleCounter(id: 'ac207', blockId: '207', x: -900, y: 320);
+    axleCounters['ac209'] =
+        AxleCounter(id: 'ac209', blockId: '209', x: -700, y: 320);
+    axleCounters['ac211'] =
+        AxleCounter(id: 'ac211', blockId: '211', x: -500, y: 320);
+    axleCounters['ac213'] =
+        AxleCounter(id: 'ac213', blockId: '213', x: -300, y: 320);
+    axleCounters['ac215'] =
+        AxleCounter(id: 'ac215', blockId: '215', x: -100, y: 320);
 
     // Left section crossover - crossover_left removed, only crossover_211_212 remains
-    axleCounters['ac_cx211_212'] = AxleCounter(id: 'ac_cx211_212', blockId: 'crossover_211_212', x: -375, y: 200);
+    axleCounters['ac_cx211_212'] = AxleCounter(
+        id: 'ac_cx211_212', blockId: 'crossover_211_212', x: -375, y: 200);
 
     // MIDDLE SECTION AXLE COUNTERS (100-115) - Original
-    axleCounters['ac100'] = AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
-    axleCounters['ac104'] = AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
-    axleCounters['ac108'] = AxleCounter(id: 'ac108', blockId: '108', x: 700, y: 120);
-    axleCounters['ac112'] = AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
+    axleCounters['ac100'] =
+        AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
+    axleCounters['ac104'] =
+        AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
+    axleCounters['ac108'] =
+        AxleCounter(id: 'ac108', blockId: '108', x: 700, y: 120);
+    axleCounters['ac112'] =
+        AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
 
-    axleCounters['ac101'] = AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
-    axleCounters['ac105'] = AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
-    axleCounters['ac109'] = AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
-    axleCounters['ac111'] = AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
+    axleCounters['ac101'] =
+        AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
+    axleCounters['ac105'] =
+        AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
+    axleCounters['ac109'] =
+        AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
+    axleCounters['ac111'] =
+        AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
 
     // Middle section crossovers
     axleCounters['ac106'] = AxleCounter(
@@ -1905,33 +1974,55 @@ class TerminalStationController extends ChangeNotifier {
 
     // RIGHT SECTION AXLE COUNTERS (300-319) - Extended with buffer stops
     // Upper track (300-318) eastbound
-    axleCounters['ac300'] = AxleCounter(id: 'ac300', blockId: '300', x: 1700, y: 120);
-    axleCounters['ac302'] = AxleCounter(id: 'ac302', blockId: '302', x: 1900, y: 120);
-    axleCounters['ac304'] = AxleCounter(id: 'ac304', blockId: '304', x: 2100, y: 120);
-    axleCounters['ac306'] = AxleCounter(id: 'ac306', blockId: '306', x: 2300, y: 120);
-    axleCounters['ac308'] = AxleCounter(id: 'ac308', blockId: '308', x: 2500, y: 120);
-    axleCounters['ac310'] = AxleCounter(id: 'ac310', blockId: '310', x: 2700, y: 120);
-    axleCounters['ac312'] = AxleCounter(id: 'ac312', blockId: '312', x: 2900, y: 120);
-    axleCounters['ac314'] = AxleCounter(id: 'ac314', blockId: '314', x: 3100, y: 120);
-    axleCounters['ac316'] = AxleCounter(id: 'ac316', blockId: '316', x: 3250, y: 120);
-    axleCounters['ac318'] = AxleCounter(id: 'ac318', blockId: '318', x: 3350, y: 120);
+    axleCounters['ac300'] =
+        AxleCounter(id: 'ac300', blockId: '300', x: 1700, y: 120);
+    axleCounters['ac302'] =
+        AxleCounter(id: 'ac302', blockId: '302', x: 1900, y: 120);
+    axleCounters['ac304'] =
+        AxleCounter(id: 'ac304', blockId: '304', x: 2100, y: 120);
+    axleCounters['ac306'] =
+        AxleCounter(id: 'ac306', blockId: '306', x: 2300, y: 120);
+    axleCounters['ac308'] =
+        AxleCounter(id: 'ac308', blockId: '308', x: 2500, y: 120);
+    axleCounters['ac310'] =
+        AxleCounter(id: 'ac310', blockId: '310', x: 2700, y: 120);
+    axleCounters['ac312'] =
+        AxleCounter(id: 'ac312', blockId: '312', x: 2900, y: 120);
+    axleCounters['ac314'] =
+        AxleCounter(id: 'ac314', blockId: '314', x: 3100, y: 120);
+    axleCounters['ac316'] =
+        AxleCounter(id: 'ac316', blockId: '316', x: 3250, y: 120);
+    axleCounters['ac318'] =
+        AxleCounter(id: 'ac318', blockId: '318', x: 3350, y: 120);
 
     // Lower track (301-319) westbound
-    axleCounters['ac301'] = AxleCounter(id: 'ac301', blockId: '301', x: 1700, y: 320);
-    axleCounters['ac303'] = AxleCounter(id: 'ac303', blockId: '303', x: 1900, y: 320);
-    axleCounters['ac305'] = AxleCounter(id: 'ac305', blockId: '305', x: 2100, y: 320);
-    axleCounters['ac307'] = AxleCounter(id: 'ac307', blockId: '307', x: 2300, y: 320);
-    axleCounters['ac309'] = AxleCounter(id: 'ac309', blockId: '309', x: 2500, y: 320);
-    axleCounters['ac311'] = AxleCounter(id: 'ac311', blockId: '311', x: 2700, y: 320);
-    axleCounters['ac313'] = AxleCounter(id: 'ac313', blockId: '313', x: 2900, y: 320);
-    axleCounters['ac315'] = AxleCounter(id: 'ac315', blockId: '315', x: 3100, y: 320);
-    axleCounters['ac317'] = AxleCounter(id: 'ac317', blockId: '317', x: 3250, y: 320);
-    axleCounters['ac319'] = AxleCounter(id: 'ac319', blockId: '319', x: 3350, y: 320);
+    axleCounters['ac301'] =
+        AxleCounter(id: 'ac301', blockId: '301', x: 1700, y: 320);
+    axleCounters['ac303'] =
+        AxleCounter(id: 'ac303', blockId: '303', x: 1900, y: 320);
+    axleCounters['ac305'] =
+        AxleCounter(id: 'ac305', blockId: '305', x: 2100, y: 320);
+    axleCounters['ac307'] =
+        AxleCounter(id: 'ac307', blockId: '307', x: 2300, y: 320);
+    axleCounters['ac309'] =
+        AxleCounter(id: 'ac309', blockId: '309', x: 2500, y: 320);
+    axleCounters['ac311'] =
+        AxleCounter(id: 'ac311', blockId: '311', x: 2700, y: 320);
+    axleCounters['ac313'] =
+        AxleCounter(id: 'ac313', blockId: '313', x: 2900, y: 320);
+    axleCounters['ac315'] =
+        AxleCounter(id: 'ac315', blockId: '315', x: 3100, y: 320);
+    axleCounters['ac317'] =
+        AxleCounter(id: 'ac317', blockId: '317', x: 3250, y: 320);
+    axleCounters['ac319'] =
+        AxleCounter(id: 'ac319', blockId: '319', x: 3350, y: 320);
 
     // Right section crossover - UPDATED to match renamed crossover
-    axleCounters['ac_cx303_304'] = AxleCounter(id: 'ac_cx303_304', blockId: 'crossover_303_304', x: 1975, y: 200);
+    axleCounters['ac_cx303_304'] = AxleCounter(
+        id: 'ac_cx303_304', blockId: 'crossover_303_304', x: 1975, y: 200);
 
-    _logEvent('🔢 Initialized ${axleCounters.length} axle counters across all sections');
+    _logEvent(
+        '🔢 Initialized ${axleCounters.length} axle counters across all sections');
   }
 
   void _initializeClock() {
@@ -2004,7 +2095,8 @@ class TerminalStationController extends ChangeNotifier {
       // Check if assigned train has completed journey
       if (service.assignedTrainId != null) {
         try {
-          final train = trains.firstWhere((t) => t.id == service.assignedTrainId);
+          final train =
+              trains.firstWhere((t) => t.id == service.assignedTrainId);
           if (train.currentBlockId == service.endBlock && train.speed == 0) {
             service.isCompleted = true;
             _logEvent('✅ ${service.trainName} service completed');
@@ -2047,7 +2139,8 @@ class TerminalStationController extends ChangeNotifier {
 
   void _updateGhostTrainBlock(GhostTrain ghost) {
     for (var block in blocks.values) {
-      if (ghost.x >= block.startX && ghost.x <= block.endX &&
+      if (ghost.x >= block.startX &&
+          ghost.x <= block.endX &&
           (ghost.y - block.y).abs() < 50) {
         ghost.currentBlockId = block.id;
         break;
@@ -2059,7 +2152,8 @@ class TerminalStationController extends ChangeNotifier {
     if (ghost.doorsOpen) return;
 
     for (var platform in platforms) {
-      if (ghost.x >= platform.startX && ghost.x <= platform.endX &&
+      if (ghost.x >= platform.startX &&
+          ghost.x <= platform.endX &&
           (ghost.y - platform.y).abs() < 50) {
         // Ghost arrived at platform
         ghost.currentPlatformId = platform.id;
@@ -2069,7 +2163,8 @@ class TerminalStationController extends ChangeNotifier {
         ghost.speed = 0;
 
         // Remove from remaining stops if applicable
-        if (ghost.currentBlockId != null && ghost.remainingStops.contains(ghost.currentBlockId)) {
+        if (ghost.currentBlockId != null &&
+            ghost.remainingStops.contains(ghost.currentBlockId)) {
           ghost.remainingStops.remove(ghost.currentBlockId);
         }
 
@@ -2083,7 +2178,8 @@ class TerminalStationController extends ChangeNotifier {
       if (train.assignedTimetableId == null) continue;
 
       try {
-        final ghost = ghostTrains.firstWhere((g) => g.id == train.assignedTimetableId);
+        final ghost =
+            ghostTrains.firstWhere((g) => g.id == train.assignedTimetableId);
 
         // Update current station
         final platformId = _getPlatformForTrain(train);
@@ -2156,11 +2252,14 @@ class TerminalStationController extends ChangeNotifier {
       targetSpeed: 0,
       direction: 1,
       color: Colors.primaries[trains.length % Colors.primaries.length],
-      controlMode: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2
+      controlMode: service.trainType == TrainType.cbtcM1 ||
+              service.trainType == TrainType.cbtcM2
           ? TrainControlMode.automatic
           : TrainControlMode.automatic,
-      isCbtcEquipped: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2,
-      cbtcMode: service.trainType == TrainType.cbtcM1 || service.trainType == TrainType.cbtcM2
+      isCbtcEquipped: service.trainType == TrainType.cbtcM1 ||
+          service.trainType == TrainType.cbtcM2,
+      cbtcMode: service.trainType == TrainType.cbtcM1 ||
+              service.trainType == TrainType.cbtcM2
           ? CbtcMode.auto
           : CbtcMode.off,
       smcDestination: 'B:${service.endBlock}',
@@ -2175,7 +2274,8 @@ class TerminalStationController extends ChangeNotifier {
     // Auto-set signals and points for the route
     _autoSetRouteForTrain(train, service);
 
-    _logEvent('🚂 Auto-dispatched: ${service.trainName} from ${service.startBlock} to ${service.endBlock}');
+    _logEvent(
+        '🚂 Auto-dispatched: ${service.trainName} from ${service.startBlock} to ${service.endBlock}');
     notifyListeners();
   }
 
@@ -2217,7 +2317,8 @@ class TerminalStationController extends ChangeNotifier {
       train.assignedServiceId = ghost.serviceId;
       ghost.assignedRealTrainId = trainId;
 
-      _logEvent('📋 ${train.name} assigned to timetable slot $ghostTrainId (${ghost.name})');
+      _logEvent(
+          '📋 ${train.name} assigned to timetable slot $ghostTrainId (${ghost.name})');
       notifyListeners();
     } catch (e) {
       _logEvent('❌ Failed to assign train to timetable: $e');
@@ -2287,7 +2388,8 @@ class TerminalStationController extends ChangeNotifier {
       // Generate multiple ghost trains for continuous service
       // Create ghost trains every 2 minutes for each service
       for (int i = 0; i < 10; i++) {
-        final scheduledDeparture = service.scheduledTime.add(Duration(minutes: i * 2));
+        final scheduledDeparture =
+            service.scheduledTime.add(Duration(minutes: i * 2));
 
         // Map platform IDs from stop blocks
         final Map<String, DateTime> platformTimes = {};
@@ -2296,7 +2398,8 @@ class TerminalStationController extends ChangeNotifier {
           final platform = _getPlatformForBlock(stopBlock);
           if (platform != null) {
             // Estimate arrival time: 30 seconds per stop
-            platformTimes[platform.id] = scheduledDeparture.add(Duration(seconds: stopIndex * 30));
+            platformTimes[platform.id] =
+                scheduledDeparture.add(Duration(seconds: stopIndex * 30));
           }
         }
 
@@ -2321,7 +2424,8 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
 
-    _logEvent('👻 Generated ${ghostTrains.length} ghost trains for ${timetable!.services.length} services');
+    _logEvent(
+        '👻 Generated ${ghostTrains.length} ghost trains for ${timetable!.services.length} services');
     notifyListeners();
   }
 
@@ -2350,8 +2454,10 @@ class TerminalStationController extends ChangeNotifier {
     // LEFT SECTION (-1800 to 0) - Extended with buffer stops
     // ═══════════════════════════════════════════════════════════════════════
     // Upper track (y=100) - Eastbound →
-    blocks['198'] = BlockSection(id: '198', startX: -1800, endX: -1700, y: 100);  // NEW: Buffer approach
-    blocks['196'] = BlockSection(id: '196', startX: -1700, endX: -1600, y: 100);  // NEW: Buffer stop
+    blocks['198'] = BlockSection(
+        id: '198', startX: -1800, endX: -1700, y: 100); // NEW: Buffer approach
+    blocks['196'] = BlockSection(
+        id: '196', startX: -1700, endX: -1600, y: 100); // NEW: Buffer stop
     blocks['200'] = BlockSection(id: '200', startX: -1600, endX: -1400, y: 100);
     blocks['202'] = BlockSection(id: '202', startX: -1400, endX: -1200, y: 100);
     blocks['204'] = BlockSection(id: '204', startX: -1200, endX: -1000, y: 100);
@@ -2362,8 +2468,10 @@ class TerminalStationController extends ChangeNotifier {
     blocks['214'] = BlockSection(id: '214', startX: -200, endX: 0, y: 100);
 
     // Lower track (y=300) - Westbound ←
-    blocks['199'] = BlockSection(id: '199', startX: -1800, endX: -1700, y: 300);  // NEW: Buffer approach
-    blocks['197'] = BlockSection(id: '197', startX: -1700, endX: -1600, y: 300);  // NEW: Buffer stop
+    blocks['199'] = BlockSection(
+        id: '199', startX: -1800, endX: -1700, y: 300); // NEW: Buffer approach
+    blocks['197'] = BlockSection(
+        id: '197', startX: -1700, endX: -1600, y: 300); // NEW: Buffer stop
     blocks['201'] = BlockSection(id: '201', startX: -1600, endX: -1400, y: 300);
     blocks['203'] = BlockSection(id: '203', startX: -1400, endX: -1200, y: 300);
     blocks['205'] = BlockSection(id: '205', startX: -1200, endX: -1000, y: 300);
@@ -2408,8 +2516,10 @@ class TerminalStationController extends ChangeNotifier {
     blocks['310'] = BlockSection(id: '310', startX: 2600, endX: 2800, y: 100);
     blocks['312'] = BlockSection(id: '312', startX: 2800, endX: 3000, y: 100);
     blocks['314'] = BlockSection(id: '314', startX: 3000, endX: 3200, y: 100);
-    blocks['316'] = BlockSection(id: '316', startX: 3200, endX: 3300, y: 100);  // NEW: Buffer approach
-    blocks['318'] = BlockSection(id: '318', startX: 3300, endX: 3400, y: 100);  // NEW: Buffer stop
+    blocks['316'] = BlockSection(
+        id: '316', startX: 3200, endX: 3300, y: 100); // NEW: Buffer approach
+    blocks['318'] = BlockSection(
+        id: '318', startX: 3300, endX: 3400, y: 100); // NEW: Buffer stop
 
     // Lower track (y=300) - Westbound ←
     blocks['301'] = BlockSection(id: '301', startX: 1600, endX: 1800, y: 300);
@@ -2420,8 +2530,10 @@ class TerminalStationController extends ChangeNotifier {
     blocks['311'] = BlockSection(id: '311', startX: 2600, endX: 2800, y: 300);
     blocks['313'] = BlockSection(id: '313', startX: 2800, endX: 3000, y: 300);
     blocks['315'] = BlockSection(id: '315', startX: 3000, endX: 3200, y: 300);
-    blocks['317'] = BlockSection(id: '317', startX: 3200, endX: 3300, y: 300);  // NEW: Buffer approach
-    blocks['319'] = BlockSection(id: '319', startX: 3300, endX: 3400, y: 300);  // NEW: Buffer stop
+    blocks['317'] = BlockSection(
+        id: '317', startX: 3200, endX: 3300, y: 300); // NEW: Buffer approach
+    blocks['319'] = BlockSection(
+        id: '319', startX: 3300, endX: 3400, y: 300); // NEW: Buffer stop
 
     // ═══════════════════════════════════════════════════════════════════════
     // CROSSOVERS - 4 total for flexible routing
@@ -2468,10 +2580,14 @@ class TerminalStationController extends ChangeNotifier {
 
     // Left section points - DOUBLE DIAMOND CROSSOVER (4 points)
     // 45-degree crossovers with proper 200-unit span for correct geometry
-    points['76A'] = Point(id: '76A', x: -550, y: 100);  // Start of double diamond
-    points['76B'] = Point(id: '76B', x: -550, y: 300);  // Start of double diamond
-    points['77A'] = Point(id: '77A', x: -350, y: 100);  // End of double diamond (200 units span)
-    points['77B'] = Point(id: '77B', x: -350, y: 300);  // End of double diamond (200 units span)
+    points['76A'] =
+        Point(id: '76A', x: -550, y: 100); // Start of double diamond
+    points['76B'] =
+        Point(id: '76B', x: -550, y: 300); // Start of double diamond
+    points['77A'] = Point(
+        id: '77A', x: -350, y: 100); // End of double diamond (200 units span)
+    points['77B'] = Point(
+        id: '77B', x: -350, y: 300); // End of double diamond (200 units span)
 
     // Middle points (crossover106/109) - Standard crossover
     points['78A'] = Point(id: '78A', x: 600, y: 100);
@@ -2479,31 +2595,59 @@ class TerminalStationController extends ChangeNotifier {
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
     // 45-degree crossovers with proper 200-unit span for correct geometry
-    points['79A'] = Point(id: '79A', x: 1900, y: 100);  // Start of double diamond
-    points['79B'] = Point(id: '79B', x: 1900, y: 300);  // Start of double diamond
-    points['80A'] = Point(id: '80A', x: 2100, y: 100);  // End of double diamond (200 units span)
-    points['80B'] = Point(id: '80B', x: 2100, y: 300);  // End of double diamond (200 units span)
+    points['79A'] =
+        Point(id: '79A', x: 1900, y: 100); // Start of double diamond
+    points['79B'] =
+        Point(id: '79B', x: 1900, y: 300); // Start of double diamond
+    points['80A'] = Point(
+        id: '80A', x: 2100, y: 100); // End of double diamond (200 units span)
+    points['80B'] = Point(
+        id: '80B', x: 2100, y: 300); // End of double diamond (200 units span)
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)
     // ═══════════════════════════════════════════════════════════════════════
     // Left End Station
     platforms.add(Platform(
-        id: 'P1', name: 'West Terminal Platform 1', startX: -1200, endX: -800, y: 100));
+        id: 'P1',
+        name: 'West Terminal Platform 1',
+        startX: -1200,
+        endX: -800,
+        y: 100));
     platforms.add(Platform(
-        id: 'P2', name: 'West Terminal Platform 2', startX: -1200, endX: -800, y: 300));
+        id: 'P2',
+        name: 'West Terminal Platform 2',
+        startX: -1200,
+        endX: -800,
+        y: 300));
 
     // Middle Station (original)
     platforms.add(Platform(
-        id: 'P3', name: 'Central Terminal Platform 1', startX: 800, endX: 1200, y: 100));
+        id: 'P3',
+        name: 'Central Terminal Platform 1',
+        startX: 800,
+        endX: 1200,
+        y: 100));
     platforms.add(Platform(
-        id: 'P4', name: 'Central Terminal Platform 2', startX: 1000, endX: 1200, y: 300));  // FIXED: Moved to x: 1000
+        id: 'P4',
+        name: 'Central Terminal Platform 2',
+        startX: 1000,
+        endX: 1200,
+        y: 300)); // FIXED: Moved to x: 1000
 
     // Right End Station
     platforms.add(Platform(
-        id: 'P5', name: 'East Terminal Platform 1', startX: 2400, endX: 2800, y: 100));
+        id: 'P5',
+        name: 'East Terminal Platform 1',
+        startX: 2400,
+        endX: 2800,
+        y: 100));
     platforms.add(Platform(
-        id: 'P6', name: 'East Terminal Platform 2', startX: 2400, endX: 2800, y: 300));
+        id: 'P6',
+        name: 'East Terminal Platform 2',
+        startX: 2400,
+        endX: 2800,
+        y: 300));
 
     // ═══════════════════════════════════════════════════════════════════════
     // SIGNALS - Comprehensive coverage across all 3 sections
@@ -2513,7 +2657,7 @@ class TerminalStationController extends ChangeNotifier {
     // Upper track eastbound signals
     signals['L01'] = Signal(
       id: 'L01',
-      x: -1710,  // FIXED: 10 units from end of block 198 (before block 200)
+      x: -1710, // FIXED: 10 units from end of block 198 (before block 200)
       y: 80,
       routes: [
         SignalRoute(
@@ -2529,8 +2673,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L02'] = Signal(
       id: 'L02',
-      x: -1010,  // FIXED: 10 units from end of block 204 (before block 202)
-      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
+      x: -1010, // FIXED: 10 units from end of block 204 (before block 202)
+      y: 320, // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'L02_R1',
@@ -2545,14 +2689,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L03'] = Signal(
       id: 'L03',
-      x: -810,  // FIXED: 10 units from end of block 206 (before block 208)
+      x: -810, // FIXED: 10 units from end of block 206 (before block 208)
       y: 80,
       routes: [
         SignalRoute(
           id: 'L03_R1',
           name: 'To Central (Straight)',
           requiredBlocksClear: ['208', '210', '212'],
-          requiredPointPositions: {'76A': PointPosition.normal, '77A': PointPosition.normal},
+          requiredPointPositions: {
+            '76A': PointPosition.normal,
+            '77A': PointPosition.normal
+          },
           pathBlocks: ['208', '210', '212'],
           protectedBlocks: ['208', '210', '212'],
         ),
@@ -2560,7 +2707,10 @@ class TerminalStationController extends ChangeNotifier {
           id: 'L03_R2',
           name: 'To Central via Crossover (Diverging)',
           requiredBlocksClear: ['208', 'crossover_211_212', '211'],
-          requiredPointPositions: {'76A': PointPosition.reverse, '76B': PointPosition.reverse},
+          requiredPointPositions: {
+            '76A': PointPosition.reverse,
+            '76B': PointPosition.reverse
+          },
           pathBlocks: ['208', 'crossover_211_212', '211'],
           protectedBlocks: ['crossover_211_212', '211'],
         ),
@@ -2570,7 +2720,7 @@ class TerminalStationController extends ChangeNotifier {
     signals['L04'] = Signal(
       id: 'L04',
       x: -100,
-      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
+      y: 320, // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'L04_R1',
@@ -2587,7 +2737,7 @@ class TerminalStationController extends ChangeNotifier {
     signals['L05'] = Signal(
       id: 'L05',
       x: -200,
-      y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
+      y: 80, // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
           id: 'L05_R1',
@@ -2602,14 +2752,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L06'] = Signal(
       id: 'L06',
-      x: -1010,  // FIXED: 10 units from end of block 205 (before block 203)
-      y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
+      x: -1010, // FIXED: 10 units from end of block 205 (before block 203)
+      y: 80, // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
           id: 'L06_R1',
           name: 'West Platform 2 Departure (Straight)',
           requiredBlocksClear: ['211', '209', '207'],
-          requiredPointPositions: {'76B': PointPosition.normal, '77B': PointPosition.normal},
+          requiredPointPositions: {
+            '76B': PointPosition.normal,
+            '77B': PointPosition.normal
+          },
           pathBlocks: ['211', '209', '207'],
           protectedBlocks: ['211', '209', '207'],
         ),
@@ -2617,7 +2770,10 @@ class TerminalStationController extends ChangeNotifier {
           id: 'L06_R2',
           name: 'West Platform 2 via Crossover (Diverging)',
           requiredBlocksClear: ['crossover_211_212', '210', '208'],
-          requiredPointPositions: {'76A': PointPosition.reverse, '77A': PointPosition.reverse},
+          requiredPointPositions: {
+            '76A': PointPosition.reverse,
+            '77A': PointPosition.reverse
+          },
           pathBlocks: ['crossover_211_212', '210', '208'],
           protectedBlocks: ['crossover_211_212', '210', '208'],
         ),
@@ -2626,14 +2782,14 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L07'] = Signal(
       id: 'L07',
-      x: -1710,  // FIXED: 10 units from end of block 199 (before block 201)
+      x: -1710, // FIXED: 10 units from end of block 199 (before block 201)
       y: 320,
       routes: [
         SignalRoute(
           id: 'L07_R1',
           name: 'West Loop',
           requiredBlocksClear: ['205', '203', '201'],
-          requiredPointPositions: {},  // FIXED: Removed reference to deleted point 76B
+          requiredPointPositions: {}, // FIXED: Removed reference to deleted point 76B
           pathBlocks: ['205', '203', '201'],
           protectedBlocks: ['205', '203', '201'],
         ),
@@ -2659,7 +2815,10 @@ class TerminalStationController extends ChangeNotifier {
           id: 'C31_R2',
           name: 'Via Crossover (Diverging)',
           requiredBlocksClear: ['crossover106', '109', '107'],
-          requiredPointPositions: {'78A': PointPosition.reverse, '78B': PointPosition.reverse},
+          requiredPointPositions: {
+            '78A': PointPosition.reverse,
+            '78B': PointPosition.reverse
+          },
           pathBlocks: ['104', 'crossover106', '109', '107'],
           protectedBlocks: ['crossover106', '109', '107'],
         ),
@@ -2668,7 +2827,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C33'] = Signal(
       id: 'C33',
-      x: 1190,  // FIXED: 10 units from end of block 110 (before block 112)
+      x: 1190, // FIXED: 10 units from end of block 110 (before block 112)
       y: 80,
       routes: [
         SignalRoute(
@@ -2705,7 +2864,7 @@ class TerminalStationController extends ChangeNotifier {
       id: 'C30',
       x: 1000,
       y: 320,
-      direction: SignalDirection.west,  // Westbound signal
+      direction: SignalDirection.west, // Westbound signal
       routes: [
         SignalRoute(
           id: 'C30_R1',
@@ -2728,7 +2887,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C03'] = Signal(
       id: 'C03',
-      x: 1190,  // FIXED: 10 units from end of block 111 (before block 113)
+      x: 1190, // FIXED: 10 units from end of block 111 (before block 113)
       y: 320,
       routes: [
         SignalRoute(
@@ -2744,8 +2903,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C04'] = Signal(
       id: 'C04',
-      x: 290,  // MOVED: 100 units left from 390 to avoid conflict with C31
-      y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
+      x: 290, // MOVED: 100 units left from 390 to avoid conflict with C31
+      y: 80, // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
           id: 'C04_R1',
@@ -2762,14 +2921,17 @@ class TerminalStationController extends ChangeNotifier {
     // Upper track eastbound signals
     signals['R01'] = Signal(
       id: 'R01',
-      x: 1790,  // FIXED: 10 units from end of block 300 (before block 312)
+      x: 1790, // FIXED: 10 units from end of block 300 (before block 312)
       y: 80,
       routes: [
         SignalRoute(
           id: 'R01_R1',
           name: 'East Entry (Straight)',
           requiredBlocksClear: ['300', '302'],
-          requiredPointPositions: {'79A': PointPosition.normal, '80A': PointPosition.normal},
+          requiredPointPositions: {
+            '79A': PointPosition.normal,
+            '80A': PointPosition.normal
+          },
           pathBlocks: ['300', '302'],
           protectedBlocks: ['300', '302'],
         ),
@@ -2777,7 +2939,10 @@ class TerminalStationController extends ChangeNotifier {
           id: 'R01_R2',
           name: 'East Entry via Crossover (Diverging)',
           requiredBlocksClear: ['crossover_303_304', '303', '301'],
-          requiredPointPositions: {'79A': PointPosition.reverse, '79B': PointPosition.reverse},
+          requiredPointPositions: {
+            '79A': PointPosition.reverse,
+            '79B': PointPosition.reverse
+          },
           pathBlocks: ['crossover_303_304', '303', '301'],
           protectedBlocks: ['crossover_303_304', '303', '301'],
         ),
@@ -2786,8 +2951,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R02'] = Signal(
       id: 'R02',
-      x: 2590,  // FIXED: 10 units from end of block 308 (before block 306)
-      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
+      x: 2590, // FIXED: 10 units from end of block 308 (before block 306)
+      y: 320, // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'R02_R1',
@@ -2802,7 +2967,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R03'] = Signal(
       id: 'R03',
-      x: 2790,  // FIXED: 10 units from end of block 310 (before block 302)
+      x: 2790, // FIXED: 10 units from end of block 310 (before block 302)
       y: 80,
       routes: [
         SignalRoute(
@@ -2818,14 +2983,14 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R04'] = Signal(
       id: 'R04',
-      x: 3290,  // FIXED: 10 units from end of block 316 (before block 314)
-      y: 320,  // FIXED: Changed to 320 to face correct direction (westbound on lower track)
+      x: 3290, // FIXED: 10 units from end of block 316 (before block 314)
+      y: 320, // FIXED: Changed to 320 to face correct direction (westbound on lower track)
       routes: [
         SignalRoute(
           id: 'R04_R1',
           name: 'East Loop Entry',
           requiredBlocksClear: ['314', '316'],
-          requiredPointPositions: {},  // FIXED: Removed reference to deleted point 80A
+          requiredPointPositions: {}, // FIXED: Removed reference to deleted point 80A
           pathBlocks: ['314', '316'],
           protectedBlocks: ['314', '316'],
         ),
@@ -2835,7 +3000,7 @@ class TerminalStationController extends ChangeNotifier {
     // Lower track westbound signals
     signals['R05'] = Signal(
       id: 'R05',
-      x: 2790,  // FIXED: 10 units from end of block 311 (before block 313)
+      x: 2790, // FIXED: 10 units from end of block 311 (before block 313)
       y: 320,
       routes: [
         SignalRoute(
@@ -2851,7 +3016,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R06'] = Signal(
       id: 'R06',
-      x: 2490,  // MOVED: 100 units left from 2590 to avoid conflict with R02
+      x: 2490, // MOVED: 100 units left from 2590 to avoid conflict with R02
       y: 320,
       routes: [
         SignalRoute(
@@ -2867,14 +3032,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R07'] = Signal(
       id: 'R07',
-      x: 1990,  // FIXED: 10 units from end of block 303 (before block 301)
+      x: 1990, // FIXED: 10 units from end of block 303 (before block 301)
       y: 320,
       routes: [
         SignalRoute(
           id: 'R07_R1',
           name: 'To Central (Straight)',
           requiredBlocksClear: ['305', '303', '301'],
-          requiredPointPositions: {'79B': PointPosition.normal, '80B': PointPosition.normal},
+          requiredPointPositions: {
+            '79B': PointPosition.normal,
+            '80B': PointPosition.normal
+          },
           pathBlocks: ['305', '303', '301'],
           protectedBlocks: ['305', '303', '301'],
         ),
@@ -2882,7 +3050,10 @@ class TerminalStationController extends ChangeNotifier {
           id: 'R07_R2',
           name: 'To Central via Crossover (Diverging)',
           requiredBlocksClear: ['crossover_303_304', '304', '302'],
-          requiredPointPositions: {'80A': PointPosition.reverse, '80B': PointPosition.reverse},
+          requiredPointPositions: {
+            '80A': PointPosition.reverse,
+            '80B': PointPosition.reverse
+          },
           pathBlocks: ['crossover_303_304', '304', '302'],
           protectedBlocks: ['crossover_303_304', '304', '302'],
         ),
@@ -2891,8 +3062,8 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R08'] = Signal(
       id: 'R08',
-      x: 1590,  // FIXED: 10 units from end of block 115 (before block 113)
-      y: 80,  // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
+      x: 1590, // FIXED: 10 units from end of block 115 (before block 113)
+      y: 80, // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(
           id: 'R08_R1',
@@ -2906,54 +3077,96 @@ class TerminalStationController extends ChangeNotifier {
     );
 
     // TRAIN STOPS for all signals - UPDATED to match new signal positions
-    trainStops['TL01'] = TrainStop(id: 'TL01', signalId: 'L01', x: -1710, y: 120);
-    trainStops['TL02'] = TrainStop(id: 'TL02', signalId: 'L02', x: -1010, y: 340);
-    trainStops['TL03'] = TrainStop(id: 'TL03', signalId: 'L03', x: -810, y: 120);
-    trainStops['TL04'] = TrainStop(id: 'TL04', signalId: 'L04', x: -100, y: 340);
-    trainStops['TL05'] = TrainStop(id: 'TL05', signalId: 'L05', x: -200, y: 120);
-    trainStops['TL06'] = TrainStop(id: 'TL06', signalId: 'L06', x: -1010, y: 120);
-    trainStops['TL07'] = TrainStop(id: 'TL07', signalId: 'L07', x: -1710, y: 340);
+    trainStops['TL01'] =
+        TrainStop(id: 'TL01', signalId: 'L01', x: -1710, y: 120);
+    trainStops['TL02'] =
+        TrainStop(id: 'TL02', signalId: 'L02', x: -1010, y: 340);
+    trainStops['TL03'] =
+        TrainStop(id: 'TL03', signalId: 'L03', x: -810, y: 120);
+    trainStops['TL04'] =
+        TrainStop(id: 'TL04', signalId: 'L04', x: -100, y: 340);
+    trainStops['TL05'] =
+        TrainStop(id: 'TL05', signalId: 'L05', x: -200, y: 120);
+    trainStops['TL06'] =
+        TrainStop(id: 'TL06', signalId: 'L06', x: -1010, y: 120);
+    trainStops['TL07'] =
+        TrainStop(id: 'TL07', signalId: 'L07', x: -1710, y: 340);
 
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
     trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1190, y: 120);
-    trainStops['T30'] = TrainStop(id: 'T30', signalId: 'C30', x: 1000, y: 340);  // FIXED: Match C30 signal x-position
+    trainStops['T30'] = TrainStop(
+        id: 'T30',
+        signalId: 'C30',
+        x: 1000,
+        y: 340); // FIXED: Match C30 signal x-position
     trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 50, y: 120);
     // REMOVED TC02 - was within 20 units of T30 (duplicate, C02 signal removed)
-    trainStops['TC03'] = TrainStop(id: 'TC03', signalId: 'C03', x: 1190, y: 340);
-    trainStops['TC04'] = TrainStop(id: 'TC04', signalId: 'C04', x: 290, y: 120);  // MOVED: Match C04 signal position
+    trainStops['TC03'] =
+        TrainStop(id: 'TC03', signalId: 'C03', x: 1190, y: 340);
+    trainStops['TC04'] = TrainStop(
+        id: 'TC04',
+        signalId: 'C04',
+        x: 290,
+        y: 120); // MOVED: Match C04 signal position
 
-    trainStops['TR01'] = TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
-    trainStops['TR02'] = TrainStop(id: 'TR02', signalId: 'R02', x: 2590, y: 340);
-    trainStops['TR03'] = TrainStop(id: 'TR03', signalId: 'R03', x: 2790, y: 120);
-    trainStops['TR04'] = TrainStop(id: 'TR04', signalId: 'R04', x: 3290, y: 340);
-    trainStops['TR05'] = TrainStop(id: 'TR05', signalId: 'R05', x: 2790, y: 340);
-    trainStops['TR06'] = TrainStop(id: 'TR06', signalId: 'R06', x: 2490, y: 340);  // MOVED: Match R06 signal position
-    trainStops['TR07'] = TrainStop(id: 'TR07', signalId: 'R07', x: 1990, y: 340);
-    trainStops['TR08'] = TrainStop(id: 'TR08', signalId: 'R08', x: 1590, y: 120);
+    trainStops['TR01'] =
+        TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
+    trainStops['TR02'] =
+        TrainStop(id: 'TR02', signalId: 'R02', x: 2590, y: 340);
+    trainStops['TR03'] =
+        TrainStop(id: 'TR03', signalId: 'R03', x: 2790, y: 120);
+    trainStops['TR04'] =
+        TrainStop(id: 'TR04', signalId: 'R04', x: 3290, y: 340);
+    trainStops['TR05'] =
+        TrainStop(id: 'TR05', signalId: 'R05', x: 2790, y: 340);
+    trainStops['TR06'] = TrainStop(
+        id: 'TR06',
+        signalId: 'R06',
+        x: 2490,
+        y: 340); // MOVED: Match R06 signal position
+    trainStops['TR07'] =
+        TrainStop(id: 'TR07', signalId: 'R07', x: 1990, y: 340);
+    trainStops['TR08'] =
+        TrainStop(id: 'TR08', signalId: 'R08', x: 1590, y: 120);
 
     // ═══════════════════════════════════════════════════════════════════════
     // CBTC INFRASTRUCTURE - WiFi and Transponders with individual control
     // ═══════════════════════════════════════════════════════════════════════
     // LEFT SECTION WiFi Coverage
-    wifiAntennas['W_L1'] = WifiAntenna(id: 'W_L1', x: -1500, y: 200, isActive: true);
-    wifiAntennas['W_L2'] = WifiAntenna(id: 'W_L2', x: -1200, y: 200, isActive: true);
-    wifiAntennas['W_L3'] = WifiAntenna(id: 'W_L3', x: -800, y: 200, isActive: true);
-    wifiAntennas['W_L4'] = WifiAntenna(id: 'W_L4', x: -400, y: 200, isActive: true);
-    wifiAntennas['W_L5'] = WifiAntenna(id: 'W_L5', x: -100, y: 200, isActive: true);
+    wifiAntennas['W_L1'] =
+        WifiAntenna(id: 'W_L1', x: -1500, y: 200, isActive: true);
+    wifiAntennas['W_L2'] =
+        WifiAntenna(id: 'W_L2', x: -1200, y: 200, isActive: true);
+    wifiAntennas['W_L3'] =
+        WifiAntenna(id: 'W_L3', x: -800, y: 200, isActive: true);
+    wifiAntennas['W_L4'] =
+        WifiAntenna(id: 'W_L4', x: -400, y: 200, isActive: true);
+    wifiAntennas['W_L5'] =
+        WifiAntenna(id: 'W_L5', x: -100, y: 200, isActive: true);
 
     // MIDDLE SECTION WiFi Coverage
-    wifiAntennas['W_C1'] = WifiAntenna(id: 'W_C1', x: 100, y: 200, isActive: true);
-    wifiAntennas['W_C2'] = WifiAntenna(id: 'W_C2', x: 400, y: 200, isActive: true);
-    wifiAntennas['W_C3'] = WifiAntenna(id: 'W_C3', x: 800, y: 200, isActive: true);
-    wifiAntennas['W_C4'] = WifiAntenna(id: 'W_C4', x: 1000, y: 200, isActive: true);
-    wifiAntennas['W_C5'] = WifiAntenna(id: 'W_C5', x: 1400, y: 200, isActive: true);
+    wifiAntennas['W_C1'] =
+        WifiAntenna(id: 'W_C1', x: 100, y: 200, isActive: true);
+    wifiAntennas['W_C2'] =
+        WifiAntenna(id: 'W_C2', x: 400, y: 200, isActive: true);
+    wifiAntennas['W_C3'] =
+        WifiAntenna(id: 'W_C3', x: 800, y: 200, isActive: true);
+    wifiAntennas['W_C4'] =
+        WifiAntenna(id: 'W_C4', x: 1000, y: 200, isActive: true);
+    wifiAntennas['W_C5'] =
+        WifiAntenna(id: 'W_C5', x: 1400, y: 200, isActive: true);
 
     // RIGHT SECTION WiFi Coverage
-    wifiAntennas['W_R1'] = WifiAntenna(id: 'W_R1', x: 1700, y: 200, isActive: true);
-    wifiAntennas['W_R2'] = WifiAntenna(id: 'W_R2', x: 2000, y: 200, isActive: true);
-    wifiAntennas['W_R3'] = WifiAntenna(id: 'W_R3', x: 2400, y: 200, isActive: true);
-    wifiAntennas['W_R4'] = WifiAntenna(id: 'W_R4', x: 2600, y: 200, isActive: true);
-    wifiAntennas['W_R5'] = WifiAntenna(id: 'W_R5', x: 3000, y: 200, isActive: true);
+    wifiAntennas['W_R1'] =
+        WifiAntenna(id: 'W_R1', x: 1700, y: 200, isActive: true);
+    wifiAntennas['W_R2'] =
+        WifiAntenna(id: 'W_R2', x: 2000, y: 200, isActive: true);
+    wifiAntennas['W_R3'] =
+        WifiAntenna(id: 'W_R3', x: 2400, y: 200, isActive: true);
+    wifiAntennas['W_R4'] =
+        WifiAntenna(id: 'W_R4', x: 2600, y: 200, isActive: true);
+    wifiAntennas['W_R5'] =
+        WifiAntenna(id: 'W_R5', x: 3000, y: 200, isActive: true);
 
     // ═══════════════════════════════════════════════════════════════════════
     // TRANSPONDER TAGS - Comprehensive CBTC positioning system
@@ -2961,75 +3174,276 @@ class TerminalStationController extends ChangeNotifier {
 
     // T6: Accurate stopping tags - 25 units from end of each platform
     // West Terminal Platforms (endX: -800)
-    transponders['T6_P1'] = Transponder(id: 'T6_P1', type: TransponderType.t6, x: -800 + 25, y: 100, description: 'T6 - Accurate Stopping Tag P1');
-    transponders['T6_P2'] = Transponder(id: 'T6_P2', type: TransponderType.t6, x: -800 + 25, y: 300, description: 'T6 - Accurate Stopping Tag P2');
+    transponders['T6_P1'] = Transponder(
+        id: 'T6_P1',
+        type: TransponderType.t6,
+        x: -800 + 25,
+        y: 100,
+        description: 'T6 - Accurate Stopping Tag P1');
+    transponders['T6_P2'] = Transponder(
+        id: 'T6_P2',
+        type: TransponderType.t6,
+        x: -800 + 25,
+        y: 300,
+        description: 'T6 - Accurate Stopping Tag P2');
 
     // Central Terminal Platforms (endX: 1200)
-    transponders['T6_P3'] = Transponder(id: 'T6_P3', type: TransponderType.t6, x: 1200 + 25, y: 100, description: 'T6 - Accurate Stopping Tag P3');
-    transponders['T6_P4'] = Transponder(id: 'T6_P4', type: TransponderType.t6, x: 1200 + 25, y: 300, description: 'T6 - Accurate Stopping Tag P4');
+    transponders['T6_P3'] = Transponder(
+        id: 'T6_P3',
+        type: TransponderType.t6,
+        x: 1200 + 25,
+        y: 100,
+        description: 'T6 - Accurate Stopping Tag P3');
+    transponders['T6_P4'] = Transponder(
+        id: 'T6_P4',
+        type: TransponderType.t6,
+        x: 1200 + 25,
+        y: 300,
+        description: 'T6 - Accurate Stopping Tag P4');
 
     // East Terminal Platforms (endX: 2800)
-    transponders['T6_P5'] = Transponder(id: 'T6_P5', type: TransponderType.t6, x: 2800 + 25, y: 100, description: 'T6 - Accurate Stopping Tag P5');
-    transponders['T6_P6'] = Transponder(id: 'T6_P6', type: TransponderType.t6, x: 2800 + 25, y: 300, description: 'T6 - Accurate Stopping Tag P6');
+    transponders['T6_P5'] = Transponder(
+        id: 'T6_P5',
+        type: TransponderType.t6,
+        x: 2800 + 25,
+        y: 100,
+        description: 'T6 - Accurate Stopping Tag P5');
+    transponders['T6_P6'] = Transponder(
+        id: 'T6_P6',
+        type: TransponderType.t6,
+        x: 2800 + 25,
+        y: 300,
+        description: 'T6 - Accurate Stopping Tag P6');
 
     // T1 tags at extreme ends (before stations)
-    transponders['T1_WEST_END_UP'] = Transponder(id: 'T1_WEST_END_UP', type: TransponderType.t1, x: -1400, y: 100, description: 'T1 - West End Tag Upper');
-    transponders['T1_WEST_END_LOW'] = Transponder(id: 'T1_WEST_END_LOW', type: TransponderType.t1, x: -1400, y: 300, description: 'T1 - West End Tag Lower');
-    transponders['T1_EAST_END_UP'] = Transponder(id: 'T1_EAST_END_UP', type: TransponderType.t1, x: 3000, y: 100, description: 'T1 - East End Tag Upper');
-    transponders['T1_EAST_END_LOW'] = Transponder(id: 'T1_EAST_END_LOW', type: TransponderType.t1, x: 3000, y: 300, description: 'T1 - East End Tag Lower');
+    transponders['T1_WEST_END_UP'] = Transponder(
+        id: 'T1_WEST_END_UP',
+        type: TransponderType.t1,
+        x: -1400,
+        y: 100,
+        description: 'T1 - West End Tag Upper');
+    transponders['T1_WEST_END_LOW'] = Transponder(
+        id: 'T1_WEST_END_LOW',
+        type: TransponderType.t1,
+        x: -1400,
+        y: 300,
+        description: 'T1 - West End Tag Lower');
+    transponders['T1_EAST_END_UP'] = Transponder(
+        id: 'T1_EAST_END_UP',
+        type: TransponderType.t1,
+        x: 3000,
+        y: 100,
+        description: 'T1 - East End Tag Upper');
+    transponders['T1_EAST_END_LOW'] = Transponder(
+        id: 'T1_EAST_END_LOW',
+        type: TransponderType.t1,
+        x: 3000,
+        y: 300,
+        description: 'T1 - East End Tag Lower');
 
     // T1 tags at crossover junctions
     // West crossover (-550 to -450)
-    transponders['T1_XO_WEST_1'] = Transponder(id: 'T1_XO_WEST_1', type: TransponderType.t1, x: -550, y: 100, description: 'T1 - West Crossover Tag');
-    transponders['T1_XO_WEST_2'] = Transponder(id: 'T1_XO_WEST_2', type: TransponderType.t1, x: -550, y: 300, description: 'T1 - West Crossover Tag');
-    transponders['T1_XO_WEST_3'] = Transponder(id: 'T1_XO_WEST_3', type: TransponderType.t1, x: -450, y: 100, description: 'T1 - West Crossover Tag');
-    transponders['T1_XO_WEST_4'] = Transponder(id: 'T1_XO_WEST_4', type: TransponderType.t1, x: -450, y: 300, description: 'T1 - West Crossover Tag');
+    transponders['T1_XO_WEST_1'] = Transponder(
+        id: 'T1_XO_WEST_1',
+        type: TransponderType.t1,
+        x: -550,
+        y: 100,
+        description: 'T1 - West Crossover Tag');
+    transponders['T1_XO_WEST_2'] = Transponder(
+        id: 'T1_XO_WEST_2',
+        type: TransponderType.t1,
+        x: -550,
+        y: 300,
+        description: 'T1 - West Crossover Tag');
+    transponders['T1_XO_WEST_3'] = Transponder(
+        id: 'T1_XO_WEST_3',
+        type: TransponderType.t1,
+        x: -450,
+        y: 100,
+        description: 'T1 - West Crossover Tag');
+    transponders['T1_XO_WEST_4'] = Transponder(
+        id: 'T1_XO_WEST_4',
+        type: TransponderType.t1,
+        x: -450,
+        y: 300,
+        description: 'T1 - West Crossover Tag');
 
     // Middle crossover (600 to 800)
-    transponders['T1_XO_MID_1'] = Transponder(id: 'T1_XO_MID_1', type: TransponderType.t1, x: 600, y: 100, description: 'T1 - Middle Crossover Tag');
-    transponders['T1_XO_MID_2'] = Transponder(id: 'T1_XO_MID_2', type: TransponderType.t1, x: 600, y: 300, description: 'T1 - Middle Crossover Tag');
-    transponders['T1_XO_MID_3'] = Transponder(id: 'T1_XO_MID_3', type: TransponderType.t1, x: 800, y: 100, description: 'T1 - Middle Crossover Tag');
-    transponders['T1_XO_MID_4'] = Transponder(id: 'T1_XO_MID_4', type: TransponderType.t1, x: 800, y: 300, description: 'T1 - Middle Crossover Tag');
+    transponders['T1_XO_MID_1'] = Transponder(
+        id: 'T1_XO_MID_1',
+        type: TransponderType.t1,
+        x: 600,
+        y: 100,
+        description: 'T1 - Middle Crossover Tag');
+    transponders['T1_XO_MID_2'] = Transponder(
+        id: 'T1_XO_MID_2',
+        type: TransponderType.t1,
+        x: 600,
+        y: 300,
+        description: 'T1 - Middle Crossover Tag');
+    transponders['T1_XO_MID_3'] = Transponder(
+        id: 'T1_XO_MID_3',
+        type: TransponderType.t1,
+        x: 800,
+        y: 100,
+        description: 'T1 - Middle Crossover Tag');
+    transponders['T1_XO_MID_4'] = Transponder(
+        id: 'T1_XO_MID_4',
+        type: TransponderType.t1,
+        x: 800,
+        y: 300,
+        description: 'T1 - Middle Crossover Tag');
 
     // East crossover (1900 to 2000)
-    transponders['T1_XO_EAST_1'] = Transponder(id: 'T1_XO_EAST_1', type: TransponderType.t1, x: 1900, y: 100, description: 'T1 - East Crossover Tag');
-    transponders['T1_XO_EAST_2'] = Transponder(id: 'T1_XO_EAST_2', type: TransponderType.t1, x: 1900, y: 300, description: 'T1 - East Crossover Tag');
-    transponders['T1_XO_EAST_3'] = Transponder(id: 'T1_XO_EAST_3', type: TransponderType.t1, x: 2000, y: 100, description: 'T1 - East Crossover Tag');
-    transponders['T1_XO_EAST_4'] = Transponder(id: 'T1_XO_EAST_4', type: TransponderType.t1, x: 2000, y: 300, description: 'T1 - East Crossover Tag');
+    transponders['T1_XO_EAST_1'] = Transponder(
+        id: 'T1_XO_EAST_1',
+        type: TransponderType.t1,
+        x: 1900,
+        y: 100,
+        description: 'T1 - East Crossover Tag');
+    transponders['T1_XO_EAST_2'] = Transponder(
+        id: 'T1_XO_EAST_2',
+        type: TransponderType.t1,
+        x: 1900,
+        y: 300,
+        description: 'T1 - East Crossover Tag');
+    transponders['T1_XO_EAST_3'] = Transponder(
+        id: 'T1_XO_EAST_3',
+        type: TransponderType.t1,
+        x: 2000,
+        y: 100,
+        description: 'T1 - East Crossover Tag');
+    transponders['T1_XO_EAST_4'] = Transponder(
+        id: 'T1_XO_EAST_4',
+        type: TransponderType.t1,
+        x: 2000,
+        y: 300,
+        description: 'T1 - East Crossover Tag');
 
     // Transponder pattern between West and Central stations
     // Pattern: T1, T1, T1, T2 (cross border), T3 (border), T2 (cross border), T1, T1, T1
     // Distance from West end of P1 (-800) to Central start of P3 (800) = 1600 units
     final westToCentralDist = 1600.0;
     final westToCentralStart = -800.0 + 25; // After P1 T6 tag
-    final spacing1 = westToCentralDist / 10; // Divide into 10 segments for 9 tags
+    final spacing1 =
+        westToCentralDist / 10; // Divide into 10 segments for 9 tags
 
-    transponders['T1_WC_1_UP'] = Transponder(id: 'T1_WC_1_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 1, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_WC_1_LOW'] = Transponder(id: 'T1_WC_1_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 1, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_1_UP'] = Transponder(
+        id: 'T1_WC_1_UP',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 1,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_WC_1_LOW'] = Transponder(
+        id: 'T1_WC_1_LOW',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 1,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T1_WC_2_UP'] = Transponder(id: 'T1_WC_2_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 2, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_WC_2_LOW'] = Transponder(id: 'T1_WC_2_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 2, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_2_UP'] = Transponder(
+        id: 'T1_WC_2_UP',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 2,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_WC_2_LOW'] = Transponder(
+        id: 'T1_WC_2_LOW',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 2,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T1_WC_3_UP'] = Transponder(id: 'T1_WC_3_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 3, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_WC_3_LOW'] = Transponder(id: 'T1_WC_3_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 3, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_3_UP'] = Transponder(
+        id: 'T1_WC_3_UP',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 3,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_WC_3_LOW'] = Transponder(
+        id: 'T1_WC_3_LOW',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 3,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T2_WC_1_UP'] = Transponder(id: 'T2_WC_1_UP', type: TransponderType.t2, x: westToCentralStart + spacing1 * 4, y: 100, description: 'T2 - Cross Border Tag');
-    transponders['T2_WC_1_LOW'] = Transponder(id: 'T2_WC_1_LOW', type: TransponderType.t2, x: westToCentralStart + spacing1 * 4, y: 300, description: 'T2 - Cross Border Tag');
+    transponders['T2_WC_1_UP'] = Transponder(
+        id: 'T2_WC_1_UP',
+        type: TransponderType.t2,
+        x: westToCentralStart + spacing1 * 4,
+        y: 100,
+        description: 'T2 - Cross Border Tag');
+    transponders['T2_WC_1_LOW'] = Transponder(
+        id: 'T2_WC_1_LOW',
+        type: TransponderType.t2,
+        x: westToCentralStart + spacing1 * 4,
+        y: 300,
+        description: 'T2 - Cross Border Tag');
 
-    transponders['T3_WC_UP'] = Transponder(id: 'T3_WC_UP', type: TransponderType.t3, x: westToCentralStart + spacing1 * 5, y: 100, description: 'T3 - Border Tag');
-    transponders['T3_WC_LOW'] = Transponder(id: 'T3_WC_LOW', type: TransponderType.t3, x: westToCentralStart + spacing1 * 5, y: 300, description: 'T3 - Border Tag');
+    transponders['T3_WC_UP'] = Transponder(
+        id: 'T3_WC_UP',
+        type: TransponderType.t3,
+        x: westToCentralStart + spacing1 * 5,
+        y: 100,
+        description: 'T3 - Border Tag');
+    transponders['T3_WC_LOW'] = Transponder(
+        id: 'T3_WC_LOW',
+        type: TransponderType.t3,
+        x: westToCentralStart + spacing1 * 5,
+        y: 300,
+        description: 'T3 - Border Tag');
 
-    transponders['T2_WC_2_UP'] = Transponder(id: 'T2_WC_2_UP', type: TransponderType.t2, x: westToCentralStart + spacing1 * 6, y: 100, description: 'T2 - Cross Border Tag');
-    transponders['T2_WC_2_LOW'] = Transponder(id: 'T2_WC_2_LOW', type: TransponderType.t2, x: westToCentralStart + spacing1 * 6, y: 300, description: 'T2 - Cross Border Tag');
+    transponders['T2_WC_2_UP'] = Transponder(
+        id: 'T2_WC_2_UP',
+        type: TransponderType.t2,
+        x: westToCentralStart + spacing1 * 6,
+        y: 100,
+        description: 'T2 - Cross Border Tag');
+    transponders['T2_WC_2_LOW'] = Transponder(
+        id: 'T2_WC_2_LOW',
+        type: TransponderType.t2,
+        x: westToCentralStart + spacing1 * 6,
+        y: 300,
+        description: 'T2 - Cross Border Tag');
 
-    transponders['T1_WC_4_UP'] = Transponder(id: 'T1_WC_4_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 7, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_WC_4_LOW'] = Transponder(id: 'T1_WC_4_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 7, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_4_UP'] = Transponder(
+        id: 'T1_WC_4_UP',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 7,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_WC_4_LOW'] = Transponder(
+        id: 'T1_WC_4_LOW',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 7,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T1_WC_5_UP'] = Transponder(id: 'T1_WC_5_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 8, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_WC_5_LOW'] = Transponder(id: 'T1_WC_5_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 8, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_5_UP'] = Transponder(
+        id: 'T1_WC_5_UP',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 8,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_WC_5_LOW'] = Transponder(
+        id: 'T1_WC_5_LOW',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 8,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T1_WC_6_UP'] = Transponder(id: 'T1_WC_6_UP', type: TransponderType.t1, x: westToCentralStart + spacing1 * 9, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_WC_6_LOW'] = Transponder(id: 'T1_WC_6_LOW', type: TransponderType.t1, x: westToCentralStart + spacing1 * 9, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_WC_6_UP'] = Transponder(
+        id: 'T1_WC_6_UP',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 9,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_WC_6_LOW'] = Transponder(
+        id: 'T1_WC_6_LOW',
+        type: TransponderType.t1,
+        x: westToCentralStart + spacing1 * 9,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
     // Transponder pattern between Central and East stations
     // Distance from Central end of P3 (1200) to East start of P5 (2400) = 1200 units
@@ -3037,32 +3451,122 @@ class TerminalStationController extends ChangeNotifier {
     final centralToEastStart = 1200.0 + 25; // After P3 T6 tag
     final spacing2 = centralToEastDist / 10;
 
-    transponders['T1_CE_1_UP'] = Transponder(id: 'T1_CE_1_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 1, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_CE_1_LOW'] = Transponder(id: 'T1_CE_1_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 1, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_1_UP'] = Transponder(
+        id: 'T1_CE_1_UP',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 1,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_CE_1_LOW'] = Transponder(
+        id: 'T1_CE_1_LOW',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 1,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T1_CE_2_UP'] = Transponder(id: 'T1_CE_2_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 2, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_CE_2_LOW'] = Transponder(id: 'T1_CE_2_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 2, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_2_UP'] = Transponder(
+        id: 'T1_CE_2_UP',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 2,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_CE_2_LOW'] = Transponder(
+        id: 'T1_CE_2_LOW',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 2,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T1_CE_3_UP'] = Transponder(id: 'T1_CE_3_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 3, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_CE_3_LOW'] = Transponder(id: 'T1_CE_3_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 3, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_3_UP'] = Transponder(
+        id: 'T1_CE_3_UP',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 3,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_CE_3_LOW'] = Transponder(
+        id: 'T1_CE_3_LOW',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 3,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T2_CE_1_UP'] = Transponder(id: 'T2_CE_1_UP', type: TransponderType.t2, x: centralToEastStart + spacing2 * 4, y: 100, description: 'T2 - Cross Border Tag');
-    transponders['T2_CE_1_LOW'] = Transponder(id: 'T2_CE_1_LOW', type: TransponderType.t2, x: centralToEastStart + spacing2 * 4, y: 300, description: 'T2 - Cross Border Tag');
+    transponders['T2_CE_1_UP'] = Transponder(
+        id: 'T2_CE_1_UP',
+        type: TransponderType.t2,
+        x: centralToEastStart + spacing2 * 4,
+        y: 100,
+        description: 'T2 - Cross Border Tag');
+    transponders['T2_CE_1_LOW'] = Transponder(
+        id: 'T2_CE_1_LOW',
+        type: TransponderType.t2,
+        x: centralToEastStart + spacing2 * 4,
+        y: 300,
+        description: 'T2 - Cross Border Tag');
 
-    transponders['T3_CE_UP'] = Transponder(id: 'T3_CE_UP', type: TransponderType.t3, x: centralToEastStart + spacing2 * 5, y: 100, description: 'T3 - Border Tag');
-    transponders['T3_CE_LOW'] = Transponder(id: 'T3_CE_LOW', type: TransponderType.t3, x: centralToEastStart + spacing2 * 5, y: 300, description: 'T3 - Border Tag');
+    transponders['T3_CE_UP'] = Transponder(
+        id: 'T3_CE_UP',
+        type: TransponderType.t3,
+        x: centralToEastStart + spacing2 * 5,
+        y: 100,
+        description: 'T3 - Border Tag');
+    transponders['T3_CE_LOW'] = Transponder(
+        id: 'T3_CE_LOW',
+        type: TransponderType.t3,
+        x: centralToEastStart + spacing2 * 5,
+        y: 300,
+        description: 'T3 - Border Tag');
 
-    transponders['T2_CE_2_UP'] = Transponder(id: 'T2_CE_2_UP', type: TransponderType.t2, x: centralToEastStart + spacing2 * 6, y: 100, description: 'T2 - Cross Border Tag');
-    transponders['T2_CE_2_LOW'] = Transponder(id: 'T2_CE_2_LOW', type: TransponderType.t2, x: centralToEastStart + spacing2 * 6, y: 300, description: 'T2 - Cross Border Tag');
+    transponders['T2_CE_2_UP'] = Transponder(
+        id: 'T2_CE_2_UP',
+        type: TransponderType.t2,
+        x: centralToEastStart + spacing2 * 6,
+        y: 100,
+        description: 'T2 - Cross Border Tag');
+    transponders['T2_CE_2_LOW'] = Transponder(
+        id: 'T2_CE_2_LOW',
+        type: TransponderType.t2,
+        x: centralToEastStart + spacing2 * 6,
+        y: 300,
+        description: 'T2 - Cross Border Tag');
 
-    transponders['T1_CE_4_UP'] = Transponder(id: 'T1_CE_4_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 7, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_CE_4_LOW'] = Transponder(id: 'T1_CE_4_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 7, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_4_UP'] = Transponder(
+        id: 'T1_CE_4_UP',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 7,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_CE_4_LOW'] = Transponder(
+        id: 'T1_CE_4_LOW',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 7,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T1_CE_5_UP'] = Transponder(id: 'T1_CE_5_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 8, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_CE_5_LOW'] = Transponder(id: 'T1_CE_5_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 8, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_5_UP'] = Transponder(
+        id: 'T1_CE_5_UP',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 8,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_CE_5_LOW'] = Transponder(
+        id: 'T1_CE_5_LOW',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 8,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
-    transponders['T1_CE_6_UP'] = Transponder(id: 'T1_CE_6_UP', type: TransponderType.t1, x: centralToEastStart + spacing2 * 9, y: 100, description: 'T1 - Crossover Tag');
-    transponders['T1_CE_6_LOW'] = Transponder(id: 'T1_CE_6_LOW', type: TransponderType.t1, x: centralToEastStart + spacing2 * 9, y: 300, description: 'T1 - Crossover Tag');
+    transponders['T1_CE_6_UP'] = Transponder(
+        id: 'T1_CE_6_UP',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 9,
+        y: 100,
+        description: 'T1 - Crossover Tag');
+    transponders['T1_CE_6_LOW'] = Transponder(
+        id: 'T1_CE_6_LOW',
+        type: TransponderType.t1,
+        x: centralToEastStart + spacing2 * 9,
+        y: 300,
+        description: 'T1 - Crossover Tag');
 
     _logEvent(
         '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, ${signals.length} signals, ${points.length} points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
@@ -3122,7 +3626,8 @@ class TerminalStationController extends ChangeNotifier {
     // TODO: Define routes through crossovers
     // This will allow trains to actually traverse the double diamond
 
-    _logEvent('⚠️ Double diamond crossover routing NOT IMPLEMENTED - visual only');
+    _logEvent(
+        '⚠️ Double diamond crossover routing NOT IMPLEMENTED - visual only');
   }
 
   /// TODO: Calculate route through double diamond crossover
@@ -3381,7 +3886,8 @@ class TerminalStationController extends ChangeNotifier {
 
       // FIXED: Check if train has moved at least 2 blocks (200 units) from last platform
       if (!train.hasLeftPlatform && train.lastDoorOpenPositionX != null) {
-        final distanceFromLastPlatform = (train.x - train.lastDoorOpenPositionX!).abs();
+        final distanceFromLastPlatform =
+            (train.x - train.lastDoorOpenPositionX!).abs();
         if (distanceFromLastPlatform >= 200.0) {
           train.hasLeftPlatform = true;
           _logEvent('✓ ${train.name} cleared 2 blocks from last platform');
@@ -3394,12 +3900,13 @@ class TerminalStationController extends ChangeNotifier {
       // Check if train is at a platform
       for (var platform in platforms) {
         final atPlatform = train.x >= platform.startX &&
-                          train.x <= platform.endX &&
-                          (train.y - platform.y).abs() < 20;
+            train.x <= platform.endX &&
+            (train.y - platform.y).abs() < 20;
 
         if (atPlatform) {
           // FIXED: Check if this is the same platform where doors last opened
-          if (train.lastPlatformDoorsOpened == platform.id && !train.hasLeftPlatform) {
+          if (train.lastPlatformDoorsOpened == platform.id &&
+              !train.hasLeftPlatform) {
             // Skip - haven't left this platform yet
             continue;
           }
@@ -3435,7 +3942,8 @@ class TerminalStationController extends ChangeNotifier {
           if (train.manualStop) {
             train.manualStop = false;
             train.targetSpeed = 2.0; // Resume at slow speed
-            _logEvent('🚂 ${train.name} resuming journey - must travel 2 blocks before next stop');
+            _logEvent(
+                '🚂 ${train.name} resuming journey - must travel 2 blocks before next stop');
           }
         }
       }
@@ -3640,7 +4148,8 @@ class TerminalStationController extends ChangeNotifier {
 
   void acknowledgeCollisionAlarm() {
     // Move collided trains back 20 units in opposite directions for recovery
-    if (currentCollisionIncident != null && currentCollisionIncident!.trainsInvolved.length >= 2) {
+    if (currentCollisionIncident != null &&
+        currentCollisionIncident!.trainsInvolved.length >= 2) {
       final train1Id = currentCollisionIncident!.trainsInvolved[0];
       final train2Id = currentCollisionIncident!.trainsInvolved[1];
 
@@ -3665,7 +4174,8 @@ class TerminalStationController extends ChangeNotifier {
       train2.targetSpeed = 0;
       train2.emergencyBrake = true;
 
-      _logEvent('🔧 COLLISION RECOVERY: ${train1.name} and ${train2.name} moved back 20 units');
+      _logEvent(
+          '🔧 COLLISION RECOVERY: ${train1.name} and ${train2.name} moved back 20 units');
       _updateBlockOccupation();
     }
 
@@ -3707,7 +4217,8 @@ class TerminalStationController extends ChangeNotifier {
         .any((reservation) => reservation.reservedBlocks.contains(blockId));
   }
 
-  void addTrainToBlock(String blockId, {
+  void addTrainToBlock(
+    String blockId, {
     TrainType trainType = TrainType.m1,
     String? destination,
     bool assignToTimetable = false,
@@ -3732,7 +4243,8 @@ class TerminalStationController extends ChangeNotifier {
       direction = -1;
     }
 
-    final isCbtc = trainType == TrainType.cbtcM1 || trainType == TrainType.cbtcM2;
+    final isCbtc =
+        trainType == TrainType.cbtcM1 || trainType == TrainType.cbtcM2;
 
     final train = Train(
       id: 'T$nextTrainNumber',
@@ -3748,7 +4260,8 @@ class TerminalStationController extends ChangeNotifier {
       controlMode: TrainControlMode.automatic,
       manualStop: false,
       isCbtcEquipped: isCbtc,
-      cbtcMode: isCbtc ? CbtcMode.rm : CbtcMode.off, // Start CBTC trains in RM mode
+      cbtcMode:
+          isCbtc ? CbtcMode.rm : CbtcMode.off, // Start CBTC trains in RM mode
       smcDestination: destination,
       isNCT: isCbtc && destination != null, // NCT if CBTC with destination
       transpondersPassed: 0,
@@ -3760,8 +4273,10 @@ class TerminalStationController extends ChangeNotifier {
 
     // Log NCT alert if CBTC train starts in NCT state
     if (train.isNCT) {
-      _logEvent('🚨 NCT ALERT: ${train.name} is a Non-Communication Train (newly added)');
-      _logEvent('ℹ️  Put train in RM mode and pass over 2 transponders to activate');
+      _logEvent(
+          '🚨 NCT ALERT: ${train.name} is a Non-Communication Train (newly added)');
+      _logEvent(
+          'ℹ️  Put train in RM mode and pass over 2 transponders to activate');
     }
 
     // If assign to timetable, find next available ghost train slot
@@ -3804,6 +4319,14 @@ class TerminalStationController extends ChangeNotifier {
         return 'CBTC M1';
       case TrainType.cbtcM2:
         return 'CBTC M2';
+      case TrainType.m4:
+        return 'M4';
+      case TrainType.m8:
+        return 'M8';
+      case TrainType.cbtcM4:
+        return 'CBTC M4';
+      case TrainType.cbtcM8:
+        return 'CBTC M8';
     }
   }
 
@@ -3906,7 +4429,8 @@ class TerminalStationController extends ChangeNotifier {
 
     // Check if point is reserved
     if (reservedPoints.containsKey(pointId)) {
-      _logEvent('🔒 Point $pointId is RESERVED in ${reservedPoints[pointId]!.name} - cannot swing');
+      _logEvent(
+          '🔒 Point $pointId is RESERVED in ${reservedPoints[pointId]!.name} - cannot swing');
       return;
     }
 
@@ -4545,7 +5069,8 @@ class TerminalStationController extends ChangeNotifier {
       rotation: train.rotation,
       doorsOpen: train.doorsOpen,
       doorsOpenedAt: train.doorsOpenedAt,
-      isCbtcEquipped: newType == TrainType.cbtcM1 || newType == TrainType.cbtcM2,
+      isCbtcEquipped:
+          newType == TrainType.cbtcM1 || newType == TrainType.cbtcM2,
       cbtcMode: (newType == TrainType.cbtcM1 || newType == TrainType.cbtcM2)
           ? CbtcMode.auto
           : CbtcMode.off,
@@ -4575,6 +5100,14 @@ class TerminalStationController extends ChangeNotifier {
         return 'CBTC M1';
       case TrainType.cbtcM2:
         return 'CBTC M2';
+      case TrainType.m4:
+        return 'M4 (Single)';
+      case TrainType.m8:
+        return 'M8 (Double)';
+      case TrainType.cbtcM4:
+        return 'CBTC M4';
+      case TrainType.cbtcM8:
+        return 'CBTC M8';
     }
   }
 
@@ -4583,7 +5116,8 @@ class TerminalStationController extends ChangeNotifier {
 
     // Prevent switching to AUTO or PM mode when in NCT state
     if (train.isNCT && (newMode == CbtcMode.auto || newMode == CbtcMode.pm)) {
-      _logEvent('❌ ${train.name} is in NCT state (flashing red) - cannot enter ${_getCbtcModeName(newMode)} mode');
+      _logEvent(
+          '❌ ${train.name} is in NCT state (flashing red) - cannot enter ${_getCbtcModeName(newMode)} mode');
       _logEvent('ℹ️  Put train in RM mode and pass over 2 transponders first');
       return;
     }
@@ -4592,7 +5126,9 @@ class TerminalStationController extends ChangeNotifier {
     train.cbtcMode = newMode;
 
     // If switching FROM off mode TO any other mode, trigger NCT
-    if (oldMode == CbtcMode.off && newMode != CbtcMode.off && newMode != CbtcMode.storage) {
+    if (oldMode == CbtcMode.off &&
+        newMode != CbtcMode.off &&
+        newMode != CbtcMode.storage) {
       train.isNCT = true;
       train.transpondersPassed = 0;
       train.terReceived = false;
@@ -4600,11 +5136,14 @@ class TerminalStationController extends ChangeNotifier {
       train.lastTransponderId = null;
       train.tractionLostAt = null; // Clear traction tracking
       train.tractionLossWarned = false;
-      _logEvent('🚨 NCT ALERT: ${train.name} is now a Non-Communication Train (was in OFF mode)');
-      _logEvent('ℹ️  Switch to RM mode and pass over 2 transponders to activate');
+      _logEvent(
+          '🚨 NCT ALERT: ${train.name} is now a Non-Communication Train (was in OFF mode)');
+      _logEvent(
+          'ℹ️  Switch to RM mode and pass over 2 transponders to activate');
     }
 
-    _logEvent('🔧 ${train.name} CBTC mode changed to ${_getCbtcModeName(newMode)}');
+    _logEvent(
+        '🔧 ${train.name} CBTC mode changed to ${_getCbtcModeName(newMode)}');
     notifyListeners();
   }
 
@@ -4737,18 +5276,21 @@ class TerminalStationController extends ChangeNotifier {
             if (train.transpondersPassed == 1) {
               // First transponder: TER (Train Entry Request)
               train.terReceived = true;
-              _logEvent('📡 ${train.name} TER: Train Entry Request received by VCC (Transponder ${transponder.id})');
+              _logEvent(
+                  '📡 ${train.name} TER: Train Entry Request received by VCC (Transponder ${transponder.id})');
             } else if (train.transpondersPassed == 2) {
               // Second transponder: Direction confirmed, NCT cleared
               train.directionConfirmed = true;
               train.isNCT = false; // Clear NCT state
               train.tractionLostAt = null; // Clear traction tracking
               train.tractionLossWarned = false;
-              _logEvent('✅ ${train.name} ACTIVE: Direction confirmed, NCT state cleared (Transponder ${transponder.id})');
+              _logEvent(
+                  '✅ ${train.name} ACTIVE: Direction confirmed, NCT state cleared (Transponder ${transponder.id})');
               _logEvent('🚄 ${train.name} can now enter AUTO or PM mode');
             } else if (train.transpondersPassed > 2) {
               // Log subsequent transponder passes for positioning
-              _logEvent('📍 ${train.name} passed transponder ${transponder.id} (${transponder.description})');
+              _logEvent(
+                  '📍 ${train.name} passed transponder ${transponder.id} (${transponder.description})');
             }
 
             notifyListeners();
@@ -4789,12 +5331,14 @@ class TerminalStationController extends ChangeNotifier {
       // 1.5. CLOSED BLOCK CHECK - Auto trains emergency brake in/approaching closed blocks
       if (train.controlMode == TrainControlMode.automatic) {
         // Check if current block is closed
-        if (train.currentBlockId != null && isBlockClosed(train.currentBlockId!)) {
+        if (train.currentBlockId != null &&
+            isBlockClosed(train.currentBlockId!)) {
           if (!train.emergencyBrake) {
             train.emergencyBrake = true;
             train.targetSpeed = 0;
             train.speed = 0;
-            _logEvent('🚫 ${train.name} EMERGENCY BRAKE: In closed block ${train.currentBlockId}');
+            _logEvent(
+                '🚫 ${train.name} EMERGENCY BRAKE: In closed block ${train.currentBlockId}');
           }
           continue;
         }
@@ -4827,7 +5371,8 @@ class TerminalStationController extends ChangeNotifier {
             if (!train.emergencyBrake) {
               train.emergencyBrake = true;
               train.targetSpeed = 0;
-              _logEvent('🚫 ${train.name} EMERGENCY BRAKE: Approaching closed block ${block.id} (${distanceToBlock.toStringAsFixed(1)}m away)');
+              _logEvent(
+                  '🚫 ${train.name} EMERGENCY BRAKE: Approaching closed block ${block.id} (${distanceToBlock.toStringAsFixed(1)}m away)');
             }
             break;
           }
@@ -4863,7 +5408,9 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       // 5. CBTC TRACTION LOSS - Check for traction current in train's area
-      if (train.isCbtcTrain && train.cbtcMode != CbtcMode.off && train.cbtcMode != CbtcMode.storage) {
+      if (train.isCbtcTrain &&
+          train.cbtcMode != CbtcMode.off &&
+          train.cbtcMode != CbtcMode.storage) {
         final hasTraction = isTractionOnAt(train.x);
 
         if (!hasTraction) {
@@ -4871,14 +5418,16 @@ class TerminalStationController extends ChangeNotifier {
           if (!train.emergencyBrake) {
             train.emergencyBrake = true;
             train.targetSpeed = 0;
-            _logEvent('🚨 ${train.name} EMERGENCY BRAKE: Traction current lost');
+            _logEvent(
+                '🚨 ${train.name} EMERGENCY BRAKE: Traction current lost');
           }
 
           // Start or continue 30-second countdown to NCT
           if (train.tractionLostAt == null) {
             train.tractionLostAt = DateTime.now();
             train.tractionLossWarned = false;
-            _logEvent('⚠️  ${train.name} traction lost - 30 seconds until NCT state');
+            _logEvent(
+                '⚠️  ${train.name} traction lost - 30 seconds until NCT state');
           } else {
             // Check if 30 seconds have elapsed
             final elapsed = DateTime.now().difference(train.tractionLostAt!);
@@ -4888,12 +5437,15 @@ class TerminalStationController extends ChangeNotifier {
               train.transpondersPassed = 0;
               train.terReceived = false;
               train.directionConfirmed = false;
-              _logEvent('🚨 NCT ALERT: ${train.name} traction not restored - now in NCT state');
-              _logEvent('ℹ️  ${train.name} must use RM mode and pass 2 transponders to re-activate');
+              _logEvent(
+                  '🚨 NCT ALERT: ${train.name} traction not restored - now in NCT state');
+              _logEvent(
+                  'ℹ️  ${train.name} must use RM mode and pass 2 transponders to re-activate');
             } else if (elapsed.inSeconds >= 15 && !train.tractionLossWarned) {
               // Warn at 15 seconds remaining
               train.tractionLossWarned = true;
-              _logEvent('⚠️  ${train.name} traction still off - ${30 - elapsed.inSeconds} seconds until NCT');
+              _logEvent(
+                  '⚠️  ${train.name} traction still off - ${30 - elapsed.inSeconds} seconds until NCT');
             }
           }
         } else {
@@ -4923,7 +5475,8 @@ class TerminalStationController extends ChangeNotifier {
               final distance = (trainAhead.x - train.x).abs();
               if (distance < 20.0) {
                 train.targetSpeed = 0;
-                _logEvent('🛑 CBTC ${train.name} stopped: Train ahead within 20 units');
+                _logEvent(
+                    '🛑 CBTC ${train.name} stopped: Train ahead within 20 units');
               } else {
                 train.targetSpeed = 2.0;
               }
@@ -4936,7 +5489,8 @@ class TerminalStationController extends ChangeNotifier {
                   final distance = (abPosition - train.x) * train.direction;
                   if (distance < 20.0 && distance > 0) {
                     train.targetSpeed = 0;
-                    _logEvent('🛑 CBTC ${train.name} stopped: Occupied AB ahead within 20 units');
+                    _logEvent(
+                        '🛑 CBTC ${train.name} stopped: Occupied AB ahead within 20 units');
                   } else {
                     train.targetSpeed = 2.0;
                   }
@@ -4964,7 +5518,8 @@ class TerminalStationController extends ChangeNotifier {
               final distance = (trainAhead.x - train.x).abs();
               if (distance < 20.0) {
                 train.emergencyBrake = true;
-                _logEvent('⚠️ CBTC PM ${train.name}: Emergency brake - Train ahead within 20 units');
+                _logEvent(
+                    '⚠️ CBTC PM ${train.name}: Emergency brake - Train ahead within 20 units');
               }
             }
 
@@ -4975,7 +5530,8 @@ class TerminalStationController extends ChangeNotifier {
                 final distance = (abPosition - train.x) * train.direction;
                 if (distance < 20.0 && distance > 0) {
                   train.emergencyBrake = true;
-                  _logEvent('⚠️ CBTC PM ${train.name}: Emergency brake - Occupied AB ahead within 20 units');
+                  _logEvent(
+                      '⚠️ CBTC PM ${train.name}: Emergency brake - Occupied AB ahead within 20 units');
                 }
               }
             }
@@ -4991,10 +5547,12 @@ class TerminalStationController extends ChangeNotifier {
             // No signal checks, no train stop checks, no speed restrictions
             // User controls movement via Go/Stop buttons
             if (train.targetSpeed == 0) {
-              train.targetSpeed = 2.0; // Ensure train can move when Go is pressed
+              train.targetSpeed =
+                  2.0; // Ensure train can move when Go is pressed
             }
           }
-        } else if (train.cbtcMode == CbtcMode.storage || train.cbtcMode == CbtcMode.off) {
+        } else if (train.cbtcMode == CbtcMode.storage ||
+            train.cbtcMode == CbtcMode.off) {
           // Storage or Off mode - train should not move
           train.targetSpeed = 0;
           train.speed = 0;
@@ -5017,57 +5575,58 @@ class TerminalStationController extends ChangeNotifier {
           // Automatic mode - check signals and route reservations
           Signal? signalAhead = _getSignalAhead(train);
 
-        // Enhanced permissive movement logic with direction protection
-        bool hasPassedSignalThreshold = false;
-        if (signalAhead != null && train.lastPassedSignalId == signalAhead.id) {
-          final distancePastSignal =
-              (train.x - signalAhead.x) * train.direction;
-          hasPassedSignalThreshold = distancePastSignal > 4;
-        }
-
-        // Enhanced direction-based signal protection
-        signalAhead = _filterSignalByDirection(train, signalAhead);
-
-        // Check if train has route reservation for the block ahead
-        bool hasRouteReservation = false;
-        final nextBlock = _getNextBlockForTrain(train);
-        if (nextBlock != null) {
-          hasRouteReservation = routeReservations.values.any((reservation) =>
-              reservation.trainId == train.id &&
-              reservation.reservedBlocks.contains(nextBlock));
-        }
-
-        if (signalAhead == null) {
-          train.targetSpeed = 2.0;
-        } else if (signalAhead.aspect == SignalAspect.red &&
-            !hasPassedSignalThreshold &&
-            !hasRouteReservation) {
-          final distanceToSignal = (signalAhead.x - train.x).abs();
-          if (distanceToSignal < 100 && distanceToSignal > 0) {
-            if (train.targetSpeed > 0) {
-              _logStopReason(train, signalAhead, 'approaching red signal');
-            }
-            train.targetSpeed = 0;
-            train.hasCommittedToMove = false;
+          // Enhanced permissive movement logic with direction protection
+          bool hasPassedSignalThreshold = false;
+          if (signalAhead != null &&
+              train.lastPassedSignalId == signalAhead.id) {
+            final distancePastSignal =
+                (train.x - signalAhead.x) * train.direction;
+            hasPassedSignalThreshold = distancePastSignal > 4;
           }
-        } else {
-          train.targetSpeed = 2.0;
 
-          if ((signalAhead.aspect == SignalAspect.green ||
-                  hasRouteReservation) &&
-              !train.hasCommittedToMove) {
-            final hasPassed = train.direction > 0
-                ? train.x >= signalAhead.x
-                : train.x <= signalAhead.x;
+          // Enhanced direction-based signal protection
+          signalAhead = _filterSignalByDirection(train, signalAhead);
 
-            if (hasPassed) {
-              train.lastPassedSignalId = signalAhead.id;
-              train.hasCommittedToMove = true;
-              _logEvent(
-                  '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+          // Check if train has route reservation for the block ahead
+          bool hasRouteReservation = false;
+          final nextBlock = _getNextBlockForTrain(train);
+          if (nextBlock != null) {
+            hasRouteReservation = routeReservations.values.any((reservation) =>
+                reservation.trainId == train.id &&
+                reservation.reservedBlocks.contains(nextBlock));
+          }
+
+          if (signalAhead == null) {
+            train.targetSpeed = 2.0;
+          } else if (signalAhead.aspect == SignalAspect.red &&
+              !hasPassedSignalThreshold &&
+              !hasRouteReservation) {
+            final distanceToSignal = (signalAhead.x - train.x).abs();
+            if (distanceToSignal < 100 && distanceToSignal > 0) {
+              if (train.targetSpeed > 0) {
+                _logStopReason(train, signalAhead, 'approaching red signal');
+              }
+              train.targetSpeed = 0;
+              train.hasCommittedToMove = false;
+            }
+          } else {
+            train.targetSpeed = 2.0;
+
+            if ((signalAhead.aspect == SignalAspect.green ||
+                    hasRouteReservation) &&
+                !train.hasCommittedToMove) {
+              final hasPassed = train.direction > 0
+                  ? train.x >= signalAhead.x
+                  : train.x <= signalAhead.x;
+
+              if (hasPassed) {
+                train.lastPassedSignalId = signalAhead.id;
+                train.hasCommittedToMove = true;
+                _logEvent(
+                    '🚂 ${train.name} passed signal ${signalAhead.id} - committed to route');
+              }
             }
           }
-        }
         }
       }
 
@@ -5269,14 +5828,22 @@ class TerminalStationController extends ChangeNotifier {
 
       // LEFT SECTION (200-214)
       switch (currentBlock.id) {
-        case '200': return '202';
-        case '202': return '204';
-        case '204': return '206';
-        case '206': return '208';
-        case '208': return '210';
-        case '210': return '212';
-        case '212': return '214';
-        case '214': return '100'; // Continue to MIDDLE section
+        case '200':
+          return '202';
+        case '202':
+          return '204';
+        case '204':
+          return '206';
+        case '206':
+          return '208';
+        case '208':
+          return '210';
+        case '210':
+          return '212';
+        case '212':
+          return '214';
+        case '214':
+          return '100'; // Continue to MIDDLE section
       }
 
       // MIDDLE SECTION (100-114)
@@ -5331,22 +5898,31 @@ class TerminalStationController extends ChangeNotifier {
 
       // RIGHT SECTION (300-314)
       switch (currentBlock.id) {
-        case '300': return '302';
-        case '302': return '304';
-        case '304': return '306';
-        case '306': return '308';
-        case '308': return '310';
-        case '310': return '312';
-        case '312': return '314';
-        case '314': return 'crossover_right'; // Use right crossover to switch to lower track
+        case '300':
+          return '302';
+        case '302':
+          return '304';
+        case '304':
+          return '306';
+        case '306':
+          return '308';
+        case '308':
+          return '310';
+        case '310':
+          return '312';
+        case '312':
+          return '314';
+        case '314':
+          return 'crossover_right'; // Use right crossover to switch to lower track
       }
 
       // Crossovers
-      if (currentBlock.id == 'crossover_right') return '315'; // Switch to lower track
+      if (currentBlock.id == 'crossover_right')
+        return '315'; // Switch to lower track
       if (currentBlock.id == 'crossover106') return 'crossover109';
       if (currentBlock.id == 'crossover109') return '109';
-      if (currentBlock.id == 'crossover_left') return '201'; // Switch to lower track
-
+      if (currentBlock.id == 'crossover_left')
+        return '201'; // Switch to lower track
     } else {
       // ========== WESTBOUND (Lower Track) ==========
 
@@ -5402,33 +5978,51 @@ class TerminalStationController extends ChangeNotifier {
 
       // MIDDLE SECTION (101-115) - going west
       switch (currentBlock.id) {
-        case '115': return '113';
-        case '113': return '111';
-        case '111': return '109';
-        case '109': return '107';
-        case '107': return '105';
-        case '105': return '103';
-        case '103': return '101';
-        case '101': return '215'; // Continue to LEFT section
+        case '115':
+          return '113';
+        case '113':
+          return '111';
+        case '111':
+          return '109';
+        case '109':
+          return '107';
+        case '107':
+          return '105';
+        case '105':
+          return '103';
+        case '103':
+          return '101';
+        case '101':
+          return '215'; // Continue to LEFT section
       }
 
       // LEFT SECTION (201-215) - going west
       switch (currentBlock.id) {
-        case '215': return '213';
-        case '213': return '211';
-        case '211': return '209';
-        case '209': return '207';
-        case '207': return '205';
-        case '205': return '203';
-        case '203': return '201';
-        case '201': return 'crossover_left'; // Use left crossover to switch to upper track
+        case '215':
+          return '213';
+        case '213':
+          return '211';
+        case '211':
+          return '209';
+        case '209':
+          return '207';
+        case '207':
+          return '205';
+        case '205':
+          return '203';
+        case '203':
+          return '201';
+        case '201':
+          return 'crossover_left'; // Use left crossover to switch to upper track
       }
 
       // Crossovers
-      if (currentBlock.id == 'crossover_left') return '200'; // Complete loop - switch to upper track
+      if (currentBlock.id == 'crossover_left')
+        return '200'; // Complete loop - switch to upper track
       if (currentBlock.id == 'crossover109') return 'crossover106';
       if (currentBlock.id == 'crossover106') return '104';
-      if (currentBlock.id == 'crossover_right') return '314'; // Back to upper track
+      if (currentBlock.id == 'crossover_right')
+        return '314'; // Back to upper track
     }
 
     return null;
@@ -5452,15 +6046,16 @@ class TerminalStationController extends ChangeNotifier {
       // Only consider points ahead within 100 units
       if (distanceToPoint > 0 && distanceToPoint < 100) {
         // Determine required point position based on destination
-        final requiredPosition = _calculateRequiredPointPosition(
-          train, point, destinationBlock);
+        final requiredPosition =
+            _calculateRequiredPointPosition(train, point, destinationBlock);
 
         if (requiredPosition != null && point.position != requiredPosition) {
           // Check if point can be swung (not deadlocked)
           if (!_isPointDeadlockedByAB(point.id) && _arePointsMovable()) {
             // Automatically throw the point
             point.position = requiredPosition;
-            _logEvent('🔀 CBTC Auto: Point ${point.id} swung to ${requiredPosition.name.toUpperCase()} for ${train.name}');
+            _logEvent(
+                '🔀 CBTC Auto: Point ${point.id} swung to ${requiredPosition.name.toUpperCase()} for ${train.name}');
             notifyListeners();
           }
         }
@@ -5497,7 +6092,8 @@ class TerminalStationController extends ChangeNotifier {
               signalAhead.activeRouteId = route.id;
               signalAhead.aspect = SignalAspect.blue; // Keep blue in CBTC mode
 
-              _logEvent('🔀 CBTC Auto: Route ${route.id} set for ${train.name} to reach $destinationBlock');
+              _logEvent(
+                  '🔀 CBTC Auto: Route ${route.id} set for ${train.name} to reach $destinationBlock');
               notifyListeners();
               break;
             }
@@ -5544,8 +6140,10 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     // For points 79A/79B/80A/80B (right crossover)
-    if (point.id == '79A' || point.id == '79B' ||
-        point.id == '80A' || point.id == '80B') {
+    if (point.id == '79A' ||
+        point.id == '79B' ||
+        point.id == '80A' ||
+        point.id == '80B') {
       if (destinationY > 200) {
         return PointPosition.reverse; // Route to upper track
       } else {
@@ -5557,7 +6155,8 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   /// Check if route leads toward destination
-  bool _isRouteTowardDestination(Train train, SignalRoute route, String destinationBlock) {
+  bool _isRouteTowardDestination(
+      Train train, SignalRoute route, String destinationBlock) {
     // Check if any of the route's required blocks or protected blocks
     // are on the path to the destination
     final allBlocks = [...route.requiredBlocksClear, ...route.protectedBlocks];
@@ -5568,16 +6167,19 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       // Check if block is on the path to destination
-      if (_isBlockOnPathToDestination(blockId, destinationBlock, train.direction)) {
+      if (_isBlockOnPathToDestination(
+          blockId, destinationBlock, train.direction)) {
         return true;
       }
     }
 
-    return allBlocks.isNotEmpty; // If no specific match, allow if route has blocks
+    return allBlocks
+        .isNotEmpty; // If no specific match, allow if route has blocks
   }
 
   /// Check if block is on path to destination
-  bool _isBlockOnPathToDestination(String blockId, String destinationBlock, int direction) {
+  bool _isBlockOnPathToDestination(
+      String blockId, String destinationBlock, int direction) {
     // Simple heuristic: check if block number is between current and destination
     final blockNum = int.tryParse(blockId);
     final destNum = int.tryParse(destinationBlock);
@@ -5672,7 +6274,7 @@ class TerminalStationController extends ChangeNotifier {
       if (point76A?.position == PointPosition.reverse &&
           point76B?.position == PointPosition.reverse) {
         // 135-degree crossover - train transitioning between upper and lower tracks
-        double progress = (train.x + 550) / 100;  // 0 to 1 over the crossover
+        double progress = (train.x + 550) / 100; // 0 to 1 over the crossover
         if (train.direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
           train.y = 100 + (200 * progress);
@@ -5699,11 +6301,11 @@ class TerminalStationController extends ChangeNotifier {
         if (train.x < 700) {
           double progress = (train.x - 600) / 100;
           train.y = 100 + (100 * progress);
-          train.rotation = 0.785398;  // 45 degrees
+          train.rotation = 0.785398; // 45 degrees
         } else {
           double progress = (train.x - 700) / 100;
           train.y = 200 + (100 * progress);
-          train.rotation = 0.785398;  // 45 degrees
+          train.rotation = 0.785398; // 45 degrees
         }
       } else {
         if (train.y < 200) {
@@ -5719,7 +6321,7 @@ class TerminalStationController extends ChangeNotifier {
       if (point80A?.position == PointPosition.reverse &&
           point80B?.position == PointPosition.reverse) {
         // 135-degree crossover - train transitioning between upper and lower tracks
-        double progress = (train.x - 1900) / 100;  // 0 to 1 over the crossover
+        double progress = (train.x - 1900) / 100; // 0 to 1 over the crossover
         if (train.direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
           train.y = 100 + (200 * progress);
@@ -5916,7 +6518,8 @@ class TerminalStationController extends ChangeNotifier {
       final point77B = points['77B'];
       if (point76B?.position == PointPosition.reverse &&
           point77B?.position == PointPosition.reverse) {
-        _logEvent('💥 COLLISION: ${train.name} running through reversed points 76B/77B from converging side!');
+        _logEvent(
+            '💥 COLLISION: ${train.name} running through reversed points 76B/77B from converging side!');
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
@@ -5930,7 +6533,8 @@ class TerminalStationController extends ChangeNotifier {
       final point77A = points['77A'];
       if (point76A?.position == PointPosition.reverse &&
           point77A?.position == PointPosition.reverse) {
-        _logEvent('💥 COLLISION: ${train.name} running through reversed points 76A/77A from converging side!');
+        _logEvent(
+            '💥 COLLISION: ${train.name} running through reversed points 76A/77A from converging side!');
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
@@ -5943,7 +6547,8 @@ class TerminalStationController extends ChangeNotifier {
     if (train.direction > 0 && currentBlockId == '109') {
       final point78B = points['78B'];
       if (point78B?.position == PointPosition.reverse) {
-        _logEvent('💥 COLLISION: ${train.name} running through reversed point 78B from converging side!');
+        _logEvent(
+            '💥 COLLISION: ${train.name} running through reversed point 78B from converging side!');
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
@@ -5955,7 +6560,8 @@ class TerminalStationController extends ChangeNotifier {
     if (train.direction < 0 && currentBlockId == '108') {
       final point78A = points['78A'];
       if (point78A?.position == PointPosition.reverse) {
-        _logEvent('💥 COLLISION: ${train.name} running through reversed point 78A from converging side!');
+        _logEvent(
+            '💥 COLLISION: ${train.name} running through reversed point 78A from converging side!');
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
@@ -5970,7 +6576,8 @@ class TerminalStationController extends ChangeNotifier {
       final point80B = points['80B'];
       if (point79B?.position == PointPosition.reverse &&
           point80B?.position == PointPosition.reverse) {
-        _logEvent('💥 COLLISION: ${train.name} running through reversed points 79B/80B from converging side!');
+        _logEvent(
+            '💥 COLLISION: ${train.name} running through reversed points 79B/80B from converging side!');
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
@@ -5984,7 +6591,8 @@ class TerminalStationController extends ChangeNotifier {
       final point80A = points['80A'];
       if (point79A?.position == PointPosition.reverse &&
           point80A?.position == PointPosition.reverse) {
-        _logEvent('💥 COLLISION: ${train.name} running through reversed points 79A/80A from converging side!');
+        _logEvent(
+            '💥 COLLISION: ${train.name} running through reversed points 79A/80A from converging side!');
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
@@ -6313,10 +6921,12 @@ class TerminalStationController extends ChangeNotifier {
   /// Exports enhanced double diamond crossover configurations
   void _exportDoubleDiamondCrossovers(StringBuffer buffer) {
     // LEFT SECTION - Double Diamond Crossover (x=-550 to -450)
-    buffer.writeln('  <DoubleDiamondCrossover id="ddc_77" centerX="-500" centerY="200">');
+    buffer.writeln(
+        '  <DoubleDiamondCrossover id="ddc_77" centerX="-500" centerY="200">');
     buffer.writeln('    <!-- Points: 76A, 76B, 77A, 77B -->');
     buffer.writeln('    <Points>');
-    buffer.writeln('      <Point id="77c" type="left_hand" x="-575.7" y="173.8" state="normal">');
+    buffer.writeln(
+        '      <Point id="77c" type="left_hand" x="-575.7" y="173.8" state="normal">');
     buffer.writeln('        <Geometry>');
     buffer.writeln('          <MainRoute angle="0" length="21.2"/>');
     buffer.writeln('          <DivergingRoute angle="-6.7" length="21.2"/>');
@@ -6327,7 +6937,8 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('          <Detection circuit="DP_77c"/>');
     buffer.writeln('        </Control>');
     buffer.writeln('      </Point>');
-    buffer.writeln('      <Point id="77d" type="right_hand" x="-424.3" y="173.8" state="normal">');
+    buffer.writeln(
+        '      <Point id="77d" type="right_hand" x="-424.3" y="173.8" state="normal">');
     buffer.writeln('        <Geometry>');
     buffer.writeln('          <MainRoute angle="180" length="21.2"/>');
     buffer.writeln('          <DivergingRoute angle="186.7" length="21.2"/>');
@@ -6338,7 +6949,8 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('          <Detection circuit="DP_77d"/>');
     buffer.writeln('        </Control>');
     buffer.writeln('      </Point>');
-    buffer.writeln('      <Point id="77e" type="left_hand" x="-523.2" y="273.7" state="normal">');
+    buffer.writeln(
+        '      <Point id="77e" type="left_hand" x="-523.2" y="273.7" state="normal">');
     buffer.writeln('        <Geometry>');
     buffer.writeln('          <MainRoute angle="90" length="21.2"/>');
     buffer.writeln('          <DivergingRoute angle="83.3" length="21.2"/>');
@@ -6349,7 +6961,8 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('          <Detection circuit="DP_77e"/>');
     buffer.writeln('        </Control>');
     buffer.writeln('      </Point>');
-    buffer.writeln('      <Point id="77f" type="right_hand" x="-476.8" y="226.3" state="normal">');
+    buffer.writeln(
+        '      <Point id="77f" type="right_hand" x="-476.8" y="226.3" state="normal">');
     buffer.writeln('        <Geometry>');
     buffer.writeln('          <MainRoute angle="270" length="21.2"/>');
     buffer.writeln('          <DivergingRoute angle="276.7" length="21.2"/>');
@@ -6364,7 +6977,8 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('');
     buffer.writeln('    <!-- Diamond Crossings -->');
     buffer.writeln('    <Diamonds>');
-    buffer.writeln('      <Diamond id="diamond_45" angle="45" x="-500" y="200">');
+    buffer
+        .writeln('      <Diamond id="diamond_45" angle="45" x="-500" y="200">');
     buffer.writeln('        <Geometry>');
     buffer.writeln('          <Leg1 direction="22.5" length="28.4"/>');
     buffer.writeln('          <Leg2 direction="112.5" length="28.4"/>');
@@ -6378,7 +6992,8 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('          <MaintenanceFactor>3.0</MaintenanceFactor>');
     buffer.writeln('        </Performance>');
     buffer.writeln('      </Diamond>');
-    buffer.writeln('      <Diamond id="diamond_135" angle="135" x="-500" y="200">');
+    buffer.writeln(
+        '      <Diamond id="diamond_135" angle="135" x="-500" y="200">');
     buffer.writeln('        <Geometry>');
     buffer.writeln('          <Leg1 direction="67.5" length="28.4"/>');
     buffer.writeln('          <Leg2 direction="157.5" length="28.4"/>');
@@ -6396,38 +7011,58 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('');
     buffer.writeln('    <!-- Track Circuits -->');
     buffer.writeln('    <TrackCircuits>');
-    buffer.writeln('      <Circuit id="TR_77A" points="77c" occupied="false"/>');
-    buffer.writeln('      <Circuit id="TR_77B" points="77d" occupied="false"/>');
-    buffer.writeln('      <Circuit id="TR_77C" points="77e" occupied="false"/>');
-    buffer.writeln('      <Circuit id="TR_77D" points="77f" occupied="false"/>');
-    buffer.writeln('      <Circuit id="TR_77_D45" points="diamond_45" occupied="false"/>');
-    buffer.writeln('      <Circuit id="TR_77_D135" points="diamond_135" occupied="false"/>');
+    buffer
+        .writeln('      <Circuit id="TR_77A" points="77c" occupied="false"/>');
+    buffer
+        .writeln('      <Circuit id="TR_77B" points="77d" occupied="false"/>');
+    buffer
+        .writeln('      <Circuit id="TR_77C" points="77e" occupied="false"/>');
+    buffer
+        .writeln('      <Circuit id="TR_77D" points="77f" occupied="false"/>');
+    buffer.writeln(
+        '      <Circuit id="TR_77_D45" points="diamond_45" occupied="false"/>');
+    buffer.writeln(
+        '      <Circuit id="TR_77_D135" points="diamond_135" occupied="false"/>');
     buffer.writeln('    </TrackCircuits>');
     buffer.writeln('');
     buffer.writeln('    <!-- Route Possibilities -->');
     buffer.writeln('    <Routes>');
-    buffer.writeln('      <Route id="R77_EW_Straight" points="77c:normal,77d:normal" diamonds="diamond_45" speed="80"/>');
-    buffer.writeln('      <Route id="R77_EW_Cross" points="77c:reverse,77d:reverse" diamonds="diamond_135" speed="60"/>');
-    buffer.writeln('      <Route id="R77_NS_Straight" points="77e:normal,77f:normal" diamonds="diamond_45" speed="80"/>');
-    buffer.writeln('      <Route id="R77_NS_Cross" points="77e:reverse,77f:reverse" diamonds="diamond_135" speed="60"/>');
-    buffer.writeln('      <Route id="R77_Turn_NW" points="77c:reverse,77e:normal" speed="40"/>');
-    buffer.writeln('      <Route id="R77_Turn_NE" points="77d:reverse,77f:normal" speed="40"/>');
-    buffer.writeln('      <Route id="R77_Turn_SW" points="77e:reverse,77c:normal" speed="40"/>');
-    buffer.writeln('      <Route id="R77_Turn_SE" points="77f:reverse,77d:normal" speed="40"/>');
+    buffer.writeln(
+        '      <Route id="R77_EW_Straight" points="77c:normal,77d:normal" diamonds="diamond_45" speed="80"/>');
+    buffer.writeln(
+        '      <Route id="R77_EW_Cross" points="77c:reverse,77d:reverse" diamonds="diamond_135" speed="60"/>');
+    buffer.writeln(
+        '      <Route id="R77_NS_Straight" points="77e:normal,77f:normal" diamonds="diamond_45" speed="80"/>');
+    buffer.writeln(
+        '      <Route id="R77_NS_Cross" points="77e:reverse,77f:reverse" diamonds="diamond_135" speed="60"/>');
+    buffer.writeln(
+        '      <Route id="R77_Turn_NW" points="77c:reverse,77e:normal" speed="40"/>');
+    buffer.writeln(
+        '      <Route id="R77_Turn_NE" points="77d:reverse,77f:normal" speed="40"/>');
+    buffer.writeln(
+        '      <Route id="R77_Turn_SW" points="77e:reverse,77c:normal" speed="40"/>');
+    buffer.writeln(
+        '      <Route id="R77_Turn_SE" points="77f:reverse,77d:normal" speed="40"/>');
     buffer.writeln('    </Routes>');
     buffer.writeln('  </DoubleDiamondCrossover>');
     buffer.writeln('');
 
     // RIGHT SECTION - Double Diamond Crossover (x=1900 to 2000)
-    buffer.writeln('  <DoubleDiamondCrossover id="ddc_79" centerX="1950" centerY="200">');
+    buffer.writeln(
+        '  <DoubleDiamondCrossover id="ddc_79" centerX="1950" centerY="200">');
     buffer.writeln('    <!-- Points: 79A, 79B, 80A, 80B -->');
     buffer.writeln('    <Points>');
-    buffer.writeln('      <Point id="79c" type="left_hand" x="1874.3" y="173.8" state="normal"/>');
-    buffer.writeln('      <Point id="79d" type="right_hand" x="2025.7" y="173.8" state="normal"/>');
-    buffer.writeln('      <Point id="79e" type="left_hand" x="1926.8" y="273.7" state="normal"/>');
-    buffer.writeln('      <Point id="79f" type="right_hand" x="1973.2" y="226.3" state="normal"/>');
+    buffer.writeln(
+        '      <Point id="79c" type="left_hand" x="1874.3" y="173.8" state="normal"/>');
+    buffer.writeln(
+        '      <Point id="79d" type="right_hand" x="2025.7" y="173.8" state="normal"/>');
+    buffer.writeln(
+        '      <Point id="79e" type="left_hand" x="1926.8" y="273.7" state="normal"/>');
+    buffer.writeln(
+        '      <Point id="79f" type="right_hand" x="1973.2" y="226.3" state="normal"/>');
     buffer.writeln('    </Points>');
-    buffer.writeln('    <!-- Similar diamond and route configuration as ddc_77 -->');
+    buffer.writeln(
+        '    <!-- Similar diamond and route configuration as ddc_77 -->');
     buffer.writeln('  </DoubleDiamondCrossover>');
   }
 
@@ -6534,7 +7169,8 @@ class TerminalStationController extends ChangeNotifier {
 
         // Check if any train is near this signal
         for (var train in trains) {
-          if ((train.x - signal.x).abs() < 100 && (train.y - signal.y).abs() < 50) {
+          if ((train.x - signal.x).abs() < 100 &&
+              (train.y - signal.y).abs() < 50) {
             _logEvent('⚠️ Cannot delete signal $id - train nearby');
             return false;
           }
@@ -6676,7 +7312,8 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   /// Resize platform with command history
-  void resizePlatformWithHistory(String platformId, double newStartX, double newEndX) {
+  void resizePlatformWithHistory(
+      String platformId, double newStartX, double newEndX) {
     final platform = platforms.firstWhere((p) => p.id == platformId);
 
     final command = ResizePlatformCommand(
@@ -6742,7 +7379,8 @@ class TerminalStationController extends ChangeNotifier {
   // ============================================================================
 
   /// Create a new signal at specified position
-  void createSignal(String id, double x, double y, {SignalDirection direction = SignalDirection.east}) {
+  void createSignal(String id, double x, double y,
+      {SignalDirection direction = SignalDirection.east}) {
     if (signals.containsKey(id)) {
       _logEvent('❌ Signal $id already exists');
       return;
@@ -6790,7 +7428,8 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   /// Create a new platform at specified position
-  void createPlatform(String id, String name, double x, double y, {double length = 200}) {
+  void createPlatform(String id, String name, double x, double y,
+      {double length = 200}) {
     if (platforms.any((p) => p.id == id)) {
       _logEvent('❌ Platform $id already exists');
       return;
@@ -6826,7 +7465,8 @@ class TerminalStationController extends ChangeNotifier {
       enabled: true,
     );
 
-    _logEvent('✅ Created train stop $id at ($x, $y) linked to signal $effectiveSignalId');
+    _logEvent(
+        '✅ Created train stop $id at ($x, $y) linked to signal $effectiveSignalId');
     notifyListeners();
   }
 
@@ -6869,7 +7509,8 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   /// Create a new transponder at specified position
-  void createTransponder(String id, double x, double y, {TransponderType type = TransponderType.t1}) {
+  void createTransponder(String id, double x, double y,
+      {TransponderType type = TransponderType.t1}) {
     if (transponders.containsKey(id)) {
       _logEvent('❌ Transponder $id already exists');
       return;
@@ -6888,7 +7529,8 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   /// Create a new WiFi antenna at specified position
-  void createWifiAntenna(String id, double x, double y, {bool isActive = true}) {
+  void createWifiAntenna(String id, double x, double y,
+      {bool isActive = true}) {
     if (wifiAntennas.containsKey(id)) {
       _logEvent('❌ WiFi antenna $id already exists');
       return;
@@ -6911,7 +7553,8 @@ class TerminalStationController extends ChangeNotifier {
     double nearestDistance = double.infinity;
 
     for (var signal in signals.values) {
-      final distance = math.sqrt(math.pow(signal.x - x, 2) + math.pow(signal.y - y, 2));
+      final distance =
+          math.sqrt(math.pow(signal.x - x, 2) + math.pow(signal.y - y, 2));
       if (distance < nearestDistance) {
         nearestDistance = distance;
         nearestId = signal.id;

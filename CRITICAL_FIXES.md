@@ -2,22 +2,73 @@
 
 ## 🚨 Issues Fixed
 
-### 1. App Crash on Startup ✅ FIXED
+### 1. App Crash on Startup ✅ FIXED (TWO CRITICAL ISSUES)
 
-**Symptom:** App crashes immediately on launch with no error message or white screen
+#### Issue 1A: Service Initialization Crash (MOST CRITICAL)
 
-**Root Cause:** `LateInitializationError` when Supabase initialization fails
+**Symptom:** App crashes immediately on launch, shuts down before showing UI
 
-**Fix Location:** `lib/main.dart:97-110`
+**Root Cause:** Unhandled exceptions in service initialization (`main()` lines 62-70)
+
+**Most Likely Culprit:** `WidgetPreferencesService.initialize()` failing when `SharedPreferences.getInstance()` throws
+
+**Fix Location:** `lib/main.dart:67-89`
+
+**What Changed:**
+- Wrapped ALL service initializations in individual try-catch blocks
+- Services now fail gracefully without crashing app
+- App continues even if all services fail to initialize
+
+**Before:**
+```dart
+// NO ERROR HANDLING ❌
+final widgetPrefsService = WidgetPreferencesService();
+await widgetPrefsService.initialize();  // Crash if SharedPreferences fails
+
+final speechRecognitionService = SpeechRecognitionService();
+await speechRecognitionService.initialize();  // Crash if permissions denied
+
+final ttsService = TextToSpeechService();
+await ttsService.initialize();  // Crash if TTS unavailable
+```
+
+**After:**
+```dart
+// SAFE INITIALIZATION ✅
+final widgetPrefsService = WidgetPreferencesService();
+try {
+  await widgetPrefsService.initialize();
+  debugPrint('✅ Widget preferences service initialized');
+} catch (e) {
+  debugPrint('⚠️ Widget preferences initialization failed (non-critical): $e');
+  // Continue anyway - app will use default values
+}
+
+// Same pattern for other services
+```
+
+**Testing:**
+1. Force SharedPreferences to fail (corrupt local storage)
+2. Deny microphone permissions
+3. Test on platform without TTS support
+4. App should start in all cases
+
+#### Issue 1B: Supabase Client Crash
+
+**Symptom:** App crashes when Supabase initialization fails
+
+**Root Cause:** `LateInitializationError` when accessing `Supabase.instance.client`
+
+**Fix Location:** `lib/main.dart:100-110`
 
 **What Changed:**
 - Added try-catch around `Supabase.instance.client` access
-- Creates mock Supabase client if initialization fails
+- Creates mock Supabase client as fallback
 - App now works in offline mode
 
 **Before:**
 ```dart
-final client = supabaseClient ?? Supabase.instance.client; // Crashes if Supabase not initialized
+final client = supabaseClient ?? Supabase.instance.client; // Crashes if not initialized
 ```
 
 **After:**
@@ -348,9 +399,15 @@ If you're still experiencing problems:
 
 ## 🎉 Summary
 
-✅ **3 Critical bugs fixed**
-✅ **App starts reliably**
+✅ **4 Critical bugs fixed**
+✅ **App starts reliably** (even with failed service initialization)
 ✅ **SQL migrations work safely**
 ✅ **Code compiles without errors**
+
+**Fixed Issues:**
+1. **Service initialization crash** (SharedPreferences, speech recognition, TTS)
+2. **Supabase client crash** (offline mode support)
+3. **SQL partitioning errors** (safe migration script)
+4. **_logEvent method error** (public API)
 
 All fixes are backward compatible and include fallbacks for robustness.

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -154,25 +155,35 @@ Future<void> main() async {
       // ========== PHASE 3: OPTIONAL FEATURES ==========
       debugPrint('📋 PHASE 3: Initializing optional features...');
 
+      // WORKAROUND: Skip speech recognition on macOS due to potential native crashes
       final speechRecognitionService = SpeechRecognitionService();
-      try {
-        debugPrint('  → Initializing speech recognition...');
-        await speechRecognitionService.initialize();
-        debugPrint('  ✅ Speech recognition initialized');
-      } catch (e) {
-        debugPrint('  ⚠️ Speech recognition failed (non-critical): $e');
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS) {
+        debugPrint('  → Skipping speech recognition on macOS (optional feature)');
+      } else {
+        try {
+          debugPrint('  → Initializing speech recognition...');
+          await speechRecognitionService.initialize();
+          debugPrint('  ✅ Speech recognition initialized');
+        } catch (e) {
+          debugPrint('  ⚠️ Speech recognition failed (non-critical): $e');
+        }
       }
 
       // Wait between heavy services
       await Future.delayed(const Duration(milliseconds: 150));
 
+      // WORKAROUND: Skip TTS initialization on macOS due to AVFoundation crashes
       final ttsService = TextToSpeechService();
-      try {
-        debugPrint('  → Initializing text-to-speech...');
-        await ttsService.initialize();
-        debugPrint('  ✅ Text-to-speech initialized');
-      } catch (e) {
-        debugPrint('  ⚠️ TTS failed (non-critical): $e');
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS) {
+        debugPrint('  → Skipping text-to-speech on macOS (known compatibility issue)');
+      } else {
+        try {
+          debugPrint('  → Initializing text-to-speech...');
+          await ttsService.initialize();
+          debugPrint('  ✅ Text-to-speech initialized');
+        } catch (e) {
+          debugPrint('  ⚠️ TTS failed (non-critical): $e');
+        }
       }
 
       debugPrint('✅ PHASE 3 Complete - Optional features ready\n');

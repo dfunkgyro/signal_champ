@@ -9,10 +9,12 @@ import 'terminal_station_screen.dart';
 /// Wraps TerminalStationScreen with scenario-specific UI and objective tracking
 class ScenarioPlayerScreen extends StatefulWidget {
   final RailwayScenario scenario;
+  final bool isTestMode;
 
   const ScenarioPlayerScreen({
     Key? key,
     required this.scenario,
+    this.isTestMode = false,
   }) : super(key: key);
 
   @override
@@ -317,9 +319,9 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Return to marketplace
+              Navigator.of(context).pop(); // Return to marketplace/builder
             },
-            child: const Text('Return to Marketplace'),
+            child: Text(widget.isTestMode ? 'Return to Editor' : 'Return to Marketplace'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -335,7 +337,7 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
               _startTimeTracking();
               _setupTrainSpawning();
             },
-            child: const Text('Play Again'),
+            child: Text(widget.isTestMode ? 'Test Again' : 'Play Again'),
           ),
         ],
       ),
@@ -368,9 +370,9 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Return to marketplace
+              Navigator.of(context).pop(); // Return to marketplace/builder
             },
-            child: const Text('Return to Marketplace'),
+            child: Text(widget.isTestMode ? 'Return to Editor' : 'Return to Marketplace'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -386,7 +388,7 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
               _startTimeTracking();
               _setupTrainSpawning();
             },
-            child: const Text('Try Again'),
+            child: Text(widget.isTestMode ? 'Test Again' : 'Try Again'),
           ),
         ],
       ),
@@ -474,13 +476,35 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    widget.scenario.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.scenario.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (widget.isTestMode)
+                        Container(
+                          margin: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: const Text(
+                            'TEST MODE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 // Time display

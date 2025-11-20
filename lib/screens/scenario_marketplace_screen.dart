@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/scenario_models.dart';
 import '../services/scenario_service.dart';
 import 'scenario_builder_screen.dart';
+import 'scenario_player_screen.dart';
 
 class ScenarioMarketplaceScreen extends StatefulWidget {
   const ScenarioMarketplaceScreen({super.key});
@@ -620,10 +621,10 @@ class _ScenarioMarketplaceScreenState extends State<ScenarioMarketplaceScreen>
   }
 
   void _openScenario(RailwayScenario scenario) {
-    // TODO: Implement scenario player/viewer
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening "${scenario.name}"...'),
+    // Navigate to scenario player
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ScenarioPlayerScreen(scenario: scenario),
       ),
     );
   }

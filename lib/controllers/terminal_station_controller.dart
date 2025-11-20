@@ -4,6 +4,7 @@ import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
 import 'package:rail_champ/models/railway_model.dart' show WifiAntenna, Transponder, TransponderType;  // FIXED: Only import WiFi/Transponder types
+import 'package:rail_champ/models/scenario_models.dart';
 import 'package:rail_champ/controllers/edit_commands.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -6710,6 +6711,118 @@ class TerminalStationController extends ChangeNotifier {
       commandHistory.redo();
       _logEvent('↷ Redo: ${commandHistory.getRedoDescription() ?? "action"}');
       notifyListeners();
+    }
+  }
+
+  // ============================================================================
+  // SCENARIO LOADING
+  // ============================================================================
+
+  /// Load a scenario into the simulation
+  /// Clears existing state and configures railway from scenario data
+  Future<void> loadScenario(RailwayScenario scenario) async {
+    try {
+      _logEvent('📋 Loading scenario: ${scenario.name}');
+
+      // Stop simulation if running
+      if (isRunning) {
+        toggleSimulation();
+      }
+
+      // Clear existing state
+      trains.clear();
+      blocks.clear();
+      points.clear();
+      signals.clear();
+      platforms.clear();
+      trainStops.clear();
+      axleCounters.clear();
+      wifiAntennas.clear();
+      transponders.clear();
+      routeReservations.clear();
+      eventLog.clear();
+
+      // Reset simulation state
+      nextTrainNumber = 1;
+      tickCount = 0;
+      _simulationRunningTime = Duration.zero;
+      collisionAlarmActive = false;
+      currentCollisionIncident = null;
+
+      // Clear command history
+      commandHistory.clear();
+
+      _logEvent('🗑️  Cleared existing railway state');
+
+      // Load block sections from scenario
+      for (var scenarioBlock in scenario.blockSections) {
+        blocks[scenarioBlock.id] = BlockSection(
+          id: scenarioBlock.id,
+          startX: scenarioBlock.startX,
+          endX: scenarioBlock.endX,
+          y: scenarioBlock.y,
+          isOccupied: false,
+          nextBlock: scenarioBlock.nextBlock,
+          prevBlock: scenarioBlock.prevBlock,
+          isCrossover: scenarioBlock.isCrossover,
+          isReversingArea: scenarioBlock.isReversingArea,
+        );
+      }
+      _logEvent('✅ Loaded ${scenario.blockSections.length} block sections');
+
+      // Load signals from scenario
+      for (var scenarioSignal in scenario.signals) {
+        signals[scenarioSignal.id] = Signal(
+          id: scenarioSignal.id,
+          x: scenarioSignal.x,
+          y: scenarioSignal.y,
+          aspect: SignalAspect.red, // Start all signals at red for safety
+          controlledBlocks: scenarioSignal.controlledBlocks,
+          requiredPointPositions: scenarioSignal.requiredPointPositions.isNotEmpty
+              ? Map.fromEntries(
+                  scenarioSignal.requiredPointPositions
+                      .map((e) => e.split(':'))
+                      .where((parts) => parts.length == 2)
+                      .map((parts) => MapEntry(parts[0], parts[1])))
+              : null,
+        );
+      }
+      _logEvent('✅ Loaded ${scenario.signals.length} signals');
+
+      // Load points from scenario
+      for (var scenarioPoint in scenario.points) {
+        points[scenarioPoint.id] = Point(
+          id: scenarioPoint.id,
+          x: scenarioPoint.x,
+          y: scenarioPoint.y,
+          position: PointPosition.normal,
+          normalRoute: scenarioPoint.normalRoute,
+          reverseRoute: scenarioPoint.reverseRoute,
+        );
+      }
+      _logEvent('✅ Loaded ${scenario.points.length} points');
+
+      // Reinitialize axle counter evaluator if we have counters
+      if (axleCounters.isNotEmpty) {
+        ace = AxleCounterEvaluator(axleCounters);
+        _logEvent('✅ Initialized axle counter evaluator');
+      }
+
+      // Note: Train spawning will be handled by ScenarioPlayerScreen
+      // based on scenario.trainSpawns configuration
+
+      _logEvent('🎯 Scenario loaded successfully');
+      _logEvent('📊 Objectives: ${scenario.objectives.length}');
+      if (scenario.timeLimit != null) {
+        _logEvent('⏱️  Time limit: ${scenario.timeLimit! ~/ 60} minutes');
+      }
+
+      notifyListeners();
+    } catch (e, stackTrace) {
+      _logEvent('❌ Error loading scenario: $e');
+      debugPrint('Scenario load error: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 

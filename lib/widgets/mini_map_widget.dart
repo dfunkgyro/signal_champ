@@ -43,16 +43,27 @@ class MiniMapWidgetEnhanced extends StatelessWidget {
       if (adjustedX >= 0 && adjustedX <= mapWidth &&
           adjustedY >= 0 && adjustedY <= mapHeight) {
 
-        // Convert from minimap coordinates to canvas coordinates
-        // Account for centered origin
-        final xRatio = (adjustedX / mapWidth) - 0.5; // -0.5 to 0.5
-        final yRatio = (adjustedY / mapHeight) - 0.5; // -0.5 to 0.5
+        // FIXED: Convert from minimap coordinates to canvas coordinates
+        // Minimap is centered at (mapWidth/2, mapHeight/2), corresponding to canvas (0, 0)
+        // Calculate position relative to minimap center
+        final minimapCenterX = adjustedX - (mapWidth / 2);
+        final minimapCenterY = adjustedY - (mapHeight / 2);
 
-        // Calculate target position on canvas (centered coordinates)
-        final targetX = xRatio * canvasWidth;
-        final targetY = yRatio * canvasHeight;
+        // Scale to canvas coordinates
+        final scaleX = canvasWidth / mapWidth;
+        final scaleY = canvasHeight / mapHeight;
 
-        onNavigate(targetX, targetY);
+        // Calculate target position in canvas coordinates
+        final targetCanvasX = minimapCenterX * scaleX;
+        final targetCanvasY = minimapCenterY * scaleY;
+
+        // FIXED: Negate to convert canvas position to camera offset
+        // Camera offset moves the canvas opposite to viewport
+        final targetCameraOffsetX = -targetCanvasX;
+        final targetCameraOffsetY = -targetCanvasY;
+
+        // Navigate to this camera offset
+        onNavigate(targetCameraOffsetX, targetCameraOffsetY);
       }
     } catch (e) {
       debugPrint('MiniMap tap error: $e');
@@ -282,24 +293,31 @@ class MiniMapPainterEnhanced extends CustomPainter {
       );
     }
 
-    // CRITICAL FIX: Draw viewport rectangle with correct dimensions
+    // FIXED: Draw viewport rectangle with correct camera transform calculation
     if (cameraZoom > 0 && viewportWidth > 0 && viewportHeight > 0) {
-      // Calculate viewport size in canvas coordinates
+      // Calculate viewport size in canvas coordinates (unscaled)
       final viewportCanvasWidth = viewportWidth / cameraZoom;
       final viewportCanvasHeight = viewportHeight / cameraZoom;
 
-      // Calculate viewport position (centered on camera offset)
-      final viewportX = cameraOffsetX * scaleX;
-      final viewportY = cameraOffsetY * scaleY;
+      // CRITICAL FIX: The camera offset moves the canvas OPPOSITE to viewport movement
+      // In main canvas: translate(center) → scale(zoom) → translate(cameraOffset)
+      // This means cameraOffset moves the scaled canvas, so the viewport center is at -cameraOffset
+      // We need to negate the camera offsets to get the actual viewport center in canvas coordinates
+      final viewportCenterX = -cameraOffsetX;
+      final viewportCenterY = -cameraOffsetY;
+
+      // Convert viewport center from canvas coordinates to minimap coordinates
+      final minimapCenterX = viewportCenterX * scaleX;
+      final minimapCenterY = viewportCenterY * scaleY;
 
       // Calculate viewport size in minimap coordinates
       final viewportMinimapWidth = viewportCanvasWidth * scaleX;
       final viewportMinimapHeight = viewportCanvasHeight * scaleY;
 
-      // Draw viewport rectangle centered on camera position
+      // Draw viewport rectangle centered on the correct position
       canvas.drawRect(
         Rect.fromCenter(
-          center: Offset(viewportX, viewportY),
+          center: Offset(minimapCenterX, minimapCenterY),
           width: viewportMinimapWidth,
           height: viewportMinimapHeight,
         ),

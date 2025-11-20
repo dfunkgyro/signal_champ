@@ -30,7 +30,24 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
   void initState() {
     super.initState();
     _initializeOpenAI();
-    _addMessage('Signalling Manager', 'Hello! I am the Signalling System Manager. I can help you control the railway. Try commands like:\n• "Set route L01 to route 1"\n• "Swing point 76A"\n• "Add M1 train to block 100"', isAI: true);
+    _addMessage('Signalling Manager', '''👋 Hello! I am the Signalling System Manager.
+
+I understand **natural language** - speak to me naturally! I work in **guest mode** and **signed-in mode** without requiring API keys.
+
+🎓 **Need help?** Just ask:
+• "help" - Comprehensive guide
+• "help with trains" - Train tutorials
+• "help with signals" - Signal & route tutorials
+• "tutorial on points" - Switch/turnout guide
+
+🚦 **Quick Commands:**
+• "Set route L01" or "activate signal L01"
+• "Swing point 76A" or "throw point 76A"
+• "Add train to block 100" or "create train in 100"
+
+**I understand synonyms and variations!** Just speak naturally - no exact phrases needed.
+
+Type "help" to see all available tutorials! 🤖''', isAI: true);
   }
 
   void _initializeOpenAI() {
@@ -227,10 +244,15 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
       return;
     }
 
-    // Set route pattern - enhanced to handle various formats
-    if (lower.contains('set') && lower.contains('route') ||
+    // Set route pattern - ENHANCED with extensive synonym recognition
+    if (lower.contains('set') && (lower.contains('route') || lower.contains('signal')) ||
         lower.contains('route') && lower.contains('to') ||
-        lower.contains('set signal')) {
+        lower.contains('activate') && lower.contains('signal') ||
+        lower.contains('clear') && lower.contains('signal') ||
+        lower.contains('give') && (lower.contains('signal') || lower.contains('road')) ||
+        lower.contains('pull off') ||
+        lower.contains('change') && lower.contains('signal') ||
+        lower.contains('switch') && lower.contains('route')) {
       final signalMatch = RegExp(r'([lcr]\d+)', caseSensitive: false).firstMatch(input);
       if (signalMatch != null) {
         final signalId = signalMatch.group(1)!.toUpperCase();
@@ -259,8 +281,14 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
       return;
     }
 
-    // Swing/throw point pattern - enhanced
+    // Swing/throw point pattern - ENHANCED with extensive synonym recognition
     if (lower.contains('swing') || lower.contains('throw') ||
+        lower.contains('change') && lower.contains('point') ||
+        lower.contains('switch') && lower.contains('point') ||
+        lower.contains('move') && lower.contains('point') ||
+        lower.contains('flip') && lower.contains('point') ||
+        lower.contains('reverse') && lower.contains('point') ||
+        lower.contains('toggle') ||
         (lower.contains('point') && (lower.contains('normal') || lower.contains('reverse')))) {
       final pointMatch = RegExp(r'(\d+[ab])', caseSensitive: false).firstMatch(input);
       if (pointMatch != null) {
@@ -277,8 +305,13 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
       return;
     }
 
-    // Add train pattern - enhanced with train type support
-    if (lower.contains('add') && lower.contains('train')) {
+    // Add train pattern - ENHANCED with extensive synonym recognition
+    if (lower.contains('add') && lower.contains('train') ||
+        lower.contains('create') && lower.contains('train') ||
+        lower.contains('spawn') && lower.contains('train') ||
+        lower.contains('place') && lower.contains('train') ||
+        lower.contains('put') && lower.contains('train') ||
+        lower.contains('add') && lower.contains('service')) {
       final blockMatch = RegExp(r'block\s*(\d+)', caseSensitive: false).firstMatch(input);
       TrainType trainType = TrainType.m1; // Default
 
@@ -302,8 +335,12 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
       return;
     }
 
-    // Remove train pattern
-    if (lower.contains('remove') && lower.contains('train')) {
+    // Remove train pattern - ENHANCED with synonym recognition
+    if (lower.contains('remove') && lower.contains('train') ||
+        lower.contains('delete') && lower.contains('train') ||
+        lower.contains('cancel') && lower.contains('train') ||
+        lower.contains('clear') && lower.contains('train') ||
+        lower.contains('take off') && lower.contains('train')) {
       final trainMatch = RegExp(r'train\s*(\d+)', caseSensitive: false).firstMatch(input);
       if (trainMatch != null) {
         final trainId = trainMatch.group(1)!;
@@ -367,38 +404,25 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
       return;
     }
 
-    // Help command
-    if (lower.contains('help') || lower.contains('what can you do')) {
-      _addMessage('AI Agent', '''🤖 Available Commands:
-
-📍 Routes & Signals:
-• "set route [signal]" or "set signal L01 to route 1"
-• "cancel route [signal]"
-
-🔀 Points:
-• "swing point [id]" or "throw point 76A"
-
-🚂 Trains:
-• "add train to block [id]" or "add M2 train to block 100"
-• "add CBTC M1 train to block 100"
-• "remove train [id]"
-• "set train [id] destination to block [id]"
-• "depart train [id]"
-
-🚄 CBTC:
-• "enable CBTC" or "activate CBTC mode"
-• "disable CBTC" or "turn off CBTC"
-
-🚨 Safety:
-• "emergency brake" or "stop all trains"
-
-Examples:
-• "Set route L01"
-• "Swing point 76A"
-• "Add CBTC M1 train to block 100"
-• "Set train 1 destination to block 110"
-• "Enable CBTC mode"
-''', isAI: true);
+    // Help command - enhanced with tutorial system
+    if (lower.contains('help') || lower.contains('what can you do') || lower.contains('tutorial') || lower.contains('guide') || lower.contains('teach me')) {
+      // Check if asking about specific topic
+      if (lower.contains('signal') || lower.contains('route')) {
+        _showTutorial('signals');
+      } else if (lower.contains('point') || lower.contains('switch') || lower.contains('turnout')) {
+        _showTutorial('points');
+      } else if (lower.contains('train')) {
+        _showTutorial('trains');
+      } else if (lower.contains('cbtc')) {
+        _showTutorial('cbtc');
+      } else if (lower.contains('app') || lower.contains('interface') || lower.contains('ui')) {
+        _showTutorial('app');
+      } else if (lower.contains('edit') || lower.contains('builder') || lower.contains('create')) {
+        _showTutorial('edit');
+      } else {
+        // General help
+        _showTutorial('general');
+      }
       return;
     }
 
@@ -515,36 +539,41 @@ Try saying:
           final signalId = command.parameters['signal_id'] as String;
           final routeId = command.parameters['route_id'] as String;
           controller.setRoute(signalId, routeId);
-          _addMessage('AI Agent', 'Route $routeId set for signal $signalId', isAI: true);
+          _addMessage('AI Agent', '✅ Route $routeId set for signal $signalId', isAI: true);
           break;
 
         case 'cancel_route':
           final signalId = command.parameters['signal_id'] as String;
           controller.cancelRoute(signalId);
-          _addMessage('AI Agent', 'Route cancelled for signal $signalId', isAI: true);
+          _addMessage('AI Agent', '✅ Route cancelled for signal $signalId', isAI: true);
           break;
 
         case 'swing_point':
           final pointId = command.parameters['point_id'] as String;
           controller.swingPoint(pointId);
-          _addMessage('AI Agent', 'Point $pointId swung', isAI: true);
+          _addMessage('AI Agent', '✅ Point $pointId swung', isAI: true);
           break;
 
         case 'add_train':
           final blockId = command.parameters['block_id'] as String;
           final trainType = _parseTrainType(command.parameters['train_type'] as String?);
           controller.addTrainToBlock(blockId, trainType: trainType);
-          _addMessage('AI Agent', 'Train added to block $blockId', isAI: true);
+          _addMessage('AI Agent', '✅ Train added to block $blockId', isAI: true);
           break;
 
         case 'set_cbtc':
           final enabled = command.parameters['enabled'] as bool;
           controller.toggleCbtcMode(enabled);
-          _addMessage('AI Agent', 'CBTC mode ${enabled ? "enabled" : "disabled"}', isAI: true);
+          _addMessage('AI Agent', '✅ CBTC mode ${enabled ? "enabled" : "disabled"}', isAI: true);
+          break;
+
+        case 'help':
+          final topic = command.parameters['topic'] as String? ?? 'general';
+          _showTutorial(topic);
           break;
 
         default:
-          _addMessage('AI Agent', 'Unknown action: ${command.action}', isAI: true);
+          _addMessage('AI Agent', '⚠️ Unknown action: ${command.action}', isAI: true);
       }
     } catch (e) {
       _addMessage('AI Agent', 'Error executing command: $e', isAI: true);
@@ -561,6 +590,375 @@ Try saying:
         return TrainType.cbtcM2;
       default:
         return TrainType.m1;
+    }
+  }
+
+  /// Show comprehensive tutorials based on topic
+  void _showTutorial(String topic) {
+    final lower = topic.toLowerCase();
+
+    if (lower.contains('signal') || lower.contains('route')) {
+      _addMessage('AI Agent Tutorial', '''📚 **SIGNALS & ROUTES TUTORIAL**
+
+**What are Railway Signals?**
+Railway signals control train movements by displaying aspects (colors) that tell trains when it's safe to proceed.
+
+**Signal IDs:**
+• **L** signals (Left): For eastbound/left-to-right traffic
+• **C** signals (Center): For bidirectional or crossover movements
+• **R** signals (Right): For westbound/right-to-left traffic
+• Example: L01, C23, R45
+
+**Setting a Route:**
+A route is a path reserved for a train from one signal to the next. You MUST set routes for trains to proceed.
+
+**Commands:**
+• "set route L01" - Sets the first available route for signal L01
+• "set L01 to route 1" - Sets specific route 1 for L01
+• "activate signal L01" - Alternative phrasing
+• "pull off L01" - Railway terminology for clearing a signal
+• "give the road on L01" - Traditional signalling phrase
+
+**Alternative Phrases (I understand them all!):**
+• "change signal L01"
+• "clear signal L01"
+• "switch route L01"
+• "turn L01 green"
+
+**Cancelling a Route:**
+• "cancel route L01"
+• "clear route L01"
+• "release L01"
+• "put L01 back to red"
+• "drop route L01"
+
+**Try it now:** Say "set route L01" or use your own words!
+
+**Pro tip:** Routes automatically release after trains pass through them.''', isAI: true);
+    } else if (lower.contains('point') || lower.contains('switch') || lower.contains('turnout')) {
+      _addMessage('AI Agent Tutorial', '''📚 **POINTS/SWITCHES TUTORIAL**
+
+**What are Points?**
+Points (also called switches or turnouts) allow trains to change tracks. They have two positions:
+• **Normal** - Straight route (main line)
+• **Reverse** - Diverging route (siding/branch)
+
+**Point IDs:**
+Points are numbered with a letter suffix indicating their side.
+• Examples: 76A, 76B, 79A, 79B, 82A, 82B
+
+**Swinging a Point:**
+"Swinging" a point means changing its position from normal to reverse or vice versa.
+
+**Commands:**
+• "swing point 76A" - Toggle point 76A
+• "throw point 76A" - Railway terminology
+• "change point 76A"
+• "switch point 76A"
+• "reverse point 76A"
+• "flip point 76A"
+• "move point 76A"
+
+**Alternative Phrases (I understand them all!):**
+• "set point 76A to reverse"
+• "put point 76A normal"
+• "toggle 76A"
+
+**Safety Note:**
+⚠️ NEVER swing points when a train is passing over them! This causes derailments.
+✅ ALWAYS check track is clear before changing points
+
+**Try it now:** Say "swing point 76A" or use your own words!
+
+**Pro tip:** If "Self-Normalizing Points" is enabled, points automatically return to normal after train passes.''', isAI: true);
+    } else if (lower.contains('train')) {
+      _addMessage('AI Agent Tutorial', '''📚 **TRAIN OPERATIONS TUTORIAL**
+
+**Adding Trains:**
+Trains spawn on blocks (track sections). Each train gets a unique ID number.
+
+**Train Types:**
+• **M1** - Single metropolitan car (default)
+• **M2** - Double metropolitan car (longer)
+• **M7** - Seven-car metro train
+• **M9** - Nine-car metro train
+• **Freight** - Freight locomotive
+• **CBTC-M1** - CBTC-equipped single car
+• **CBTC-M2** - CBTC-equipped double car
+
+**Commands:**
+• "add train" - Adds M1 train to a safe default block
+• "add train to block 100" - Adds M1 to specific block
+• "add M2 train to block 100" - Adds specific train type
+• "create freight train in 104" - Alternative phrasing
+• "spawn train" - Gaming terminology (I understand it!)
+• "place M7 train in block 100"
+
+**Alternative Phrases (I understand them all!):**
+• "create train"
+• "spawn train"
+• "put train in block 100"
+• "add service to 100" (railway terminology)
+
+**Removing Trains:**
+• "remove train 1" - Removes train with ID 1
+• "delete train 1"
+• "cancel train 1"
+• "clear train 1"
+• "take off train 1"
+
+**Setting Destinations:**
+• "set train 1 destination to block 110"
+• "send train 1 to block 110"
+• "direct train 1 to 110"
+
+**Departing Trains:**
+• "depart train 1" - Manually depart from platform
+• "train 1 depart"
+
+**Finding & Following:**
+• "find train 1" - Pan camera to train location
+• "follow train 1" - Camera follows train automatically
+• "stop following" - Disable camera follow
+
+**Try it now:** Say "add M2 train to block 100" or use your own words!
+
+**Pro tip:** Watch the Event Log panel to see train movements and status updates.''', isAI: true);
+    } else if (lower.contains('cbtc')) {
+      _addMessage('AI Agent Tutorial', '''📚 **CBTC SYSTEM TUTORIAL**
+
+**What is CBTC?**
+Communications-Based Train Control (CBTC) is a modern railway signaling system that uses wireless communications between trains and track equipment for precise train control.
+
+**CBTC vs Traditional:**
+• **Traditional:** Trains controlled by fixed-block signals
+• **CBTC:** Trains controlled by real-time communications
+• **Advantage:** Higher capacity, closer train spacing, automatic speed control
+
+**CBTC Components:**
+🛜 **WiFi Antennas** - Provide track-to-train communications
+📡 **Transponders** - Provide precise train location reference points
+
+**Enabling CBTC:**
+• "enable CBTC" - Activates CBTC mode
+• "activate CBTC mode"
+• "turn on CBTC"
+• "start CBTC"
+• "switch to CBTC"
+
+**Alternative Phrases (I understand them all!):**
+• "enable CBTC system"
+• "activate communications based train control"
+• "turn CBTC on"
+
+**Disabling CBTC:**
+• "disable CBTC"
+• "turn off CBTC"
+• "deactivate CBTC"
+• "switch to conventional signaling"
+
+**CBTC Train Types:**
+To use CBTC, you need CBTC-equipped trains:
+• "add CBTC M1 train to block 100"
+• "add CBTC M2 train to block 104"
+
+**Try it now:** Say "enable CBTC mode" then "add CBTC M1 train to block 100"
+
+**Pro tip:** CBTC mode works alongside conventional signaling - you can mix CBTC and traditional trains!''', isAI: true);
+    } else if (lower.contains('app') || lower.contains('interface') || lower.contains('ui') || lower.contains('screen')) {
+      _addMessage('AI Agent Tutorial', '''📚 **USING THE APP TUTORIAL**
+
+**Main Interface Elements:**
+
+**🖥️ Left Panel (Control Center):**
+• **Train List** - Shows all active trains with IDs and speeds
+• **Add Train Button** - Quick train spawning
+• **Signal List** - All signals with current aspects
+• **Route Management** - Set/cancel routes visually
+
+**🗺️ Right Panel (Information):**
+• **Mini Map** - Overview of entire railway layout
+  - **Click minimap** to jump to that location!
+  - White rectangle shows your current view
+• **Event Log** - Real-time railway events
+• **Settings** - Customize simulation and display
+
+**📺 Main Canvas (Railway View):**
+• **Pan:** Click and drag OR use WASD/arrow keys
+• **Zoom:** Mouse wheel OR +/- keys
+• **Select:** Click on trains, signals, points
+• **Context Menu:** Right-click elements
+
+**🤖 This Panel (AI Agent):**
+• **Drag me** anywhere on screen!
+• **Type commands** in natural language
+• **Command history** - Use ↑/↓ arrow keys
+• **Auto-scroll** can be toggled in settings
+
+**Other Panels:**
+• **⚡ Relay Rack** - Visualize interlocking logic
+• **💥 Collision Alarm** - Safety monitoring
+• **📊 Timetable** - Schedule train services
+
+**Keyboard Shortcuts:**
+• **Space** - Pause/Resume simulation
+• **+/-** - Zoom in/out
+• **WASD** or **Arrow Keys** - Pan camera
+• **Tab** - Cycle through panels
+• **Esc** - Close dialogs/menus
+• **Ctrl+Z** - Undo (in Edit Mode)
+• **Ctrl+Y** - Redo (in Edit Mode)
+
+**Mouse Controls:**
+• **Left Click** - Select element
+• **Right Click** - Context menu (if available)
+• **Scroll Wheel** - Zoom in/out
+• **Click + Drag** - Pan view
+• **Double Click** - Focus on element
+
+**Simulation Controls:**
+• **Speed slider** - Change simulation speed (0.5x to 5x)
+• **Pause button** - Freeze time
+• **Reset button** - Clear all trains and routes
+
+**Try it now:**
+• Click the minimap to jump around!
+• Type "status" to see railway info
+• Type "find train 1" to locate a train
+
+**Pro tip:** You can have multiple panels open at once. Drag them to arrange your workspace!''', isAI: true);
+    } else if (lower.contains('edit') || lower.contains('builder') || lower.contains('create')) {
+      _addMessage('AI Agent Tutorial', '''📚 **EDIT MODE & LAYOUT CREATION TUTORIAL**
+
+**What is Edit Mode?**
+Edit Mode allows you to modify the railway layout - add/remove components, move signals, resize platforms, and more!
+
+**Entering Edit Mode:**
+Look for the **Edit Mode** button at the bottom center of the screen (orange toolbar when active).
+
+**Edit Mode Features:**
+
+**🎯 Selection & Movement:**
+• **Click** any component to select it
+• **Drag** to move signals, points, platforms, stops
+• **Resize handles** appear on platforms (drag corners)
+
+**➕ Adding Components:**
+Click "Add Component" dropdown to add:
+• **Signals** - Traffic control
+• **Points** - Track switches
+• **Platforms** - Station stops
+• **Train Stops** - Stopping points
+• **Buffer Stops** - End of track protection
+• **Axle Counters** - Train detection
+• **Transponders** - CBTC location markers
+• **WiFi Antennas** - CBTC communications
+
+**🗑️ Deleting Components:**
+• Select component → Click "Delete Component" button
+• Safety check prevents deleting occupied blocks
+
+**↶↷ Undo/Redo:**
+• **Undo** - Ctrl+Z or toolbar button
+• **Redo** - Ctrl+Y or toolbar button
+• Full command history preserved!
+
+**📐 Grid System:**
+• Toggle "Grid" for alignment assistance
+• Components snap to grid when enabled
+• Grid spacing: 20 pixels
+
+**⌨️ Keyboard Shortcuts (Edit Mode):**
+• **Delete** - Remove selected component
+• **Escape** - Deselect/exit operation
+• **Ctrl+Z** - Undo last change
+• **Ctrl+Y** - Redo last undone change
+
+**Special Features:**
+• **Signal Direction** - Rotate signals to face correct direction
+• **Axle Counter Flip** - Swap D1/D2 detector orientation
+• **Platform Resize** - Drag handles to adjust length
+
+**Exiting Edit Mode:**
+• Click "Done" button (green)
+• Simulation resumes automatically
+
+**Try it now:**
+• Enter Edit Mode from the bottom toolbar
+• Try moving a signal or platform
+• Use Undo if you make a mistake!
+
+**Pro tip:** Edit Mode pauses simulation automatically for safety. Exit Edit Mode to resume train movements.
+
+**Scenario Building:**
+Want to create custom scenarios? Check out the Scenario Builder in the main menu!''', isAI: true);
+    } else {
+      // General help
+      _addMessage('AI Agent Tutorial', '''📚 **SIGNAL CHAMP - COMPREHENSIVE GUIDE**
+
+Welcome! I'm your Signalling System Manager AI assistant. I understand natural language - you don't need to memorize exact commands!
+
+**🎓 AVAILABLE TUTORIALS:**
+Ask me about any of these topics for detailed help:
+• "help with signals" - Signal operations & routes
+• "help with points" - Points/switches/turnouts
+• "help with trains" - Train management & control
+• "help with CBTC" - Modern signaling system
+• "help with the app" - Interface & controls
+• "help with edit mode" - Creating custom layouts
+
+**🚦 QUICK START:**
+
+**1. Basic Railway Control:**
+• "set route L01" - Clear a signal for train movement
+• "swing point 76A" - Change track direction
+• "add train to block 100" - Create a train
+
+**2. Train Management:**
+• "find train 1" - Locate a specific train
+• "follow train 1" - Camera follows the train
+• "set train 1 destination to block 110" - Direct train movement
+
+**3. System Features:**
+• "enable CBTC mode" - Activate modern signaling
+• "status" - Check railway statistics
+• "emergency brake" - Stop all trains immediately
+
+**💬 NATURAL LANGUAGE:**
+I understand variations and synonyms! Try saying things naturally:
+• "Can you activate signal L01?"
+• "Move point 76A please"
+• "I need a train on block 100"
+• "Show me where train 1 is"
+• "Turn on the CBTC system"
+
+All of these work! Speak naturally - I'll understand your intent.
+
+**🎮 INTERFACE TIPS:**
+• **Minimap** (right panel) - Click to jump to locations
+• **Event Log** - See what's happening in real-time
+• **Speed Controls** - Adjust simulation speed (0.5x-5x)
+• **Drag me** anywhere you want on the screen!
+
+**⌨️ KEYBOARD SHORTCUTS:**
+• **Space** - Pause/Resume
+• **+/-** - Zoom
+• **WASD/Arrows** - Pan camera
+• **↑/↓** - Recall command history (in this chat)
+
+**🆘 EMERGENCY COMMANDS:**
+• "emergency brake" - Stop all trains
+• "stop all trains" - Same as above
+• "cancel all routes" - Clear all signal routes
+
+**🎯 TRY THESE NOW:**
+1. Type "status" to see your railway statistics
+2. Type "find signal L01" to locate a signal
+3. Try any command in your own words!
+
+**Remember:** I work in **guest mode** and **signed-in mode** - no API key needed for basic features!
+
+**Need specific help?** Just ask! Say "help with trains" or "tutorial on signals" or "how do I..." and I'll guide you!''', isAI: true);
     }
   }
 

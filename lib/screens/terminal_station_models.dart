@@ -202,6 +202,11 @@ class Train {
   String? smcDestination; // SMC-assigned destination
   MovementAuthority? movementAuthority; // CBTC movement authority visualization
 
+  // Door cycle tracking to prevent stuck-at-platform loop
+  String? lastPlatformDoorsOpened; // ID of last platform where doors were opened
+  double? lastDoorOpenPositionX; // X position when doors last opened
+  bool hasLeftPlatform; // True if train has moved 2+ blocks from last platform
+
   // CBTC NCT (Non-Communication Train) state
   bool isNCT; // NCT state - train flashes red, cannot go auto/PM
   int transpondersPassed; // Count of transponders passed for activation
@@ -243,6 +248,9 @@ class Train {
     this.cbtcMode = CbtcMode.off,
     this.smcDestination,
     this.movementAuthority,
+    this.lastPlatformDoorsOpened,
+    this.lastDoorOpenPositionX,
+    this.hasLeftPlatform = true, // Default to true so doors can open at first platform
     this.isNCT = false, // Default to false for backwards compatibility
     this.transpondersPassed = 0,
     this.lastTransponderId,

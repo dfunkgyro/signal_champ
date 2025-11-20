@@ -1297,7 +1297,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       ..color = themeData.signalPoleColor
       ..style = PaintingStyle.fill;
 
-    bool pointerWest = signal.id == 'C30' || signal.id == 'C28';
+    bool pointerWest = signal.direction == SignalDirection.west;
 
     if (pointerWest) {
       final path = Path()

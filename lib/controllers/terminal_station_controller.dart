@@ -13,8 +13,8 @@ import 'dart:math' as math;
 class AxleCounter {
   final String id;
   final String blockId;
-  final double x;
-  final double y;
+  double x;  // Made mutable for edit mode
+  double y;  // Made mutable for edit mode
   int count;
   DateTime? lastDetectionTime;
   bool d1Active;
@@ -24,6 +24,7 @@ class AxleCounter {
   final String? twinLabel;
   String? lastTrainDetected;
   DateTime? lastTrainDetectionTime;
+  bool flipped;  // Added for edit mode - swaps D1/D2 orientation
 
   AxleCounter({
     required this.id,
@@ -39,6 +40,7 @@ class AxleCounter {
     this.twinLabel,
     this.lastTrainDetected,
     this.lastTrainDetectionTime,
+    this.flipped = false,  // Default to false
   });
 }
 
@@ -2684,6 +2686,7 @@ class TerminalStationController extends ChangeNotifier {
       id: 'C30',
       x: 1000,
       y: 320,
+      direction: SignalDirection.west,  // Westbound signal
       routes: [
         SignalRoute(
           id: 'C30_R1',

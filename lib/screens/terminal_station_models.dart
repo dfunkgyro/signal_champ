@@ -7,6 +7,8 @@ import 'collision_analysis_system.dart' as collision_system;
 
 enum PointPosition { normal, reverse }
 
+enum SignalDirection { east, west }
+
 enum SignalAspect { red, green, blue }
 
 enum RouteState { unset, setting, set, releasing }
@@ -57,9 +59,9 @@ class MovementAuthority {
 class BlockSection {
   final String id;
   final String? name;  // Optional display name for crossovers and special sections
-  final double startX;
-  final double endX;
-  final double y;
+  double startX;  // Made mutable for edit mode
+  double endX;    // Made mutable for edit mode
+  double y;       // Made mutable for edit mode
   bool occupied;
   String? occupyingTrainId;
 
@@ -80,10 +82,24 @@ class BlockSection {
   double get centerX => startX + (endX - startX) / 2;
 }
 
+class Crossover {
+  final String id;
+  final String name;
+  final List<String> pointIds;  // Points that belong to this crossover
+  final String blockId;  // Associated block section
+
+  Crossover({
+    required this.id,
+    required this.name,
+    required this.pointIds,
+    required this.blockId,
+  });
+}
+
 class Point {
   final String id;
-  final double x;
-  final double y;
+  double x;  // Made mutable for edit mode
+  double y;  // Made mutable for edit mode
   PointPosition position;
   bool locked;
   bool lockedByAB;
@@ -120,8 +136,9 @@ class SignalRoute {
 
 class Signal {
   final String id;
-  final double x;
-  final double y;
+  double x;  // Made mutable for edit mode
+  double y;  // Made mutable for edit mode
+  SignalDirection direction;  // Added for edit mode
   final List<SignalRoute> routes;
   SignalAspect aspect;
   String? activeRouteId;
@@ -131,6 +148,7 @@ class Signal {
     required this.id,
     required this.x,
     required this.y,
+    this.direction = SignalDirection.east,  // Default to east
     required this.routes,
     this.aspect = SignalAspect.red,
     this.activeRouteId,
@@ -141,9 +159,9 @@ class Signal {
 class Platform {
   final String id;
   final String name;
-  final double startX;
-  final double endX;
-  final double y;
+  double startX;  // Made mutable for edit mode
+  double endX;    // Made mutable for edit mode
+  double y;       // Made mutable for edit mode
   bool occupied;
 
   Platform({
@@ -156,6 +174,7 @@ class Platform {
   });
 
   double get centerX => startX + (endX - startX) / 2;
+  double get length => endX - startX;
 }
 
 class Train {
@@ -258,8 +277,8 @@ class Train {
 class TrainStop {
   final String id;
   final String signalId;
-  final double x;
-  final double y;
+  double x;  // Made mutable for edit mode
+  double y;  // Made mutable for edit mode
   bool enabled;
   bool active;
 
@@ -270,6 +289,22 @@ class TrainStop {
     required this.y,
     this.enabled = true,
     this.active = false,
+  });
+}
+
+class BufferStop {
+  final String id;
+  double x;      // Made mutable for edit mode
+  double y;      // Made mutable for edit mode
+  double width;  // Visual width of buffer stop
+  double height; // Visual height of buffer stop
+
+  BufferStop({
+    required this.id,
+    required this.x,
+    required this.y,
+    this.width = 30,
+    this.height = 20,
   });
 }
 

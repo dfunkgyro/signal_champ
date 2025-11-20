@@ -45,6 +45,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   bool _assignToTimetable = false;
   bool _showGhostTrains = false;
 
+  // Edit Mode: Component dragging state
+  bool _isDraggingComponent = false;
+  String? _draggingComponentId;
+  String? _draggingComponentType;
+  Offset? _dragStartPosition;
+
   // FIXED: Canvas size controls for expanded 7000×1200 closed-loop network
   double _canvasWidth = 7000.0; // Expanded width for full loop
   double _canvasHeight = 1200.0; // Expanded height for return line
@@ -454,18 +460,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ),
           ),
 
-          // Dot Matrix Display - bottom left (Layer 11)
-          Positioned(
-            left: _showLeftPanel ? 330 : 10,
-            bottom: 100,
-            child: Container(
-              constraints: const BoxConstraints(
-                maxWidth: 400,
-                maxHeight: 300,
-              ),
-              child: const DotMatrixDisplay(),
-            ),
-          ),
+          // Dot Matrix Display moved to right sidebar (removed from here)
         ],
       ),
     );
@@ -3534,19 +3529,67 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     (localPosition.dy - (_canvasHeight / 2)) / _zoom -
                         _cameraOffsetY;
 
-                // Handle click on signals or points
-                _handleCanvasClick(controller, canvasX, canvasY);
+                // Handle click based on edit mode state
+                if (controller.editModeEnabled) {
+                  _handleEditModeClick(controller, canvasX, canvasY);
+                } else {
+                  _handleCanvasClick(controller, canvasX, canvasY);
+                }
               },
               onPanStart: (details) {
-                // Disable auto-follow immediately when user starts panning
+                final localPosition = details.localPosition;
+                final canvasX =
+                    (localPosition.dx - (_canvasWidth / 2)) / _zoom -
+                        _cameraOffsetX;
+                final canvasY =
+                    (localPosition.dy - (_canvasHeight / 2)) / _zoom -
+                        _cameraOffsetY;
+
+                // In edit mode with a selected component, start dragging
+                if (controller.editModeEnabled &&
+                    controller.selectedComponentId != null) {
+                  // Check if we're clicking on the selected component
+                  if (_isClickingOnComponent(controller,
+                      controller.selectedComponentType!,
+                      controller.selectedComponentId!,
+                      canvasX, canvasY)) {
+                    _isDraggingComponent = true;
+                    _draggingComponentId = controller.selectedComponentId;
+                    _draggingComponentType = controller.selectedComponentType;
+                    _dragStartPosition = Offset(canvasX, canvasY);
+                    return;
+                  }
+                }
+
+                // Otherwise, pan the camera
                 _controller.disableAutoFollow();
               },
               onPanUpdate: (details) {
-                _controller.updateCameraPosition(
-                  _controller.cameraOffsetX + details.delta.dx / _controller.cameraZoom,
-                  _controller.cameraOffsetY + details.delta.dy / _controller.cameraZoom,
-                  _controller.cameraZoom,
-                );
+                // If dragging a component in edit mode, move the component
+                if (_isDraggingComponent &&
+                    _draggingComponentId != null &&
+                    _draggingComponentType != null) {
+                  final dx = details.delta.dx / _zoom;
+                  final dy = details.delta.dy / _zoom;
+                  _moveComponent(controller, _draggingComponentType!,
+                      _draggingComponentId!, dx, dy);
+                } else {
+                  // Otherwise, pan the camera
+                  _controller.updateCameraPosition(
+                    _controller.cameraOffsetX + details.delta.dx / _controller.cameraZoom,
+                    _controller.cameraOffsetY + details.delta.dy / _controller.cameraZoom,
+                    _controller.cameraZoom,
+                  );
+                }
+              },
+              onPanEnd: (details) {
+                // Stop dragging
+                if (_isDraggingComponent) {
+                  _isDraggingComponent = false;
+                  _draggingComponentId = null;
+                  _draggingComponentType = null;
+                  _dragStartPosition = null;
+                }
               },
               child: Consumer<CanvasThemeController>(
                 builder: (context, canvasThemeController, _) {
@@ -3672,6 +3715,274 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         _showBlockDialog(controller, block);
         return;
       }
+    }
+  }
+
+  /// Handle click in edit mode - select components instead of showing dialogs
+  void _handleEditModeClick(
+      TerminalStationController controller, double canvasX, double canvasY) {
+    // Check for signal clicks
+    for (final signal in controller.signals.values) {
+      final distance =
+          ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
+      if (distance < 30) {
+        controller.selectComponent('signal', signal.id);
+        controller.logEvent('📍 Selected signal ${signal.id}');
+        return;
+      }
+    }
+
+    // Check for point clicks
+    for (final point in controller.points.values) {
+      final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
+      if (distance < 20) {
+        controller.selectComponent('point', point.id);
+        controller.logEvent('📍 Selected point ${point.id}');
+        return;
+      }
+    }
+
+    // Check for platform clicks
+    for (final platform in controller.platforms.values) {
+      if (canvasX >= platform.startX &&
+          canvasX <= platform.endX &&
+          (canvasY - platform.y).abs() < 25) {
+        controller.selectComponent('platform', platform.id);
+        controller.logEvent('📍 Selected platform ${platform.id}');
+        return;
+      }
+    }
+
+    // Check for train stop clicks
+    for (final trainStop in controller.trainStops.values) {
+      final distance = ((trainStop.x - canvasX).abs() + (trainStop.y - canvasY).abs());
+      if (distance < 20) {
+        controller.selectComponent('trainstop', trainStop.id);
+        controller.logEvent('📍 Selected train stop ${trainStop.id}');
+        return;
+      }
+    }
+
+    // Check for buffer stop clicks
+    for (final bufferStop in controller.bufferStops.values) {
+      final distance = ((bufferStop.x - canvasX).abs() + (bufferStop.y - canvasY).abs());
+      if (distance < 20) {
+        controller.selectComponent('bufferstop', bufferStop.id);
+        controller.logEvent('📍 Selected buffer stop ${bufferStop.id}');
+        return;
+      }
+    }
+
+    // Check for axle counter clicks
+    for (final axleCounter in controller.axleCounters.values) {
+      final distance = ((axleCounter.x - canvasX).abs() + (axleCounter.y - canvasY).abs());
+      if (distance < 20) {
+        controller.selectComponent('axlecounter', axleCounter.id);
+        controller.logEvent('📍 Selected axle counter ${axleCounter.id}');
+        return;
+      }
+    }
+
+    // Check for transponder clicks
+    for (final transponder in controller.transponders.values) {
+      final distance = ((transponder.x - canvasX).abs() + (transponder.y - canvasY).abs());
+      if (distance < 20) {
+        controller.selectComponent('transponder', transponder.id);
+        controller.logEvent('📍 Selected transponder ${transponder.id}');
+        return;
+      }
+    }
+
+    // Check for WiFi antenna clicks
+    for (final wifiAntenna in controller.wifiAntennas.values) {
+      final distance = ((wifiAntenna.x - canvasX).abs() + (wifiAntenna.y - canvasY).abs());
+      if (distance < 25) {
+        controller.selectComponent('wifiantenna', wifiAntenna.id);
+        controller.logEvent('📍 Selected WiFi antenna ${wifiAntenna.id}');
+        return;
+      }
+    }
+
+    // No component clicked - clear selection
+    controller.clearSelection();
+  }
+
+  /// Check if user is clicking on a specific component
+  bool _isClickingOnComponent(TerminalStationController controller,
+      String type, String id, double canvasX, double canvasY) {
+    switch (type.toLowerCase()) {
+      case 'signal':
+        final signal = controller.signals[id];
+        if (signal != null) {
+          final distance =
+              ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
+          return distance < 30;
+        }
+        break;
+      case 'point':
+        final point = controller.points[id];
+        if (point != null) {
+          final distance =
+              ((point.x - canvasX).abs() + (point.y - canvasY).abs());
+          return distance < 20;
+        }
+        break;
+      case 'platform':
+        final platform = controller.platforms[id];
+        if (platform != null) {
+          return canvasX >= platform.startX &&
+              canvasX <= platform.endX &&
+              (canvasY - platform.y).abs() < 25;
+        }
+        break;
+      case 'trainstop':
+        final trainStop = controller.trainStops[id];
+        if (trainStop != null) {
+          final distance =
+              ((trainStop.x - canvasX).abs() + (trainStop.y - canvasY).abs());
+          return distance < 20;
+        }
+        break;
+      case 'bufferstop':
+        final bufferStop = controller.bufferStops[id];
+        if (bufferStop != null) {
+          final distance =
+              ((bufferStop.x - canvasX).abs() + (bufferStop.y - canvasY).abs());
+          return distance < 20;
+        }
+        break;
+      case 'axlecounter':
+        final axleCounter = controller.axleCounters[id];
+        if (axleCounter != null) {
+          final distance =
+              ((axleCounter.x - canvasX).abs() + (axleCounter.y - canvasY).abs());
+          return distance < 20;
+        }
+        break;
+      case 'transponder':
+        final transponder = controller.transponders[id];
+        if (transponder != null) {
+          final distance =
+              ((transponder.x - canvasX).abs() + (transponder.y - canvasY).abs());
+          return distance < 20;
+        }
+        break;
+      case 'wifiantenna':
+        final wifiAntenna = controller.wifiAntennas[id];
+        if (wifiAntenna != null) {
+          final distance =
+              ((wifiAntenna.x - canvasX).abs() + (wifiAntenna.y - canvasY).abs());
+          return distance < 25;
+        }
+        break;
+    }
+    return false;
+  }
+
+  /// Move a component with optional snap-to-grid
+  void _moveComponent(TerminalStationController controller, String type,
+      String id, double dx, double dy) {
+    switch (type.toLowerCase()) {
+      case 'signal':
+        final signal = controller.signals[id];
+        if (signal != null) {
+          signal.x += dx;
+          signal.y += dy;
+          // Snap to grid if enabled
+          if (controller.gridVisible) {
+            signal.x = controller.snapToGrid(signal.x);
+            signal.y = controller.snapToGrid(signal.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
+      case 'point':
+        final point = controller.points[id];
+        if (point != null) {
+          point.x += dx;
+          point.y += dy;
+          if (controller.gridVisible) {
+            point.x = controller.snapToGrid(point.x);
+            point.y = controller.snapToGrid(point.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
+      case 'platform':
+        final platform = controller.platforms[id];
+        if (platform != null) {
+          final length = platform.endX - platform.startX;
+          platform.startX += dx;
+          platform.endX = platform.startX + length;
+          platform.y += dy;
+          if (controller.gridVisible) {
+            platform.startX = controller.snapToGrid(platform.startX);
+            platform.endX = controller.snapToGrid(platform.endX);
+            platform.y = controller.snapToGrid(platform.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
+      case 'trainstop':
+        final trainStop = controller.trainStops[id];
+        if (trainStop != null) {
+          trainStop.x += dx;
+          trainStop.y += dy;
+          if (controller.gridVisible) {
+            trainStop.x = controller.snapToGrid(trainStop.x);
+            trainStop.y = controller.snapToGrid(trainStop.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
+      case 'bufferstop':
+        final bufferStop = controller.bufferStops[id];
+        if (bufferStop != null) {
+          bufferStop.x += dx;
+          bufferStop.y += dy;
+          if (controller.gridVisible) {
+            bufferStop.x = controller.snapToGrid(bufferStop.x);
+            bufferStop.y = controller.snapToGrid(bufferStop.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
+      case 'axlecounter':
+        final axleCounter = controller.axleCounters[id];
+        if (axleCounter != null) {
+          axleCounter.x += dx;
+          axleCounter.y += dy;
+          if (controller.gridVisible) {
+            axleCounter.x = controller.snapToGrid(axleCounter.x);
+            axleCounter.y = controller.snapToGrid(axleCounter.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
+      case 'transponder':
+        final transponder = controller.transponders[id];
+        if (transponder != null) {
+          transponder.x += dx;
+          transponder.y += dy;
+          if (controller.gridVisible) {
+            transponder.x = controller.snapToGrid(transponder.x);
+            transponder.y = controller.snapToGrid(transponder.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
+      case 'wifiantenna':
+        final wifiAntenna = controller.wifiAntennas[id];
+        if (wifiAntenna != null) {
+          wifiAntenna.x += dx;
+          wifiAntenna.y += dy;
+          if (controller.gridVisible) {
+            wifiAntenna.x = controller.snapToGrid(wifiAntenna.x);
+            wifiAntenna.y = controller.snapToGrid(wifiAntenna.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
     }
   }
 
@@ -3913,6 +4224,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   );
                   _controller.disableAutoFollow();
                 },
+              ),
+
+              // Dot Matrix Display - relocated under minimap
+              Container(
+                width: 280,
+                height: 140,
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: const DotMatrixDisplay(),
               ),
 
               // Rest of the status panel content

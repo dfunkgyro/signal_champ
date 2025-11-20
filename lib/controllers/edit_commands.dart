@@ -104,21 +104,25 @@ class MovePlatformCommand implements EditCommand {
 
   @override
   void execute() {
-    final platform = controller.platforms[platformId];
-    if (platform != null) {
+    try {
+      final platform = controller.platforms.firstWhere((p) => p.id == platformId);
       platform.startX = newStartX;
       platform.endX = newEndX;
       platform.y = newY;
+    } catch (e) {
+      // Platform not found
     }
   }
 
   @override
   void undo() {
-    final platform = controller.platforms[platformId];
-    if (platform != null) {
+    try {
+      final platform = controller.platforms.firstWhere((p) => p.id == platformId);
       platform.startX = oldStartX;
       platform.endX = oldEndX;
       platform.y = oldY;
+    } catch (e) {
+      // Platform not found
     }
   }
 
@@ -144,19 +148,23 @@ class ResizePlatformCommand implements EditCommand {
 
   @override
   void execute() {
-    final platform = controller.platforms[platformId];
-    if (platform != null) {
+    try {
+      final platform = controller.platforms.firstWhere((p) => p.id == platformId);
       platform.startX = newStartX;
       platform.endX = newEndX;
+    } catch (e) {
+      // Platform not found
     }
   }
 
   @override
   void undo() {
-    final platform = controller.platforms[platformId];
-    if (platform != null) {
+    try {
+      final platform = controller.platforms.firstWhere((p) => p.id == platformId);
       platform.startX = oldStartX;
       platform.endX = oldEndX;
+    } catch (e) {
+      // Platform not found
     }
   }
 

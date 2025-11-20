@@ -5,6 +5,7 @@ import '../models/scenario_models.dart';
 import '../services/scenario_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/route_designer_canvas.dart';
+import 'scenario_player_screen.dart';
 
 class ScenarioBuilderScreen extends StatefulWidget {
   final String? scenarioId;
@@ -542,10 +543,90 @@ class _ScenarioBuilderScreenState extends State<ScenarioBuilderScreen> {
   }
 
   void _testScenario() {
-    // TODO: Implement scenario testing
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Test mode - Feature coming soon!'),
+    // Validate scenario has required elements before testing
+    final validationErrors = <String>[];
+
+    if (_scenario.blockSections.isEmpty) {
+      validationErrors.add('No block sections defined');
+    }
+
+    if (_scenario.signals.isEmpty) {
+      validationErrors.add('No signals defined');
+    }
+
+    if (_scenario.objectives.isEmpty) {
+      validationErrors.add('No objectives defined (scenario will complete immediately)');
+    }
+
+    // Show validation warnings but allow testing anyway
+    if (validationErrors.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Validation Warnings'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('The following issues were found:'),
+              const SizedBox(height: 8),
+              ...validationErrors.map((error) => Padding(
+                    padding: const EdgeInsets.only(left: 8, top: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.circle, size: 6, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(error)),
+                      ],
+                    ),
+                  )),
+              const SizedBox(height: 16),
+              const Text('Would you like to test anyway?'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _launchTestMode();
+              },
+              child: const Text('Test Anyway'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _launchTestMode();
+    }
+  }
+
+  void _launchTestMode() {
+    // Update scenario with current form values
+    _scenario = _scenario.copyWith(
+      name: _nameController.text.isNotEmpty ? _nameController.text : 'Untitled Scenario',
+      description: _descriptionController.text,
+      category: _selectedCategory,
+      difficulty: _selectedDifficulty,
+      updatedAt: DateTime.now(),
+    );
+
+    // Navigate to scenario player in test mode
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ScenarioPlayerScreen(
+          scenario: _scenario,
+          isTestMode: true,
+        ),
       ),
     );
   }

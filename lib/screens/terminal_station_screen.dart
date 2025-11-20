@@ -7,6 +7,7 @@ import '../controllers/canvas_theme_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
 import '../widgets/ai_agent_panel.dart';
 import '../widgets/relay_rack_panel.dart';
+import '../widgets/edit_mode_toolbar.dart';
 import 'scenario_marketplace_screen.dart';
 import 'dart:math' as math;
 
@@ -440,6 +441,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ? const AIAgentPanel()
                   : const SizedBox.shrink();
             },
+          ),
+
+          // Edit Mode Toolbar - bottom center (Layer 10)
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: const Center(
+              child: EditModeToolbar(),
+            ),
           ),
         ],
       ),

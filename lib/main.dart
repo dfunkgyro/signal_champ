@@ -27,66 +27,115 @@ import '../controllers/terminal_station_controller.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  debugPrint('🚀 Starting Rail Champ initialization...');
+
+  // ========== PHASE 1: CRITICAL INFRASTRUCTURE ==========
+  debugPrint('📋 PHASE 1: Initializing critical infrastructure...');
+
   String? openAiApiKey;
   SupabaseClient? supabaseClient;
 
   try {
     // Load environment variables
+    debugPrint('  → Loading environment variables...');
     await dotenv.load(fileName: 'assets/.env');
 
     final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
     final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
     openAiApiKey = dotenv.env['OPENAI_API_KEY'];
+    debugPrint('  ✅ Environment variables loaded');
 
-    // Initialize Supabase
+    // Initialize Supabase (CRITICAL - needs time to connect)
     if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
+      debugPrint('  → Initializing Supabase connection...');
       await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
       supabaseClient = Supabase.instance.client;
+      debugPrint('  ✅ Supabase connection established');
+
+      // WAIT for Supabase to stabilize
+      debugPrint('  ⏳ Waiting for Supabase to stabilize (500ms)...');
+      await Future.delayed(const Duration(milliseconds: 500));
+      debugPrint('  ✅ Supabase stabilized');
+    } else {
+      debugPrint('  ⚠️ Supabase credentials missing - running in offline mode');
     }
 
-    // Initialize Sound Service
+    // Initialize Sound Service (optional but beneficial to do early)
     try {
+      debugPrint('  → Initializing sound service...');
       await SoundService().initialize();
+      debugPrint('  ✅ Sound service initialized');
     } catch (e) {
-      debugPrint('Sound service initialization error (optional): $e');
+      debugPrint('  ⚠️ Sound service initialization error (optional): $e');
     }
   } catch (e) {
-    debugPrint('Initialization error: $e');
+    debugPrint('  ❌ Critical initialization error: $e');
   }
 
-  // Create a fallback Supabase client if initialization failed
+  // Create fallback Supabase client if needed
   if (supabaseClient == null) {
-    debugPrint('Running in fallback mode without Supabase');
+    debugPrint('  → Creating fallback Supabase client...');
+    // Don't create a fake client that will fail - just leave it null
+    debugPrint('  ⚠️ Running in full offline mode without Supabase');
   }
 
-  // Initialize new services with error handling
+  debugPrint('✅ PHASE 1 Complete - Critical infrastructure ready\n');
+
+  // ========== PHASE 2: CORE SERVICES ==========
+  debugPrint('📋 PHASE 2: Initializing core services...');
+
+  // Small delay before starting service initialization
+  await Future.delayed(const Duration(milliseconds: 200));
+
   final widgetPrefsService = WidgetPreferencesService();
-  final speechRecognitionService = SpeechRecognitionService();
-  final ttsService = TextToSpeechService();
-
   try {
+    debugPrint('  → Initializing widget preferences (SharedPreferences)...');
     await widgetPrefsService.initialize();
-    debugPrint('✅ Widget preferences service initialized');
+    debugPrint('  ✅ Widget preferences initialized');
   } catch (e) {
-    debugPrint('⚠️ Widget preferences initialization failed (non-critical): $e');
-    // Continue anyway - app will use default values
+    debugPrint('  ⚠️ Widget preferences failed (non-critical): $e');
   }
 
+  // Wait between service initializations to prevent resource contention
+  await Future.delayed(const Duration(milliseconds: 150));
+
+  debugPrint('✅ PHASE 2 Complete - Core services ready\n');
+
+  // ========== PHASE 3: OPTIONAL FEATURES ==========
+  debugPrint('📋 PHASE 3: Initializing optional features...');
+
+  final speechRecognitionService = SpeechRecognitionService();
   try {
+    debugPrint('  → Initializing speech recognition...');
     await speechRecognitionService.initialize();
-    debugPrint('✅ Speech recognition service initialized');
+    debugPrint('  ✅ Speech recognition initialized');
   } catch (e) {
-    debugPrint('⚠️ Speech recognition initialization failed (non-critical): $e');
-    // Continue anyway - voice features disabled
+    debugPrint('  ⚠️ Speech recognition failed (non-critical): $e');
   }
 
+  // Wait between heavy services
+  await Future.delayed(const Duration(milliseconds: 150));
+
+  final ttsService = TextToSpeechService();
   try {
+    debugPrint('  → Initializing text-to-speech...');
     await ttsService.initialize();
-    debugPrint('✅ Text-to-speech service initialized');
+    debugPrint('  ✅ Text-to-speech initialized');
   } catch (e) {
-    debugPrint('⚠️ TTS initialization failed (non-critical): $e');
-    // Continue anyway - TTS features disabled
+    debugPrint('  ⚠️ TTS failed (non-critical): $e');
   }
+
+  debugPrint('✅ PHASE 3 Complete - Optional features ready\n');
+
+  // ========== PHASE 4: FINAL PREPARATION ==========
+  debugPrint('📋 PHASE 4: Preparing to launch UI...');
+
+  // Final stabilization delay before starting UI
+  debugPrint('  ⏳ Final stabilization (300ms)...');
+  await Future.delayed(const Duration(milliseconds: 300));
+
+  debugPrint('✅ All initialization complete - Starting app UI\n');
+  debugPrint('🎉 Rail Champ ready to launch!\n');
 
   runApp(RailChampApp(
     supabaseClient: supabaseClient,
@@ -178,11 +227,38 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
 
-    // Show loading while initializing
+    // Show loading splash while initializing authentication
     if (!authService.isInitialized) {
-      return const Scaffold(
+      return Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.background,
         body: Center(
-          child: CircularProgressIndicator(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // App logo or icon
+              Icon(
+                Icons.train,
+                size: 80,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 32),
+              // Loading indicator
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              // Status text
+              Text(
+                'Initializing Rail Champ...',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Checking authentication',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -229,24 +305,61 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _initializeServices() async {
+    debugPrint('🔧 MainScreen: Starting service initialization...');
+
     try {
-      // Initialize Supabase presence
-      final supabaseService = context.read<SupabaseService>();
-      await supabaseService.initializePresence();
+      // STEP 1: Initialize Supabase presence (if available)
+      try {
+        debugPrint('  → Initializing Supabase presence...');
+        final supabaseService = context.read<SupabaseService>();
+        await supabaseService.initializePresence();
+        debugPrint('  ✅ Supabase presence initialized');
 
-      // Load achievements
-      final achievements = context.read<AchievementsService>();
-      await achievements.loadEarnedAchievements();
+        // Wait for presence to stabilize
+        await Future.delayed(const Duration(milliseconds: 200));
+      } catch (e) {
+        debugPrint('  ⚠️ Supabase presence failed (non-critical): $e');
+      }
 
-      // Start connection monitoring
-      final connectionService = context.read<ConnectionService>();
-      await connectionService.checkAllConnections();
+      // STEP 2: Load achievements
+      try {
+        debugPrint('  → Loading achievements...');
+        final achievements = context.read<AchievementsService>();
+        await achievements.loadEarnedAchievements();
+        debugPrint('  ✅ Achievements loaded');
 
-      // Log app open event
-      final analyticsService = context.read<AnalyticsService>();
-      await analyticsService.logEvent('app_opened');
+        // Small delay before next service
+        await Future.delayed(const Duration(milliseconds: 150));
+      } catch (e) {
+        debugPrint('  ⚠️ Achievements loading failed (non-critical): $e');
+      }
+
+      // STEP 3: Start connection monitoring
+      try {
+        debugPrint('  → Starting connection monitoring...');
+        final connectionService = context.read<ConnectionService>();
+        await connectionService.checkAllConnections();
+        debugPrint('  ✅ Connection monitoring started');
+
+        // Small delay before analytics
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (e) {
+        debugPrint('  ⚠️ Connection monitoring failed (non-critical): $e');
+      }
+
+      // STEP 4: Log app open event (analytics - low priority)
+      try {
+        debugPrint('  → Logging app open event...');
+        final analyticsService = context.read<AnalyticsService>();
+        await analyticsService.logEvent('app_opened');
+        debugPrint('  ✅ App open event logged');
+      } catch (e) {
+        debugPrint('  ⚠️ Analytics logging failed (non-critical): $e');
+      }
+
+      debugPrint('✅ MainScreen: All services initialized successfully\n');
     } catch (e) {
-      debugPrint('Service initialization error: $e');
+      debugPrint('❌ MainScreen: Service initialization error: $e');
     }
   }
 

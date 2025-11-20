@@ -501,6 +501,234 @@ class CollisionAnalysisSystem {
     return _incidentHistory.reversed.take(count).toList();
   }
 
+  /// Export collision report as formatted text
+  String exportCollisionReport({
+    int? incidentCount,
+    bool includeTimeline = true,
+    bool includeRecommendations = true,
+  }) {
+    final buffer = StringBuffer();
+    final incidents = incidentCount != null
+        ? getRecentIncidents(count: incidentCount)
+        : _incidentHistory;
+
+    // Header
+    buffer.writeln('=' * 80);
+    buffer.writeln('RAILWAY COLLISION ANALYSIS REPORT');
+    buffer.writeln('Generated: ${DateTime.now().toIso8601String()}');
+    buffer.writeln('Total Incidents: ${incidents.length}');
+    buffer.writeln('=' * 80);
+    buffer.writeln();
+
+    if (incidents.isEmpty) {
+      buffer.writeln('✅ No collision incidents recorded.');
+      buffer.writeln();
+      return buffer.toString();
+    }
+
+    // Statistics
+    buffer.writeln('SUMMARY STATISTICS');
+    buffer.writeln('-' * 80);
+    final severityCounts = <CollisionSeverity, int>{};
+    final causeCounts = <CollisionCause, int>{};
+
+    for (var incident in incidents) {
+      severityCounts[incident.severity] = (severityCounts[incident.severity] ?? 0) + 1;
+      for (var cause in incident.rootCauses) {
+        causeCounts[cause] = (causeCounts[cause] ?? 0) + 1;
+      }
+    }
+
+    buffer.writeln('By Severity:');
+    for (var entry in severityCounts.entries) {
+      buffer.writeln('  ${_formatSeverityName(entry.key)}: ${entry.value}');
+    }
+
+    buffer.writeln('\nTop Root Causes:');
+    final sortedCauses = causeCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    for (var entry in sortedCauses.take(5)) {
+      buffer.writeln('  ${_formatCauseName(entry.key)}: ${entry.value} incidents');
+    }
+    buffer.writeln();
+
+    // Detailed incidents
+    buffer.writeln('=' * 80);
+    buffer.writeln('DETAILED INCIDENT REPORTS');
+    buffer.writeln('=' * 80);
+    buffer.writeln();
+
+    for (var i = 0; i < incidents.length; i++) {
+      final incident = incidents[i];
+      buffer.writeln('INCIDENT #${i + 1}: ${incident.id}');
+      buffer.writeln('-' * 80);
+      buffer.writeln('Timestamp: ${incident.timestamp}');
+      buffer.writeln('Location: ${incident.location}');
+      buffer.writeln('Trains Involved: ${incident.trainsInvolved.join(", ")}');
+      buffer.writeln('Severity: ${_formatSeverityName(incident.severity)}');
+      buffer.writeln('Responsibility: ${_formatResponsibilityName(incident.responsibility)} - ${incident.specificParty}');
+      buffer.writeln();
+
+      buffer.writeln('Root Causes:');
+      for (var cause in incident.rootCauses) {
+        buffer.writeln('  • ${_formatCauseName(cause)}');
+      }
+      buffer.writeln();
+
+      if (includeTimeline && incident.leadingEvents.isNotEmpty) {
+        buffer.writeln('Timeline (Leading Events):');
+        for (var event in incident.leadingEvents.take(10)) {
+          final secondsAgo = incident.timestamp.difference(event.timestamp).inSeconds;
+          buffer.writeln('  T-${secondsAgo}s: ${event.trainId} @ ${event.location}');
+          buffer.writeln('          ${event.description} (${event.trainSpeed.toStringAsFixed(1)} m/s)');
+        }
+        buffer.writeln();
+      }
+
+      buffer.writeln('Forensic Summary:');
+      buffer.writeln(incident.forensicSummary);
+      buffer.writeln();
+
+      if (includeRecommendations) {
+        buffer.writeln('Prevention Recommendations:');
+        for (var rec in incident.preventionRecommendations) {
+          buffer.writeln('  • $rec');
+        }
+        buffer.writeln();
+      }
+
+      buffer.writeln('=' * 80);
+      buffer.writeln();
+    }
+
+    return buffer.toString();
+  }
+
+  /// Export collision report as CSV format
+  String exportCollisionReportCSV() {
+    final buffer = StringBuffer();
+
+    // CSV Header
+    buffer.writeln('Incident ID,Timestamp,Location,Trains Involved,Severity,Root Causes,Responsibility,Specific Party');
+
+    for (var incident in _incidentHistory) {
+      final trainsStr = incident.trainsInvolved.join(';');
+      final causesStr = incident.rootCauses.map((c) => _formatCauseName(c)).join(';');
+
+      buffer.writeln([
+        incident.id,
+        incident.timestamp.toIso8601String(),
+        incident.location,
+        trainsStr,
+        _formatSeverityName(incident.severity),
+        causesStr,
+        _formatResponsibilityName(incident.responsibility),
+        incident.specificParty,
+      ].map((s) => '"$s"').join(','));
+    }
+
+    return buffer.toString();
+  }
+
+  /// Export collision report as JSON format
+  String exportCollisionReportJSON() {
+    final incidents = _incidentHistory.map((incident) => {
+      'id': incident.id,
+      'timestamp': incident.timestamp.toIso8601String(),
+      'location': incident.location,
+      'trainsInvolved': incident.trainsInvolved,
+      'severity': _formatSeverityName(incident.severity),
+      'rootCauses': incident.rootCauses.map((c) => _formatCauseName(c)).toList(),
+      'responsibility': _formatResponsibilityName(incident.responsibility),
+      'specificParty': incident.specificParty,
+      'leadingEvents': incident.leadingEvents.map((e) => {
+        'timestamp': e.timestamp.toIso8601String(),
+        'trainId': e.trainId,
+        'description': e.description,
+        'location': e.location,
+        'trainSpeed': e.trainSpeed,
+      }).toList(),
+      'preventionRecommendations': incident.preventionRecommendations,
+      'forensicSummary': incident.forensicSummary,
+    }).toList();
+
+    // Simple JSON serialization
+    return _jsonEncode(incidents);
+  }
+
+  /// Simple JSON encoder (without dart:convert dependency)
+  String _jsonEncode(List<Map<String, dynamic>> data) {
+    final buffer = StringBuffer();
+    buffer.write('[');
+    for (var i = 0; i < data.length; i++) {
+      if (i > 0) buffer.write(',');
+      buffer.write(_jsonEncodeMap(data[i]));
+    }
+    buffer.write(']');
+    return buffer.toString();
+  }
+
+  String _jsonEncodeMap(Map<String, dynamic> map) {
+    final buffer = StringBuffer();
+    buffer.write('{');
+    var first = true;
+    map.forEach((key, value) {
+      if (!first) buffer.write(',');
+      first = false;
+      buffer.write('"$key":');
+      if (value is String) {
+        buffer.write('"${value.replaceAll('"', '\\"')}"');
+      } else if (value is List) {
+        buffer.write('[');
+        for (var i = 0; i < value.length; i++) {
+          if (i > 0) buffer.write(',');
+          if (value[i] is String) {
+            buffer.write('"${value[i].replaceAll('"', '\\"')}"');
+          } else if (value[i] is Map) {
+            buffer.write(_jsonEncodeMap(value[i] as Map<String, dynamic>));
+          } else {
+            buffer.write(value[i].toString());
+          }
+        }
+        buffer.write(']');
+      } else {
+        buffer.write(value.toString());
+      }
+    });
+    buffer.write('}');
+    return buffer.toString();
+  }
+
+  String _formatSeverityName(CollisionSeverity severity) {
+    switch (severity) {
+      case CollisionSeverity.nearMiss:
+        return 'Near Miss';
+      case CollisionSeverity.minor:
+        return 'Minor';
+      case CollisionSeverity.major:
+        return 'Major';
+      case CollisionSeverity.catastrophic:
+        return 'Catastrophic';
+    }
+  }
+
+  String _formatResponsibilityName(Responsibility resp) {
+    switch (resp) {
+      case Responsibility.trainDriver:
+        return 'Train Driver';
+      case Responsibility.signaller:
+        return 'Signaller';
+      case Responsibility.systemController:
+        return 'System Controller';
+      case Responsibility.maintenance:
+        return 'Maintenance';
+      case Responsibility.externalFactors:
+        return 'External Factors';
+      case Responsibility.underInvestigation:
+        return 'Under Investigation';
+    }
+  }
+
   // Clear history
   void clearHistory() {
     _eventHistory.clear();

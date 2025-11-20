@@ -8,6 +8,7 @@ import '../widgets/collision_alarm_ui.dart';
 import '../widgets/ai_agent_panel.dart';
 import '../widgets/relay_rack_panel.dart';
 import '../widgets/edit_mode_toolbar.dart';
+import '../widgets/dot_matrix_display.dart';
 import 'scenario_marketplace_screen.dart';
 import 'dart:math' as math;
 
@@ -450,6 +451,19 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             right: 0,
             child: const Center(
               child: EditModeToolbar(),
+            ),
+          ),
+
+          // Dot Matrix Display - bottom left (Layer 11)
+          Positioned(
+            left: _showLeftPanel ? 330 : 10,
+            bottom: 100,
+            child: Container(
+              constraints: const BoxConstraints(
+                maxWidth: 400,
+                maxHeight: 300,
+              ),
+              child: const DotMatrixDisplay(),
             ),
           ),
         ],

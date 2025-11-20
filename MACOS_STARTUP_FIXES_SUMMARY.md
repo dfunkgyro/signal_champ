@@ -128,31 +128,30 @@ b) Default size/shape should match minimap dimensions
 
 ---
 
-## 📋 INCOMPLETE/PLACEHOLDER FEATURES TO DOCUMENT
+## 📋 INCOMPLETE/PLACEHOLDER FEATURES - AUDIT COMPLETE ✅
 
-**Next Steps**: Need to audit codebase for:
+**Comprehensive audit completed!** See detailed report in:
+👉 **[INCOMPLETE_FEATURES_AUDIT.md](INCOMPLETE_FEATURES_AUDIT.md)**
 
-1. **Edit Mode Features**
-   - What edit operations are supported?
-   - Which ones are incomplete or placeholder?
-   - UI components that don't function?
+**Summary of Findings:**
+- **Total Features Audited:** 15
+- **Complete:** 7 (47%)
+- **Incomplete/Missing:** 6 (40%)
+- **Platform-Limited:** 2 (13%)
 
-2. **Export Functionality**
-   - XML export (has known bug)
-   - Other export formats?
-   - Import functionality status?
+**High Priority Issues Found:**
+1. ❌ **Scenario Player/Viewer** - Users cannot play downloaded scenarios
+2. ❌ **Scenario Testing Mode** - Cannot test scenarios before publishing
 
-3. **AI/SSM Features**
-   - Natural language command processing
-   - Intent recognition completeness
-   - AI agent interaction features
+**Medium Priority Issues:**
+3. ❌ **Component Creation in Edit Mode** - Cannot add new components
+4. ❌ **Template Loading** - Must build scenarios from scratch
+5. ❌ **Collision Report Export** - Cannot save collision analysis
 
-4. **Placeholder Screens/Widgets**
-   - Screens that show "Coming Soon"
-   - Buttons that don't do anything
-   - Features marked TODO in code
+**Platform Limitations:**
+6. ⚠️ **Voice Features Disabled on macOS** - Speech recognition and TTS unavailable
 
-**Action**: User should identify specific missing features for prioritization
+See the full audit report for implementation roadmap and technical details.
 
 ---
 

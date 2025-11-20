@@ -96,8 +96,18 @@ class RailChampApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Create a dummy Supabase client if none provided (for fallback mode)
-    final client = supabaseClient ?? Supabase.instance.client;
+    // Handle Supabase client safely - use provided client or try to get instance
+    late final SupabaseClient client;
+    try {
+      client = supabaseClient ?? Supabase.instance.client;
+    } catch (e) {
+      debugPrint('Supabase not initialized, running in offline mode: $e');
+      // Create a mock client with dummy credentials for offline mode
+      client = SupabaseClient(
+        'https://placeholder.supabase.co',
+        'placeholder-anon-key',
+      );
+    }
 
     return MultiProvider(
       providers: [

@@ -6029,12 +6029,18 @@ class TerminalStationController extends ChangeNotifier {
     return nearest;
   }
 
-  void _logEvent(String message) {
+  /// Log an event to the event log (public method for external access)
+  void logEvent(String message) {
     eventLog.insert(0,
         '${DateTime.now().toIso8601String().split('T')[1].substring(0, 8)} - $message');
     if (eventLog.length > 50) {
       eventLog.removeLast();
     }
+  }
+
+  /// Private helper to maintain backward compatibility
+  void _logEvent(String message) {
+    logEvent(message);
   }
 
   // ========== CBTC HELPER METHODS ==========

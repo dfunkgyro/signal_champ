@@ -49,6 +49,73 @@ Made all component coordinates mutable for edit mode:
 - ✅ Fixed ConnectionIndicator context error
 - ✅ Fixed RailwaySearchBar reference (renamed to RailwaySearchBarEnhanced)
 
+### Phase 3: Command Pattern & Edit Mode Core (COMPLETED)
+
+#### 1. Command Pattern Infrastructure
+- ✅ Created `edit_commands.dart` with complete Command pattern
+- ✅ Implemented 9 command types:
+  - MoveSignalCommand, MovePointCommand, MovePlatformCommand
+  - ResizePlatformCommand, MoveTrainStopCommand, MoveAxleCounterCommand
+  - ChangeSignalDirectionCommand, FlipAxleCounterCommand
+  - DeleteComponentCommand, AddComponentCommand
+- ✅ CommandHistory class with 50-command undo/redo stack
+
+#### 2. Edit Mode State Management
+- ✅ Added `editModeEnabled` boolean
+- ✅ Added `editModeGridSize` (default: 10 units)
+- ✅ Added component selection tracking (selectedComponentType, selectedComponentId)
+- ✅ Added bufferStops and crossovers Maps
+- ✅ Integrated CommandHistory into controller
+
+#### 3. Snap-to-Grid System
+- ✅ `snapToGrid(double value)` helper method
+- ✅ All movement methods use snap-to-grid automatically
+- ✅ Grid size configurable (default 10 units)
+
+#### 4. Component Management Methods
+- ✅ `toggleEditMode()` - pauses simulation when ON
+- ✅ `selectComponent()` / `clearSelection()` - selection management
+- ✅ `generateUniqueId()` - sequential ID generation (S001, P001, etc.)
+- ✅ `canDeleteComponent()` - safety validation before deletion
+- ✅ `deleteComponent()` / `restoreComponent()` - with safety checks
+- ✅ Movement methods with history:
+  - moveSignalWithHistory(), movePointWithHistory()
+  - movePlatformWithHistory(), resizePlatformWithHistory()
+- ✅ `changeSignalDirectionWithHistory()` - toggle signal direction
+- ✅ `flipAxleCounterWithHistory()` - flip axle counter orientation
+- ✅ `undo()` / `redo()` - command history navigation
+
+#### 5. Safety Validation
+- ✅ Signals: can't delete if route active or train nearby
+- ✅ Points: can't delete if locked or lockedByAB
+- ✅ Blocks: can't delete if occupied
+- ✅ Event logging for all safety violations
+- ✅ Simulation auto-pauses when entering edit mode
+
+### Phase 4: Edit Mode UI (COMPLETED)
+
+#### 1. EditModeToolbar Widget
+- ✅ Compact toggle button when edit mode OFF
+- ✅ Full toolbar when edit mode ON with:
+  - Edit Mode indicator (orange background)
+  - Undo button with tooltip showing action description
+  - Redo button with tooltip showing action description
+  - Add Component dropdown (8 component types)
+  - Delete Selected button with confirmation dialog
+  - Grid toggle button
+  - Done button to exit edit mode
+- ✅ Add component dialog with auto-generated IDs
+- ✅ Delete confirmation dialog with safety checks
+- ✅ Visual feedback (icons, colors, tooltips)
+
+#### 2. Keyboard Shortcuts
+- ✅ EditModeKeyboardHandler widget
+- ✅ Ctrl+Z = Undo
+- ✅ Ctrl+Y / Ctrl+Shift+Z = Redo
+- ✅ Delete / Backspace = Delete selected component
+- ✅ Escape = Clear selection
+- ✅ Auto-focus and keyboard event handling
+
 ## 🚧 Pending Features (Not Yet Implemented)
 
 ### Phase 3: Controller Integration (PENDING)
@@ -193,49 +260,81 @@ Layout Menu:
 - ❌ Make transponders movable
 - ❌ Make WiFi antennas movable
 
-#### 4. Validation
+#### 4. Validation (Enhancements)
 - ❌ Prevent invalid positions (components off screen)
 - ❌ Warn about overlapping components
 - ❌ Check minimum platform sizes
 
-#### 5. Undo/Redo
-- ❌ Command pattern for movements
-- ❌ Undo/Redo buttons
-
 ## 📊 Implementation Summary
 
-### Completed: ~30% of Full Feature
+### Completed: ~65% of Full Feature
 - ✅ Core data models (100%)
 - ✅ Relative positioning (100%)
 - ✅ Signal direction system (100%)
 - ✅ Axle counter flipped orientation (100%)
 - ✅ Point gap refactoring (100%)
+- ✅ Command pattern infrastructure (100%)
+- ✅ Edit Mode state management (100%)
+- ✅ Component management methods (100%)
+- ✅ Safety validation (100%)
+- ✅ Undo/Redo system (100%)
+- ✅ Edit Mode UI toolbar (100%)
+- ✅ Keyboard shortcuts (100%)
 
-### Pending: ~70% Remaining
-- ❌ Controller integration (0%)
-- ❌ Edit Mode state management (0%)
-- ❌ Movement logic (0%)
-- ❌ UI implementation (0%)
-- ❌ Persistence (0%)
+### Pending: ~35% Remaining
+- ❌ Component dragging implementation (0%)
+- ❌ Platform resize drag handles (0%)
+- ❌ Persistence layer (JSON/XML) (0%)
+- ❌ BufferStop/Crossover initialization (0%)
+- ❌ Integration with main UI (0%)
 
 ## 🎯 Next Steps
 
 To complete the Edit Mode feature, implement in this order:
 
-1. **Add BufferStop instances** to controller (1-2 hours)
-2. **Add Crossover instances** to controller (1 hour)
-3. **Implement Edit Mode toggle** state management (2-3 hours)
-4. **Implement snap-to-grid movement** helpers (2-3 hours)
-5. **Add Edit Mode UI toggle** button (1-2 hours)
-6. **Implement component dragging** (4-6 hours)
-7. **Implement platform resize** (2-3 hours)
-8. **Add signal direction toggle** UI (1 hour)
-9. **Implement JSON persistence** (4-6 hours)
-10. **Implement XML export/import** (3-4 hours)
-11. **Add Reset to Default** (1 hour)
-12. **Testing and refinement** (4-8 hours)
+1. **Integrate EditModeToolbar into main UI** (1 hour)
+   - Add to terminal_station_screen.dart
+   - Wire up EditModeKeyboardHandler
+   - Test toolbar visibility and functionality
 
-**Total estimated time remaining: 25-40 hours**
+2. **Implement component dragging** (4-6 hours)
+   - Add GestureDetector to painter for component detection
+   - Implement drag behavior with snap-to-grid
+   - Visual feedback during dragging (ghost image, position preview)
+   - Call moveXWithHistory() methods on drag complete
+
+3. **Implement platform resize handles** (2-3 hours)
+   - Detect clicks on platform edges (left, right, center)
+   - Implement edge dragging for resizing
+   - Implement center dragging for moving
+   - Call resizePlatformWithHistory() methods
+
+4. **Add BufferStop instances** to controller (1 hour)
+   - Initialize buffer stops at current hardcoded positions
+   - Remove hardcoded rendering in painter
+   - Make buffer stops draggable
+
+5. **Add Crossover instances** to controller (1 hour)
+   - Initialize crossover-point relationships
+   - Implement compound movement (crossover drags all child points)
+
+6. **Implement JSON persistence** (4-6 hours)
+   - Add toJson() / fromJson() to all component models
+   - Implement save/load with SharedPreferences
+   - Auto-save on edit mode exit
+
+7. **Implement XML export/import** (3-4 hours)
+   - Create XML export function
+   - Create XML import with validation
+   - File picker integration
+
+8. **Testing and bug fixing** (2-4 hours)
+   - Test all component movements
+   - Test undo/redo extensively
+   - Test safety validation
+   - Fix any issues
+
+**Total estimated time remaining: 18-30 hours**
 
 ## 🔧 Technical Debt
 

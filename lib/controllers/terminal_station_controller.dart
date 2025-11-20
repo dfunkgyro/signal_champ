@@ -6911,7 +6911,7 @@ class TerminalStationController extends ChangeNotifier {
 
       // Stop simulation if running
       if (isRunning) {
-        stopSimulation();
+        pauseSimulation();
       }
 
       // Clear existing state
@@ -6947,11 +6947,9 @@ class TerminalStationController extends ChangeNotifier {
           endX: scenarioBlock.endX,
           y: scenarioBlock.y,
           occupied: false,
-          nextBlock: scenarioBlock.nextBlock,
-          prevBlock: scenarioBlock.prevBlock,
-          isCrossover: scenarioBlock.isCrossover,
-          isReversingArea: scenarioBlock.isReversingArea,
         );
+        // Note: ScenarioBlockSection has nextBlock, prevBlock, isCrossover, isReversingArea
+        // but runtime BlockSection doesn't store these (they're in the scenario data model)
       }
       _logEvent('✅ Loaded ${scenario.blockSections.length} block sections');
 

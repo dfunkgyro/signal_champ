@@ -6733,7 +6733,14 @@ class TerminalStationController extends ChangeNotifier {
       y: y,
       direction: direction,
       routes: [
-        SignalRoute(id: '${id}_R1', name: 'Route 1'),
+        SignalRoute(
+          id: '${id}_R1',
+          name: 'Route 1',
+          requiredBlocksClear: [],
+          requiredPointPositions: {},
+          pathBlocks: [],
+          protectedBlocks: [],
+        ),
       ],
       aspect: SignalAspect.red,
     );
@@ -6840,7 +6847,7 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   /// Create a new transponder at specified position
-  void createTransponder(String id, double x, double y, {TransponderType type = TransponderType.location}) {
+  void createTransponder(String id, double x, double y, {TransponderType type = TransponderType.t1}) {
     if (transponders.containsKey(id)) {
       _logEvent('❌ Transponder $id already exists');
       return;
@@ -6848,9 +6855,10 @@ class TerminalStationController extends ChangeNotifier {
 
     transponders[id] = Transponder(
       id: id,
+      type: type,
       x: x,
       y: y,
-      type: type,
+      description: 'Transponder $id (${type.name})',
     );
 
     _logEvent('✅ Created transponder $id (${type.name}) at ($x, $y)');
@@ -6858,7 +6866,7 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   /// Create a new WiFi antenna at specified position
-  void createWifiAntenna(String id, double x, double y, {double range = 300}) {
+  void createWifiAntenna(String id, double x, double y, {bool isActive = true}) {
     if (wifiAntennas.containsKey(id)) {
       _logEvent('❌ WiFi antenna $id already exists');
       return;
@@ -6868,11 +6876,10 @@ class TerminalStationController extends ChangeNotifier {
       id: id,
       x: x,
       y: y,
-      range: range,
-      active: true,
+      isActive: isActive,
     );
 
-    _logEvent('✅ Created WiFi antenna $id at ($x, $y) with range ${range}m');
+    _logEvent('✅ Created WiFi antenna $id at ($x, $y)');
     notifyListeners();
   }
 
@@ -6904,7 +6911,7 @@ class TerminalStationController extends ChangeNotifier {
 
       // Stop simulation if running
       if (isRunning) {
-        toggleSimulation();
+        stopSimulation();
       }
 
       // Clear existing state
@@ -6939,7 +6946,7 @@ class TerminalStationController extends ChangeNotifier {
           startX: scenarioBlock.startX,
           endX: scenarioBlock.endX,
           y: scenarioBlock.y,
-          isOccupied: false,
+          occupied: false,
           nextBlock: scenarioBlock.nextBlock,
           prevBlock: scenarioBlock.prevBlock,
           isCrossover: scenarioBlock.isCrossover,
@@ -6950,19 +6957,23 @@ class TerminalStationController extends ChangeNotifier {
 
       // Load signals from scenario
       for (var scenarioSignal in scenario.signals) {
+        // Convert scenario signal to runtime signal with default route
         signals[scenarioSignal.id] = Signal(
           id: scenarioSignal.id,
           x: scenarioSignal.x,
           y: scenarioSignal.y,
+          direction: SignalDirection.east,
+          routes: [
+            SignalRoute(
+              id: '${scenarioSignal.id}_R1',
+              name: 'Route 1',
+              requiredBlocksClear: scenarioSignal.controlledBlocks,
+              requiredPointPositions: {},
+              pathBlocks: scenarioSignal.controlledBlocks,
+              protectedBlocks: [],
+            ),
+          ],
           aspect: SignalAspect.red, // Start all signals at red for safety
-          controlledBlocks: scenarioSignal.controlledBlocks,
-          requiredPointPositions: scenarioSignal.requiredPointPositions.isNotEmpty
-              ? Map.fromEntries(
-                  scenarioSignal.requiredPointPositions
-                      .map((e) => e.split(':'))
-                      .where((parts) => parts.length == 2)
-                      .map((parts) => MapEntry(parts[0], parts[1])))
-              : null,
         );
       }
       _logEvent('✅ Loaded ${scenario.signals.length} signals');
@@ -6974,9 +6985,9 @@ class TerminalStationController extends ChangeNotifier {
           x: scenarioPoint.x,
           y: scenarioPoint.y,
           position: PointPosition.normal,
-          normalRoute: scenarioPoint.normalRoute,
-          reverseRoute: scenarioPoint.reverseRoute,
         );
+        // Note: normalRoute and reverseRoute from scenario are for display purposes
+        // The actual route logic is handled by signal routes
       }
       _logEvent('✅ Loaded ${scenario.points.length} points');
 

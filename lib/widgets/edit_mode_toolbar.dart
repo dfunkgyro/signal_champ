@@ -215,7 +215,7 @@ class EditModeToolbar extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               // Create the component at origin (0, 0) - user can drag to position
-              _createComponent(controller, componentType, newId);
+              _createComponent(context, controller, componentType, newId);
               Navigator.pop(context);
             },
             child: const Text('Add'),
@@ -226,7 +226,12 @@ class EditModeToolbar extends StatelessWidget {
   }
 
   /// Create a component using the controller's factory methods
-  void _createComponent(TerminalStationController controller, String componentType, String id) {
+  void _createComponent(
+    BuildContext context,
+    TerminalStationController controller,
+    String componentType,
+    String id,
+  ) {
     // Default position at (0, 0) - user will drag to desired location
     const double x = 0.0;
     const double y = 0.0;

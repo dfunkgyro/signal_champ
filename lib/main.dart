@@ -631,46 +631,61 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(),
 
-          // Logout Button
+          // Sign In Button (for guest users) or Logout Button (for authenticated users)
           if (authService.isAuthenticated)
             Padding(
               padding: const EdgeInsets.all(16),
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Sign Out'),
-                      content: const Text('Are you sure you want to sign out?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
+              child: authService.isGuest
+                  ? ElevatedButton.icon(
+                      onPressed: () async {
+                        // Sign out of guest mode to show login screen
+                        await context.read<AuthService>().signOut();
+                      },
+                      icon: const Icon(Icons.login),
+                      label: const Text('Sign In or Create Account'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Sign Out'),
+                            content:
+                                const Text('Are you sure you want to sign out?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('Sign Out'),
+                              ),
+                            ],
                           ),
-                          child: const Text('Sign Out'),
-                        ),
-                      ],
-                    ),
-                  );
+                        );
 
-                  if (confirmed == true && context.mounted) {
-                    await context.read<AuthService>().signOut();
-                  }
-                },
-                icon: const Icon(Icons.logout),
-                label: const Text('Sign Out'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
+                        if (confirmed == true && context.mounted) {
+                          await context.read<AuthService>().signOut();
+                        }
+                      },
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Sign Out'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
             ),
         ],
       ),

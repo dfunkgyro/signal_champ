@@ -269,7 +269,7 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
 
     final controller = context.read<TerminalStationController>();
     if (controller.isRunning) {
-      controller.stopSimulation();
+      controller.pauseSimulation();
     }
 
     _showFailureDialog();

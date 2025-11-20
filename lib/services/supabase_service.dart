@@ -32,23 +32,22 @@ class UserPresence {
 }
 
 class SupabaseService extends ChangeNotifier {
-  final SupabaseClient _supabase;
-  final bool _isMockClient;
+  final SupabaseClient? _supabase;
   RealtimeChannel? _presenceChannel;
   final Map<String, UserPresence> _activeUsers = {};
   String? _currentUserId;
   bool _isConnected = false;
   String _connectionStatus = 'Not connected';
 
-  SupabaseService(this._supabase) : _isMockClient = _isPlaceholderClient(_supabase) {
+  SupabaseService(this._supabase) {
     try {
-      if (!_isMockClient) {
-        _currentUserId = _supabase.auth.currentUser?.id;
+      if (_supabase != null) {
+        _currentUserId = _supabase!.auth.currentUser?.id;
         _isConnected = _currentUserId != null;
         _connectionStatus = _isConnected ? 'Connected' : 'Not authenticated';
-        debugPrint('  → SupabaseService: Real client initialized (user: $_currentUserId)');
+        debugPrint('  → SupabaseService: Client initialized (user: $_currentUserId)');
       } else {
-        debugPrint('  → SupabaseService: Mock client detected, skipping auth check');
+        debugPrint('  → SupabaseService: No client, running in offline mode');
         _currentUserId = null;
         _isConnected = false;
         _connectionStatus = 'Offline (no Supabase connection)';
@@ -61,25 +60,14 @@ class SupabaseService extends ChangeNotifier {
     }
   }
 
-  // Check if this is a placeholder/mock client
-  static bool _isPlaceholderClient(SupabaseClient client) {
-    try {
-      // Check the REST URL instead (this property exists)
-      final url = client.restUrl;
-      return url.contains('placeholder') || url.contains('localhost') || url.isEmpty;
-    } catch (e) {
-      return true;
-    }
-  }
-
   bool get isConnected => _isConnected;
   String get connectionStatus => _connectionStatus;
   Map<String, UserPresence> get activeUsers => Map.unmodifiable(_activeUsers);
 
   Future<void> initializePresence() async {
-    // Skip presence for mock clients
-    if (_isMockClient) {
-      debugPrint('  → Skipping presence initialization (mock client)');
+    // Skip presence if no Supabase client
+    if (_supabase == null) {
+      debugPrint('  → Skipping presence initialization (no Supabase client)');
       return;
     }
 
@@ -88,7 +76,7 @@ class SupabaseService extends ChangeNotifier {
     }
 
     try {
-      _presenceChannel = _supabase.channel('railway_presence');
+      _presenceChannel = _supabase!.channel('railway_presence');
 
       _presenceChannel!.onPresenceSync((payload) {
         _handlePresenceSync();
@@ -132,10 +120,10 @@ class SupabaseService extends ChangeNotifier {
   }
 
   Future<void> recordMetric(String metricName, double value) async {
-    if (_currentUserId == null) return;
+    if (_currentUserId == null || _supabase == null) return;
 
     try {
-      await _supabase.from('metrics').insert({
+      await _supabase!.from('metrics').insert({
         'user_id': _currentUserId,
         'metric_name': metricName,
         'value': value,
@@ -151,8 +139,12 @@ class SupabaseService extends ChangeNotifier {
     DateTime start,
     DateTime end,
   ) async {
+    if (_supabase == null) {
+      return {};
+    }
+
     try {
-      final response = await _supabase.rpc('calculate_metric_stats', params: {
+      final response = await _supabase!.rpc('calculate_metric_stats', params: {
         'metric_name': metricName,
         'start_time': start.toIso8601String(),
         'end_time': end.toIso8601String(),

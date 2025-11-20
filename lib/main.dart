@@ -249,7 +249,7 @@ class RailChampApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService(client)),
         ChangeNotifierProvider(create: (_) => AnalyticsService(client)),
         ChangeNotifierProvider(
-          create: (_) => ConnectionService(client!, openAiApiKey: openAiApiKey),
+          create: (_) => ConnectionService(client, openAiApiKey: openAiApiKey),
         ),
         ChangeNotifierProvider(create: (_) => WeatherSystem()),
         ChangeNotifierProvider(create: (_) => AchievementsService(client)),

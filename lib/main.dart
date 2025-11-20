@@ -51,7 +51,8 @@ Future<void> main() async {
         await CrashReportService().initialize(sentryDsn: sentryDsn);
         debugPrint('  ✅ Crash reporting initialized');
       } catch (e) {
-        debugPrint('  ⚠️ Crash reporting initialization error (non-critical): $e');
+        debugPrint(
+            '  ⚠️ Crash reporting initialization error (non-critical): $e');
       }
 
       // Set up Flutter error handler
@@ -92,94 +93,96 @@ Future<void> main() async {
         openAiApiKey = dotenv.env['OPENAI_API_KEY'];
         debugPrint('  ✅ Environment variables loaded');
 
-    // Initialize Supabase (CRITICAL - needs time to connect)
-    if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
-      debugPrint('  → Initializing Supabase connection...');
-      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
-      supabaseClient = Supabase.instance.client;
-      debugPrint('  ✅ Supabase connection established');
+        // Initialize Supabase (CRITICAL - needs time to connect)
+        if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
+          debugPrint('  → Initializing Supabase connection...');
+          await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+          supabaseClient = Supabase.instance.client;
+          debugPrint('  ✅ Supabase connection established');
 
-      // WAIT for Supabase to stabilize
-      debugPrint('  ⏳ Waiting for Supabase to stabilize (500ms)...');
-      await Future.delayed(const Duration(milliseconds: 500));
-      debugPrint('  ✅ Supabase stabilized');
-    } else {
-      debugPrint('  ⚠️ Supabase credentials missing - running in offline mode');
-    }
+          // WAIT for Supabase to stabilize
+          debugPrint('  ⏳ Waiting for Supabase to stabilize (500ms)...');
+          await Future.delayed(const Duration(milliseconds: 500));
+          debugPrint('  ✅ Supabase stabilized');
+        } else {
+          debugPrint(
+              '  ⚠️ Supabase credentials missing - running in offline mode');
+        }
 
-    // Initialize Sound Service (optional but beneficial to do early)
-    try {
-      debugPrint('  → Initializing sound service...');
-      await SoundService().initialize();
-      debugPrint('  ✅ Sound service initialized');
-    } catch (e) {
-      debugPrint('  ⚠️ Sound service initialization error (optional): $e');
-    }
-  } catch (e) {
-    debugPrint('  ❌ Critical initialization error: $e');
-  }
+        // Initialize Sound Service (optional but beneficial to do early)
+        try {
+          debugPrint('  → Initializing sound service...');
+          await SoundService().initialize();
+          debugPrint('  ✅ Sound service initialized');
+        } catch (e) {
+          debugPrint('  ⚠️ Sound service initialization error (optional): $e');
+        }
+      } catch (e) {
+        debugPrint('  ❌ Critical initialization error: $e');
+      }
 
-  // Create fallback Supabase client if needed
-  if (supabaseClient == null) {
-    debugPrint('  → Creating fallback Supabase client...');
-    // Don't create a fake client that will fail - just leave it null
-    debugPrint('  ⚠️ Running in full offline mode without Supabase');
-  }
+      // Create fallback Supabase client if needed
+      if (supabaseClient == null) {
+        debugPrint('  → Creating fallback Supabase client...');
+        // Don't create a fake client that will fail - just leave it null
+        debugPrint('  ⚠️ Running in full offline mode without Supabase');
+      }
 
-  debugPrint('✅ PHASE 1 Complete - Critical infrastructure ready\n');
+      debugPrint('✅ PHASE 1 Complete - Critical infrastructure ready\n');
 
-  // ========== PHASE 2: CORE SERVICES ==========
-  debugPrint('📋 PHASE 2: Initializing core services...');
+      // ========== PHASE 2: CORE SERVICES ==========
+      debugPrint('📋 PHASE 2: Initializing core services...');
 
-  // Small delay before starting service initialization
-  await Future.delayed(const Duration(milliseconds: 200));
+      // Small delay before starting service initialization
+      await Future.delayed(const Duration(milliseconds: 200));
 
-  final widgetPrefsService = WidgetPreferencesService();
-  try {
-    debugPrint('  → Initializing widget preferences (SharedPreferences)...');
-    await widgetPrefsService.initialize();
-    debugPrint('  ✅ Widget preferences initialized');
-  } catch (e) {
-    debugPrint('  ⚠️ Widget preferences failed (non-critical): $e');
-  }
+      final widgetPrefsService = WidgetPreferencesService();
+      try {
+        debugPrint(
+            '  → Initializing widget preferences (SharedPreferences)...');
+        await widgetPrefsService.initialize();
+        debugPrint('  ✅ Widget preferences initialized');
+      } catch (e) {
+        debugPrint('  ⚠️ Widget preferences failed (non-critical): $e');
+      }
 
-  // Wait between service initializations to prevent resource contention
-  await Future.delayed(const Duration(milliseconds: 150));
+      // Wait between service initializations to prevent resource contention
+      await Future.delayed(const Duration(milliseconds: 150));
 
-  debugPrint('✅ PHASE 2 Complete - Core services ready\n');
+      debugPrint('✅ PHASE 2 Complete - Core services ready\n');
 
-  // ========== PHASE 3: OPTIONAL FEATURES ==========
-  debugPrint('📋 PHASE 3: Initializing optional features...');
+      // ========== PHASE 3: OPTIONAL FEATURES ==========
+      debugPrint('📋 PHASE 3: Initializing optional features...');
 
-  final speechRecognitionService = SpeechRecognitionService();
-  try {
-    debugPrint('  → Initializing speech recognition...');
-    await speechRecognitionService.initialize();
-    debugPrint('  ✅ Speech recognition initialized');
-  } catch (e) {
-    debugPrint('  ⚠️ Speech recognition failed (non-critical): $e');
-  }
+      final speechRecognitionService = SpeechRecognitionService();
+      try {
+        debugPrint('  → Initializing speech recognition...');
+        await speechRecognitionService.initialize();
+        debugPrint('  ✅ Speech recognition initialized');
+      } catch (e) {
+        debugPrint('  ⚠️ Speech recognition failed (non-critical): $e');
+      }
 
-  // Wait between heavy services
-  await Future.delayed(const Duration(milliseconds: 150));
+      // Wait between heavy services
+      await Future.delayed(const Duration(milliseconds: 150));
 
-  final ttsService = TextToSpeechService();
-  try {
-    debugPrint('  → Initializing text-to-speech...');
-    await ttsService.initialize();
-    debugPrint('  ✅ Text-to-speech initialized');
-  } catch (e) {
-    debugPrint('  ⚠️ TTS failed (non-critical): $e');
-  }
+      final ttsService = TextToSpeechService();
+      try {
+        debugPrint('  → Initializing text-to-speech...');
+        await ttsService.initialize();
+        debugPrint('  ✅ Text-to-speech initialized');
+      } catch (e) {
+        debugPrint('  ⚠️ TTS failed (non-critical): $e');
+      }
 
-  debugPrint('✅ PHASE 3 Complete - Optional features ready\n');
+      debugPrint('✅ PHASE 3 Complete - Optional features ready\n');
 
-  // ========== PHASE 4: FINAL PREPARATION ==========
-  debugPrint('📋 PHASE 4: Preparing to launch UI...');
+      // ========== PHASE 4: FINAL PREPARATION ==========
+      debugPrint('📋 PHASE 4: Preparing to launch UI...');
 
-  // Final stabilization delay before starting UI
-  debugPrint('  ⏳ Final stabilization (300ms)...');
-  await Future.delayed(const Duration(milliseconds: 300));
+      // Final stabilization delay before starting UI
+      debugPrint('  ⏳ Final stabilization (300ms)...');
+      await Future.delayed(const Duration(milliseconds: 300));
 
       debugPrint('✅ All initialization complete - Starting app UI\n');
       debugPrint('🎉 Rail Champ ready to launch!\n');
@@ -246,7 +249,7 @@ class RailChampApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService(client)),
         ChangeNotifierProvider(create: (_) => AnalyticsService(client)),
         ChangeNotifierProvider(
-          create: (_) => ConnectionService(client, openAiApiKey: openAiApiKey),
+          create: (_) => ConnectionService(client!, openAiApiKey: openAiApiKey),
         ),
         ChangeNotifierProvider(create: (_) => WeatherSystem()),
         ChangeNotifierProvider(create: (_) => AchievementsService(client)),
@@ -315,8 +318,12 @@ class AuthWrapper extends StatelessWidget {
               Text(
                 'Checking authentication',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
-                ),
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.color
+                          ?.withOpacity(0.6),
+                    ),
               ),
             ],
           ),

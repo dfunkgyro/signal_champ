@@ -66,11 +66,15 @@ Future<void> main() async {
             'context': details.context?.toString() ?? 'no context',
           },
         );
-        // Also send to Sentry if available
-        Sentry.captureException(
-          details.exception,
-          stackTrace: details.stack,
-        );
+        // Also send to Sentry if available (wrapped in try-catch in case not initialized)
+        try {
+          Sentry.captureException(
+            details.exception,
+            stackTrace: details.stack,
+          );
+        } catch (e) {
+          debugPrint('  ⚠️ Sentry not available: $e');
+        }
       };
 
       debugPrint('✅ PHASE 0 Complete - Crash reporting ready\n');
@@ -200,11 +204,15 @@ Future<void> main() async {
         errorContext: 'Uncaught Zone Error',
       );
 
-      // Send to Sentry
-      await Sentry.captureException(
-        error,
-        stackTrace: stackTrace,
-      );
+      // Send to Sentry if available
+      try {
+        await Sentry.captureException(
+          error,
+          stackTrace: stackTrace,
+        );
+      } catch (e) {
+        debugPrint('  ⚠️ Sentry not available: $e');
+      }
     },
   );
 }

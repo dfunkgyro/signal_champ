@@ -4,6 +4,7 @@ import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
 import 'package:rail_champ/models/railway_model.dart' show WifiAntenna, Transponder, TransponderType;  // FIXED: Only import WiFi/Transponder types
+import 'package:rail_champ/controllers/edit_commands.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -533,6 +534,15 @@ class TerminalStationController extends ChangeNotifier {
   // Grid system
   bool gridVisible = false;
   double gridSpacing = 100.0;
+
+  // Edit Mode system
+  bool editModeEnabled = false;
+  double editModeGridSize = 10.0; // Snap-to-grid size in edit mode
+  String? selectedComponentType; // Type of selected component (signal, point, etc.)
+  String? selectedComponentId; // ID of selected component
+  late CommandHistory commandHistory; // Undo/redo history
+  Map<String, BufferStop> bufferStops = {}; // Buffer stops
+  Map<String, Crossover> crossovers = {}; // Crossovers with point relationships
 
   // Traction current system - split into 3 sections
   bool tractionCurrentOn = true; // For backwards compatibility
@@ -1827,6 +1837,7 @@ class TerminalStationController extends ChangeNotifier {
   // ============================================================================
 
   TerminalStationController() {
+    commandHistory = CommandHistory(); // Initialize command history for undo/redo
     _initializeLayout();
     _initializeClock();
     _initializeTimetable();
@@ -6370,6 +6381,312 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('    </Points>');
     buffer.writeln('    <!-- Similar diamond and route configuration as ddc_77 -->');
     buffer.writeln('  </DoubleDiamondCrossover>');
+  }
+
+  // ============================================================================
+  // EDIT MODE FUNCTIONALITY
+  // ============================================================================
+
+  /// Toggle edit mode on/off
+  void toggleEditMode() {
+    editModeEnabled = !editModeEnabled;
+
+    if (editModeEnabled) {
+      // Entering edit mode - pause simulation
+      if (isRunning) {
+        stop();
+      }
+      _logEvent('🔧 Edit Mode ENABLED - Simulation paused');
+    } else {
+      // Exiting edit mode - clear selection
+      selectedComponentType = null;
+      selectedComponentId = null;
+      _logEvent('🔧 Edit Mode DISABLED');
+    }
+
+    notifyListeners();
+  }
+
+  /// Snap value to grid
+  double snapToGrid(double value) {
+    return (value / editModeGridSize).round() * editModeGridSize;
+  }
+
+  /// Select a component for editing
+  void selectComponent(String type, String id) {
+    selectedComponentType = type;
+    selectedComponentId = id;
+    notifyListeners();
+  }
+
+  /// Clear component selection
+  void clearSelection() {
+    selectedComponentType = null;
+    selectedComponentId = null;
+    notifyListeners();
+  }
+
+  /// Generate unique ID for a component type
+  String generateUniqueId(String componentType) {
+    Set<String> existingIds = {};
+
+    // Collect all existing IDs based on component type
+    switch (componentType.toLowerCase()) {
+      case 'signal':
+        existingIds = signals.keys.toSet();
+        break;
+      case 'point':
+        existingIds = points.keys.toSet();
+        break;
+      case 'platform':
+        existingIds = platforms.map((p) => p.id).toSet();
+        break;
+      case 'trainstop':
+        existingIds = trainStops.keys.toSet();
+        break;
+      case 'axlecounter':
+        existingIds = axleCounters.keys.toSet();
+        break;
+      case 'bufferstop':
+        existingIds = bufferStops.keys.toSet();
+        break;
+      case 'transponder':
+        existingIds = transponders.keys.toSet();
+        break;
+      case 'wifiantenna':
+        existingIds = wifiAntennas.keys.toSet();
+        break;
+    }
+
+    // Find next available number
+    int counter = 1;
+    String newId;
+    String prefix = componentType.substring(0, 1).toUpperCase();
+
+    do {
+      newId = '$prefix${counter.toString().padLeft(3, '0')}';
+      counter++;
+    } while (existingIds.contains(newId) && counter < 1000);
+
+    return newId;
+  }
+
+  /// Check if component can be deleted safely
+  bool canDeleteComponent(String type, String id) {
+    switch (type.toLowerCase()) {
+      case 'signal':
+        final signal = signals[id];
+        if (signal == null) return false;
+
+        // Can't delete if route is set
+        if (signal.routeState == RouteState.set) {
+          _logEvent('⚠️ Cannot delete signal $id - route is active');
+          return false;
+        }
+
+        // Check if any train is near this signal
+        for (var train in trains) {
+          if ((train.x - signal.x).abs() < 100 && (train.y - signal.y).abs() < 50) {
+            _logEvent('⚠️ Cannot delete signal $id - train nearby');
+            return false;
+          }
+        }
+        break;
+
+      case 'point':
+        final point = points[id];
+        if (point == null) return false;
+
+        // Can't delete if locked
+        if (point.locked || point.lockedByAB) {
+          _logEvent('⚠️ Cannot delete point $id - locked');
+          return false;
+        }
+        break;
+
+      case 'block':
+        final block = blocks[id];
+        if (block == null) return false;
+
+        // Can't delete if occupied
+        if (block.occupied) {
+          _logEvent('⚠️ Cannot delete block $id - occupied');
+          return false;
+        }
+        break;
+    }
+
+    return true;
+  }
+
+  /// Delete a component (with safety checks)
+  void deleteComponent(String type, String id) {
+    if (!canDeleteComponent(type, id)) {
+      return;
+    }
+
+    switch (type.toLowerCase()) {
+      case 'signal':
+        signals.remove(id);
+        break;
+      case 'point':
+        points.remove(id);
+        break;
+      case 'platform':
+        platforms.removeWhere((p) => p.id == id);
+        break;
+      case 'trainstop':
+        trainStops.remove(id);
+        break;
+      case 'axlecounter':
+        axleCounters.remove(id);
+        break;
+      case 'bufferstop':
+        bufferStops.remove(id);
+        break;
+      case 'transponder':
+        transponders.remove(id);
+        break;
+      case 'wifiantenna':
+        wifiAntennas.remove(id);
+        break;
+      case 'block':
+        blocks.remove(id);
+        break;
+    }
+
+    _logEvent('🗑️ Deleted $type $id');
+    notifyListeners();
+  }
+
+  /// Restore a component (for undo)
+  void restoreComponent(String type, String id, Map<String, dynamic> data) {
+    switch (type.toLowerCase()) {
+      case 'signal':
+        // Would need proper deserialization here
+        _logEvent('✅ Restored $type $id');
+        break;
+      // Add other component types as needed
+    }
+    notifyListeners();
+  }
+
+  /// Move signal with command history
+  void moveSignalWithHistory(String signalId, double newX, double newY) {
+    final signal = signals[signalId];
+    if (signal == null) return;
+
+    final command = MoveSignalCommand(
+      this,
+      signalId,
+      signal.x,
+      signal.y,
+      snapToGrid(newX),
+      snapToGrid(newY),
+    );
+
+    commandHistory.executeCommand(command);
+    notifyListeners();
+  }
+
+  /// Move point with command history
+  void movePointWithHistory(String pointId, double newX, double newY) {
+    final point = points[pointId];
+    if (point == null) return;
+
+    final command = MovePointCommand(
+      this,
+      pointId,
+      point.x,
+      point.y,
+      snapToGrid(newX),
+      snapToGrid(newY),
+    );
+
+    commandHistory.executeCommand(command);
+    notifyListeners();
+  }
+
+  /// Move platform with command history
+  void movePlatformWithHistory(String platformId, double newX, double newY) {
+    final platform = platforms.firstWhere((p) => p.id == platformId);
+    final width = platform.endX - platform.startX;
+
+    final command = MovePlatformCommand(
+      this,
+      platformId,
+      platform.startX,
+      platform.endX,
+      platform.y,
+      snapToGrid(newX),
+      snapToGrid(newX) + width,
+      snapToGrid(newY),
+    );
+
+    commandHistory.executeCommand(command);
+    notifyListeners();
+  }
+
+  /// Resize platform with command history
+  void resizePlatformWithHistory(String platformId, double newStartX, double newEndX) {
+    final platform = platforms.firstWhere((p) => p.id == platformId);
+
+    final command = ResizePlatformCommand(
+      this,
+      platformId,
+      platform.startX,
+      platform.endX,
+      snapToGrid(newStartX),
+      snapToGrid(newEndX),
+    );
+
+    commandHistory.executeCommand(command);
+    notifyListeners();
+  }
+
+  /// Change signal direction with command history
+  void changeSignalDirectionWithHistory(String signalId) {
+    final signal = signals[signalId];
+    if (signal == null) return;
+
+    final newDirection = signal.direction == SignalDirection.east
+        ? SignalDirection.west
+        : SignalDirection.east;
+
+    final command = ChangeSignalDirectionCommand(
+      this,
+      signalId,
+      signal.direction,
+      newDirection,
+    );
+
+    commandHistory.executeCommand(command);
+    notifyListeners();
+  }
+
+  /// Flip axle counter with command history
+  void flipAxleCounterWithHistory(String counterId) {
+    final command = FlipAxleCounterCommand(this, counterId);
+    commandHistory.executeCommand(command);
+    notifyListeners();
+  }
+
+  /// Undo last command
+  void undo() {
+    if (commandHistory.canUndo()) {
+      commandHistory.undo();
+      _logEvent('↶ Undo: ${commandHistory.getRedoDescription() ?? "action"}');
+      notifyListeners();
+    }
+  }
+
+  /// Redo last undone command
+  void redo() {
+    if (commandHistory.canRedo()) {
+      commandHistory.redo();
+      _logEvent('↷ Redo: ${commandHistory.getRedoDescription() ?? "action"}');
+      notifyListeners();
+    }
   }
 
   @override

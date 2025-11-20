@@ -36,8 +36,12 @@ enum CbtcMode {
 enum TrainType {
   m1,         // Single train unit (2 wheels on AB)
   m2,         // Double train unit (4 wheels on AB)
+  m4,         // 4-car train (8 wheels on AB)
+  m8,         // 8-car train (16 wheels on AB)
   cbtcM1,     // CBTC-equipped single unit
   cbtcM2,     // CBTC-equipped double unit
+  cbtcM4,     // CBTC-equipped 4-car train
+  cbtcM8,     // CBTC-equipped 8-car train
 }
 
 // ============================================================================
@@ -202,6 +206,11 @@ class Train {
   String? smcDestination; // SMC-assigned destination
   MovementAuthority? movementAuthority; // CBTC movement authority visualization
 
+  // Door cycle tracking to prevent stuck-at-platform loop
+  String? lastPlatformDoorsOpened; // ID of last platform where doors were opened
+  double? lastDoorOpenPositionX; // X position when doors last opened
+  bool hasLeftPlatform; // True if train has moved 2+ blocks from last platform
+
   // CBTC NCT (Non-Communication Train) state
   bool isNCT; // NCT state - train flashes red, cannot go auto/PM
   int transpondersPassed; // Count of transponders passed for activation
@@ -243,6 +252,9 @@ class Train {
     this.cbtcMode = CbtcMode.off,
     this.smcDestination,
     this.movementAuthority,
+    this.lastPlatformDoorsOpened,
+    this.lastDoorOpenPositionX,
+    this.hasLeftPlatform = true, // Default to true so doors can open at first platform
     this.isNCT = false, // Default to false for backwards compatibility
     this.transpondersPassed = 0,
     this.lastTransponderId,
@@ -265,12 +277,21 @@ class Train {
       case TrainType.m2:
       case TrainType.cbtcM2:
         return 4;
+      case TrainType.m4:
+      case TrainType.cbtcM4:
+        return 8;
+      case TrainType.m8:
+      case TrainType.cbtcM8:
+        return 16;
     }
   }
 
   // Helper to check if this is a CBTC train
   bool get isCbtcTrain {
-    return trainType == TrainType.cbtcM1 || trainType == TrainType.cbtcM2;
+    return trainType == TrainType.cbtcM1 ||
+           trainType == TrainType.cbtcM2 ||
+           trainType == TrainType.cbtcM4 ||
+           trainType == TrainType.cbtcM8;
   }
 }
 

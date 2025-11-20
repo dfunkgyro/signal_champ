@@ -3379,6 +3379,18 @@ class TerminalStationController extends ChangeNotifier {
       // Skip if doors are already open
       if (train.doorsOpen) continue;
 
+      // FIXED: Check if train has moved at least 2 blocks (200 units) from last platform
+      if (!train.hasLeftPlatform && train.lastDoorOpenPositionX != null) {
+        final distanceFromLastPlatform = (train.x - train.lastDoorOpenPositionX!).abs();
+        if (distanceFromLastPlatform >= 200.0) {
+          train.hasLeftPlatform = true;
+          _logEvent('✓ ${train.name} cleared 2 blocks from last platform');
+        } else {
+          // Still too close to last platform, skip door check
+          continue;
+        }
+      }
+
       // Check if train is at a platform
       for (var platform in platforms) {
         final atPlatform = train.x >= platform.startX &&
@@ -3386,12 +3398,21 @@ class TerminalStationController extends ChangeNotifier {
                           (train.y - platform.y).abs() < 20;
 
         if (atPlatform) {
+          // FIXED: Check if this is the same platform where doors last opened
+          if (train.lastPlatformDoorsOpened == platform.id && !train.hasLeftPlatform) {
+            // Skip - haven't left this platform yet
+            continue;
+          }
+
           // Check if train is stopped or nearly stopped
           if (train.speed.abs() < 0.5) {
             // Auto-open doors
             train.doorsOpen = true;
             train.doorsOpenedAt = DateTime.now();
             train.manualStop = true; // Keep train stopped while doors open
+            train.lastPlatformDoorsOpened = platform.id;
+            train.lastDoorOpenPositionX = train.x;
+            train.hasLeftPlatform = false; // Reset for next cycle
             _logEvent('🚪 ${train.name} doors AUTO-OPENED at ${platform.name}');
             notifyListeners();
             break;
@@ -3413,7 +3434,8 @@ class TerminalStationController extends ChangeNotifier {
           // Auto-continue journey after door closes
           if (train.manualStop) {
             train.manualStop = false;
-            _logEvent('🚂 ${train.name} resuming journey after door closure');
+            train.targetSpeed = 2.0; // Resume at slow speed
+            _logEvent('🚂 ${train.name} resuming journey - must travel 2 blocks before next stop');
           }
         }
       }

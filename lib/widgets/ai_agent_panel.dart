@@ -316,12 +316,20 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
       TrainType trainType = TrainType.m1; // Default
 
       // Parse train type
-      if (lower.contains('m2') || lower.contains('double')) {
-        trainType = TrainType.m2;
-      } else if (lower.contains('cbtc m1') || lower.contains('cbtc-m1')) {
-        trainType = TrainType.cbtcM1;
+      if (lower.contains('cbtc m8') || lower.contains('cbtc-m8')) {
+        trainType = TrainType.cbtcM8;
+      } else if (lower.contains('cbtc m4') || lower.contains('cbtc-m4')) {
+        trainType = TrainType.cbtcM4;
       } else if (lower.contains('cbtc m2') || lower.contains('cbtc-m2')) {
         trainType = TrainType.cbtcM2;
+      } else if (lower.contains('cbtc m1') || lower.contains('cbtc-m1')) {
+        trainType = TrainType.cbtcM1;
+      } else if (lower.contains('m8')) {
+        trainType = TrainType.m8;
+      } else if (lower.contains('m4')) {
+        trainType = TrainType.m4;
+      } else if (lower.contains('m2') || lower.contains('double')) {
+        trainType = TrainType.m2;
       }
 
       if (blockMatch != null) {
@@ -509,13 +517,33 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
     if (lower.contains('status') || lower.contains('how many')) {
       final trainCount = controller.trains.length;
       final cbtcStatus = controller.cbtcModeActive ? 'ENABLED' : 'DISABLED';
+      final simStatus = controller.isRunning ? 'RUNNING' : 'PAUSED';
       _addMessage('AI Agent', '''📊 Railway Status:
 • Trains: $trainCount
 • CBTC Mode: $cbtcStatus
+• Simulation: $simStatus
 • Signals: ${controller.signals.length}
 • Points: ${controller.points.length}
 • Blocks: ${controller.blocks.length}
 ''', isAI: true);
+      return;
+    }
+
+    // Diagnostic queries - "Why" questions
+    if (lower.contains('why')) {
+      _handleDiagnosticQuery(input, lower, controller);
+      return;
+    }
+
+    // Event log access
+    if (lower.contains('event log') || lower.contains('show events') || lower.contains('recent events')) {
+      final recentEvents = controller.eventLog.take(10).toList();
+      if (recentEvents.isEmpty) {
+        _addMessage('AI Agent', '📋 Event log is empty. Simulation may not have started yet.', isAI: true);
+      } else {
+        final eventText = recentEvents.map((e) => '• $e').join('\n');
+        _addMessage('AI Agent', '📋 Recent Events:\n$eventText', isAI: true);
+      }
       return;
     }
 
@@ -529,7 +557,278 @@ Try saying:
 • "add train to block 100"
 • "enable CBTC mode"
 • "status" - See railway status
+• "why is signal X not clearing?" - Diagnostics
+• "why is train X not moving?" - Troubleshooting
 ''', isAI: true);
+  }
+
+  /// Handle diagnostic queries like "why is signal not clearing" or "why is train not moving"
+  void _handleDiagnosticQuery(String input, String lower, TerminalStationController controller) {
+    // Check if simulation is running first
+    if (!controller.isRunning) {
+      _addMessage('AI Agent', '''🔍 **SIMULATION NOT STARTED**
+
+⚠️ The simulation is currently PAUSED.
+
+**Solution:** Click the Play/Resume button to start the simulation.
+
+Once running, trains will move, signals will respond to routes, and the railway will come to life!''', isAI: true);
+      return;
+    }
+
+    // Signal diagnostic
+    if (lower.contains('signal') && (lower.contains('not clearing') || lower.contains('not green') || lower.contains('red') || lower.contains('not showing green'))) {
+      final signalMatch = RegExp(r'([lcr]\d+)', caseSensitive: false).firstMatch(input);
+
+      if (signalMatch != null) {
+        final signalId = signalMatch.group(1)!.toUpperCase();
+        final signal = controller.signals[signalId];
+
+        if (signal == null) {
+          _addMessage('AI Agent', '❌ Signal $signalId not found in the system.', isAI: true);
+          return;
+        }
+
+        // Analyze why signal is not clearing
+        final diagnostics = <String>[];
+
+        // Check if signal has routes
+        if (signal.routes.isEmpty) {
+          diagnostics.add('❌ Signal has no configured routes');
+        }
+
+        // Check if route is set
+        if (signal.activeRouteId == null || signal.routeState == RouteState.unset) {
+          diagnostics.add('🔴 No route is currently set for this signal');
+          diagnostics.add('   → Solution: Set a route using "set route $signalId"');
+        } else {
+          // Route is set, check why it's not clearing
+          final activeRoute = signal.routes.where((r) => r.id == signal.activeRouteId).firstOrNull;
+
+          if (activeRoute != null) {
+            // Check required blocks
+            final occupiedBlocks = <String>[];
+            for (final blockId in activeRoute.requiredBlocksClear) {
+              final block = controller.blocks[blockId];
+              if (block != null && block.occupied) {
+                occupiedBlocks.add(blockId);
+              }
+            }
+
+            if (occupiedBlocks.isNotEmpty) {
+              diagnostics.add('🚫 Route blocked - these blocks are occupied:');
+              for (final blockId in occupiedBlocks) {
+                final block = controller.blocks[blockId];
+                diagnostics.add('   • Block $blockId (Train: ${block?.occupyingTrainId ?? "unknown"})');
+              }
+              diagnostics.add('   → Wait for trains to clear these blocks');
+            }
+
+            // Check point positions
+            final wrongPoints = <String>[];
+            for (final entry in activeRoute.requiredPointPositions.entries) {
+              final point = controller.points[entry.key];
+              if (point != null && point.position != entry.value) {
+                wrongPoints.add('${entry.key} (need ${entry.value.name}, currently ${point.position.name})');
+              }
+            }
+
+            if (wrongPoints.isNotEmpty) {
+              diagnostics.add('⚠️ Points in wrong position:');
+              for (final pointInfo in wrongPoints) {
+                diagnostics.add('   • $pointInfo');
+              }
+              diagnostics.add('   → Swing the points to correct positions');
+            }
+
+            // Check conflicting routes
+            final activeConflicts = <String>[];
+            for (final conflictId in activeRoute.conflictingRoutes) {
+              final conflictSignal = controller.signals.values.where((s) => s.activeRouteId == conflictId).firstOrNull;
+              if (conflictSignal != null) {
+                activeConflicts.add('${conflictSignal.id} (route $conflictId)');
+              }
+            }
+
+            if (activeConflicts.isNotEmpty) {
+              diagnostics.add('⚠️ Conflicting routes are active:');
+              for (final conflict in activeConflicts) {
+                diagnostics.add('   • $conflict');
+              }
+              diagnostics.add('   → Cancel conflicting routes first');
+            }
+
+            // Check route state
+            if (signal.routeState == RouteState.setting) {
+              diagnostics.add('⏳ Route is still being set (takes a few seconds)');
+            }
+          }
+        }
+
+        // Current signal state
+        final currentAspect = signal.aspect.name.toUpperCase();
+        String response = '''🔍 **SIGNAL $signalId DIAGNOSTIC**
+
+📊 Current State: ${currentAspect} ${signal.aspect == SignalAspect.green ? '🟢' : signal.aspect == SignalAspect.red ? '🔴' : '🔵'}
+''';
+
+        if (diagnostics.isEmpty && signal.aspect == SignalAspect.green) {
+          response += '\n✅ Signal is CLEAR! Everything looks good.';
+        } else if (diagnostics.isEmpty) {
+          response += '\n⏳ Signal should clear shortly if route is properly set.';
+        } else {
+          response += '\n**Issues Found:**\n${diagnostics.join('\n')}';
+        }
+
+        _addMessage('AI Agent', response, isAI: true);
+      } else {
+        _addMessage('AI Agent', '''⚠️ Please specify which signal (e.g., "why is signal L01 not clearing?")
+
+**Common signal issues:**
+• No route set → Use "set route [signal]"
+• Blocks occupied → Wait for trains to clear
+• Points in wrong position → Swing points
+• Conflicting routes → Cancel other routes first
+• Simulation paused → Press Play to start''', isAI: true);
+      }
+      return;
+    }
+
+    // Train diagnostic
+    if (lower.contains('train') && (lower.contains('not moving') || lower.contains('stuck') || lower.contains('stopped'))) {
+      final trainMatch = RegExp(r'train\s*(\d+)', caseSensitive: false).firstMatch(input);
+
+      if (trainMatch != null) {
+        final trainId = trainMatch.group(1)!;
+        final train = controller.trains.where((t) => t.id == trainId).firstOrNull;
+
+        if (train == null) {
+          _addMessage('AI Agent', '❌ Train $trainId not found in the system.', isAI: true);
+          return;
+        }
+
+        // Analyze why train is not moving
+        final diagnostics = <String>[];
+
+        // Check if train has speed
+        if (train.speed == 0) {
+          diagnostics.add('🚂 Train speed: 0 km/h');
+
+          // Check various reasons for stopped train
+          if (train.emergencyBrake) {
+            diagnostics.add('🚨 EMERGENCY BRAKE is active!');
+            diagnostics.add('   → Release emergency brake to allow movement');
+          }
+
+          if (train.manualStop) {
+            diagnostics.add('🛑 Manual stop is engaged');
+            diagnostics.add('   → Check if train is at platform or user commanded stop');
+          }
+
+          if (train.doorsOpen) {
+            diagnostics.add('🚪 Doors are OPEN');
+            diagnostics.add('   → Doors will auto-close after 20 seconds at platforms');
+          }
+
+          // Check if train is waiting at red signal
+          if (train.currentBlockId != null) {
+            // Look for signals protecting this block
+            bool foundRedSignal = false;
+            for (final signal in controller.signals.values) {
+              if (signal.aspect == SignalAspect.red) {
+                // Check if signal's routes include train's current block
+                for (final route in signal.routes) {
+                  if (route.pathBlocks.contains(train.currentBlockId)) {
+                    diagnostics.add('🔴 Waiting at red signal ${signal.id}');
+                    diagnostics.add('   → Set route for ${signal.id} to allow train to proceed');
+                    foundRedSignal = true;
+                    break;
+                  }
+                }
+              }
+              if (foundRedSignal) break;
+            }
+          }
+
+          if (train.controlMode == TrainControlMode.automatic) {
+            diagnostics.add('🤖 Train is in AUTOMATIC mode');
+            diagnostics.add('   → Train will move when route is clear and doors close');
+          } else {
+            diagnostics.add('👤 Train is in MANUAL mode');
+            diagnostics.add('   → User controls are required to move train');
+          }
+
+          if (train.targetSpeed == 0) {
+            diagnostics.add('⚠️ Target speed is 0 (train commanded to stop)');
+          }
+
+        } else {
+          diagnostics.add('✅ Train IS moving at ${train.speed.toStringAsFixed(1)} km/h');
+          diagnostics.add('   Direction: ${train.direction > 0 ? "Forward →" : "Reverse ←"}');
+          diagnostics.add('   Target speed: ${train.targetSpeed.toStringAsFixed(1)} km/h');
+        }
+
+        String response = '''🔍 **TRAIN $trainId DIAGNOSTIC**
+
+📊 Current State:
+• Location: Block ${train.currentBlockId ?? "unknown"}
+• Speed: ${train.speed.toStringAsFixed(1)} km/h
+• Control: ${train.controlMode.name.toUpperCase()}
+• Position: (${train.x.toInt()}, ${train.y.toInt()})
+''';
+
+        if (diagnostics.isEmpty) {
+          response += '\n✅ Train appears to be operating normally.';
+        } else {
+          response += '\n**Analysis:**\n${diagnostics.join('\n')}';
+        }
+
+        _addMessage('AI Agent', response, isAI: true);
+      } else {
+        _addMessage('AI Agent', '''⚠️ Please specify which train (e.g., "why is train 1 not moving?")
+
+**Common reasons trains don't move:**
+• Simulation paused → Press Play
+• Emergency brake active → Clear emergency
+• Doors open at platform → Wait 20 sec for auto-close
+• Waiting at red signal → Set route to clear signal
+• Manual mode without input → Switch to automatic
+• Manual stop engaged → Release manual stop''', isAI: true);
+      }
+      return;
+    }
+
+    // General "why" - provide helpful guidance
+    _addMessage('AI Agent', '''🔍 **DIAGNOSTIC HELP**
+
+I can help diagnose railway issues! Ask me:
+
+**Signal Issues:**
+• "Why is signal L01 not clearing?"
+• "Why is signal L01 red?"
+• "Why is signal L01 not showing green?"
+
+**Train Issues:**
+• "Why is train 1 not moving?"
+• "Why is train 1 stuck?"
+• "Why is train 1 stopped?"
+
+**System Status:**
+• "status" - Overall railway status
+• "event log" - Recent events
+• "show events" - What's been happening
+
+**Common Problems:**
+🔴 **Signals not clearing?**
+   → Check: Route set? Blocks clear? Points correct?
+
+🚂 **Train not moving?**
+   → Check: Simulation running? Signal green? Doors closed?
+
+⏸️ **Nothing happening?**
+   → Simulation may be paused - click Play button!
+
+Try asking about a specific signal or train!''', isAI: true);
   }
 
   void _executeCommand(RailwayCommand command, TerminalStationController controller) {
@@ -584,10 +883,18 @@ Try saying:
     switch (type?.toLowerCase()) {
       case 'm2':
         return TrainType.m2;
+      case 'm4':
+        return TrainType.m4;
+      case 'm8':
+        return TrainType.m8;
       case 'cbtc_m1':
         return TrainType.cbtcM1;
       case 'cbtc_m2':
         return TrainType.cbtcM2;
+      case 'cbtc_m4':
+        return TrainType.cbtcM4;
+      case 'cbtc_m8':
+        return TrainType.cbtcM8;
       default:
         return TrainType.m1;
     }
@@ -678,21 +985,24 @@ Points are numbered with a letter suffix indicating their side.
 Trains spawn on blocks (track sections). Each train gets a unique ID number.
 
 **Train Types:**
-• **M1** - Single metropolitan car (default)
-• **M2** - Double metropolitan car (longer)
-• **M7** - Seven-car metro train
-• **M9** - Nine-car metro train
-• **Freight** - Freight locomotive
-• **CBTC-M1** - CBTC-equipped single car
-• **CBTC-M2** - CBTC-equipped double car
+• **M1** - Single train unit (2 wheels, default)
+• **M2** - Double train unit (4 wheels, longer)
+• **M4** - 4-car train (8 wheels, high capacity)
+• **M8** - 8-car train (16 wheels, maximum capacity)
+• **CBTC M1** - CBTC-equipped single unit
+• **CBTC M2** - CBTC-equipped double unit
+• **CBTC M4** - CBTC-equipped 4-car train
+• **CBTC M8** - CBTC-equipped 8-car train
 
 **Commands:**
 • "add train" - Adds M1 train to a safe default block
 • "add train to block 100" - Adds M1 to specific block
 • "add M2 train to block 100" - Adds specific train type
-• "create freight train in 104" - Alternative phrasing
+• "add M4 train to block 100" - Adds 4-car train
+• "add M8 train to block 104" - Adds 8-car train
+• "add CBTC M4 train to block 100" - Adds CBTC-equipped 4-car train
 • "spawn train" - Gaming terminology (I understand it!)
-• "place M7 train in block 100"
+• "place M8 train in block 100"
 
 **Alternative Phrases (I understand them all!):**
 • "create train"

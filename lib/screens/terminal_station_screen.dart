@@ -3743,7 +3743,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     }
 
     // Check for platform clicks
-    for (final platform in controller.platforms.values) {
+    for (final platform in controller.platforms) {
       if (canvasX >= platform.startX &&
           canvasX <= platform.endX &&
           (canvasY - platform.y).abs() < 25) {
@@ -3828,13 +3828,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         }
         break;
       case 'platform':
-        final platform = controller.platforms[id];
-        if (platform != null) {
+        try {
+          final platform = controller.platforms.firstWhere((p) => p.id == id);
           return canvasX >= platform.startX &&
               canvasX <= platform.endX &&
               (canvasY - platform.y).abs() < 25;
+        } catch (e) {
+          return false;
         }
-        break;
       case 'trainstop':
         final trainStop = controller.trainStops[id];
         if (trainStop != null) {
@@ -3909,8 +3910,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         }
         break;
       case 'platform':
-        final platform = controller.platforms[id];
-        if (platform != null) {
+        try {
+          final platform = controller.platforms.firstWhere((p) => p.id == id);
           final length = platform.endX - platform.startX;
           platform.startX += dx;
           platform.endX = platform.startX + length;
@@ -3921,6 +3922,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             platform.y = controller.snapToGrid(platform.y);
           }
           controller.notifyListeners();
+        } catch (e) {
+          // Platform not found
         }
         break;
       case 'trainstop':

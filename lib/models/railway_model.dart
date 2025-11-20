@@ -23,8 +23,8 @@ enum CbtcMode {
 class Transponder {
   final String id;
   final TransponderType type;
-  final double x;
-  final double y;
+  double x;  // Made mutable for edit mode
+  double y;  // Made mutable for edit mode
   final String description;
 
   Transponder({
@@ -38,8 +38,8 @@ class Transponder {
 
 class WifiAntenna {
   final String id;
-  final double x;
-  final double y;
+  double x;  // Made mutable for edit mode
+  double y;  // Made mutable for edit mode
   bool isActive;
 
   WifiAntenna({

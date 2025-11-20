@@ -110,7 +110,7 @@ class ConnectionService extends ChangeNotifier {
       debugPrint('Supabase connection error: $e');
       // Even if the check fails, if we have a valid client, mark as connected
       // The client might work fine even if this specific check fails
-      if (_supabase != null && _supabase!.supabaseUrl.isNotEmpty) {
+      if (_supabase != null) {
         _isSupabaseConnected = true;
         _supabaseStatus = 'Connected (unable to verify) ✓';
         _lastSupabaseCheck = DateTime.now();

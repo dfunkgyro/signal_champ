@@ -138,14 +138,13 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
       case 'm2':
         trainType = TrainType.m2;
         break;
-      case 'm7':
-        trainType = TrainType.m7;
+      case 'cbtcm1':
+      case 'cbtc_m1':
+        trainType = TrainType.cbtcM1;
         break;
-      case 'm9':
-        trainType = TrainType.m9;
-        break;
-      case 'freight':
-        trainType = TrainType.freight;
+      case 'cbtcm2':
+      case 'cbtc_m2':
+        trainType = TrainType.cbtcM2;
         break;
       default:
         trainType = TrainType.m1;
@@ -160,15 +159,18 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
       final blockCenterX = (block.startX + block.endX) / 2;
       final distance = (blockCenterX - spawn.x).abs();
 
-      if (distance < closestDistance && !block.isOccupied) {
+      if (distance < closestDistance && !block.occupied) {
         closestDistance = distance;
         spawnBlock = block.id;
       }
     }
 
     if (spawnBlock != null) {
-      controller.addTrain(spawnBlock, trainType, destination: spawn.destination);
-      debugPrint('🚂 Spawned ${spawn.trainType} train at $spawnBlock');
+      // Note: addTrain() now automatically selects a safe block
+      // We'll need to enhance it later to support spawning at specific blocks
+      controller.addTrain();
+      debugPrint('🚂 Spawned ${spawn.trainType} train (automatic block selection)');
+      // TODO: Implement custom train spawning with specific block and destination
     }
   }
 
@@ -192,8 +194,10 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
         case 'deliver':
           // Check if specific trains reached destination
           final targetTrainCount = objective.parameters['train_count'] as int? ?? 1;
+          // TODO: Implement hasReachedDestination tracking on Train model
+          // For now, count trains that have stopped at their SMC destination
           final deliveredTrains = controller.trains
-              .where((t) => t.hasReachedDestination)
+              .where((t) => t.smcDestination != null && t.speed == 0 && t.doorsOpen)
               .length;
           _objectiveProgress[objective.id] = deliveredTrains;
           isComplete = deliveredTrains >= targetTrainCount;
@@ -265,7 +269,7 @@ class _ScenarioPlayerScreenState extends State<ScenarioPlayerScreen> {
 
     final controller = context.read<TerminalStationController>();
     if (controller.isRunning) {
-      controller.toggleSimulation();
+      controller.stopSimulation();
     }
 
     _showFailureDialog();

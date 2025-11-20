@@ -215,7 +215,7 @@ class EditModeToolbar extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               // TODO: Actually create the component
-              controller._logEvent('➕ Added $componentType $newId');
+              controller.logEvent('➕ Added $componentType $newId');
               Navigator.pop(context);
             },
             child: const Text('Add'),

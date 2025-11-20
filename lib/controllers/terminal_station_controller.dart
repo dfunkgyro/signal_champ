@@ -6394,7 +6394,7 @@ class TerminalStationController extends ChangeNotifier {
     if (editModeEnabled) {
       // Entering edit mode - pause simulation
       if (isRunning) {
-        stop();
+        pauseSimulation();
       }
       _logEvent('🔧 Edit Mode ENABLED - Simulation paused');
     } else {

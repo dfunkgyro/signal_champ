@@ -42,10 +42,10 @@ class WidgetPreferencesService extends ChangeNotifier {
   Color _searchBarColor = Colors.orange;
   double _searchBarTextSize = 14.0;
 
-  // AI Agent settings
+  // AI Agent settings (match minimap dimensions)
   double _aiAgentWidth = 280.0;
-  double _aiAgentHeight = 80.0;
-  Color _aiAgentColor = Colors.orange;
+  double _aiAgentHeight = 140.0; // Matches minimap height
+  Color _aiAgentColor = Colors.orange; // Default orange like other widgets
   double _aiAgentExpandedWidth = 400.0;
   double _aiAgentExpandedHeight = 500.0;
 
@@ -108,9 +108,9 @@ class WidgetPreferencesService extends ChangeNotifier {
     _searchBarColor = Color(_prefs!.getInt(_searchBarColorKey) ?? Colors.orange.value);
     _searchBarTextSize = _prefs!.getDouble(_searchBarTextSizeKey) ?? 14.0;
 
-    // AI Agent
+    // AI Agent (defaults match minimap dimensions)
     _aiAgentWidth = _prefs!.getDouble(_aiAgentWidthKey) ?? 280.0;
-    _aiAgentHeight = _prefs!.getDouble(_aiAgentHeightKey) ?? 80.0;
+    _aiAgentHeight = _prefs!.getDouble(_aiAgentHeightKey) ?? 140.0; // Match minimap height
     _aiAgentColor = Color(_prefs!.getInt(_aiAgentColorKey) ?? Colors.orange.value);
     _aiAgentExpandedWidth = _prefs!.getDouble(_aiAgentExpandedWidthKey) ?? 400.0;
     _aiAgentExpandedHeight = _prefs!.getDouble(_aiAgentExpandedHeightKey) ?? 500.0;

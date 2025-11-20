@@ -4,8 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Authentication service for handling user login, Google Sign-In, and guest mode
 class AuthService extends ChangeNotifier {
-  final SupabaseClient _supabase;
-  final bool _isMockClient;
+  final SupabaseClient? _supabase;
 
   User? _currentUser;
   bool _isGuest = false;
@@ -13,20 +12,9 @@ class AuthService extends ChangeNotifier {
   String _connectionStatus = 'Initializing...';
   bool _isConnected = false;
 
-  AuthService(this._supabase) : _isMockClient = _isPlaceholderClient(_supabase) {
+  AuthService(this._supabase) {
     // Don't call async methods in constructor - schedule them
     Future.microtask(() => _initialize());
-  }
-
-  // Check if this is a placeholder/mock client
-  static bool _isPlaceholderClient(SupabaseClient client) {
-    try {
-      // Check the REST URL instead (this property exists)
-      final url = client.restUrl;
-      return url.contains('placeholder') || url.contains('localhost') || url.isEmpty;
-    } catch (e) {
-      return true;
-    }
   }
 
   // Getters
@@ -48,14 +36,14 @@ class AuthService extends ChangeNotifier {
   Future<void> _initialize() async {
     try {
       debugPrint('🔐 AuthService: Starting initialization...');
-      debugPrint('  Mock client: $_isMockClient');
+      debugPrint('  Supabase client available: ${_supabase != null}');
 
-      // If using mock/placeholder client, go straight to guest mode
-      if (_isMockClient) {
-        debugPrint('  → Mock client detected, checking guest mode preference');
+      // If no Supabase client, go straight to guest mode
+      if (_supabase == null) {
+        debugPrint('  → No Supabase client, checking guest mode preference');
         try {
           final prefs = await SharedPreferences.getInstance();
-          _isGuest = prefs.getBool('is_guest') ?? true; // Default to guest if mock
+          _isGuest = prefs.getBool('is_guest') ?? true; // Default to guest if no Supabase
           if (_isGuest) {
             _updateConnectionStatus('Guest mode (offline)', false);
             debugPrint('  ✅ Guest mode activated (offline)');
@@ -77,7 +65,7 @@ class AuthService extends ChangeNotifier {
 
       // Listen to auth state changes (only for real client)
       try {
-        _supabase.auth.onAuthStateChange.listen((data) {
+        _supabase!.auth.onAuthStateChange.listen((data) {
           final AuthChangeEvent event = data.event;
           final Session? session = data.session;
 
@@ -102,7 +90,7 @@ class AuthService extends ChangeNotifier {
       // Check for existing session
       try {
         debugPrint('  → Checking for existing session');
-        final session = _supabase.auth.currentSession;
+        final session = _supabase!.auth.currentSession;
         if (session != null) {
           _currentUser = session.user;
           _updateConnectionStatus('Connected to Supabase', true);
@@ -151,10 +139,14 @@ class AuthService extends ChangeNotifier {
   /// Sign up with email and password
   Future<AuthResult> signUpWithEmail(String email, String password,
       {String? fullName}) async {
+    if (_supabase == null) {
+      return AuthResult(success: false, message: 'No Supabase connection available');
+    }
+
     try {
       _updateConnectionStatus('Creating account...', false);
 
-      final response = await _supabase.auth.signUp(
+      final response = await _supabase!.auth.signUp(
         email: email,
         password: password,
         data: fullName != null ? {'full_name': fullName} : null,
@@ -179,10 +171,14 @@ class AuthService extends ChangeNotifier {
 
   /// Sign in with email and password
   Future<AuthResult> signInWithEmail(String email, String password) async {
+    if (_supabase == null) {
+      return AuthResult(success: false, message: 'No Supabase connection available');
+    }
+
     try {
       _updateConnectionStatus('Signing in...', false);
 
-      final response = await _supabase.auth.signInWithPassword(
+      final response = await _supabase!.auth.signInWithPassword(
         email: email,
         password: password,
       );
@@ -205,11 +201,15 @@ class AuthService extends ChangeNotifier {
 
   /// Sign in with Google
   Future<AuthResult> signInWithGoogle() async {
+    if (_supabase == null) {
+      return AuthResult(success: false, message: 'No Supabase connection available');
+    }
+
     try {
       _updateConnectionStatus('Signing in with Google...', false);
 
       // Sign in with Google via Supabase
-      final response = await _supabase.auth.signInWithOAuth(
+      final response = await _supabase!.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: kIsWeb ? null : 'io.supabase.railchamp://login-callback/',
       );
@@ -239,8 +239,8 @@ class AuthService extends ChangeNotifier {
   /// Sign out
   Future<void> signOut() async {
     try {
-      if (!_isGuest) {
-        await _supabase.auth.signOut();
+      if (!_isGuest && _supabase != null) {
+        await _supabase!.auth.signOut();
       }
       _currentUser = null;
       _isGuest = false;
@@ -254,8 +254,12 @@ class AuthService extends ChangeNotifier {
 
   /// Reset password
   Future<AuthResult> resetPassword(String email) async {
+    if (_supabase == null) {
+      return AuthResult(success: false, message: 'No Supabase connection available');
+    }
+
     try {
-      await _supabase.auth.resetPasswordForEmail(email);
+      await _supabase!.auth.resetPasswordForEmail(email);
       return AuthResult(success: true, message: 'Password reset email sent');
     } catch (e) {
       return AuthResult(success: false, message: 'Error: ${e.toString()}');
@@ -264,8 +268,8 @@ class AuthService extends ChangeNotifier {
 
   /// Save user settings to Supabase
   Future<void> saveSettings(Map<String, dynamic> settings) async {
-    if (_isGuest) {
-      // Save locally for guest users
+    if (_isGuest || _supabase == null) {
+      // Save locally for guest users or offline mode
       final prefs = await SharedPreferences.getInstance();
       settings.forEach((key, value) {
         if (value is String) {
@@ -282,7 +286,7 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      await _supabase.from('user_settings').upsert({
+      await _supabase!.from('user_settings').upsert({
         'user_id': userId,
         'settings': settings,
         'updated_at': DateTime.now().toIso8601String(),
@@ -307,8 +311,8 @@ class AuthService extends ChangeNotifier {
 
   /// Load user settings from Supabase
   Future<Map<String, dynamic>> loadSettings() async {
-    if (_isGuest) {
-      // Load from local storage for guest users
+    if (_isGuest || _supabase == null) {
+      // Load from local storage for guest users or offline mode
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys().where((k) => k.startsWith('setting_'));
       final settings = <String, dynamic>{};
@@ -320,7 +324,7 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      final response = await _supabase
+      final response = await _supabase!
           .from('user_settings')
           .select('settings')
           .eq('user_id', userId!)

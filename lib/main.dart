@@ -59,15 +59,34 @@ Future<void> main() async {
     debugPrint('Running in fallback mode without Supabase');
   }
 
-  // Initialize new services
+  // Initialize new services with error handling
   final widgetPrefsService = WidgetPreferencesService();
-  await widgetPrefsService.initialize();
-
   final speechRecognitionService = SpeechRecognitionService();
-  await speechRecognitionService.initialize();
-
   final ttsService = TextToSpeechService();
-  await ttsService.initialize();
+
+  try {
+    await widgetPrefsService.initialize();
+    debugPrint('✅ Widget preferences service initialized');
+  } catch (e) {
+    debugPrint('⚠️ Widget preferences initialization failed (non-critical): $e');
+    // Continue anyway - app will use default values
+  }
+
+  try {
+    await speechRecognitionService.initialize();
+    debugPrint('✅ Speech recognition service initialized');
+  } catch (e) {
+    debugPrint('⚠️ Speech recognition initialization failed (non-critical): $e');
+    // Continue anyway - voice features disabled
+  }
+
+  try {
+    await ttsService.initialize();
+    debugPrint('✅ Text-to-speech service initialized');
+  } catch (e) {
+    debugPrint('⚠️ TTS initialization failed (non-critical): $e');
+    // Continue anyway - TTS features disabled
+  }
 
   runApp(RailChampApp(
     supabaseClient: supabaseClient,

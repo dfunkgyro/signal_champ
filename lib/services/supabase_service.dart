@@ -64,7 +64,8 @@ class SupabaseService extends ChangeNotifier {
   // Check if this is a placeholder/mock client
   static bool _isPlaceholderClient(SupabaseClient client) {
     try {
-      final url = client.supabaseUrl;
+      // Check the REST URL instead (this property exists)
+      final url = client.restUrl;
       return url.contains('placeholder') || url.contains('localhost') || url.isEmpty;
     } catch (e) {
       return true;

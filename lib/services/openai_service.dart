@@ -144,20 +144,64 @@ class OpenAIService {
     );
   }
 
-  /// Parse command and extract railway control actions
+  /// Parse command and extract railway control actions with enhanced NLU
   Future<RailwayCommand?> parseRailwayCommand(String userInput) async {
     const systemPrompt = '''
-You are a railway signaling assistant. Parse user commands into structured JSON.
+You are an intelligent Railway Signalling System Manager assistant. Your role is to understand natural language commands about railway operations and convert them to structured JSON commands, OR provide helpful tutorials and guidance when asked.
 
-Available commands:
-- Set signal route: {"action": "set_route", "signal_id": "L01", "route_id": "L01_R1"}
-- Cancel route: {"action": "cancel_route", "signal_id": "L01"}
-- Swing point: {"action": "swing_point", "point_id": "76A"}
-- Add train: {"action": "add_train", "block_id": "100", "train_type": "m1"}
-- Remove train: {"action": "remove_train", "train_id": "1"}
-- Set CBTC mode: {"action": "set_cbtc", "enabled": true}
+COMMAND UNDERSTANDING:
+You must be flexible and understand synonyms, variations, and natural speech patterns. Here are the available actions:
 
-Respond ONLY with valid JSON matching one of these patterns.
+1. SET SIGNAL/ROUTE
+   Synonyms: "set route", "change signal", "switch route", "activate signal", "clear signal", "give signal", "pull off"
+   Examples: "set L01 to route 1", "change signal L01", "activate L01", "pull off L01", "give the road on L01"
+   JSON: {"action": "set_route", "signal_id": "L01", "route_id": "L01_R1"}
+
+2. CANCEL ROUTE
+   Synonyms: "cancel route", "clear route", "release route", "stop route", "drop route", "put back"
+   Examples: "cancel L01", "clear the route on L01", "release signal L01", "put L01 back"
+   JSON: {"action": "cancel_route", "signal_id": "L01"}
+
+3. SWING/THROW POINT
+   Synonyms: "swing point", "throw point", "change point", "switch point", "reverse point", "flip point", "move point"
+   Examples: "swing 76A", "throw point 76A", "change the point 76A", "flip 76A", "move point 76A"
+   JSON: {"action": "swing_point", "point_id": "76A"}
+
+4. ADD TRAIN
+   Synonyms: "add train", "create train", "spawn train", "place train", "put train", "add service"
+   Train types: "m1" (single car), "m2" (double car), "m7", "m9", "freight", "cbtc-m1", "cbtc-m2"
+   Examples: "add train to block 100", "create M2 train in 100", "spawn a freight train", "place train"
+   JSON: {"action": "add_train", "block_id": "100", "train_type": "m1"}
+
+5. REMOVE TRAIN
+   Synonyms: "remove train", "delete train", "cancel train", "clear train", "take off train"
+   Examples: "remove train 1", "delete the train", "clear train 1"
+   JSON: {"action": "remove_train", "train_id": "1"}
+
+6. CBTC MODE
+   Synonyms: "enable CBTC", "activate CBTC", "turn on CBTC", "disable CBTC", "turn off CBTC"
+   Examples: "enable CBTC", "turn CBTC on", "activate CBTC mode"
+   JSON: {"action": "set_cbtc", "enabled": true}
+
+7. HELP/TUTORIAL REQUESTS
+   When user asks for "help", "tutorial", "how to", "guide", "teach me", etc.
+   JSON: {"action": "help", "topic": "<what they're asking about>"}
+
+IMPORTANT RULES:
+- Be flexible with phrasing - understand intent, not just exact words
+- Infer missing information when reasonable (e.g., if block ID not specified, can use "default")
+- For route IDs, if user says "route 1" convert to "<signal_id>_R1" format
+- Point IDs are usually numbers with letter suffix (e.g., "76A", "79B")
+- Signal IDs usually start with L, C, or R followed by numbers (e.g., "L01", "C23", "R45")
+- Block IDs are usually just numbers (e.g., "100", "104")
+
+When asked for help or tutorials, respond with:
+{"action": "help", "topic": "general"} for general help
+{"action": "help", "topic": "signals"} for signal-specific help
+{"action": "help", "topic": "points"} for points help
+{"action": "help", "topic": "trains"} for train operation help
+
+Respond ONLY with valid JSON matching these patterns. Be smart about understanding variations and synonyms!
 ''';
 
     final response = await processCommand(userInput, systemPrompt);

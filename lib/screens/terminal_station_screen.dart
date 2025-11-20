@@ -3865,7 +3865,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           return Column(
             children: [
               // Search Bar at the top with viewport dimensions for navigation
-              RailwaySearchBar(
+              RailwaySearchBarEnhanced(
                 viewportWidth: viewportWidth,
                 viewportHeight: viewportHeight,
               ),

@@ -19,13 +19,14 @@ class ConnectionIndicator extends StatelessWidget {
     final authService = context.watch<AuthService>();
 
     if (showDetails) {
-      return _buildDetailedIndicator(connectionService, authService);
+      return _buildDetailedIndicator(context, connectionService, authService);
     } else {
-      return _buildCompactIndicator(connectionService, authService);
+      return _buildCompactIndicator(context, connectionService, authService);
     }
   }
 
   Widget _buildCompactIndicator(
+    BuildContext context,
     ConnectionService connectionService,
     AuthService authService,
   ) {
@@ -77,6 +78,7 @@ class ConnectionIndicator extends StatelessWidget {
   }
 
   Widget _buildDetailedIndicator(
+    BuildContext context,
     ConnectionService connectionService,
     AuthService authService,
   ) {

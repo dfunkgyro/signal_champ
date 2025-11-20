@@ -13,8 +13,8 @@ import 'dart:math' as math;
 class AxleCounter {
   final String id;
   final String blockId;
-  final double x;
-  final double y;
+  double x;  // Made mutable for edit mode
+  double y;  // Made mutable for edit mode
   int count;
   DateTime? lastDetectionTime;
   bool d1Active;
@@ -24,6 +24,7 @@ class AxleCounter {
   final String? twinLabel;
   String? lastTrainDetected;
   DateTime? lastTrainDetectionTime;
+  bool flipped;  // Added for edit mode - swaps D1/D2 orientation
 
   AxleCounter({
     required this.id,
@@ -39,6 +40,7 @@ class AxleCounter {
     this.twinLabel,
     this.lastTrainDetected,
     this.lastTrainDetectionTime,
+    this.flipped = false,  // Default to false
   });
 }
 
@@ -1426,14 +1428,18 @@ class TerminalStationController extends ChangeNotifier {
 
         if (distance < 50) {
           // Train is near the axle counter
-          if (!counter.d1Active && train.direction > 0) {
+          // Respect flipped property - swap D1/D2 logic when flipped
+          final d1Trigger = counter.flipped ? (train.direction < 0) : (train.direction > 0);
+          final d2Trigger = counter.flipped ? (train.direction > 0) : (train.direction < 0);
+
+          if (!counter.d1Active && d1Trigger) {
             counter.d1Active = true;
             counter.count++;
             counter.lastDetectionTime = DateTime.now();
             counter.lastDirection = 'D1';
             _logEvent(
                 '🔢 ${counter.id} detected train ${train.name} via D1 - Count: ${counter.count}');
-          } else if (!counter.d2Active && train.direction < 0) {
+          } else if (!counter.d2Active && d2Trigger) {
             counter.d2Active = true;
             counter.count++;
             counter.lastDetectionTime = DateTime.now();
@@ -1443,10 +1449,13 @@ class TerminalStationController extends ChangeNotifier {
           }
         } else {
           // Reset detection when train moves away
-          if (counter.d1Active && train.direction > 0) {
+          final d1Trigger = counter.flipped ? (train.direction < 0) : (train.direction > 0);
+          final d2Trigger = counter.flipped ? (train.direction > 0) : (train.direction < 0);
+
+          if (counter.d1Active && d1Trigger) {
             counter.d1Active = false;
           }
-          if (counter.d2Active && train.direction < 0) {
+          if (counter.d2Active && d2Trigger) {
             counter.d2Active = false;
           }
         }
@@ -2684,6 +2693,7 @@ class TerminalStationController extends ChangeNotifier {
       id: 'C30',
       x: 1000,
       y: 320,
+      direction: SignalDirection.west,  // Westbound signal
       routes: [
         SignalRoute(
           id: 'C30_R1',

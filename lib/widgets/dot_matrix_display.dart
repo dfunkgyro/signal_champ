@@ -58,7 +58,8 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.orange[600], size: 20),
+                    Icon(Icons.info_outline,
+                        color: Colors.orange[600], size: 20),
                     const SizedBox(width: 8),
                     const Text(
                       'TRAIN INFORMATION',
@@ -75,7 +76,8 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
 
               // Current time
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
                   border: Border(
@@ -140,7 +142,8 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.warning, color: Colors.red[300], size: 20),
+                              Icon(Icons.warning,
+                                  color: Colors.red[300], size: 20),
                               const SizedBox(width: 8),
                               _DotMatrixText(
                                 text: 'ALERTS',
@@ -269,7 +272,8 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
     }
 
     // Emergency brake alerts
-    final emergencyTrains = controller.trains.where((t) => t.emergencyBrake).toList();
+    final emergencyTrains =
+        controller.trains.where((t) => t.emergencyBrake).toList();
     if (emergencyTrains.isNotEmpty) {
       alerts.add(_buildAlert(
         'EMERGENCY BRAKE: ${emergencyTrains.map((t) => t.id).join(", ")}',
@@ -323,7 +327,8 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
         controller.arePointsDeadlocked;
   }
 
-  String _getTrainDestination(Train train, TerminalStationController controller) {
+  String _getTrainDestination(
+      Train train, TerminalStationController controller) {
     if (train.smcDestination != null && train.smcDestination!.isNotEmpty) {
       // Parse destination (format: "B:100", "P:Platform 1")
       if (train.smcDestination!.startsWith('B:')) {
@@ -431,6 +436,14 @@ class _DotMatrixDisplayState extends State<DotMatrixDisplay>
       case TrainType.cbtcM1:
         return Colors.cyan[400]!;
       case TrainType.cbtcM2:
+        return Colors.teal[400]!;
+      case TrainType.m4:
+        return Colors.blue[400]!;
+      case TrainType.m8:
+        return Colors.purple[400]!;
+      case TrainType.cbtcM4:
+        return Colors.cyan[400]!;
+      case TrainType.cbtcM8:
         return Colors.teal[400]!;
     }
   }

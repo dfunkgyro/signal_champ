@@ -3284,6 +3284,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         return 'CBTC M1 (Single Unit - 2 wheels)';
       case TrainType.cbtcM2:
         return 'CBTC M2 (Double Unit - 4 wheels)';
+        case TrainType.m4:
+        return 'M4 (Single Unit - 8 wheels)';
+      case TrainType.m8:
+        return 'M8 (Double Unit - 16 wheels)';
+      case TrainType.cbtcM4:
+        return 'CBTC M4 (Single Unit - 8 wheels)';
+      case TrainType.cbtcM8:
+        return 'CBTC M8 (Double Unit - 16 wheels)';
     }
   }
 
@@ -5132,6 +5140,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         return 'CBTC M1';
       case TrainType.cbtcM2:
         return 'CBTC M2';
+      case TrainType.m4:
+        return 'M4 (Single)';
+      case TrainType.m8:
+        return 'M8 (Double)';
+      case TrainType.cbtcM4:
+        return 'CBTC M4';
+      case TrainType.cbtcM8:
+        return 'CBTC M8';
     }
   }
 

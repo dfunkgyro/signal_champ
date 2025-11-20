@@ -6223,7 +6223,6 @@ class TerminalStationController extends ChangeNotifier {
       buffer.writeln(
           '    <Platform id="${platform.id}" name="${platform.name}" startX="${platform.startX}" endX="${platform.endX}" y="${platform.y}" occupied="${platform.occupied}" />');
     }
-    ;
     buffer.writeln('  </Platforms>');
 
     // Export Trains
@@ -6232,7 +6231,6 @@ class TerminalStationController extends ChangeNotifier {
       buffer.writeln(
           '    <Train id="${train.id}" name="${train.name}" x="${train.x}" y="${train.y}" speed="${train.speed}" direction="${train.direction == 1 ? 'eastbound' : 'westbound'}" currentBlock="${train.currentBlockId ?? 'none'}" controlMode="${train.controlMode.name}" rotation="${train.rotation}" emergencyBrake="${train.emergencyBrake}" doorsOpen="${train.doorsOpen}" />');
     }
-    ;
     buffer.writeln('  </Trains>');
 
     // Export Route Reservations (iterate over copy to avoid concurrent modification)
@@ -6268,12 +6266,15 @@ class TerminalStationController extends ChangeNotifier {
     }
     buffer.writeln('  </AxleCounters>');
 
-    // Export ACE Results
+    // Export ACE Results (iterate over copy to avoid concurrent modification)
     buffer.writeln('  <ACEResults>');
-    ace.abResults.forEach((abId, count) {
+    final aceResultEntries = ace.abResults.entries.toList();
+    for (var entry in aceResultEntries) {
+      final abId = entry.key;
+      final count = entry.value;
       buffer.writeln(
           '    <ABResult id="$abId" count="$count" occupied="${ace.isABOccupied(abId)}" />');
-    });
+    }
     buffer.writeln('  </ACEResults>');
 
     // Export Double Diamond Crossovers

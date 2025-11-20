@@ -4,6 +4,7 @@ import 'dart:async';
 import '../models/scenario_models.dart';
 import '../controllers/terminal_station_controller.dart';
 import 'terminal_station_screen.dart';
+import 'terminal_station_models.dart';
 
 /// Screen for playing railway scenarios
 /// Wraps TerminalStationScreen with scenario-specific UI and objective tracking

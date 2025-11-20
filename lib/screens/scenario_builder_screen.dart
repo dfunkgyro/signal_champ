@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/scenario_models.dart';
+import '../models/railway_template.dart';
 import '../services/scenario_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/route_designer_canvas.dart';
@@ -663,12 +664,112 @@ class _ScenarioBuilderScreenState extends State<ScenarioBuilderScreen> {
   }
 
   void _loadTemplate() {
-    // TODO: Implement template loading
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Template loading - Feature coming soon!'),
+    showDialog(
+      context: context,
+      builder: (context) => _TemplatePickerDialog(
+        onTemplateSelected: (template) {
+          _applyTemplate(template);
+          Navigator.pop(context);
+        },
       ),
     );
+  }
+
+  /// Apply a template to the current scenario
+  void _applyTemplate(RailwayTemplate template) {
+    final properties = template.properties;
+
+    // Apply template based on category
+    switch (template.category) {
+      case TemplateCategory.signals:
+        // Add signal-related route to scenario
+        _addTemplateSignalRoute(properties);
+        break;
+      case TemplateCategory.points:
+        // Add point-related configuration
+        _addTemplatePointConfig(properties);
+        break;
+      case TemplateCategory.stations:
+        // Apply station template (multiple components)
+        _applyStationTemplate(properties);
+        break;
+      case TemplateCategory.platforms:
+        // Add platform configuration
+        _addTemplatePlatform(properties);
+        break;
+      case TemplateCategory.crossovers:
+        // Add crossover configuration
+        _addTemplateCrossover(properties);
+        break;
+      case TemplateCategory.tracks:
+        // Add track section
+        _addTemplateTrack(properties);
+        break;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✅ Applied template: ${template.name}'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _addTemplateSignalRoute(Map<String, dynamic> props) {
+    final routeCount = props['routes'] as int? ?? 1;
+    setState(() {
+      _scenario = _scenario.copyWith(
+        description: '${_scenario.description}\n\n📍 Template: Signal with $routeCount route(s) applied',
+      );
+    });
+  }
+
+  void _addTemplatePointConfig(Map<String, dynamic> props) {
+    final direction = props['direction'] as String? ?? 'left';
+    setState(() {
+      _scenario = _scenario.copyWith(
+        description: '${_scenario.description}\n\n🔀 Template: $direction-hand point applied',
+      );
+    });
+  }
+
+  void _applyStationTemplate(Map<String, dynamic> props) {
+    final style = props['style'] as String? ?? 'through';
+    final platforms = props['platforms'] as int? ?? 2;
+    setState(() {
+      _scenario = _scenario.copyWith(
+        description: '${_scenario.description}\n\n🚉 Template: $style station with $platforms platforms applied',
+      );
+    });
+  }
+
+  void _addTemplatePlatform(Map<String, dynamic> props) {
+    final length = props['length'] as int? ?? 200;
+    setState(() {
+      _scenario = _scenario.copyWith(
+        description: '${_scenario.description}\n\n🚉 Template: Platform (${length}m) applied',
+      );
+    });
+  }
+
+  void _addTemplateCrossover(Map<String, dynamic> props) {
+    final style = props['style'] as String? ?? 'single';
+    setState(() {
+      _scenario = _scenario.copyWith(
+        description: '${_scenario.description}\n\n🔀 Template: $style crossover applied',
+      );
+    });
+  }
+
+  void _addTemplateTrack(Map<String, dynamic> props) {
+    final length = props['length'] as int? ?? 100;
+    final shape = props['shape'] as String? ?? 'straight';
+    setState(() {
+      _scenario = _scenario.copyWith(
+        description: '${_scenario.description}\n\n🛤️ Template: $shape track (${length}m) applied',
+      );
+    });
   }
 
   void _showHelp() {
@@ -718,5 +819,160 @@ class _ScenarioBuilderScreenState extends State<ScenarioBuilderScreen> {
         ],
       ),
     );
+  }
+}
+
+/// Template Picker Dialog for browsing and selecting railway templates
+class _TemplatePickerDialog extends StatefulWidget {
+  final Function(RailwayTemplate) onTemplateSelected;
+
+  const _TemplatePickerDialog({required this.onTemplateSelected});
+
+  @override
+  State<_TemplatePickerDialog> createState() => _TemplatePickerDialogState();
+}
+
+class _TemplatePickerDialogState extends State<_TemplatePickerDialog> {
+  TemplateCategory _selectedCategory = TemplateCategory.signals;
+
+  @override
+  Widget build(BuildContext context) {
+    final templates = RailwayTemplateLibrary.filterByCategory(_selectedCategory);
+
+    return Dialog(
+      child: Container(
+        width: 600,
+        height: 500,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Row(
+              children: [
+                const Icon(Icons.layers, size: 28),
+                const SizedBox(width: 8),
+                const Text(
+                  'Railway Template Library',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const Divider(),
+
+            // Category selector
+            const SizedBox(height: 8),
+            const Text(
+              'Category:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: TemplateCategory.values.map((category) {
+                final isSelected = category == _selectedCategory;
+                return ChoiceChip(
+                  label: Text(_getCategoryLabel(category)),
+                  avatar: Icon(_getCategoryIcon(category), size: 18),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() => _selectedCategory = category);
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 16),
+            const Divider(),
+
+            // Template list
+            Expanded(
+              child: templates.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No templates in this category',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: templates.length,
+                      itemBuilder: (context, index) {
+                        final template = templates[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              child: Icon(template.icon),
+                            ),
+                            title: Text(template.name),
+                            subtitle: Text(template.description),
+                            trailing: ElevatedButton(
+                              onPressed: () => widget.onTemplateSelected(template),
+                              child: const Text('Apply'),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            const SizedBox(height: 8),
+            Text(
+              '💡 Tip: Templates provide pre-configured railway components for your scenarios',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getCategoryLabel(TemplateCategory category) {
+    switch (category) {
+      case TemplateCategory.signals:
+        return 'Signals';
+      case TemplateCategory.points:
+        return 'Points';
+      case TemplateCategory.tracks:
+        return 'Tracks';
+      case TemplateCategory.platforms:
+        return 'Platforms';
+      case TemplateCategory.crossovers:
+        return 'Crossovers';
+      case TemplateCategory.stations:
+        return 'Stations';
+    }
+  }
+
+  IconData _getCategoryIcon(TemplateCategory category) {
+    switch (category) {
+      case TemplateCategory.signals:
+        return Icons.traffic;
+      case TemplateCategory.points:
+        return Icons.call_split;
+      case TemplateCategory.tracks:
+        return Icons.straighten;
+      case TemplateCategory.platforms:
+        return Icons.train_outlined;
+      case TemplateCategory.crossovers:
+        return Icons.alt_route;
+      case TemplateCategory.stations:
+        return Icons.apartment;
+    }
   }
 }

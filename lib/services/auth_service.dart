@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Authentication service for handling user login, Google Sign-In, and guest mode
 class AuthService extends ChangeNotifier {
   final SupabaseClient _supabase;
+  final bool _isMockClient;
 
   User? _currentUser;
   bool _isGuest = false;
@@ -12,8 +13,19 @@ class AuthService extends ChangeNotifier {
   String _connectionStatus = 'Initializing...';
   bool _isConnected = false;
 
-  AuthService(this._supabase) {
-    _initialize();
+  AuthService(this._supabase) : _isMockClient = _isPlaceholderClient(_supabase) {
+    // Don't call async methods in constructor - schedule them
+    Future.microtask(() => _initialize());
+  }
+
+  // Check if this is a placeholder/mock client
+  static bool _isPlaceholderClient(SupabaseClient client) {
+    try {
+      final url = client.supabaseUrl;
+      return url.contains('placeholder') || url.contains('localhost') || url.isEmpty;
+    } catch (e) {
+      return true;
+    }
   }
 
   // Getters
@@ -34,46 +46,98 @@ class AuthService extends ChangeNotifier {
 
   Future<void> _initialize() async {
     try {
-      _updateConnectionStatus('Connecting to Supabase...', false);
+      debugPrint('🔐 AuthService: Starting initialization...');
+      debugPrint('  Mock client: $_isMockClient');
 
-      // Listen to auth state changes
-      _supabase.auth.onAuthStateChange.listen((data) {
-        final AuthChangeEvent event = data.event;
-        final Session? session = data.session;
-
-        if (event == AuthChangeEvent.signedIn ||
-            event == AuthChangeEvent.tokenRefreshed) {
-          _currentUser = session?.user;
-          _isGuest = false;
-          _updateConnectionStatus('Connected to Supabase', true);
-        } else if (event == AuthChangeEvent.signedOut) {
-          _currentUser = null;
-          _updateConnectionStatus('Disconnected', false);
+      // If using mock/placeholder client, go straight to guest mode
+      if (_isMockClient) {
+        debugPrint('  → Mock client detected, checking guest mode preference');
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          _isGuest = prefs.getBool('is_guest') ?? true; // Default to guest if mock
+          if (_isGuest) {
+            _updateConnectionStatus('Guest mode (offline)', false);
+            debugPrint('  ✅ Guest mode activated (offline)');
+          } else {
+            _updateConnectionStatus('Offline - No Supabase connection', false);
+            debugPrint('  ⚠️ Offline mode - Supabase not available');
+          }
+        } catch (e) {
+          debugPrint('  ⚠️ SharedPreferences failed, defaulting to guest mode: $e');
+          _isGuest = true;
+          _updateConnectionStatus('Guest mode (offline)', false);
         }
-        notifyListeners();
-      });
+        return; // Skip Supabase auth setup
+      }
+
+      // Real Supabase client - proceed with normal auth setup
+      _updateConnectionStatus('Connecting to Supabase...', false);
+      debugPrint('  → Setting up Supabase auth listener');
+
+      // Listen to auth state changes (only for real client)
+      try {
+        _supabase.auth.onAuthStateChange.listen((data) {
+          final AuthChangeEvent event = data.event;
+          final Session? session = data.session;
+
+          if (event == AuthChangeEvent.signedIn ||
+              event == AuthChangeEvent.tokenRefreshed) {
+            _currentUser = session?.user;
+            _isGuest = false;
+            _updateConnectionStatus('Connected to Supabase', true);
+            debugPrint('  ✅ User signed in: ${_currentUser?.email}');
+          } else if (event == AuthChangeEvent.signedOut) {
+            _currentUser = null;
+            _updateConnectionStatus('Disconnected', false);
+            debugPrint('  ℹ️  User signed out');
+          }
+          notifyListeners();
+        });
+        debugPrint('  ✅ Auth state listener registered');
+      } catch (e) {
+        debugPrint('  ⚠️ Failed to setup auth listener: $e');
+      }
 
       // Check for existing session
-      final session = _supabase.auth.currentSession;
-      if (session != null) {
-        _currentUser = session.user;
-        _updateConnectionStatus('Connected to Supabase', true);
-      } else {
-        // Check if user was in guest mode
-        final prefs = await SharedPreferences.getInstance();
-        _isGuest = prefs.getBool('is_guest') ?? false;
-        if (_isGuest) {
-          _updateConnectionStatus('Guest mode (offline)', false);
+      try {
+        debugPrint('  → Checking for existing session');
+        final session = _supabase.auth.currentSession;
+        if (session != null) {
+          _currentUser = session.user;
+          _updateConnectionStatus('Connected to Supabase', true);
+          debugPrint('  ✅ Existing session found: ${_currentUser?.email}');
         } else {
-          _updateConnectionStatus('Not authenticated', false);
+          debugPrint('  ℹ️  No existing session');
+          // Check if user was in guest mode
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            _isGuest = prefs.getBool('is_guest') ?? false;
+            if (_isGuest) {
+              _updateConnectionStatus('Guest mode (offline)', false);
+              debugPrint('  ✅ Guest mode preference found');
+            } else {
+              _updateConnectionStatus('Not authenticated', false);
+              debugPrint('  ℹ️  No authentication');
+            }
+          } catch (e) {
+            debugPrint('  ⚠️ SharedPreferences check failed: $e');
+            _updateConnectionStatus('Not authenticated (preferences unavailable)', false);
+          }
         }
+      } catch (e) {
+        debugPrint('  ⚠️ Session check failed: $e');
+        _updateConnectionStatus('Session check failed: $e', false);
       }
     } catch (e) {
-      debugPrint('Auth initialization error: $e');
+      debugPrint('  ❌ Auth initialization error: $e');
+      debugPrint('  Stack trace: ${StackTrace.current}');
       _updateConnectionStatus('Connection failed: $e', false);
+      // Fall back to guest mode on any error
+      _isGuest = true;
     } finally {
       _isInitialized = true;
       notifyListeners();
+      debugPrint('✅ AuthService: Initialization complete (initialized: $_isInitialized, guest: $_isGuest)\n');
     }
   }
 

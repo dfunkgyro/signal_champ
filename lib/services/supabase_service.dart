@@ -33,16 +33,42 @@ class UserPresence {
 
 class SupabaseService extends ChangeNotifier {
   final SupabaseClient _supabase;
+  final bool _isMockClient;
   RealtimeChannel? _presenceChannel;
   final Map<String, UserPresence> _activeUsers = {};
   String? _currentUserId;
   bool _isConnected = false;
   String _connectionStatus = 'Not connected';
 
-  SupabaseService(this._supabase) {
-    _currentUserId = _supabase.auth.currentUser?.id;
-    _isConnected = _currentUserId != null;
-    _connectionStatus = _isConnected ? 'Connected' : 'Not authenticated';
+  SupabaseService(this._supabase) : _isMockClient = _isPlaceholderClient(_supabase) {
+    try {
+      if (!_isMockClient) {
+        _currentUserId = _supabase.auth.currentUser?.id;
+        _isConnected = _currentUserId != null;
+        _connectionStatus = _isConnected ? 'Connected' : 'Not authenticated';
+        debugPrint('  → SupabaseService: Real client initialized (user: $_currentUserId)');
+      } else {
+        debugPrint('  → SupabaseService: Mock client detected, skipping auth check');
+        _currentUserId = null;
+        _isConnected = false;
+        _connectionStatus = 'Offline (no Supabase connection)';
+      }
+    } catch (e) {
+      debugPrint('  ⚠️ SupabaseService constructor error: $e');
+      _currentUserId = null;
+      _isConnected = false;
+      _connectionStatus = 'Initialization error';
+    }
+  }
+
+  // Check if this is a placeholder/mock client
+  static bool _isPlaceholderClient(SupabaseClient client) {
+    try {
+      final url = client.supabaseUrl;
+      return url.contains('placeholder') || url.contains('localhost') || url.isEmpty;
+    } catch (e) {
+      return true;
+    }
   }
 
   bool get isConnected => _isConnected;
@@ -50,6 +76,12 @@ class SupabaseService extends ChangeNotifier {
   Map<String, UserPresence> get activeUsers => Map.unmodifiable(_activeUsers);
 
   Future<void> initializePresence() async {
+    // Skip presence for mock clients
+    if (_isMockClient) {
+      debugPrint('  → Skipping presence initialization (mock client)');
+      return;
+    }
+
     if (_currentUserId == null) {
       _currentUserId = 'anonymous_${DateTime.now().millisecondsSinceEpoch}';
     }

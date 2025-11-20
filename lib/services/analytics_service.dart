@@ -8,7 +8,7 @@ import 'dart:io';
 /// Comprehensive analytics service for tracking app usage, location, and events
 /// Uses Supabase for all analytics storage and tracking
 class AnalyticsService extends ChangeNotifier {
-  final SupabaseClient _supabase;
+  final SupabaseClient? _supabase;
 
   Position? _currentPosition;
   Map<String, dynamic> _deviceInfo = {};
@@ -174,8 +174,10 @@ class AnalyticsService extends ChangeNotifier {
 
   /// Save location to Supabase
   Future<void> _saveLocationToSupabase(Position position) async {
+    if (_supabase == null) return;
+
     try {
-      await _supabase.from('user_locations').insert({
+      await _supabase!.from('user_locations').insert({
         'latitude': position.latitude,
         'longitude': position.longitude,
         'accuracy': position.accuracy,
@@ -191,8 +193,10 @@ class AnalyticsService extends ChangeNotifier {
 
   /// Log a custom event to Supabase
   Future<void> logEvent(String name, {Map<String, dynamic>? parameters}) async {
+    if (_supabase == null) return;
+
     try {
-      await _supabase.from('analytics_events').insert({
+      await _supabase!.from('analytics_events').insert({
         'event_name': name,
         'parameters': parameters,
         'device_info': _deviceInfo,
@@ -205,8 +209,10 @@ class AnalyticsService extends ChangeNotifier {
 
   /// Log screen view to Supabase
   Future<void> logScreenView(String screenName) async {
+    if (_supabase == null) return;
+
     try {
-      await _supabase.from('analytics_events').insert({
+      await _supabase!.from('analytics_events').insert({
         'event_name': 'screen_view',
         'parameters': {'screen_name': screenName},
         'device_info': _deviceInfo,
@@ -219,8 +225,10 @@ class AnalyticsService extends ChangeNotifier {
 
   /// Set user properties in Supabase
   Future<void> setUserProperty(String name, String value) async {
+    if (_supabase == null) return;
+
     try {
-      await _supabase.from('user_properties').upsert({
+      await _supabase!.from('user_properties').upsert({
         'property_name': name,
         'property_value': value,
         'updated_at': DateTime.now().toIso8601String(),
@@ -232,8 +240,22 @@ class AnalyticsService extends ChangeNotifier {
 
   /// Get analytics summary
   Future<Map<String, dynamic>> getAnalyticsSummary() async {
+    if (_supabase == null) {
+      return {
+        'location_enabled': _isLocationEnabled,
+        'current_position': _currentPosition != null
+            ? {
+                'latitude': _currentPosition!.latitude,
+                'longitude': _currentPosition!.longitude,
+              }
+            : null,
+        'device_info': _deviceInfo,
+        'error': 'No Supabase connection',
+      };
+    }
+
     try {
-      final response = await _supabase
+      final response = await _supabase!
           .from('analytics_events')
           .select('event_name, count(*)')
           .gte(

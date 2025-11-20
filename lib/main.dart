@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:upgrader/upgrader.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/canvas_theme_controller.dart';
 import '../services/supabase_service.dart';
@@ -15,6 +17,7 @@ import '../services/intent_service.dart';
 import '../services/widget_preferences_service.dart';
 import '../services/speech_recognition_service.dart';
 import '../services/text_to_speech_service.dart';
+import '../services/crash_report_service.dart';
 import '../widgets/connection_indicator.dart';
 import 'weather_system.dart';
 import 'achievements_service.dart';
@@ -22,28 +25,68 @@ import 'custom_bottom_nav.dart';
 import '../screens/terminal_station_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/analytics_screen.dart';
+import '../screens/crash_reports_screen.dart';
 import '../controllers/terminal_station_controller.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Wrap entire app initialization with error handling
+  await runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-  debugPrint('🚀 Starting Rail Champ initialization...');
+      debugPrint('🚀 Starting Rail Champ initialization...');
 
-  // ========== PHASE 1: CRITICAL INFRASTRUCTURE ==========
-  debugPrint('📋 PHASE 1: Initializing critical infrastructure...');
+      // ========== PHASE 0: CRASH REPORTING ==========
+      debugPrint('📋 PHASE 0: Initializing crash reporting...');
 
-  String? openAiApiKey;
-  SupabaseClient? supabaseClient;
+      String? sentryDsn;
+      try {
+        // Load environment variables first to get Sentry DSN
+        debugPrint('  → Loading environment variables for crash reporting...');
+        await dotenv.load(fileName: 'assets/.env');
+        sentryDsn = dotenv.env['SENTRY_DSN'];
 
-  try {
-    // Load environment variables
-    debugPrint('  → Loading environment variables...');
-    await dotenv.load(fileName: 'assets/.env');
+        // Initialize crash reporting service
+        debugPrint('  → Initializing crash report service...');
+        await CrashReportService().initialize(sentryDsn: sentryDsn);
+        debugPrint('  ✅ Crash reporting initialized');
+      } catch (e) {
+        debugPrint('  ⚠️ Crash reporting initialization error (non-critical): $e');
+      }
 
-    final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-    final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-    openAiApiKey = dotenv.env['OPENAI_API_KEY'];
-    debugPrint('  ✅ Environment variables loaded');
+      // Set up Flutter error handler
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.presentError(details);
+        CrashReportService().generateCrashReport(
+          error: details.exception,
+          stackTrace: details.stack ?? StackTrace.current,
+          errorContext: 'Flutter Framework Error',
+          additionalData: {
+            'library': details.library ?? 'unknown',
+            'context': details.context?.toString() ?? 'no context',
+          },
+        );
+        // Also send to Sentry if available
+        Sentry.captureException(
+          details.exception,
+          stackTrace: details.stack,
+        );
+      };
+
+      debugPrint('✅ PHASE 0 Complete - Crash reporting ready\n');
+
+      // ========== PHASE 1: CRITICAL INFRASTRUCTURE ==========
+      debugPrint('📋 PHASE 1: Initializing critical infrastructure...');
+
+      String? openAiApiKey;
+      SupabaseClient? supabaseClient;
+
+      try {
+        // Environment variables already loaded in Phase 0
+        final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
+        final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+        openAiApiKey = dotenv.env['OPENAI_API_KEY'];
+        debugPrint('  ✅ Environment variables loaded');
 
     // Initialize Supabase (CRITICAL - needs time to connect)
     if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
@@ -134,16 +177,36 @@ Future<void> main() async {
   debugPrint('  ⏳ Final stabilization (300ms)...');
   await Future.delayed(const Duration(milliseconds: 300));
 
-  debugPrint('✅ All initialization complete - Starting app UI\n');
-  debugPrint('🎉 Rail Champ ready to launch!\n');
+      debugPrint('✅ All initialization complete - Starting app UI\n');
+      debugPrint('🎉 Rail Champ ready to launch!\n');
 
-  runApp(RailChampApp(
-    supabaseClient: supabaseClient,
-    openAiApiKey: openAiApiKey,
-    widgetPrefsService: widgetPrefsService,
-    speechRecognitionService: speechRecognitionService,
-    ttsService: ttsService,
-  ));
+      runApp(RailChampApp(
+        supabaseClient: supabaseClient,
+        openAiApiKey: openAiApiKey,
+        widgetPrefsService: widgetPrefsService,
+        speechRecognitionService: speechRecognitionService,
+        ttsService: ttsService,
+      ));
+    },
+    (error, stackTrace) async {
+      // Handle uncaught errors from the zone
+      debugPrint('❌ Uncaught error in zone: $error');
+      debugPrint('Stack trace: $stackTrace');
+
+      // Generate crash report
+      await CrashReportService().generateCrashReport(
+        error: error,
+        stackTrace: stackTrace,
+        errorContext: 'Uncaught Zone Error',
+      );
+
+      // Send to Sentry
+      await Sentry.captureException(
+        error,
+        stackTrace: stackTrace,
+      );
+    },
+  );
 }
 
 class RailChampApp extends StatelessWidget {
@@ -521,10 +584,15 @@ class SettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.bug_report),
-            title: const Text('Report Issue'),
+            title: const Text('Crash Reports'),
+            subtitle: const Text('View and share crash logs'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Feature coming soon')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CrashReportsScreen(),
+                ),
               );
             },
           ),

@@ -460,18 +460,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ),
           ),
 
-          // Dot Matrix Display - bottom left (Layer 11)
-          Positioned(
-            left: _showLeftPanel ? 330 : 10,
-            bottom: 100,
-            child: Container(
-              constraints: const BoxConstraints(
-                maxWidth: 400,
-                maxHeight: 300,
-              ),
-              child: const DotMatrixDisplay(),
-            ),
-          ),
+          // Dot Matrix Display moved to right sidebar (removed from here)
         ],
       ),
     );
@@ -4235,6 +4224,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   );
                   _controller.disableAutoFollow();
                 },
+              ),
+
+              // Dot Matrix Display - relocated under minimap
+              Container(
+                width: 280,
+                height: 140,
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: const DotMatrixDisplay(),
               ),
 
               // Rest of the status panel content

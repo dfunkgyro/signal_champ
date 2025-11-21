@@ -651,6 +651,106 @@ Please specify which train, e.g., "where is train 1?"''', isAI: true);
       return;
     }
 
+    // Relay rack data queries
+    if (lower.contains('relay') && (lower.contains('status') || lower.contains('data') || lower.contains('rack') || lower.contains('position'))) {
+      String response = '🔌 **RELAY RACK DATA**\n\n';
+
+      // Signal Relays (GR - Green Relays)
+      response += '**Signal Relays (GR):**\n';
+      for (final signal in controller.signals.values.take(10)) {
+        final status = signal.aspect == SignalAspect.green ? 'UP ✓' : 'DOWN';
+        response += '• GR-${signal.id}: $status (Signal ${signal.aspect.name.toUpperCase()})\n';
+      }
+
+      // Point Relays (WKR - Working Relay)
+      response += '\n**Points Relays (WKR):**\n';
+      for (final point in controller.points.values.take(10)) {
+        final status = point.position == PointPosition.reverse ? 'REV' : 'NOR';
+        response += '• WKR-${point.id}: $status (${point.locked ? "LOCKED" : "FREE"})\n';
+      }
+
+      // Track Relays (TR - Track Relay)
+      response += '\n**Track Relays (TR):**\n';
+      final blocks = controller.blocks.values.take(10).toList();
+      for (final block in blocks) {
+        final status = block.occupied ? 'DOWN ⚠️' : 'UP ✓';
+        final occupant = block.occupied ? ' (${block.occupyingTrainId})' : '';
+        response += '• TR-${block.id}: $status$occupant\n';
+      }
+
+      _addMessage('AI Agent', response, isAI: true);
+      return;
+    }
+
+    // Train location queries - "where is train X"
+    if (lower.contains('where') && lower.contains('train')) {
+      // Extract train ID from query
+      final trainMatch = RegExp(r'train\s*(\d+|[a-z]\d+)', caseSensitive: false).firstMatch(lower);
+
+      if (trainMatch != null) {
+        final trainQuery = trainMatch.group(1)!;
+        final trainId = trainQuery.startsWith('t') ? trainQuery : 't$trainQuery';
+
+        final train = controller.trains.where((t) => t.id.toLowerCase() == trainId.toLowerCase()).firstOrNull;
+
+        if (train != null) {
+          final blockInfo = train.currentBlockId != null ? 'Block ${train.currentBlockId}' : 'Unknown block';
+
+          String response = '📍 **TRAIN ${train.id.toUpperCase()} LOCATION**\n\n';
+          response += '**Position:** $blockInfo\n';
+          response += '**Coordinates:** (${train.x.toInt()}, ${train.y.toInt()})\n';
+          response += '**Speed:** ${train.speed.toStringAsFixed(1)} km/h\n';
+          response += '**Direction:** ${train.direction > 0 ? "East →" : "West ←"}\n';
+
+          if (train.isCbtcTrain) {
+            response += '**Mode:** ${train.cbtcMode.name.toUpperCase()}\n';
+            response += '**NCT Status:** ${train.isNCT ? "⚠️ NCT (Non-Communicating)" : "✓ Communicating"}\n';
+          }
+
+          response += '\n**Would you like me to show you this train\'s location?**\n';
+          response += 'Say "yes" or "show train" to pan the camera to this train.';
+
+          // Store train ID for follow-up "yes" command
+          _pendingTrainLocation = train.id;
+
+          _addMessage('AI Agent', response, isAI: true);
+        } else {
+          _addMessage('AI Agent', '❌ Train $trainId not found. Available trains: ${controller.trains.map((t) => t.id).join(", ")}', isAI: true);
+        }
+      } else if (controller.trains.length == 1) {
+        // Only one train, show its location
+        final train = controller.trains.first;
+        final blockInfo = train.currentBlockId != null ? 'Block ${train.currentBlockId}' : 'Unknown block';
+
+        _addMessage('AI Agent', '''📍 Train ${train.id} is at $blockInfo
+Coordinates: (${train.x.toInt()}, ${train.y.toInt()})
+Speed: ${train.speed.toStringAsFixed(1)} km/h
+
+Say "show train" to pan the camera to this train.''', isAI: true);
+
+        _pendingTrainLocation = train.id;
+      } else {
+        _addMessage('AI Agent', '❓ Which train? Please specify: ${controller.trains.map((t) => t.id).join(", ")}', isAI: true);
+      }
+      return;
+    }
+
+    // Handle "yes" or "show train" for pending train location
+    if ((lower == 'yes' || lower.contains('show') && lower.contains('train') || lower.contains('go to')) && _pendingTrainLocation != null) {
+      final train = controller.trains.where((t) => t.id == _pendingTrainLocation).firstOrNull;
+
+      if (train != null) {
+        // Pan camera to train location
+        controller.panToPosition(train.x, train.y);
+        _addMessage('AI Agent', '🎯 Camera panned to ${train.id} at (${train.x.toInt()}, ${train.y.toInt()})', isAI: true);
+        _pendingTrainLocation = null;
+      } else {
+        _addMessage('AI Agent', '❌ Train $_pendingTrainLocation no longer exists.', isAI: true);
+        _pendingTrainLocation = null;
+      }
+      return;
+    }
+
     // Default - command not recognized
     _addMessage('AI Agent', '''⚠️ Command not recognized.
 

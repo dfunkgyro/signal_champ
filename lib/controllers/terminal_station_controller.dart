@@ -1197,49 +1197,51 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
-  void startAutomaticCollisionRecovery() {
-    if (!collisionAlarmActive) return;
-
-    for (var recoveryPlan in _activeCollisionRecoveries.values) {
-      recoveryPlan.state = CollisionRecoveryState.recovery;
-
-      for (var trainId in recoveryPlan.trainsInvolved) {
-        final train = trains.firstWhere((t) => t.id == trainId);
-        train.emergencyBrake = false;
-        _logEvent('🤖 Automatic recovery started for ${train.name}');
-      }
-    }
-
-    notifyListeners();
-  }
-
-  void startManualCollisionRecovery() {
-    if (!collisionAlarmActive) return;
-
-    for (var recoveryPlan in _activeCollisionRecoveries.values) {
-      recoveryPlan.state = CollisionRecoveryState.manualOverride;
-
-      for (var trainId in recoveryPlan.trainsInvolved) {
-        final train = trains.firstWhere((t) => t.id == trainId);
-        train.emergencyBrake = false;
-        train.controlMode = TrainControlMode.manual;
-        _logEvent('🎮 Manual recovery enabled for ${train.name}');
-      }
-    }
-
-    notifyListeners();
-  }
-
+  // Force collision resolution - moves colliding train back 100 units
   void forceCollisionResolution() {
+    if (!collisionAlarmActive || currentCollisionIncident == null) return;
+
+    // Find the train that moved into collision (not the one that was already there)
+    final incident = currentCollisionIncident!;
+    Train? movingTrain;
+
+    // Determine which train was moving - usually the second train in the list
+    if (incident.trainsInvolved.length >= 2) {
+      final trainId = incident.trainsInvolved[1]; // Second train is usually the one that crashed
+      movingTrain = trains.where((t) => t.id == trainId).firstOrNull;
+    } else if (incident.trainsInvolved.isNotEmpty) {
+      movingTrain = trains.where((t) => t.id == incident.trainsInvolved.first).firstOrNull;
+    }
+
+    if (movingTrain != null) {
+      // Move train back 100 units from collision location
+      final originalX = movingTrain.x;
+      movingTrain.x = incident.location.dx - (100 * movingTrain.direction);
+      movingTrain.speed = 0;
+      movingTrain.targetSpeed = 0;
+      movingTrain.emergencyBrake = true; // Keep emergency brake until acknowledged
+
+      _logEvent('🔄 ${movingTrain.name} moved back 100 units from collision at (${incident.location.dx.toInt()}, ${incident.location.dy.toInt()})');
+      _logEvent('ℹ️  Train repositioned from x=${originalX.toInt()} to x=${movingTrain.x.toInt()}');
+    }
+
+    // Don't clear alarm yet - require acknowledgment
+    _logEvent('⚠️  Collision alarm active - click Acknowledge to clear');
+    notifyListeners();
+  }
+
+  // Acknowledge and clear collision alarm
+  void acknowledgeCollisionAlarm() {
     _activeCollisionRecoveries.clear();
     collisionAlarmActive = false;
     currentCollisionIncident = null;
 
+    // Release emergency brakes
     for (var train in trains) {
       train.emergencyBrake = false;
     }
 
-    _logEvent('🔄 All collisions force-resolved by user');
+    _logEvent('✅ Collision alarm acknowledged and cleared');
     notifyListeners();
   }
 

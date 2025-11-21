@@ -12,9 +12,7 @@ class CollisionAlarmWidget extends StatefulWidget {
   final VoidCallback onDismiss;
   final bool isSPAD; // New parameter for SPAD incidents
   final String? trainStopId; // New parameter for train stop ID
-  final VoidCallback? onAutoRecover; // New: Auto recovery callback
-  final VoidCallback? onManualRecover; // New: Manual recovery callback
-  final VoidCallback? onForceResolve; // New: Force resolve callback
+  final VoidCallback? onForceResolve; // Force resolve callback
 
   const CollisionAlarmWidget({
     Key? key,
@@ -23,8 +21,6 @@ class CollisionAlarmWidget extends StatefulWidget {
     required this.onDismiss,
     this.isSPAD = false,
     this.trainStopId,
-    this.onAutoRecover,
-    this.onManualRecover,
     this.onForceResolve,
   }) : super(key: key);
 
@@ -161,26 +157,16 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
                 ),
               ),
               const SizedBox(width: 16),
-              // Recovery buttons (only show for collision, not SPAD)
-              if (!widget.isSPAD && widget.onAutoRecover != null) ...[
+              // Force Resolve button for collision recovery
+              if (!widget.isSPAD && widget.onForceResolve != null) ...[
                 ElevatedButton.icon(
-                  onPressed: widget.onAutoRecover,
-                  icon: const Icon(Icons.autorenew),
-                  label: const Text('Auto Recover'),
+                  onPressed: () {
+                    _confirmForceResolve(context);
+                  },
+                  icon: const Icon(Icons.undo),
+                  label: const Text('Force Recovery'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              if (!widget.isSPAD && widget.onManualRecover != null) ...[
-                ElevatedButton.icon(
-                  onPressed: widget.onManualRecover,
-                  icon: const Icon(Icons.directions),
-                  label: const Text('Manual'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange.shade700,
+                    backgroundColor: Colors.purple.shade700,
                     foregroundColor: Colors.white,
                   ),
                 ),
@@ -201,20 +187,6 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
                 ),
               ),
               const SizedBox(width: 8),
-              if (widget.onForceResolve != null) ...[
-                ElevatedButton.icon(
-                  onPressed: () {
-                    _confirmForceResolve(context);
-                  },
-                  icon: const Icon(Icons.done_all),
-                  label: const Text('Force Resolve'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple.shade700,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
               ElevatedButton.icon(
                 onPressed: () {
                   _soundService.stopAlarm();

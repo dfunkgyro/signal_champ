@@ -4240,7 +4240,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               // Dot Matrix Display - relocated under minimap
               Container(
                 width: 280,
-                height: 350, // Increased by 2.5x for better readability
+                height: 300, // Optimized height for better readability
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: const DotMatrixDisplay(),
               ),

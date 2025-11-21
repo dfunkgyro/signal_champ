@@ -1697,51 +1697,59 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         ..style = PaintingStyle.stroke
         ..strokeWidth = outlineWidth;
 
-      // Check if this is an M2 train (double unit)
-      final isM2Train = train.trainType == TrainType.m2 || train.trainType == TrainType.cbtcM2;
+      // Determine number of cars based on train type
+      int carCount = 1;
+      if (train.trainType == TrainType.m2 || train.trainType == TrainType.cbtcM2) {
+        carCount = 2;
+      } else if (train.trainType == TrainType.m4 || train.trainType == TrainType.cbtcM4) {
+        carCount = 4;
+      } else if (train.trainType == TrainType.m8 || train.trainType == TrainType.cbtcM8) {
+        carCount = 8;
+      }
 
-      if (isM2Train) {
-        // Draw two coupled train bodies for M2 trains
-        // First car (leading)
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(train.x - 30, train.y - 15, 50, 30),
-            const Radius.circular(6),
-          ),
-          bodyPaint,
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(train.x - 30, train.y - 15, 50, 30),
-            const Radius.circular(6),
-          ),
-          outlinePaint,
-        );
+      final isMultiCar = carCount > 1;
 
-        // Coupling/connector between cars
+      if (isMultiCar) {
+        // Draw multiple coupled train cars
         final couplingPaint = Paint()
           ..color = Colors.grey[700]!
           ..style = PaintingStyle.fill;
-        canvas.drawRect(
-          Rect.fromLTWH(train.x + 20, train.y - 4, 8, 8),
-          couplingPaint,
-        );
 
-        // Second car (trailing)
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(train.x + 28, train.y - 15, 50, 30),
-            const Radius.circular(6),
-          ),
-          bodyPaint,
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(train.x + 28, train.y - 15, 50, 30),
-            const Radius.circular(6),
-          ),
-          outlinePaint,
-        );
+        const double carWidth = 50.0;
+        const double couplingWidth = 8.0;
+        const double carHeight = 30.0;
+
+        // Calculate starting position to center the entire train
+        final totalWidth = (carCount * carWidth) + ((carCount - 1) * couplingWidth);
+        double xOffset = train.x - (totalWidth / 2);
+
+        for (int i = 0; i < carCount; i++) {
+          // Draw car
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(xOffset, train.y - 15, carWidth, carHeight),
+              const Radius.circular(6),
+            ),
+            bodyPaint,
+          );
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(xOffset, train.y - 15, carWidth, carHeight),
+              const Radius.circular(6),
+            ),
+            outlinePaint,
+          );
+
+          // Draw coupling between cars (except after last car)
+          if (i < carCount - 1) {
+            canvas.drawRect(
+              Rect.fromLTWH(xOffset + carWidth, train.y - 4, couplingWidth, 8),
+              couplingPaint,
+            );
+          }
+
+          xOffset += carWidth + couplingWidth;
+        }
       } else {
         // Draw single train body for M1 trains
         canvas.drawRRect(
@@ -1792,18 +1800,21 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       } else {
         // Windows for closed doors
         final windowPaint = Paint()..color = themeData.trainWindowColor;
-        if (isM2Train) {
-          // M2 train - draw windows on both cars
-          // First car windows
-          canvas.drawRect(
-              Rect.fromLTWH(train.x - 22, train.y - 10, 12, 8), windowPaint);
-          canvas.drawRect(
-              Rect.fromLTWH(train.x + 6, train.y - 10, 10, 8), windowPaint);
-          // Second car windows
-          canvas.drawRect(
-              Rect.fromLTWH(train.x + 32, train.y - 10, 10, 8), windowPaint);
-          canvas.drawRect(
-              Rect.fromLTWH(train.x + 54, train.y - 10, 12, 8), windowPaint);
+        if (isMultiCar) {
+          // Multi-car train - draw windows on each car
+          const double carWidth = 50.0;
+          const double couplingWidth = 8.0;
+          final totalWidth = (carCount * carWidth) + ((carCount - 1) * couplingWidth);
+          double xOffset = train.x - (totalWidth / 2);
+
+          for (int i = 0; i < carCount; i++) {
+            // Two windows per car
+            canvas.drawRect(
+                Rect.fromLTWH(xOffset + 8, train.y - 10, 12, 8), windowPaint);
+            canvas.drawRect(
+                Rect.fromLTWH(xOffset + 30, train.y - 10, 12, 8), windowPaint);
+            xOffset += carWidth + couplingWidth;
+          }
         } else {
           // M1 train - draw windows on single car
           canvas.drawRect(
@@ -1815,14 +1826,21 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         }
       }
 
-      // Wheels
+      // Wheels (2 wheels per car)
       final wheelPaint = Paint()..color = Colors.black;
-      if (isM2Train) {
-        // M2 train - draw wheels on both cars (4 wheels total)
-        canvas.drawCircle(Offset(train.x - 18, train.y + 15), 6, wheelPaint);
-        canvas.drawCircle(Offset(train.x + 8, train.y + 15), 6, wheelPaint);
-        canvas.drawCircle(Offset(train.x + 40, train.y + 15), 6, wheelPaint);
-        canvas.drawCircle(Offset(train.x + 66, train.y + 15), 6, wheelPaint);
+      if (isMultiCar) {
+        // Multi-car train - draw wheels for each car (2 per car)
+        const double carWidth = 50.0;
+        const double couplingWidth = 8.0;
+        final totalWidth = (carCount * carWidth) + ((carCount - 1) * couplingWidth);
+        double xOffset = train.x - (totalWidth / 2);
+
+        for (int i = 0; i < carCount; i++) {
+          // Two wheels per car
+          canvas.drawCircle(Offset(xOffset + 12, train.y + 15), 6, wheelPaint);
+          canvas.drawCircle(Offset(xOffset + 38, train.y + 15), 6, wheelPaint);
+          xOffset += carWidth + couplingWidth;
+        }
       } else {
         // M1 train - draw wheels on single car (2 wheels)
         canvas.drawCircle(Offset(train.x - 18, train.y + 15), 6, wheelPaint);

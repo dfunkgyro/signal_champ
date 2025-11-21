@@ -490,6 +490,8 @@ class TerminalStationController extends ChangeNotifier {
   late AxleCounterEvaluator ace;
   bool axleCountersVisible = true;
   bool signalsVisible = true;
+  bool miniMapVisible = true;
+  bool dotMatrixDisplayVisible = true;
 
   Duration _simulationRunningTime = Duration.zero;
   Timer? _simulationTimer;
@@ -563,9 +565,9 @@ class TerminalStationController extends ChangeNotifier {
   bool signallingSystemManagerVisible = false;
   Offset signallingSystemManagerPosition = const Offset(50, 50);
   double signallingSystemManagerOpacity = 1.0;
-  double signallingSystemManagerWidth = 175.0;
-  double signallingSystemManagerHeight = 250.0;
-  Color signallingSystemManagerColor = Colors.blue; // Customizable color
+  double signallingSystemManagerWidth = 280.0; // Matches mini map width
+  double signallingSystemManagerHeight = 140.0; // Matches mini map height
+  Color signallingSystemManagerColor = Colors.orange; // Matches mini map color
   int signallingSystemManagerDesignType = 0; // 0-3: Different design styles
   bool signallingSystemManagerCompactMode = false; // Compact view option
   bool signallingSystemManagerAutoScroll = true; // Auto-scroll chat
@@ -622,6 +624,7 @@ class TerminalStationController extends ChangeNotifier {
 
   Duration get simulationRunningTime => _simulationRunningTime;
   DateTime get currentTime => _currentTime;
+  DateTime? get simulationStartTime => _simulationStartTime;
 
   String getFormattedRunningTime() {
     final duration = _simulationRunningTime;
@@ -675,6 +678,18 @@ class TerminalStationController extends ChangeNotifier {
   void toggleSignalsVisibility() {
     signalsVisible = !signalsVisible;
     _logEvent(signalsVisible ? '✅ Signals enabled' : '❌ Signals disabled');
+    notifyListeners();
+  }
+
+  void toggleMiniMapVisibility() {
+    miniMapVisible = !miniMapVisible;
+    _logEvent(miniMapVisible ? '🗺️ Mini map shown' : '🗺️ Mini map hidden');
+    notifyListeners();
+  }
+
+  void toggleDotMatrixDisplayVisibility() {
+    dotMatrixDisplayVisible = !dotMatrixDisplayVisible;
+    _logEvent(dotMatrixDisplayVisible ? '📟 Train info display shown' : '📟 Train info display hidden');
     notifyListeners();
   }
 

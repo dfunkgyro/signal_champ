@@ -490,6 +490,9 @@ class TerminalStationController extends ChangeNotifier {
   Timer? _simulationTimer;
   DateTime? _simulationStartTime;
 
+  // Public getter for simulation start time
+  DateTime? get simulationStartTime => _simulationStartTime;
+
   bool collisionAlarmActive = false;
   CollisionIncident? currentCollisionIncident;
 

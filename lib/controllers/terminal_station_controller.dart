@@ -1245,37 +1245,18 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
+  // REMOVED: Auto and Manual collision recovery are no longer available
+  // Only Force Recovery (via acknowledgeCollisionAlarm) is supported
   void startAutomaticCollisionRecovery() {
-    if (!collisionAlarmActive) return;
-
-    for (var recoveryPlan in _activeCollisionRecoveries.values) {
-      recoveryPlan.state = CollisionRecoveryState.recovery;
-
-      for (var trainId in recoveryPlan.trainsInvolved) {
-        final train = trains.firstWhere((t) => t.id == trainId);
-        train.emergencyBrake = false;
-        _logEvent('🤖 Automatic recovery started for ${train.name}');
-      }
-    }
-
-    notifyListeners();
+    _logEvent('❌ Automatic collision recovery is disabled');
+    _logEvent('ℹ️  Use Force Recovery (Acknowledge button) to resolve collisions');
+    return;
   }
 
   void startManualCollisionRecovery() {
-    if (!collisionAlarmActive) return;
-
-    for (var recoveryPlan in _activeCollisionRecoveries.values) {
-      recoveryPlan.state = CollisionRecoveryState.manualOverride;
-
-      for (var trainId in recoveryPlan.trainsInvolved) {
-        final train = trains.firstWhere((t) => t.id == trainId);
-        train.emergencyBrake = false;
-        train.controlMode = TrainControlMode.manual;
-        _logEvent('🎮 Manual recovery enabled for ${train.name}');
-      }
-    }
-
-    notifyListeners();
+    _logEvent('❌ Manual collision recovery is disabled');
+    _logEvent('ℹ️  Use Force Recovery (Acknowledge button) to resolve collisions');
+    return;
   }
 
   void forceCollisionResolution() {
@@ -4162,7 +4143,7 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void acknowledgeCollisionAlarm() {
-    // Move collided trains back 20 units in opposite directions for recovery
+    // FORCE RECOVERY: Move the train that moved into collision back 100 units
     if (currentCollisionIncident != null &&
         currentCollisionIncident!.trainsInvolved.length >= 2) {
       final train1Id = currentCollisionIncident!.trainsInvolved[0];
@@ -4177,20 +4158,23 @@ class TerminalStationController extends ChangeNotifier {
         orElse: () => trains.first,
       );
 
-      // Move train 1 back 20 units in opposite direction
-      train1.x -= 20 * train1.direction;
-      train1.speed = 0;
-      train1.targetSpeed = 0;
-      train1.emergencyBrake = true;
-
-      // Move train 2 back 20 units in opposite direction
-      train2.x -= 20 * train2.direction;
+      // Determine which train moved into the collision
+      // (Usually train2 is the one that moved into train1)
+      // Move ONLY that train back by 100 units
+      train2.x -= 100 * train2.direction;
       train2.speed = 0;
       train2.targetSpeed = 0;
       train2.emergencyBrake = true;
 
+      // Keep train1 in place (it was stationary or had right-of-way)
+      train1.speed = 0;
+      train1.targetSpeed = 0;
+      train1.emergencyBrake = true;
+
       _logEvent(
-          '🔧 COLLISION RECOVERY: ${train1.name} and ${train2.name} moved back 20 units');
+          '🔧 FORCE RECOVERY: ${train2.name} moved back 100 units from collision location');
+      _logEvent(
+          'ℹ️  ${train1.name} remains in position. Click acknowledge to clear collision alarm.');
       _updateBlockOccupation();
     }
 
@@ -5420,6 +5404,28 @@ class TerminalStationController extends ChangeNotifier {
         train.targetSpeed = 0;
         train.speed = math.max(train.speed - 0.2, 0);
         continue;
+      }
+
+      // 4.5. CBTC OFF/STORAGE MODE - Trains cannot move in these modes
+      if (train.isCbtcTrain &&
+          (train.cbtcMode == CbtcMode.off || train.cbtcMode == CbtcMode.storage)) {
+        train.targetSpeed = 0;
+        train.speed = 0;
+        // Do not log repeatedly to avoid spam
+        continue;
+      }
+
+      // 4.6. CBTC NCT MODE - Only RM mode allowed, prevent AUTO/PM
+      if (train.isCbtcTrain && train.isNCT) {
+        // If train tries to go AUTO or PM while in NCT, force back to RM
+        if (train.cbtcMode == CbtcMode.auto || train.cbtcMode == CbtcMode.pm) {
+          train.cbtcMode = CbtcMode.rm;
+          train.emergencyBrake = true;
+          train.targetSpeed = 0;
+          train.speed = 0;
+          _logEvent('🚨 NCT ALERT: ${train.name} cannot enter AUTO/PM while NCT - switching to RM mode');
+          continue;
+        }
       }
 
       // 5. CBTC TRACTION LOSS - Check for traction current in train's area

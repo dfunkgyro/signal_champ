@@ -24,6 +24,7 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
   OpenAIService? _openAIService;
   bool _isProcessing = false;
   Map<String, dynamic>? _pendingCommand; // Store incomplete command for confirmation
+  String? _pendingTrainLocation; // Store train ID for "where is train" -> "yes" flow
   final FocusNode _inputFocusNode = FocusNode();
 
   @override
@@ -434,6 +435,82 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
       return;
     }
 
+    // "Where is the train?" - smart handling for single/multiple trains
+    if (lower.contains('where') && lower.contains('train')) {
+      final trainMatch = RegExp(r'train\s*(\d+)', caseSensitive: false).firstMatch(input);
+
+      if (trainMatch != null) {
+        // User specified a train ID
+        final trainId = trainMatch.group(1)!;
+        final train = controller.trains.where((t) => t.id == trainId).firstOrNull;
+
+        if (train != null) {
+          final blockInfo = train.currentBlockId != null ? 'Block ${train.currentBlockId}' : 'between blocks';
+          _pendingTrainLocation = trainId; // Store for "yes" response
+          _addMessage('AI Agent', '''📍 Train $trainId Location:
+• Position: $blockInfo
+• Coordinates: (${train.x.toInt()}, ${train.y.toInt()})
+• Speed: ${train.speed.toStringAsFixed(1)} km/h
+
+Would you like me to show you? Say "yes" or "go to train $trainId"''', isAI: true);
+        } else {
+          _addMessage('AI Agent', '❌ Train $trainId not found in the system.', isAI: true);
+        }
+      } else if (controller.trains.isEmpty) {
+        _addMessage('AI Agent', '⚠️ No trains in the system. Add a train first!', isAI: true);
+      } else if (controller.trains.length == 1) {
+        // Only one train, show its location
+        final train = controller.trains.first;
+        final blockInfo = train.currentBlockId != null ? 'Block ${train.currentBlockId}' : 'between blocks';
+        _pendingTrainLocation = train.id; // Store for "yes" response
+        _addMessage('AI Agent', '''📍 Train ${train.id} Location:
+• Position: $blockInfo
+• Coordinates: (${train.x.toInt()}, ${train.y.toInt()})
+• Speed: ${train.speed.toStringAsFixed(1)} km/h
+
+Would you like me to show you? Say "yes" or "go to train"''', isAI: true);
+      } else {
+        // Multiple trains, ask which one
+        final trainList = controller.trains.map((t) => 'Train ${t.id}').join(', ');
+        _addMessage('AI Agent', '''🚂 Multiple trains detected: $trainList
+
+Please specify which train, e.g., "where is train 1?"''', isAI: true);
+      }
+      return;
+    }
+
+    // "Go to train" or "show train" - pan to train location
+    if ((lower.contains('go to') || lower.contains('show') || lower == 'yes') &&
+        (lower.contains('train') || _pendingTrainLocation != null)) {
+      final trainMatch = RegExp(r'train\s*(\d+)', caseSensitive: false).firstMatch(input);
+      String? trainId = trainMatch?.group(1);
+
+      // If user just said "yes" or "go to train" without ID, use pending location
+      if (trainId == null && _pendingTrainLocation != null) {
+        trainId = _pendingTrainLocation;
+      }
+
+      // If still no ID and only one train exists, use that
+      if (trainId == null && controller.trains.length == 1) {
+        trainId = controller.trains.first.id;
+      }
+
+      if (trainId != null) {
+        final train = controller.trains.where((t) => t.id == trainId).firstOrNull;
+        if (train != null) {
+          controller.panToPosition(train.x, train.y, zoom: 1.2);
+          controller.highlightItem(trainId, 'train');
+          _addMessage('AI Agent', '📍 Showing Train $trainId location', isAI: true);
+          _pendingTrainLocation = null; // Clear pending
+        } else {
+          _addMessage('AI Agent', '❌ Train $trainId not found', isAI: true);
+        }
+      } else {
+        _addMessage('AI Agent', '⚠️ Please specify which train (e.g., "go to train 1")', isAI: true);
+      }
+      return;
+    }
+
     // Search and pan commands
     if (lower.contains('find') || lower.contains('search') || lower.contains('locate')) {
       final trainMatch = RegExp(r'train\s*(\d+)', caseSensitive: false).firstMatch(input);
@@ -510,6 +587,33 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
     if (lower.contains('stop following') || lower.contains('unfollow')) {
       controller.stopFollowingTrain();
       _addMessage('AI Agent', '✅ Stopped following train', isAI: true);
+      return;
+    }
+
+    // Time queries - simulation time and current date/time
+    if (lower.contains('time') || lower.contains('date') || lower.contains('running time')) {
+      final now = DateTime.now();
+      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+
+      String response = '🕐 **TIME INFORMATION**\n\n';
+      response += '**Current Date:** $dateStr\n';
+      response += '**Current Time:** $timeStr\n';
+
+      // Simulation running time
+      if (controller.simulationStartTime != null) {
+        final elapsed = DateTime.now().difference(controller.simulationStartTime!);
+        final hours = elapsed.inHours;
+        final minutes = elapsed.inMinutes % 60;
+        final seconds = elapsed.inSeconds % 60;
+
+        response += '**Simulation Time:** ${hours}h ${minutes}m ${seconds}s\n';
+        response += '**Status:** ${controller.isRunning ? "RUNNING ▶️" : "PAUSED ⏸️"}';
+      } else {
+        response += '**Simulation:** Not started yet';
+      }
+
+      _addMessage('AI Agent', response, isAI: true);
       return;
     }
 
@@ -785,15 +889,66 @@ Once running, trains will move, signals will respond to routes, and the railway 
 
         _addMessage('AI Agent', response, isAI: true);
       } else {
-        _addMessage('AI Agent', '''⚠️ Please specify which train (e.g., "why is train 1 not moving?")
+        // No train ID specified - list ALL non-moving trains
+        final stoppedTrains = controller.trains.where((t) => t.speed == 0).toList();
 
-**Common reasons trains don't move:**
-• Simulation paused → Press Play
-• Emergency brake active → Clear emergency
-• Doors open at platform → Wait 20 sec for auto-close
-• Waiting at red signal → Set route to clear signal
-• Manual mode without input → Switch to automatic
-• Manual stop engaged → Release manual stop''', isAI: true);
+        if (stoppedTrains.isEmpty) {
+          _addMessage('AI Agent', '✅ All trains are currently moving!', isAI: true);
+        } else if (stoppedTrains.length == controller.trains.length && controller.trains.isNotEmpty) {
+          // All trains are stopped
+          String response = '🚂 **ALL TRAINS ARE STOPPED**\n\n';
+
+          for (final train in stoppedTrains.take(5)) {
+            // Limit to 5 trains to avoid too long messages
+            response += '**Train ${train.id}:** ';
+
+            final reasons = <String>[];
+            if (train.emergencyBrake) reasons.add('Emergency brake');
+            if (train.manualStop) reasons.add('Manual stop');
+            if (train.doorsOpen) reasons.add('Doors open');
+            if (train.controlMode == TrainControlMode.manual) reasons.add('Manual mode');
+            if (train.targetSpeed == 0) reasons.add('Target speed 0');
+
+            if (reasons.isEmpty) {
+              response += 'Waiting at signal\n';
+            } else {
+              response += '${reasons.join(', ')}\n';
+            }
+          }
+
+          if (stoppedTrains.length > 5) {
+            response += '\n... and ${stoppedTrains.length - 5} more trains.\n';
+          }
+
+          response += '\n💡 Ask about a specific train for detailed diagnosis (e.g., "why is train 1 not moving?")';
+          _addMessage('AI Agent', response, isAI: true);
+        } else {
+          // Some trains stopped, some moving
+          String response = '🚂 **STOPPED TRAINS (${stoppedTrains.length}/${controller.trains.length})**\n\n';
+
+          for (final train in stoppedTrains.take(5)) {
+            response += '**Train ${train.id}** at Block ${train.currentBlockId ?? "unknown"}: ';
+
+            final reasons = <String>[];
+            if (train.emergencyBrake) reasons.add('Emergency brake');
+            if (train.manualStop) reasons.add('Manual stop');
+            if (train.doorsOpen) reasons.add('Doors open');
+            if (train.controlMode == TrainControlMode.manual) reasons.add('Manual mode');
+
+            if (reasons.isEmpty) {
+              response += 'Waiting at signal\n';
+            } else {
+              response += '${reasons.join(', ')}\n';
+            }
+          }
+
+          if (stoppedTrains.length > 5) {
+            response += '\n... and ${stoppedTrains.length - 5} more stopped trains.\n';
+          }
+
+          response += '\n💡 Ask about a specific train for detailed diagnosis (e.g., "why is train 1 not moving?")';
+          _addMessage('AI Agent', response, isAI: true);
+        }
       }
       return;
     }

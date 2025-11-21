@@ -4789,6 +4789,14 @@ class TerminalStationController extends ChangeNotifier {
         continue;
       }
 
+      // 1.2. CBTC MODE CHECK - Trains in OFF or STORAGE mode cannot move
+      if (train.isCbtcTrain && (train.cbtcMode == CbtcMode.off || train.cbtcMode == CbtcMode.storage)) {
+        train.targetSpeed = 0;
+        train.speed = 0;
+        // Don't log repeatedly - only when mode is first set
+        continue;
+      }
+
       // 1.5. CLOSED BLOCK CHECK - Auto trains emergency brake in/approaching closed blocks
       if (train.controlMode == TrainControlMode.automatic) {
         // Check if current block is closed

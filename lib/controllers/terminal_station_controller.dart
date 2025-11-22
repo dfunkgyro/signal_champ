@@ -7346,6 +7346,101 @@ class TerminalStationController extends ChangeNotifier {
     return true;
   }
 
+  /// Get component data for undo/redo (serialization)
+  Map<String, dynamic> getComponentData(String type, String id) {
+    final data = <String, dynamic>{};
+
+    switch (type.toLowerCase()) {
+      case 'signal':
+        final signal = signals[id];
+        if (signal != null) {
+          data['id'] = signal.id;
+          data['x'] = signal.x;
+          data['y'] = signal.y;
+          data['direction'] = signal.direction.toString();
+          data['aspect'] = signal.aspect.toString();
+        }
+        break;
+      case 'point':
+        final point = points[id];
+        if (point != null) {
+          data['id'] = point.id;
+          data['x'] = point.x;
+          data['y'] = point.y;
+          data['position'] = point.position.toString();
+          data['locked'] = point.locked;
+        }
+        break;
+      case 'platform':
+        final platform = platforms.where((p) => p.id == id).firstOrNull;
+        if (platform != null) {
+          data['id'] = platform.id;
+          data['startX'] = platform.startX;
+          data['endX'] = platform.endX;
+          data['y'] = platform.y;
+          data['name'] = platform.name;
+        }
+        break;
+      case 'trainstop':
+        final stop = trainStops[id];
+        if (stop != null) {
+          data['id'] = stop.id;
+          data['signalId'] = stop.signalId;
+          data['x'] = stop.x;
+          data['y'] = stop.y;
+          data['enabled'] = stop.enabled;
+        }
+        break;
+      case 'axlecounter':
+        final counter = axleCounters[id];
+        if (counter != null) {
+          data['id'] = counter.id;
+          data['x'] = counter.x;
+          data['y'] = counter.y;
+          data['flipped'] = counter.flipped;
+        }
+        break;
+      case 'bufferstop':
+        final buffer = bufferStops[id];
+        if (buffer != null) {
+          data['id'] = buffer.id;
+          data['x'] = buffer.x;
+          data['y'] = buffer.y;
+        }
+        break;
+      case 'transponder':
+        final transponder = transponders[id];
+        if (transponder != null) {
+          data['id'] = transponder.id;
+          data['x'] = transponder.x;
+          data['y'] = transponder.y;
+          data['description'] = transponder.description;
+        }
+        break;
+      case 'wifiantenna':
+        final wifi = wifiAntennas[id];
+        if (wifi != null) {
+          data['id'] = wifi.id;
+          data['x'] = wifi.x;
+          data['y'] = wifi.y;
+          data['isActive'] = wifi.isActive;
+        }
+        break;
+      case 'block':
+        final block = blocks[id];
+        if (block != null) {
+          data['id'] = block.id;
+          data['startX'] = block.startX;
+          data['endX'] = block.endX;
+          data['y'] = block.y;
+          data['name'] = block.name;
+        }
+        break;
+    }
+
+    return data;
+  }
+
   /// Delete a component (with safety checks)
   void deleteComponent(String type, String id) {
     if (!canDeleteComponent(type, id)) {

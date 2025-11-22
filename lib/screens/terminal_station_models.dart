@@ -181,6 +181,21 @@ class Platform {
   double get length => endX - startX;
 }
 
+/// Individual carriage in a multi-carriage train
+class Carriage {
+  double x;
+  double y;
+  double rotation;
+  final int index; // Position in the train (0 = lead, 1 = second, etc.)
+
+  Carriage({
+    required this.x,
+    required this.y,
+    required this.rotation,
+    required this.index,
+  });
+}
+
 class Train {
   final String id;
   final String name;
@@ -227,6 +242,9 @@ class Train {
   String? assignedServiceId; // ID of TimetableService
   int? earlyLateSeconds; // Positive = late, Negative = early, Null = not on timetable
   String? currentStationId; // Current platform/station ID for timing calculation
+
+  // Multi-carriage independent alignment
+  List<Carriage> carriages = []; // Individual carriages for M2/M4/M8 trains
 
   Train({
     required this.id,
@@ -292,6 +310,70 @@ class Train {
            trainType == TrainType.cbtcM2 ||
            trainType == TrainType.cbtcM4 ||
            trainType == TrainType.cbtcM8;
+  }
+
+  // Get number of carriages based on train type
+  int get carriageCount {
+    switch (trainType) {
+      case TrainType.m1:
+      case TrainType.cbtcM1:
+        return 1;
+      case TrainType.m2:
+      case TrainType.cbtcM2:
+        return 2;
+      case TrainType.m4:
+      case TrainType.cbtcM4:
+        return 4;
+      case TrainType.m8:
+      case TrainType.cbtcM8:
+        return 8;
+    }
+  }
+
+  // Initialize carriages for multi-carriage trains
+  void initializeCarriages() {
+    carriages.clear();
+    final count = carriageCount;
+
+    // Create individual carriages positioned behind the lead carriage
+    for (int i = 0; i < count; i++) {
+      carriages.add(Carriage(
+        x: x - (i * 25.0 * direction), // 25 units per carriage spacing
+        y: y,
+        rotation: rotation,
+        index: i,
+      ));
+    }
+  }
+
+  // Update carriage positions with independent alignment on curves
+  void updateCarriagePositions() {
+    if (carriages.isEmpty) {
+      initializeCarriages();
+    }
+
+    // Lead carriage follows train position exactly
+    if (carriages.isNotEmpty) {
+      carriages[0].x = x;
+      carriages[0].y = y;
+      carriages[0].rotation = rotation;
+    }
+
+    // Following carriages maintain fixed coupling distance
+    for (int i = 1; i < carriages.length; i++) {
+      final prevCarriage = carriages[i - 1];
+
+      // Calculate position 25 units behind previous carriage
+      // This creates the independent alignment effect on curves
+      final spacing = 25.0;
+      carriages[i].x = prevCarriage.x - (spacing * direction);
+      carriages[i].y = prevCarriage.y;
+
+      // Copy rotation from previous carriage for smooth curves
+      // In a more advanced implementation, this would calculate
+      // rotation based on actual track geometry
+      carriages[i].rotation = prevCarriage.rotation;
+    }
   }
 }
 

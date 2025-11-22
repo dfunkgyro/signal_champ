@@ -1714,7 +1714,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       final isMultiCar = carCount > 1;
 
       if (isMultiCar) {
-        // Draw multiple coupled train cars
+        // Draw multiple coupled train cars with individual carriage alignment
         final couplingPaint = Paint()
           ..color = Colors.grey[700]!
           ..style = PaintingStyle.fill;
@@ -1723,36 +1723,52 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         const double couplingWidth = 8.0;
         const double carHeight = 30.0;
 
-        // Calculate starting position to center the entire train
-        final totalWidth = (carCount * carWidth) + ((carCount - 1) * couplingWidth);
-        double xOffset = train.x - (totalWidth / 2);
+        // Update carriage positions for independent alignment
+        train.updateCarriagePositions();
 
-        for (int i = 0; i < carCount; i++) {
-          // Draw car
+        // Draw each carriage at its individual position and rotation
+        for (int i = 0; i < train.carriages.length; i++) {
+          final carriage = train.carriages[i];
+
+          // Save canvas state for individual carriage rotation
+          canvas.save();
+
+          // Apply individual carriage rotation if it differs from train rotation
+          if (carriage.rotation != 0.0) {
+            canvas.translate(carriage.x, carriage.y);
+            canvas.rotate(carriage.rotation);
+            canvas.translate(-carriage.x, -carriage.y);
+          }
+
+          // Draw car centered on carriage position
           canvas.drawRRect(
             RRect.fromRectAndRadius(
-              Rect.fromLTWH(xOffset, train.y - 15, carWidth, carHeight),
+              Rect.fromLTWH(carriage.x - 25, carriage.y - 15, carWidth, carHeight),
               const Radius.circular(6),
             ),
             bodyPaint,
           );
           canvas.drawRRect(
             RRect.fromRectAndRadius(
-              Rect.fromLTWH(xOffset, train.y - 15, carWidth, carHeight),
+              Rect.fromLTWH(carriage.x - 25, carriage.y - 15, carWidth, carHeight),
               const Radius.circular(6),
             ),
             outlinePaint,
           );
 
+          canvas.restore();
+
           // Draw coupling between cars (except after last car)
-          if (i < carCount - 1) {
+          if (i < train.carriages.length - 1) {
+            final nextCarriage = train.carriages[i + 1];
+            final couplingX = (carriage.x + nextCarriage.x) / 2;
+            final couplingY = (carriage.y + nextCarriage.y) / 2;
+
             canvas.drawRect(
-              Rect.fromLTWH(xOffset + carWidth, train.y - 4, couplingWidth, 8),
+              Rect.fromLTWH(couplingX - 4, couplingY - 4, couplingWidth, 8),
               couplingPaint,
             );
           }
-
-          xOffset += carWidth + couplingWidth;
         }
       } else {
         // Draw single train body for M1 trains

@@ -4275,6 +4275,9 @@ class TerminalStationController extends ChangeNotifier {
 
     trains.add(train);
 
+    // Initialize individual carriages for multi-carriage trains
+    train.initializeCarriages();
+
     // Log NCT alert if CBTC train starts in NCT state
     if (train.isNCT) {
       _logEvent(

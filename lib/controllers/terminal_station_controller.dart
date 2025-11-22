@@ -7158,6 +7158,100 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Delete the currently selected component
+  void deleteSelectedComponent() {
+    if (selectedComponentType == null || selectedComponentId == null) {
+      _logEvent('❌ No component selected');
+      return;
+    }
+
+    // Get component data for undo
+    final componentData = getComponentData(selectedComponentType!, selectedComponentId!);
+
+    if (componentData.isEmpty) {
+      _logEvent('❌ Component $selectedComponentId not found');
+      clearSelection();
+      return;
+    }
+
+    // Execute delete command (with undo support)
+    final command = DeleteComponentCommand(
+      this,
+      selectedComponentType!,
+      selectedComponentId!,
+      componentData,
+    );
+
+    try {
+      commandHistory.executeCommand(command);
+      _logEvent('🗑️ Deleted $selectedComponentType $selectedComponentId');
+      clearSelection();
+    } catch (e) {
+      _logEvent('❌ Cannot delete: $e');
+    }
+  }
+
+  /// Move the currently selected component
+  void moveSelectedComponent(double newX, double newY) {
+    if (selectedComponentType == null || selectedComponentId == null) return;
+
+    final type = selectedComponentType!;
+    final id = selectedComponentId!;
+
+    switch (type.toLowerCase()) {
+      case 'signal':
+        final signal = signals[id];
+        if (signal != null) {
+          final command = MoveSignalCommand(this, id, signal.x, signal.y, newX, newY);
+          commandHistory.executeCommand(command);
+          notifyListeners();
+        }
+        break;
+      case 'point':
+        final point = points[id];
+        if (point != null) {
+          final command = MovePointCommand(this, id, point.x, point.y, newX, newY);
+          commandHistory.executeCommand(command);
+          notifyListeners();
+        }
+        break;
+      case 'platform':
+        final platform = platforms.where((p) => p.id == id).firstOrNull;
+        if (platform != null) {
+          final dx = newX - platform.centerX;
+          final command = MovePlatformCommand(
+            this,
+            id,
+            platform.startX,
+            platform.endX,
+            platform.y,
+            platform.startX + dx,
+            platform.endX + dx,
+            newY,
+          );
+          commandHistory.executeCommand(command);
+          notifyListeners();
+        }
+        break;
+      case 'trainstop':
+        final stop = trainStops[id];
+        if (stop != null) {
+          final command = MoveTrainStopCommand(this, id, stop.x, stop.y, newX, newY);
+          commandHistory.executeCommand(command);
+          notifyListeners();
+        }
+        break;
+      case 'axlecounter':
+        final counter = axleCounters[id];
+        if (counter != null) {
+          final command = MoveAxleCounterCommand(this, id, counter.x, counter.y, newX, newY);
+          commandHistory.executeCommand(command);
+          notifyListeners();
+        }
+        break;
+    }
+  }
+
   /// Generate unique ID for a component type
   String generateUniqueId(String componentType) {
     Set<String> existingIds = {};

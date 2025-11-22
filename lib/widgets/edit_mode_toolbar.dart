@@ -340,11 +340,10 @@ class EditModeToolbar extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              controller.deleteComponent(type, id);
-              controller.clearSelection();
+              controller.deleteSelectedComponent(); // Uses command pattern with undo
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Deleted $type $id')),
+                SnackBar(content: Text('Deleted $type $id (undo with Ctrl+Z)')),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),

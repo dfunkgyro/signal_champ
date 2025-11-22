@@ -934,6 +934,23 @@ Once running, trains will move, signals will respond to routes, and the railway 
             diagnostics.add('   → Doors will auto-close after 20 seconds at platforms');
           }
 
+          // Check CBTC mode restrictions
+          if (train.isCbtcTrain) {
+            if (train.cbtcMode == CbtcMode.off) {
+              diagnostics.add('⚪ CBTC train is in OFF mode');
+              diagnostics.add('   → Train cannot move in OFF mode');
+              diagnostics.add('   → Switch to STORAGE or RM mode to enable movement');
+            } else if (train.cbtcMode == CbtcMode.storage) {
+              diagnostics.add('🟢 CBTC train is in STORAGE mode');
+              diagnostics.add('   → Train cannot move in STORAGE mode');
+              diagnostics.add('   → Switch to RM mode to begin NCT re-entry process');
+            } else if (train.isNCT) {
+              diagnostics.add('🔴 CBTC train is in NCT (Non-Communicating Train) state');
+              diagnostics.add('   → Switch to RM mode and pass over 2 transponders to re-activate');
+              diagnostics.add('   → Transponders passed: ${train.transpondersPassed}/2');
+            }
+          }
+
           // Check if train is waiting at red signal
           if (train.currentBlockId != null) {
             // Look for signals protecting this block

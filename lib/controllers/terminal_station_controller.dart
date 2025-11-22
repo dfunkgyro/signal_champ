@@ -497,6 +497,9 @@ class TerminalStationController extends ChangeNotifier {
   Timer? _simulationTimer;
   DateTime? _simulationStartTime;
 
+  // Public getter for simulation start time
+  DateTime? get simulationStartTime => _simulationStartTime;
+
   bool collisionAlarmActive = false;
   CollisionIncident? currentCollisionIncident;
 
@@ -1259,16 +1262,18 @@ class TerminalStationController extends ChangeNotifier {
     return;
   }
 
-  void forceCollisionResolution() {
+  // Acknowledge and clear collision alarm
+  void acknowledgeCollisionAlarm() {
     _activeCollisionRecoveries.clear();
     collisionAlarmActive = false;
     currentCollisionIncident = null;
 
+    // Release emergency brakes
     for (var train in trains) {
       train.emergencyBrake = false;
     }
 
-    _logEvent('🔄 All collisions force-resolved by user');
+    _logEvent('✅ Collision alarm acknowledged and cleared');
     notifyListeners();
   }
 
@@ -5324,6 +5329,14 @@ class TerminalStationController extends ChangeNotifier {
       if (train.doorsOpen) {
         train.targetSpeed = 0;
         train.speed = 0;
+        continue;
+      }
+
+      // 1.2. CBTC MODE CHECK - Trains in OFF or STORAGE mode cannot move
+      if (train.isCbtcTrain && (train.cbtcMode == CbtcMode.off || train.cbtcMode == CbtcMode.storage)) {
+        train.targetSpeed = 0;
+        train.speed = 0;
+        // Don't log repeatedly - only when mode is first set
         continue;
       }
 

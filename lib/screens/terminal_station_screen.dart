@@ -393,28 +393,16 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           currentIncident: controller.currentCollisionIncident,
                           onDismiss: () =>
                               controller.acknowledgeCollisionAlarm(),
-                          onAutoRecover: () {
-                            controller.startAutomaticCollisionRecovery();
+                          onForceResolve: () {
+                            controller.forceCollisionResolution();
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('🤖 Automatic recovery started'),
-                                backgroundColor: Colors.blue,
-                                duration: Duration(seconds: 2),
+                                content: Text('🔄 Force recovery: Train moved back 100 units'),
+                                backgroundColor: Colors.purple,
+                                duration: Duration(seconds: 3),
                               ),
                             );
                           },
-                          onManualRecover: () {
-                            controller.startManualCollisionRecovery();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('🎮 Manual recovery enabled'),
-                                backgroundColor: Colors.orange,
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          onForceResolve: () =>
-                              controller.forceCollisionResolution(),
                         )
                       : const SizedBox.shrink(),
                 );

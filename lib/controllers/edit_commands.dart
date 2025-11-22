@@ -365,6 +365,156 @@ class AddComponentCommand implements EditCommand {
   String get description => 'Add $componentType $componentId';
 }
 
+/// Command to move a block section
+class MoveBlockCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String blockId;
+  final double oldStartX, oldEndX, oldY;
+  final double newStartX, newEndX, newY;
+
+  MoveBlockCommand(
+    this.controller,
+    this.blockId,
+    this.oldStartX,
+    this.oldEndX,
+    this.oldY,
+    this.newStartX,
+    this.newEndX,
+    this.newY,
+  );
+
+  @override
+  void execute() {
+    final block = controller.blocks[blockId];
+    if (block != null) {
+      block.startX = newStartX;
+      block.endX = newEndX;
+      block.y = newY;
+    }
+  }
+
+  @override
+  void undo() {
+    final block = controller.blocks[blockId];
+    if (block != null) {
+      block.startX = oldStartX;
+      block.endX = oldEndX;
+      block.y = oldY;
+    }
+  }
+
+  @override
+  String get description => 'Move Block $blockId';
+}
+
+/// Command to resize a block section
+class ResizeBlockCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String blockId;
+  final double oldStartX, oldEndX;
+  final double newStartX, newEndX;
+
+  ResizeBlockCommand(
+    this.controller,
+    this.blockId,
+    this.oldStartX,
+    this.oldEndX,
+    this.newStartX,
+    this.newEndX,
+  );
+
+  @override
+  void execute() {
+    final block = controller.blocks[blockId];
+    if (block != null) {
+      block.startX = newStartX;
+      block.endX = newEndX;
+    }
+  }
+
+  @override
+  void undo() {
+    final block = controller.blocks[blockId];
+    if (block != null) {
+      block.startX = oldStartX;
+      block.endX = oldEndX;
+    }
+  }
+
+  @override
+  String get description => 'Resize Block $blockId';
+}
+
+/// Command to create a new block section
+class CreateBlockCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String blockId;
+  final double startX, endX, y;
+  final String? name;
+
+  CreateBlockCommand(
+    this.controller,
+    this.blockId,
+    this.startX,
+    this.endX,
+    this.y, {
+    this.name,
+  });
+
+  @override
+  void execute() {
+    final block = BlockSection(
+      id: blockId,
+      name: name,
+      startX: startX,
+      endX: endX,
+      y: y,
+      occupied: false,
+    );
+    controller.blocks[blockId] = block;
+  }
+
+  @override
+  void undo() {
+    controller.blocks.remove(blockId);
+  }
+
+  @override
+  String get description => 'Create Block $blockId';
+}
+
+/// Command to delete a block section (with train check)
+class DeleteBlockCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String blockId;
+  final BlockSection? _savedBlock;
+
+  DeleteBlockCommand(
+    this.controller,
+    this.blockId,
+  ) : _savedBlock = controller.blocks[blockId];
+
+  @override
+  void execute() {
+    // Check if block has a train on it
+    final block = controller.blocks[blockId];
+    if (block != null && block.occupied) {
+      throw Exception('Cannot delete block $blockId - train ${block.occupyingTrainId} is on it');
+    }
+    controller.blocks.remove(blockId);
+  }
+
+  @override
+  void undo() {
+    if (_savedBlock != null) {
+      controller.blocks[blockId] = _savedBlock!;
+    }
+  }
+
+  @override
+  String get description => 'Delete Block $blockId';
+}
+
 /// Command History Manager - manages undo/redo stacks
 class CommandHistory {
   final List<EditCommand> _undoStack = [];

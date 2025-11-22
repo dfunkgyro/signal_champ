@@ -3272,6 +3272,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         return 'CBTC M1 (Single Unit - 2 wheels)';
       case TrainType.cbtcM2:
         return 'CBTC M2 (Double Unit - 4 wheels)';
+        case TrainType.m4:
+        return 'M4 (Single Unit - 8 wheels)';
+      case TrainType.m8:
+        return 'M8 (Double Unit - 16 wheels)';
+      case TrainType.cbtcM4:
+        return 'CBTC M4 (Single Unit - 8 wheels)';
+      case TrainType.cbtcM8:
+        return 'CBTC M8 (Double Unit - 16 wheels)';
     }
   }
 
@@ -4198,32 +4206,34 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
 
               // Mini Map
-              MiniMapWidgetEnhanced(
-                canvasWidth: _canvasWidth,
-                canvasHeight: _canvasHeight,
-                cameraOffsetX: _cameraOffsetX,
-                cameraOffsetY: _cameraOffsetY,
-                cameraZoom: _zoom,
-                viewportWidth: viewportWidth,
-                viewportHeight: viewportHeight,
-                onNavigate: (x, y) {
-                  _controller.panToPosition(
-                    x,
-                    y,
-                    viewportWidth: viewportWidth,
-                    viewportHeight: viewportHeight,
-                  );
-                  _controller.disableAutoFollow();
-                },
-              ),
+              if (_controller.miniMapVisible)
+                MiniMapWidgetEnhanced(
+                  canvasWidth: _canvasWidth,
+                  canvasHeight: _canvasHeight,
+                  cameraOffsetX: _cameraOffsetX,
+                  cameraOffsetY: _cameraOffsetY,
+                  cameraZoom: _zoom,
+                  viewportWidth: viewportWidth,
+                  viewportHeight: viewportHeight,
+                  onNavigate: (x, y) {
+                    _controller.panToPosition(
+                      x,
+                      y,
+                      viewportWidth: viewportWidth,
+                      viewportHeight: viewportHeight,
+                    );
+                    _controller.disableAutoFollow();
+                  },
+                ),
 
               // Dot Matrix Display - relocated under minimap
-              Container(
-                width: 280,
-                height: 300, // Optimized height for better readability
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: const DotMatrixDisplay(),
-              ),
+              if (_controller.dotMatrixDisplayVisible)
+                Container(
+                  width: 280,
+                  height: 300, // Optimized height for better readability
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: const DotMatrixDisplay(),
+                ),
 
               // Rest of the status panel content
               Expanded(
@@ -4770,6 +4780,56 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                                   ),
                                 ),
 
+                                // Mini Map Visibility Toggle
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      controller.toggleMiniMapVisibility(),
+                                  icon: Icon(
+                                    controller.miniMapVisible
+                                        ? Icons.map
+                                        : Icons.map_outlined,
+                                    size: 16,
+                                  ),
+                                  label: Text(
+                                    'Mini Map: ${controller.miniMapVisible ? 'ON' : 'OFF'}',
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        controller.miniMapVisible
+                                            ? Colors.blue
+                                            : Colors.grey,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                  ),
+                                ),
+
+                                // Dot Matrix Display Visibility Toggle
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      controller.toggleDotMatrixDisplayVisibility(),
+                                  icon: Icon(
+                                    controller.dotMatrixDisplayVisible
+                                        ? Icons.grid_on
+                                        : Icons.grid_off,
+                                    size: 16,
+                                  ),
+                                  label: Text(
+                                    'Train Info: ${controller.dotMatrixDisplayVisible ? 'ON' : 'OFF'}',
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        controller.dotMatrixDisplayVisible
+                                            ? Colors.orange
+                                            : Colors.grey,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                  ),
+                                ),
+
                                 // Reset ACE
                                 ElevatedButton.icon(
                                   onPressed: () => controller.resetACE(),
@@ -5120,6 +5180,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         return 'CBTC M1';
       case TrainType.cbtcM2:
         return 'CBTC M2';
+      case TrainType.m4:
+        return 'M4 (Single)';
+      case TrainType.m8:
+        return 'M8 (Double)';
+      case TrainType.cbtcM4:
+        return 'CBTC M4';
+      case TrainType.cbtcM8:
+        return 'CBTC M8';
     }
   }
 

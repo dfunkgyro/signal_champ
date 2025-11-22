@@ -127,7 +127,8 @@ class _TimetableViewState extends State<TimetableView> {
                       color: Colors.white,
                       onPressed: () {
                         setState(() {
-                          _selectedTimeSlot = (_selectedTimeSlot - 1).clamp(0, _totalSlots - 1);
+                          _selectedTimeSlot =
+                              (_selectedTimeSlot - 1).clamp(0, _totalSlots - 1);
                         });
                       },
                     ),
@@ -143,7 +144,8 @@ class _TimetableViewState extends State<TimetableView> {
                       color: Colors.white,
                       onPressed: () {
                         setState(() {
-                          _selectedTimeSlot = (_selectedTimeSlot + 1).clamp(0, _totalSlots - 1);
+                          _selectedTimeSlot =
+                              (_selectedTimeSlot + 1).clamp(0, _totalSlots - 1);
                         });
                       },
                     ),
@@ -250,7 +252,8 @@ class _TimetableViewState extends State<TimetableView> {
     );
   }
 
-  Widget _buildTrainTimeline(Train train, TerminalStationController controller) {
+  Widget _buildTrainTimeline(
+      Train train, TerminalStationController controller) {
     // Calculate train's position on the timeline
     final currentHour = controller.currentTime.hour;
     final currentMinute = controller.currentTime.minute;
@@ -283,6 +286,14 @@ class _TimetableViewState extends State<TimetableView> {
       case TrainType.cbtcM1:
         return Colors.cyan;
       case TrainType.cbtcM2:
+        return Colors.teal;
+      case TrainType.m4:
+        return Colors.blue;
+      case TrainType.m8:
+        return Colors.purple;
+      case TrainType.cbtcM4:
+        return Colors.cyan;
+      case TrainType.cbtcM8:
         return Colors.teal;
     }
   }

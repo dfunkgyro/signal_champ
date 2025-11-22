@@ -7255,6 +7255,107 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
+  // ============================================================================
+  // CROSSOVER EDIT MODE METHODS
+  // ============================================================================
+
+  /// Create a new crossover at specified position
+  void createCrossover(double x, double y) {
+    // Generate unique crossover ID
+    int crossoverNum = 1;
+    while (blocks.containsKey('crossover_$crossoverNum')) {
+      crossoverNum++;
+    }
+
+    final crossoverId = crossoverNum.toString();
+    final blockId = 'crossover_$crossoverNum';
+    final pointIds = [
+      '${crossoverId}A',
+      '${crossoverId}B',
+      '${crossoverId}C',
+      '${crossoverId}D',
+    ];
+
+    // Create command and execute
+    final command = CreateCrossoverCommand(
+      this,
+      crossoverId,
+      x,
+      y,
+      pointIds,
+      blockId,
+    );
+
+    commandHistory.executeCommand(command);
+    notifyListeners();
+
+    _logEvent('✅ Created crossover $crossoverId at (${x.toInt()}, ${y.toInt()})');
+  }
+
+  /// Move a crossover and all its associated points
+  void moveCrossover(String crossoverId, double newX, double newY) {
+    // Find crossover block
+    final blockId = 'crossover_$crossoverId';
+    final block = blocks[blockId];
+
+    if (block == null) {
+      _logEvent('❌ Crossover $crossoverId not found');
+      return;
+    }
+
+    // Find associated points
+    final pointIds = [
+      '${crossoverId}A',
+      '${crossoverId}B',
+      '${crossoverId}C',
+      '${crossoverId}D',
+    ];
+
+    // Get current position (center of block)
+    final oldX = (block.startX + block.endX) / 2;
+    final oldY = block.y;
+
+    // Create and execute command
+    final command = MoveCrossoverCommand(
+      this,
+      crossoverId,
+      blockId,
+      pointIds,
+      oldX,
+      oldY,
+      newX,
+      newY,
+    );
+
+    commandHistory.executeCommand(command);
+    notifyListeners();
+  }
+
+  /// Delete a crossover and all its associated points
+  void deleteCrossover(String crossoverId) {
+    final blockId = 'crossover_$crossoverId';
+    final pointIds = [
+      '${crossoverId}A',
+      '${crossoverId}B',
+      '${crossoverId}C',
+      '${crossoverId}D',
+    ];
+
+    try {
+      final command = DeleteCrossoverCommand(
+        this,
+        crossoverId,
+        blockId,
+        pointIds,
+      );
+
+      commandHistory.executeCommand(command);
+      notifyListeners();
+    } catch (e) {
+      _logEvent('❌ ${e.toString()}');
+    }
+  }
+
   /// Generate unique ID for a component type
   String generateUniqueId(String componentType) {
     Set<String> existingIds = {};

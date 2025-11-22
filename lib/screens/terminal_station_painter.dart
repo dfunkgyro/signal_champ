@@ -285,6 +285,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _drawDirectionLabels(canvas);
     _drawLabels(canvas);
 
+    // Draw selection highlight (edit mode)
+    if (controller.editModeEnabled) {
+      _drawSelectionHighlight(canvas);
+    }
+
     drawCollisionEffects(canvas, controller, animationTick);
 
     // Draw tooltip last (if hovered object exists)
@@ -2348,6 +2353,115 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     // Draw text
     textPainter.paint(canvas, Offset(tooltipX + tooltipPadding, tooltipY + tooltipPadding));
+  }
+
+  // ============================================================================
+  // SELECTION HIGHLIGHT DRAWING (EDIT MODE)
+  // ============================================================================
+  void _drawSelectionHighlight(Canvas canvas) {
+    if (controller.selectedComponentId == null ||
+        controller.selectedComponentType == null) {
+      return;
+    }
+
+    final String type = controller.selectedComponentType!;
+    final String id = controller.selectedComponentId!;
+    double? x;
+    double? y;
+
+    // Get position based on component type
+    switch (type.toLowerCase()) {
+      case 'signal':
+        final signal = controller.signals[id];
+        if (signal != null) {
+          x = signal.x;
+          y = signal.y;
+        }
+        break;
+
+      case 'point':
+        final point = controller.points[id];
+        if (point != null) {
+          x = point.x;
+          y = point.y;
+        }
+        break;
+
+      case 'platform':
+        final platform = controller.platforms[id];
+        if (platform != null) {
+          // Use midpoint for platforms
+          x = platform.startX + (platform.endX - platform.startX) / 2;
+          y = platform.y;
+        }
+        break;
+
+      case 'trainstop':
+        final trainStop = controller.trainStops[id];
+        if (trainStop != null) {
+          x = trainStop.x;
+          y = trainStop.y;
+        }
+        break;
+
+      case 'bufferstop':
+        // Buffer stops are hardcoded at specific positions
+        // Use a default position or skip highlighting
+        return;
+
+      case 'axlecounter':
+        final axleCounter = controller.axleCounters[id];
+        if (axleCounter != null) {
+          x = axleCounter.x;
+          y = axleCounter.y;
+        }
+        break;
+
+      case 'transponder':
+        final transponder = controller.transponders[id];
+        if (transponder != null) {
+          x = transponder.x;
+          y = transponder.y;
+        }
+        break;
+
+      case 'wifiantenna':
+        final antenna = controller.wifiAntennas[id];
+        if (antenna != null) {
+          x = antenna.x;
+          y = antenna.y;
+        }
+        break;
+
+      default:
+        return;
+    }
+
+    // If we found a position, draw the selection highlight
+    if (x != null && y != null) {
+      // Draw cyan highlight circle (different from yellow hover)
+      final highlightPaint = Paint()
+        ..color = Colors.cyan.withOpacity(0.4)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(x, y), 30, highlightPaint);
+
+      // Draw thicker outline for better visibility
+      final outlinePaint = Paint()
+        ..color = Colors.cyan
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.5;
+
+      canvas.drawCircle(Offset(x, y), 30, outlinePaint);
+
+      // Add pulsing inner circle for extra emphasis
+      final innerPaint = Paint()
+        ..color = Colors.cyanAccent.withOpacity(0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+
+      canvas.drawCircle(Offset(x, y), 22, innerPaint);
+    }
   }
 
   @override

@@ -6299,11 +6299,11 @@ class TerminalStationController extends ChangeNotifier {
         if (train.direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
           train.y = 100 + (200 * progress);
-          train.rotation = 2.356; // 135 degrees in radians
+          train.rotation = 0.785398; // 45 degrees in radians (matches 78A/78B)
         } else {
           // Moving left: lower track (y=300) to upper track (y=100)
           train.y = 300 - (200 * progress);
-          train.rotation = -2.356; // -135 degrees in radians
+          train.rotation = 0.785398; // 45 degrees in radians (matches 78A/78B)
         }
       } else {
         // Points in normal position - stay on current track
@@ -6346,11 +6346,11 @@ class TerminalStationController extends ChangeNotifier {
         if (train.direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
           train.y = 100 + (200 * progress);
-          train.rotation = 2.356; // 135 degrees in radians
+          train.rotation = 0.785398; // 45 degrees in radians (matches 78A/78B)
         } else {
           // Moving left: lower track (y=300) to upper track (y=100)
           train.y = 300 - (200 * progress);
-          train.rotation = -2.356; // -135 degrees in radians
+          train.rotation = 0.785398; // 45 degrees in radians (matches 78A/78B)
         }
       } else {
         // Points in normal position - stay on current track

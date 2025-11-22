@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../screens/terminal_station_models.dart';
 import '../services/openai_service.dart';
+import '../services/voice_recognition_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Floating Signalling System Manager panel for natural language railway control
@@ -26,11 +27,13 @@ class _AIAgentPanelState extends State<AIAgentPanel> {
   Map<String, dynamic>? _pendingCommand; // Store incomplete command for confirmation
   String? _pendingTrainLocation; // Store train ID for "where is train" -> "yes" flow
   final FocusNode _inputFocusNode = FocusNode();
+  final VoiceRecognitionService _voiceService = VoiceRecognitionService();
 
   @override
   void initState() {
     super.initState();
     _initializeOpenAI();
+    _initializeVoiceRecognition();
     _addMessage('Signalling Manager', '''👋 Hello! I am the Signalling System Manager.
 
 I understand **natural language** - speak to me naturally! I work in **guest mode** and **signed-in mode** without requiring API keys.
@@ -74,6 +77,37 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
       _addMessage('System', '❌ Error initializing OpenAI: ${e.toString()}\n\nFalling back to local command processing.', isAI: true);
       debugPrint('OpenAI initialization error: $e');
     }
+  }
+
+  void _initializeVoiceRecognition() {
+    _voiceService.onResult = (text) {
+      if (mounted) {
+        setState(() {
+          _inputController.text = text;
+        });
+        // Auto-submit the voice command
+        final controller = Provider.of<TerminalStationController>(context, listen: false);
+        _processCommand(controller);
+      }
+    };
+
+    _voiceService.onError = (error) {
+      if (mounted) {
+        _addMessage('Voice', '⚠️ Voice recognition error: $error', isAI: true);
+      }
+    };
+
+    _voiceService.onListeningStateChanged = (isListening) {
+      if (mounted) {
+        setState(() {
+          // Update UI to show listening state
+        });
+      }
+    };
+
+    // Enable wake word mode by default for SSM
+    _voiceService.setWakeWordMode(true);
+    _voiceService.setVoiceEnabled(false); // Start disabled, user can enable
   }
 
   void _addMessage(String sender, String text, {bool isAI = false}) {
@@ -1600,6 +1634,30 @@ All of these work! Speak naturally - I'll understand your intent.
                               tooltip: 'Clear chat',
                             ),
                             if (!compactMode) const SizedBox(width: 4),
+                            // Voice recognition button
+                            IconButton(
+                              icon: Icon(
+                                _voiceService.isListening ? Icons.mic : Icons.mic_none,
+                                color: _voiceService.isListening ? Colors.red : Colors.white70,
+                              ),
+                              onPressed: () async {
+                                if (_voiceService.isListening) {
+                                  await _voiceService.stopListening();
+                                  _voiceService.setVoiceEnabled(false);
+                                } else {
+                                  _voiceService.setVoiceEnabled(true);
+                                  await _voiceService.startListening();
+                                }
+                                setState(() {});
+                              },
+                              iconSize: compactMode ? 14 : 16,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              tooltip: _voiceService.isListening
+                                  ? 'Stop listening'
+                                  : 'Voice input (say "ssm" + command)',
+                            ),
+                            const SizedBox(width: 4),
                             // Settings button
                             IconButton(
                               icon: const Icon(Icons.settings, color: Colors.white70),
@@ -2011,6 +2069,7 @@ All of these work! Speak naturally - I'll understand your intent.
     _inputController.dispose();
     _scrollController.dispose();
     _inputFocusNode.dispose();
+    _voiceService.dispose();
     super.dispose();
   }
 }

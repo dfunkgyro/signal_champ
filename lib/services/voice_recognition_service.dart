@@ -183,6 +183,8 @@ class VoiceRecognitionService {
 
   /// Get current locale
   String? getCurrentLocale() {
-    return _speech.isAvailable ? _speech.localeId : null;
+    // Note: localeId is not available in speech_to_text 5.1.0
+    // Return null for now - locale is set during listen() call
+    return null;
   }
 }

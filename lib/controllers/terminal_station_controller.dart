@@ -6720,13 +6720,41 @@ class TerminalStationController extends ChangeNotifier {
     return nearestTrain;
   }
 
+  /// Get the AB section that a train is currently in
+  String? _getTrainCurrentAB(Train train) {
+    final absToCheck = ['AB100', 'AB105', 'AB106', 'AB108', 'AB111'];
+
+    for (var abId in absToCheck) {
+      final abPosition = _getABPosition(abId);
+      if (abPosition == null) continue;
+
+      // Check if train is within ~100 units of AB position (AB coverage area)
+      final distance = (train.x - abPosition).abs();
+      if (distance < 100.0) {
+        // Check if AB is occupied (indicating train might be in it)
+        if (ace.isABOccupied(abId)) {
+          return abId;
+        }
+      }
+    }
+
+    return null;
+  }
+
   /// Check if there's an occupied AB ahead within the specified distance
+  /// FIXED: Excludes the AB that the train is currently occupying to prevent self-blocking
   String? _getOccupiedABAhead(Train train, double maxDistance) {
     final absToCheck = ['AB100', 'AB105', 'AB106', 'AB108', 'AB111'];
     String? nearestAB;
     double minDistance = maxDistance;
 
+    // Get the AB that this train is currently in - don't block on it!
+    final currentAB = _getTrainCurrentAB(train);
+
     for (var abId in absToCheck) {
+      // CRITICAL FIX: Skip the AB the train is currently in
+      if (abId == currentAB) continue;
+
       if (!ace.isABOccupied(abId)) continue;
 
       // Get AB position - approximate from block positions

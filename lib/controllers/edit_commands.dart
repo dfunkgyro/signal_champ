@@ -515,6 +515,225 @@ class DeleteBlockCommand implements EditCommand {
   String get description => 'Delete Block $blockId';
 }
 
+// ============================================================================
+// CROSSOVER EDIT COMMANDS
+// ============================================================================
+
+/// Command to create a new crossover with points and gaps
+class CreateCrossoverCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String crossoverId;
+  final double x;
+  final double y;
+  final List<String> pointIds;
+  final String blockId;
+
+  CreateCrossoverCommand(
+    this.controller,
+    this.crossoverId,
+    this.x,
+    this.y,
+    this.pointIds,
+    this.blockId,
+  );
+
+  @override
+  void execute() {
+    // Create crossover block
+    controller.blocks[blockId] = BlockSection(
+      id: blockId,
+      name: 'Crossover $crossoverId',
+      startX: x - 100,
+      endX: x + 100,
+      y: y,
+      occupied: false,
+    );
+
+    // Create points for crossover (4 points for double diamond)
+    final pointOffsets = [
+      {'id': '${crossoverId}A', 'x': x - 50, 'y': y - 100},
+      {'id': '${crossoverId}B', 'x': x - 50, 'y': y + 100},
+      {'id': '${crossoverId}C', 'x': x + 50, 'y': y - 100},
+      {'id': '${crossoverId}D', 'x': x + 50, 'y': y + 100},
+    ];
+
+    for (var offset in pointOffsets) {
+      final pointId = offset['id'] as String;
+      controller.points[pointId] = Point(
+        id: pointId,
+        x: offset['x'] as double,
+        y: offset['y'] as double,
+        position: PointPosition.normal,
+        locked: false,
+      );
+    }
+
+    controller.logEvent('✅ Created crossover $crossoverId with 4 points');
+  }
+
+  @override
+  void undo() {
+    // Remove crossover block
+    controller.blocks.remove(blockId);
+
+    // Remove all points
+    for (var pointId in pointIds) {
+      controller.points.remove(pointId);
+    }
+
+    controller.logEvent('↩️ Deleted crossover $crossoverId');
+  }
+
+  @override
+  String get description => 'Create Crossover $crossoverId';
+}
+
+/// Command to move a crossover and all associated points
+class MoveCrossoverCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String crossoverId;
+  final String blockId;
+  final List<String> pointIds;
+  final double oldX, oldY;
+  final double newX, newY;
+  final Map<String, Offset> oldPointPositions = {};
+
+  MoveCrossoverCommand(
+    this.controller,
+    this.crossoverId,
+    this.blockId,
+    this.pointIds,
+    this.oldX,
+    this.oldY,
+    this.newX,
+    this.newY,
+  ) {
+    // Save old point positions
+    for (var pointId in pointIds) {
+      final point = controller.points[pointId];
+      if (point != null) {
+        oldPointPositions[pointId] = Offset(point.x, point.y);
+      }
+    }
+  }
+
+  @override
+  void execute() {
+    final deltaX = newX - oldX;
+    final deltaY = newY - oldY;
+
+    // Move crossover block
+    final block = controller.blocks[blockId];
+    if (block != null) {
+      block.startX += deltaX;
+      block.endX += deltaX;
+      block.y += deltaY;
+    }
+
+    // Move all associated points
+    for (var pointId in pointIds) {
+      final point = controller.points[pointId];
+      if (point != null) {
+        point.x += deltaX;
+        point.y += deltaY;
+      }
+    }
+
+    controller.logEvent('📍 Moved crossover $crossoverId');
+  }
+
+  @override
+  void undo() {
+    final deltaX = oldX - newX;
+    final deltaY = oldY - newY;
+
+    // Move crossover block back
+    final block = controller.blocks[blockId];
+    if (block != null) {
+      block.startX += deltaX;
+      block.endX += deltaX;
+      block.y += deltaY;
+    }
+
+    // Restore old point positions
+    oldPointPositions.forEach((pointId, offset) {
+      final point = controller.points[pointId];
+      if (point != null) {
+        point.x = offset.dx;
+        point.y = offset.dy;
+      }
+    });
+
+    controller.logEvent('↩️ Moved crossover $crossoverId back');
+  }
+
+  @override
+  String get description => 'Move Crossover $crossoverId';
+}
+
+/// Command to delete a crossover and all associated points
+class DeleteCrossoverCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String crossoverId;
+  final String blockId;
+  final List<String> pointIds;
+  BlockSection? _savedBlock;
+  final Map<String, Point> _savedPoints = {};
+
+  DeleteCrossoverCommand(
+    this.controller,
+    this.crossoverId,
+    this.blockId,
+    this.pointIds,
+  );
+
+  @override
+  void execute() {
+    // Check if any trains are on the crossover
+    final block = controller.blocks[blockId];
+    if (block != null && block.occupied) {
+      throw Exception('Cannot delete crossover $crossoverId - train is on it');
+    }
+
+    // Save block and points for undo
+    _savedBlock = block;
+    for (var pointId in pointIds) {
+      final point = controller.points[pointId];
+      if (point != null) {
+        _savedPoints[pointId] = point;
+      }
+    }
+
+    // Delete crossover block
+    controller.blocks.remove(blockId);
+
+    // Delete all associated points
+    for (var pointId in pointIds) {
+      controller.points.remove(pointId);
+    }
+
+    controller.logEvent('🗑️ Deleted crossover $crossoverId with all points');
+  }
+
+  @override
+  void undo() {
+    // Restore crossover block
+    if (_savedBlock != null) {
+      controller.blocks[blockId] = _savedBlock!;
+    }
+
+    // Restore all points
+    _savedPoints.forEach((pointId, point) {
+      controller.points[pointId] = point;
+    });
+
+    controller.logEvent('↩️ Restored crossover $crossoverId');
+  }
+
+  @override
+  String get description => 'Delete Crossover $crossoverId';
+}
+
 /// Command History Manager - manages undo/redo stacks
 class CommandHistory {
   final List<EditCommand> _undoStack = [];

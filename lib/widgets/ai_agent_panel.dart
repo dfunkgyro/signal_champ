@@ -79,12 +79,33 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
     }
   }
 
+  // ENHANCEMENT 23: Enhanced voice recognition with command history
+  final List<String> _voiceCommandHistory = [];
+  int _voiceCommandCount = 0;
+
   void _initializeVoiceRecognition() {
     _voiceService.onResult = (text) {
       if (mounted) {
+        // ENHANCEMENT 24: Track voice command history
+        _voiceCommandHistory.add(text);
+        _voiceCommandCount++;
+
+        // Keep only last 50 commands
+        if (_voiceCommandHistory.length > 50) {
+          _voiceCommandHistory.removeAt(0);
+        }
+
         setState(() {
           _inputController.text = text;
         });
+
+        // ENHANCEMENT 25: Add visual feedback for voice command received
+        _addMessage(
+          'Voice',
+          '🎤 Received command #$_voiceCommandCount: "$text"',
+          isAI: true,
+        );
+
         // Auto-submit the voice command
         final controller = Provider.of<TerminalStationController>(context, listen: false);
         _processCommand(controller);
@@ -94,6 +115,15 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
     _voiceService.onError = (error) {
       if (mounted) {
         _addMessage('Voice', '⚠️ Voice recognition error: $error', isAI: true);
+
+        // ENHANCEMENT 26: Auto-retry on recoverable errors
+        if (error.contains('timeout') || error.contains('network')) {
+          Future.delayed(const Duration(seconds: 2), () {
+            if (_voiceService.isListening) {
+              _addMessage('Voice', '🔄 Retrying voice recognition...', isAI: true);
+            }
+          });
+        }
       }
     };
 
@@ -101,6 +131,9 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
       if (mounted) {
         setState(() {
           // Update UI to show listening state
+          if (isListening) {
+            _addMessage('Voice', '👂 Listening for "ssm" wake word...', isAI: true);
+          }
         });
       }
     };

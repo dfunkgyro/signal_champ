@@ -1075,10 +1075,13 @@ class TerminalStationController extends ChangeNotifier {
     // If viewport dimensions are provided, center the position in viewport
     if (viewportWidth != null && viewportHeight != null) {
       final targetZoom = zoom ?? cameraZoom;
-      // Calculate offset to center item in viewport
-      // Camera offset = -(item position) + (viewport center / zoom)
-      cameraOffsetX = -x + (viewportWidth / 2) / targetZoom;
-      cameraOffsetY = -y + (viewportHeight / 2) / targetZoom;
+      // FIXED: Center item properly in viewport
+      // The canvas rendering system centers content, so we need to account for that
+      // Formula: cameraOffset = -itemPosition (to move item to origin)
+      //          + viewportCenter (to move from origin to center of screen)
+      // Note: viewportCenter is in screen pixels, but camera works in canvas units
+      cameraOffsetX = -x + (viewportWidth / 2);
+      cameraOffsetY = -y + (viewportHeight / 2);
     } else {
       // Legacy behavior - simple offset
       cameraOffsetX = -x;

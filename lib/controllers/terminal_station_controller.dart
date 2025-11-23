@@ -2856,15 +2856,30 @@ class TerminalStationController extends ChangeNotifier {
     signals['L04'] = Signal(
       id: 'L04',
       x: -100,
-      y: 320, // FIXED: Changed to 320 to face correct direction (westbound on lower track)
+      y: 340, // Lower track westbound signal position
+      direction: SignalDirection.west,
       routes: [
         SignalRoute(
           id: 'L04_R1',
-          name: 'West Exit',
-          requiredBlocksClear: ['214', '100'],
-          requiredPointPositions: {},
-          pathBlocks: ['214', '100'],
-          protectedBlocks: ['214', '100'],
+          name: 'West Exit (Straight)',
+          requiredBlocksClear: ['215', '213'],
+          requiredPointPositions: {
+            '76A': PointPosition.normal,
+            '76B': PointPosition.normal,
+          },
+          pathBlocks: ['215', '213'],
+          protectedBlocks: ['215', '213'],
+        ),
+        SignalRoute(
+          id: 'L04_R2',
+          name: 'West Exit via Crossover (Diverging)',
+          requiredBlocksClear: ['crossover_211_212', '212', '210'],
+          requiredPointPositions: {
+            '76A': PointPosition.reverse,
+            '76B': PointPosition.reverse,
+          },
+          pathBlocks: ['crossover_211_212', '212', '210'],
+          protectedBlocks: ['crossover_211_212', '212', '210'],
         ),
       ],
     );
@@ -2873,15 +2888,30 @@ class TerminalStationController extends ChangeNotifier {
     signals['L05'] = Signal(
       id: 'L05',
       x: -200,
-      y: 80, // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
+      y: 80, // Upper track eastbound signal position
+      direction: SignalDirection.east,
       routes: [
         SignalRoute(
           id: 'L05_R1',
-          name: 'From Central',
-          requiredBlocksClear: ['215', '213'],
-          requiredPointPositions: {},
-          pathBlocks: ['215', '213'],
-          protectedBlocks: ['215', '213'],
+          name: 'From Central (Straight)',
+          requiredBlocksClear: ['101', '214'],
+          requiredPointPositions: {
+            '76A': PointPosition.normal,
+            '76B': PointPosition.normal,
+          },
+          pathBlocks: ['101', '214'],
+          protectedBlocks: ['101', '214'],
+        ),
+        SignalRoute(
+          id: 'L05_R2',
+          name: 'From Central via Crossover (Diverging)',
+          requiredBlocksClear: ['crossover_211_212', '211', '213'],
+          requiredPointPositions: {
+            '76A': PointPosition.reverse,
+            '76B': PointPosition.reverse,
+          },
+          pathBlocks: ['crossover_211_212', '211', '213'],
+          protectedBlocks: ['crossover_211_212', '211', '213'],
         ),
       ],
     );
@@ -5194,6 +5224,16 @@ class TerminalStationController extends ChangeNotifier {
 
         if (!trainApproaching) {
           signal.aspect = SignalAspect.red;
+          continue;
+        }
+      }
+
+      // Special logic for R08 - show blue (yellow) if R01 is red
+      if (signal.id == 'R08') {
+        final r01Signal = signals['R01'];
+        if (r01Signal != null && r01Signal.aspect == SignalAspect.red) {
+          // R01 is red, so R08 shows blue (caution/approach)
+          signal.aspect = allClear ? SignalAspect.blue : SignalAspect.red;
           continue;
         }
       }

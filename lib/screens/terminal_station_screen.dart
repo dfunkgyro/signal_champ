@@ -3503,6 +3503,26 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
+  /// Convert screen/local coordinates to canvas coordinates
+  /// Handles different coordinate systems for normal vs edit mode
+  Offset _screenToCanvasCoords(Offset localPosition, bool isEditMode) {
+    if (isEditMode) {
+      // In edit mode, local position is within the scrollable SizedBox
+      // Convert to canvas coordinates accounting for the offset origin
+      const double railwayMinX = -1800.0;
+      const double railwayMinY = 0.0;
+
+      final canvasX = (localPosition.dx / _zoom) + railwayMinX;
+      final canvasY = (localPosition.dy / _zoom) + railwayMinY;
+      return Offset(canvasX, canvasY);
+    } else {
+      // Normal mode uses centered canvas with pan/zoom
+      final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
+      final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
+      return Offset(canvasX, canvasY);
+    }
+  }
+
   Widget _buildStationCanvas() {
     return Container(
       color: Colors.grey[200],
@@ -3523,37 +3543,22 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   /// Build scrollable canvas for edit mode with scrollbars
   Widget _buildScrollableCanvas(TerminalStationController controller) {
     // Calculate the full extent of the railway layout
-    // Railway extends from x: -1750 to x: 3400 (approx 5150 units)
-    const double railwayWidth = 5150.0;
-    const double railwayHeight = 800.0; // Vertical extent
+    // Railway extends from x: -1800 to x: 3400, y: 0 to y: 400
+    const double railwayMinX = -1800.0;
+    const double railwayMaxX = 3500.0; // Add margin
+    const double railwayMinY = 0.0;
+    const double railwayMaxY = 450.0; // Add margin
+
+    final railwayWidth = railwayMaxX - railwayMinX;
+    final railwayHeight = railwayMaxY - railwayMinY;
 
     // Get current viewport size
     final viewportWidth = MediaQuery.of(context).size.width;
     final viewportHeight = MediaQuery.of(context).size.height;
 
-    // Sync scroll position with camera offset
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_horizontalScrollController.hasClients && _verticalScrollController.hasClients) {
-        // Update scroll position based on camera offset
-        // Map camera offset to scroll position
-        final scrollX = (-_cameraOffsetX + railwayWidth / 2) * _zoom;
-        final scrollY = (-_cameraOffsetY + railwayHeight / 2) * _zoom;
-
-        if (_horizontalScrollController.offset != scrollX) {
-          _horizontalScrollController.jumpTo(scrollX.clamp(
-            0.0,
-            _horizontalScrollController.position.maxScrollExtent,
-          ));
-        }
-
-        if (_verticalScrollController.offset != scrollY) {
-          _verticalScrollController.jumpTo(scrollY.clamp(
-            0.0,
-            _verticalScrollController.position.maxScrollExtent,
-          ));
-        }
-      }
-    });
+    // Calculate scrollable area size (railway extent * zoom)
+    final scrollableWidth = railwayWidth * _zoom;
+    final scrollableHeight = railwayHeight * _zoom;
 
     return Scrollbar(
       controller: _horizontalScrollController,
@@ -3574,16 +3579,17 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               onNotification: (notification) {
                 if (notification is ScrollUpdateNotification) {
                   // Update camera offset based on scroll position
+                  // Account for the railway starting at railwayMinX, not 0
                   setState(() {
-                    _cameraOffsetX = -((_horizontalScrollController.offset / _zoom) - railwayWidth / 2);
-                    _cameraOffsetY = -((_verticalScrollController.offset / _zoom) - railwayHeight / 2);
+                    _cameraOffsetX = (_horizontalScrollController.offset / _zoom) + railwayMinX;
+                    _cameraOffsetY = (_verticalScrollController.offset / _zoom) + railwayMinY;
                   });
                 }
                 return true;
               },
               child: SizedBox(
-                width: railwayWidth * _zoom + viewportWidth,
-                height: railwayHeight * _zoom + viewportHeight,
+                width: scrollableWidth.clamp(viewportWidth, scrollableWidth),
+                height: scrollableHeight.clamp(viewportHeight, scrollableHeight),
                 child: _buildCanvasContent(controller),
               ),
             ),
@@ -3601,109 +3607,96 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
         // Convert screen coordinates to canvas coordinates
         final localPosition = event.localPosition;
-        final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom -
-            _cameraOffsetX;
-        final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom -
-            _cameraOffsetY;
+        final canvasCoords = _screenToCanvasCoords(localPosition, controller.editModeEnabled);
 
         // Check for hovered objects (signals, points, trains, etc.)
-        _detectHoveredObject(controller, canvasX, canvasY);
+        _detectHoveredObject(controller, canvasCoords.dx, canvasCoords.dy);
       },
       onExit: (event) {
         controller.setHoveredObject(null);
       },
       child: GestureDetector(
-              onTapDown: (details) {
-                // Convert screen coordinates to canvas coordinates
-                final localPosition = details.localPosition;
-                final canvasX =
-                    (localPosition.dx - (_canvasWidth / 2)) / _zoom -
-                        _cameraOffsetX;
-                final canvasY =
-                    (localPosition.dy - (_canvasHeight / 2)) / _zoom -
-                        _cameraOffsetY;
+        onTapDown: (details) {
+          // Convert screen coordinates to canvas coordinates
+          final canvasCoords = _screenToCanvasCoords(details.localPosition, controller.editModeEnabled);
 
-                // Handle click based on edit mode state
-                if (controller.editModeEnabled) {
-                  _handleEditModeClick(controller, canvasX, canvasY);
-                } else {
-                  _handleCanvasClick(controller, canvasX, canvasY);
+          // Handle click based on edit mode state
+          if (controller.editModeEnabled) {
+            _handleEditModeClick(controller, canvasCoords.dx, canvasCoords.dy);
+          } else {
+            _handleCanvasClick(controller, canvasCoords.dx, canvasCoords.dy);
+          }
+        },
+        onPanStart: (details) {
+          final canvasCoords = _screenToCanvasCoords(details.localPosition, controller.editModeEnabled);
+          final canvasX = canvasCoords.dx;
+          final canvasY = canvasCoords.dy;
+
+          // FIXED: In edit mode, check if clicking on ANY component (not just selected one)
+          if (controller.editModeEnabled) {
+            // Find component under cursor
+            String? componentType;
+            String? componentId;
+
+            // Check all component types for a hit
+            // Signals
+            for (final signal in controller.signals.values) {
+              final distance = ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
+              if (distance < 30) {
+                componentType = 'signal';
+                componentId = signal.id;
+                break;
+              }
+            }
+
+            // Points (if no signal found)
+            if (componentType == null) {
+              for (final point in controller.points.values) {
+                final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
+                if (distance < 20) {
+                  componentType = 'point';
+                  componentId = point.id;
+                  break;
                 }
-              },
-              onPanStart: (details) {
-                final localPosition = details.localPosition;
-                final canvasX =
-                    (localPosition.dx - (_canvasWidth / 2)) / _zoom -
-                        _cameraOffsetX;
-                final canvasY =
-                    (localPosition.dy - (_canvasHeight / 2)) / _zoom -
-                        _cameraOffsetY;
+              }
+            }
 
-                // FIXED: In edit mode, check if clicking on ANY component (not just selected one)
-                if (controller.editModeEnabled) {
-                  // Find component under cursor
-                  String? componentType;
-                  String? componentId;
+            // Platforms
+            if (componentType == null) {
+              for (final platform in controller.platforms) {
+                if (canvasX >= platform.startX &&
+                    canvasX <= platform.endX &&
+                    (canvasY - platform.y).abs() < 25) {
+                  componentType = 'platform';
+                  componentId = platform.id;
+                  break;
+                }
+              }
+            }
 
-                  // Check all component types for a hit
-                  // Signals
-                  for (final signal in controller.signals.values) {
-                    final distance = ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
-                    if (distance < 30) {
-                      componentType = 'signal';
-                      componentId = signal.id;
-                      break;
-                    }
-                  }
+            // Train stops
+            if (componentType == null) {
+              for (final trainStop in controller.trainStops.values) {
+                final distance = ((trainStop.x - canvasX).abs() + (trainStop.y - canvasY).abs());
+                if (distance < 20) {
+                  componentType = 'trainstop';
+                  componentId = trainStop.id;
+                  break;
+                }
+              }
+            }
 
-                  // Points (if no signal found)
-                  if (componentType == null) {
-                    for (final point in controller.points.values) {
-                      final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
-                      if (distance < 20) {
-                        componentType = 'point';
-                        componentId = point.id;
-                        break;
-                      }
-                    }
-                  }
-
-                  // Platforms
-                  if (componentType == null) {
-                    for (final platform in controller.platforms) {
-                      if (canvasX >= platform.startX &&
-                          canvasX <= platform.endX &&
-                          (canvasY - platform.y).abs() < 25) {
-                        componentType = 'platform';
-                        componentId = platform.id;
-                        break;
-                      }
-                    }
-                  }
-
-                  // Train stops
-                  if (componentType == null) {
-                    for (final trainStop in controller.trainStops.values) {
-                      final distance = ((trainStop.x - canvasX).abs() + (trainStop.y - canvasY).abs());
-                      if (distance < 20) {
-                        componentType = 'trainstop';
-                        componentId = trainStop.id;
-                        break;
-                      }
-                    }
-                  }
-
-                  // Buffer stops
-                  if (componentType == null) {
-                    for (final bufferStop in controller.bufferStops.values) {
-                      final distance = ((bufferStop.x - canvasX).abs() + (bufferStop.y - canvasY).abs());
-                      if (distance < 20) {
-                        componentType = 'bufferstop';
-                        componentId = bufferStop.id;
-                        break;
-                      }
-                    }
-                  }
+            // Buffer stops
+            if (componentType == null) {
+              for (final bufferStop in controller.bufferStops.values) {
+                final distance = ((bufferStop.x - canvasX).abs() + (bufferStop.y - canvasY).abs());
+                if (distance < 20) {
+                  componentType = 'bufferstop';
+                  componentId = bufferStop.id;
+                  break;
+                }
+              }
+            }
 
                   // If we found a component, select it and start dragging (Pointer/Quick Select mode)
                   if (componentType != null && componentId != null) {
@@ -3773,17 +3766,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   );
                 }
               },
-              onPanEnd: (details) {
-                // Finalize marquee selection
-                if (_isDrawingMarquee && _marqueeStart != null && _marqueeEnd != null) {
-                  // Convert screen coordinates to canvas coordinates
-                  final canvasX1 = (_marqueeStart!.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
-                  final canvasY1 = (_marqueeStart!.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
-                  final canvasX2 = (_marqueeEnd!.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
-                  final canvasY2 = (_marqueeEnd!.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
+        onPanEnd: (details) {
+          // Finalize marquee selection
+          if (_isDrawingMarquee && _marqueeStart != null && _marqueeEnd != null) {
+            // Convert screen coordinates to canvas coordinates
+            final canvasStart = _screenToCanvasCoords(_marqueeStart!, controller.editModeEnabled);
+            final canvasEnd = _screenToCanvasCoords(_marqueeEnd!, controller.editModeEnabled);
 
-                  // Call controller to select all components in rectangle
-                  controller.selectInRectangle(canvasX1, canvasY1, canvasX2, canvasY2);
+            // Call controller to select all components in rectangle
+            controller.selectInRectangle(canvasStart.dx, canvasStart.dy, canvasEnd.dx, canvasEnd.dy);
 
                   setState(() {
                     _isDrawingMarquee = false;

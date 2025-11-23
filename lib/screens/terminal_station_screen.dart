@@ -3541,23 +3541,18 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     (localPosition.dy - (_canvasHeight / 2)) / _zoom -
                         _cameraOffsetY;
 
-                // In edit mode with a selected component, start dragging
+                // FIXED: In edit mode with a selected component, ANY pan gesture drags the component
+                // Don't require precise clicking - if something is selected, dragging moves it
                 if (controller.editModeEnabled &&
                     controller.selectedComponentId != null) {
-                  // Check if we're clicking on the selected component
-                  if (_isClickingOnComponent(controller,
-                      controller.selectedComponentType!,
-                      controller.selectedComponentId!,
-                      canvasX, canvasY)) {
-                    _isDraggingComponent = true;
-                    _draggingComponentId = controller.selectedComponentId;
-                    _draggingComponentType = controller.selectedComponentType;
-                    _dragStartPosition = Offset(canvasX, canvasY);
-                    return;
-                  }
+                  _isDraggingComponent = true;
+                  _draggingComponentId = controller.selectedComponentId;
+                  _draggingComponentType = controller.selectedComponentType;
+                  _dragStartPosition = Offset(canvasX, canvasY);
+                  return; // Don't pan camera when component is selected
                 }
 
-                // Otherwise, pan the camera
+                // Otherwise, pan the camera (no component selected in edit mode, or not in edit mode)
                 _controller.disableAutoFollow();
               },
               onPanUpdate: (details) {

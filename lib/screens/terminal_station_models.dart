@@ -408,8 +408,8 @@ class Train {
       carriages[i].applyCurveSway(curveRadius, speed);
       carriages[i].y += carriages[i].lateralOffset;
 
-      // FIXED: Individual carriage rotation based on its OWN position in crossover
-      // Each carriage only rotates when IT is on a crossover, then straightens when it exits
+      // FIXED: Individual carriage rotation based on TRAIN'S rotation when carriage is on crossover
+      // Each carriage checks its OWN x position to determine if IT is on a crossover
       final carriageX = carriages[i].x;
       final isOnCrossover =
           (carriageX >= -550 && carriageX < -450) ||  // Left crossover
@@ -417,9 +417,11 @@ class Train {
           (carriageX >= 1900 && carriageX < 2000);     // Right crossover
 
       if (isOnCrossover) {
-        // Carriage is on crossover - apply angled rotation
-        final rotationLag = 0.05 * i; // Each carriage lags slightly more
-        carriages[i].rotation = prevCarriage.rotation - (rotationLag * direction);
+        // Carriage is on crossover - use TRAIN's rotation (0.785398 = 45°)
+        // Apply slight lag based on carriage position for realistic articulation
+        final baseCrossoverRotation = 0.785398; // 45 degrees
+        final rotationLag = 0.02 * i; // Small lag per carriage
+        carriages[i].rotation = baseCrossoverRotation - (rotationLag * direction);
       } else {
         // Carriage is on straight track - align horizontally (rotation = 0)
         carriages[i].rotation = 0.0;

@@ -6020,18 +6020,18 @@ class TerminalStationController extends ChangeNotifier {
         }
       }
 
-      // Wrap around at track end (eastbound)
-      if (train.direction > 0 && train.x > 1600) {
-        train.x = 50;
+      // FIXED: Wrap around at track end (eastbound) - Extended track to 3400
+      if (train.direction > 0 && train.x > 3400) {
+        train.x = -1750;  // Wrap to LEFT section start
         train.y = 100;
         train.hasCommittedToMove = false;
         train.lastPassedSignalId = null;
       }
 
-      // Wrap around at track start (westbound)
-      if (train.direction < 0 && train.x < 0) {
-        train.x = 1550;
-        train.y = 100;
+      // FIXED: Wrap around at track start (westbound) - Extended track from -1800
+      if (train.direction < 0 && train.x < -1800) {
+        train.x = 3350;  // Wrap to RIGHT section end
+        train.y = 300;   // Lower track for westbound
         train.hasCommittedToMove = false;
         train.lastPassedSignalId = null;
       }

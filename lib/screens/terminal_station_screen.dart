@@ -1478,11 +1478,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 style: const TextStyle(fontSize: 10),
               ),
             ),
-            // Add Train Button
+            // Add Train Button - DISABLED in edit mode
             ElevatedButton(
-              onPressed: () => controller.addTrain(),
+              onPressed: controller.editModeEnabled ? null : () => controller.addTrain(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: controller.editModeEnabled ? Colors.grey : Colors.blue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: const Size(0, 30),

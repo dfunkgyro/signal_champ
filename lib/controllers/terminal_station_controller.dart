@@ -1581,18 +1581,22 @@ class TerminalStationController extends ChangeNotifier {
 
           if (!counter.d1Active && d1Trigger) {
             counter.d1Active = true;
-            counter.count++;
+            // FIXED: Count 2 wheels per carriage (e.g., M8 = 8 carriages × 2 wheels = 16)
+            final axlesDetected = train.carriageCount * 2;
+            counter.count += axlesDetected;
             counter.lastDetectionTime = DateTime.now();
             counter.lastDirection = 'D1';
             _logEvent(
-                '🔢 ${counter.id} detected train ${train.name} via D1 - Count: ${counter.count}');
+                '🔢 ${counter.id} detected ${train.name} (${train.carriageCount} carriages × 2 wheels = $axlesDetected axles) via D1 - Total: ${counter.count}');
           } else if (!counter.d2Active && d2Trigger) {
             counter.d2Active = true;
-            counter.count++;
+            // FIXED: Count 2 wheels per carriage (e.g., M8 = 8 carriages × 2 wheels = 16)
+            final axlesDetected = train.carriageCount * 2;
+            counter.count += axlesDetected;
             counter.lastDetectionTime = DateTime.now();
             counter.lastDirection = 'D2';
             _logEvent(
-                '🔢 ${counter.id} detected train ${train.name} via D2 - Count: ${counter.count}');
+                '🔢 ${counter.id} detected ${train.name} (${train.carriageCount} carriages × 2 wheels = $axlesDetected axles) via D2 - Total: ${counter.count}');
           }
         } else {
           // Reset detection when train moves away

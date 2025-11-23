@@ -5797,7 +5797,7 @@ class MarqueeSelectionPainter extends CustomPainter {
   void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint, double dashWidth, double dashSpace) {
     final dx = end.dx - start.dx;
     final dy = end.dy - start.dy;
-    final distance = (dx * dx + dy * dy).sqrt();
+    final distance = math.sqrt(dx * dx + dy * dy);
     final dashCount = (distance / (dashWidth + dashSpace)).floor();
 
     final unitX = dx / distance;

@@ -51,6 +51,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   String? _draggingComponentType;
   Offset? _dragStartPosition;
 
+  // Edit Mode: Marquee selection state
+  bool _isDrawingMarquee = false;
+  Offset? _marqueeStart;
+  Offset? _marqueeEnd;
+
+  // Edit Mode: Scroll controllers for edit mode navigation
+  final ScrollController _horizontalScrollController = ScrollController();
+  final ScrollController _verticalScrollController = ScrollController();
+
   // FIXED: Canvas size controls for expanded 7000×1200 closed-loop network
   double _canvasWidth = 7000.0; // Expanded width for full loop
   double _canvasHeight = 1200.0; // Expanded height for return line
@@ -95,6 +104,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   void dispose() {
     _controller.removeListener(_syncCameraState);
     _animationController.dispose();
+    _horizontalScrollController.dispose();
+    _verticalScrollController.dispose();
     super.dispose();
   }
 
@@ -3607,34 +3618,67 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     }
                   }
 
-                  // If we found a component, select it and start dragging
+                  // If we found a component, select it and start dragging (Pointer/Quick Select mode)
                   if (componentType != null && componentId != null) {
-                    controller.selectComponent(componentType, componentId);
-                    _isDraggingComponent = true;
-                    _draggingComponentId = componentId;
-                    _draggingComponentType = componentType;
-                    _dragStartPosition = Offset(canvasX, canvasY);
-                    return; // Don't pan camera when component is clicked
+                    if (controller.selectionMode == SelectionMode.pointer ||
+                        controller.selectionMode == SelectionMode.quickSelect) {
+                      controller.selectComponent(componentType, componentId);
+                      _isDraggingComponent = true;
+                      _draggingComponentId = componentId;
+                      _draggingComponentType = componentType;
+                      _dragStartPosition = Offset(canvasX, canvasY);
+                      return; // Start dragging component
+                    }
                   }
 
-                  // No component clicked - clear selection and allow camera pan
-                  controller.clearSelection();
+                  // Check if using Marquee tool
+                  if (controller.selectionMode == SelectionMode.marquee) {
+                    // Start drawing marquee rectangle
+                    setState(() {
+                      _isDrawingMarquee = true;
+                      _marqueeStart = details.localPosition;
+                      _marqueeEnd = details.localPosition;
+                    });
+                    return; // Start marquee selection
+                  }
+
+                  // Check if using Lasso tool
+                  if (controller.selectionMode == SelectionMode.lasso) {
+                    // Start drawing lasso path (future implementation)
+                    return;
+                  }
+
+                  // No component clicked and not using selection tool - clear selection
+                  if (controller.selectionMode == SelectionMode.pointer) {
+                    controller.clearSelection();
+                  }
                 }
 
-                // Pan the camera (no component clicked, or not in edit mode)
-                _controller.disableAutoFollow();
+                // NORMAL MODE: Pan the camera (edit mode off)
+                if (!controller.editModeEnabled) {
+                  _controller.disableAutoFollow();
+                }
               },
               onPanUpdate: (details) {
-                // If dragging a component in edit mode, move the component
-                if (_isDraggingComponent &&
-                    _draggingComponentId != null &&
-                    _draggingComponentType != null) {
-                  final dx = details.delta.dx / _zoom;
-                  final dy = details.delta.dy / _zoom;
-                  _moveComponent(controller, _draggingComponentType!,
-                      _draggingComponentId!, dx, dy);
+                // EDIT MODE BEHAVIOR
+                if (controller.editModeEnabled) {
+                  if (_isDraggingComponent &&
+                      _draggingComponentId != null &&
+                      _draggingComponentType != null) {
+                    // Dragging a selected component
+                    final dx = details.delta.dx / _zoom;
+                    final dy = details.delta.dy / _zoom;
+                    _moveComponent(controller, _draggingComponentType!,
+                        _draggingComponentId!, dx, dy);
+                  } else if (_isDrawingMarquee && _marqueeStart != null) {
+                    // Drawing marquee selection rectangle
+                    setState(() {
+                      _marqueeEnd = details.localPosition;
+                    });
+                  }
+                  // CRITICAL: Do NOT pan canvas in edit mode - use scrollbars instead
                 } else {
-                  // Otherwise, pan the camera
+                  // NORMAL MODE: Pan the camera (edit mode off)
                   _controller.updateCameraPosition(
                     _controller.cameraOffsetX + details.delta.dx / _controller.cameraZoom,
                     _controller.cameraOffsetY + details.delta.dy / _controller.cameraZoom,
@@ -3643,7 +3687,25 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 }
               },
               onPanEnd: (details) {
-                // Stop dragging
+                // Finalize marquee selection
+                if (_isDrawingMarquee && _marqueeStart != null && _marqueeEnd != null) {
+                  // Convert screen coordinates to canvas coordinates
+                  final canvasX1 = (_marqueeStart!.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
+                  final canvasY1 = (_marqueeStart!.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
+                  final canvasX2 = (_marqueeEnd!.dx - (_canvasWidth / 2)) / _zoom - _cameraOffsetX;
+                  final canvasY2 = (_marqueeEnd!.dy - (_canvasHeight / 2)) / _zoom - _cameraOffsetY;
+
+                  // Call controller to select all components in rectangle
+                  controller.selectInRectangle(canvasX1, canvasY1, canvasX2, canvasY2);
+
+                  setState(() {
+                    _isDrawingMarquee = false;
+                    _marqueeStart = null;
+                    _marqueeEnd = null;
+                  });
+                }
+
+                // Stop dragging component
                 if (_isDraggingComponent) {
                   _isDraggingComponent = false;
                   _draggingComponentId = null;
@@ -3653,19 +3715,33 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               },
               child: Consumer<CanvasThemeController>(
                 builder: (context, canvasThemeController, _) {
-                  return CustomPaint(
-                    size: Size(_canvasWidth, _canvasHeight),
-                    painter: TerminalStationPainter(
-                      controller: controller,
-                      cameraOffsetX: _cameraOffsetX,
-                      cameraOffsetY:
-                          _cameraOffsetY, // FIXED: Pass Y offset to painter
-                      zoom: _zoom,
-                      animationTick: _animationTick,
-                      canvasWidth: _canvasWidth,
-                      canvasHeight: _canvasHeight,
-                      themeData: canvasThemeController.getThemeData(),
-                    ),
+                  return Stack(
+                    children: [
+                      // Main railway canvas
+                      CustomPaint(
+                        size: Size(_canvasWidth, _canvasHeight),
+                        painter: TerminalStationPainter(
+                          controller: controller,
+                          cameraOffsetX: _cameraOffsetX,
+                          cameraOffsetY:
+                              _cameraOffsetY, // FIXED: Pass Y offset to painter
+                          zoom: _zoom,
+                          animationTick: _animationTick,
+                          canvasWidth: _canvasWidth,
+                          canvasHeight: _canvasHeight,
+                          themeData: canvasThemeController.getThemeData(),
+                        ),
+                      ),
+                      // Marquee selection rectangle overlay
+                      if (_isDrawingMarquee && _marqueeStart != null && _marqueeEnd != null)
+                        CustomPaint(
+                          size: Size(_canvasWidth, _canvasHeight),
+                          painter: MarqueeSelectionPainter(
+                            start: _marqueeStart!,
+                            end: _marqueeEnd!,
+                          ),
+                        ),
+                    ],
                   );
                 },
               ),
@@ -5676,5 +5752,69 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         ],
       ],
     );
+  }
+}
+
+/// Custom painter for marquee selection rectangle
+class MarqueeSelectionPainter extends CustomPainter {
+  final Offset start;
+  final Offset end;
+
+  MarqueeSelectionPainter({required this.start, required this.end});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Draw selection rectangle with dashed border
+    final rect = Rect.fromPoints(start, end);
+
+    // Fill with semi-transparent cyan
+    final fillPaint = Paint()
+      ..color = Colors.cyan.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(rect, fillPaint);
+
+    // Draw dashed border
+    final borderPaint = Paint()
+      ..color = Colors.cyan
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    // Draw dashed lines
+    _drawDashedRect(canvas, rect, borderPaint, dashWidth: 8, dashSpace: 4);
+  }
+
+  void _drawDashedRect(Canvas canvas, Rect rect, Paint paint, {required double dashWidth, required double dashSpace}) {
+    // Top edge
+    _drawDashedLine(canvas, rect.topLeft, rect.topRight, paint, dashWidth, dashSpace);
+    // Right edge
+    _drawDashedLine(canvas, rect.topRight, rect.bottomRight, paint, dashWidth, dashSpace);
+    // Bottom edge
+    _drawDashedLine(canvas, rect.bottomRight, rect.bottomLeft, paint, dashWidth, dashSpace);
+    // Left edge
+    _drawDashedLine(canvas, rect.bottomLeft, rect.topLeft, paint, dashWidth, dashSpace);
+  }
+
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint, double dashWidth, double dashSpace) {
+    final dx = end.dx - start.dx;
+    final dy = end.dy - start.dy;
+    final distance = (dx * dx + dy * dy).sqrt();
+    final dashCount = (distance / (dashWidth + dashSpace)).floor();
+
+    final unitX = dx / distance;
+    final unitY = dy / distance;
+
+    for (int i = 0; i < dashCount; i++) {
+      final startX = start.dx + (dashWidth + dashSpace) * i * unitX;
+      final startY = start.dy + (dashWidth + dashSpace) * i * unitY;
+      final endX = startX + dashWidth * unitX;
+      final endY = startY + dashWidth * unitY;
+
+      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(MarqueeSelectionPainter oldDelegate) {
+    return start != oldDelegate.start || end != oldDelegate.end;
   }
 }

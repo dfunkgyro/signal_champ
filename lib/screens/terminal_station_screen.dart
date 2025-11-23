@@ -3508,24 +3508,111 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       color: Colors.grey[200],
       child: Consumer<TerminalStationController>(
         builder: (context, controller, _) {
-          return MouseRegion(
-            onHover: (event) {
-              if (!controller.tooltipsEnabled) return;
+          // In edit mode, wrap with scrollbars for navigation
+          if (controller.editModeEnabled) {
+            return _buildScrollableCanvas(controller);
+          }
 
-              // Convert screen coordinates to canvas coordinates
-              final localPosition = event.localPosition;
-              final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom -
-                  _cameraOffsetX;
-              final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom -
-                  _cameraOffsetY;
+          // Normal mode: standard canvas with panning
+          return _buildCanvasContent(controller);
+        },
+      ),
+    );
+  }
 
-              // Check for hovered objects (signals, points, trains, etc.)
-              _detectHoveredObject(controller, canvasX, canvasY);
-            },
-            onExit: (event) {
-              controller.setHoveredObject(null);
-            },
-            child: GestureDetector(
+  /// Build scrollable canvas for edit mode with scrollbars
+  Widget _buildScrollableCanvas(TerminalStationController controller) {
+    // Calculate the full extent of the railway layout
+    // Railway extends from x: -1750 to x: 3400 (approx 5150 units)
+    const double railwayWidth = 5150.0;
+    const double railwayHeight = 800.0; // Vertical extent
+
+    // Get current viewport size
+    final viewportWidth = MediaQuery.of(context).size.width;
+    final viewportHeight = MediaQuery.of(context).size.height;
+
+    // Sync scroll position with camera offset
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_horizontalScrollController.hasClients && _verticalScrollController.hasClients) {
+        // Update scroll position based on camera offset
+        // Map camera offset to scroll position
+        final scrollX = (-_cameraOffsetX + railwayWidth / 2) * _zoom;
+        final scrollY = (-_cameraOffsetY + railwayHeight / 2) * _zoom;
+
+        if (_horizontalScrollController.offset != scrollX) {
+          _horizontalScrollController.jumpTo(scrollX.clamp(
+            0.0,
+            _horizontalScrollController.position.maxScrollExtent,
+          ));
+        }
+
+        if (_verticalScrollController.offset != scrollY) {
+          _verticalScrollController.jumpTo(scrollY.clamp(
+            0.0,
+            _verticalScrollController.position.maxScrollExtent,
+          ));
+        }
+      }
+    });
+
+    return Scrollbar(
+      controller: _horizontalScrollController,
+      thumbVisibility: true,
+      trackVisibility: true,
+      child: Scrollbar(
+        controller: _verticalScrollController,
+        thumbVisibility: true,
+        trackVisibility: true,
+        notificationPredicate: (notification) => notification.depth == 1,
+        child: SingleChildScrollView(
+          controller: _horizontalScrollController,
+          scrollDirection: Axis.horizontal,
+          child: SingleChildScrollView(
+            controller: _verticalScrollController,
+            scrollDirection: Axis.vertical,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollUpdateNotification) {
+                  // Update camera offset based on scroll position
+                  setState(() {
+                    _cameraOffsetX = -((_horizontalScrollController.offset / _zoom) - railwayWidth / 2);
+                    _cameraOffsetY = -((_verticalScrollController.offset / _zoom) - railwayHeight / 2);
+                  });
+                }
+                return true;
+              },
+              child: SizedBox(
+                width: railwayWidth * _zoom + viewportWidth,
+                height: railwayHeight * _zoom + viewportHeight,
+                child: _buildCanvasContent(controller),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build the actual canvas content (used by both scrollable and normal modes)
+  Widget _buildCanvasContent(TerminalStationController controller) {
+    return MouseRegion(
+      onHover: (event) {
+        if (!controller.tooltipsEnabled) return;
+
+        // Convert screen coordinates to canvas coordinates
+        final localPosition = event.localPosition;
+        final canvasX = (localPosition.dx - (_canvasWidth / 2)) / _zoom -
+            _cameraOffsetX;
+        final canvasY = (localPosition.dy - (_canvasHeight / 2)) / _zoom -
+            _cameraOffsetY;
+
+        // Check for hovered objects (signals, points, trains, etc.)
+        _detectHoveredObject(controller, canvasX, canvasY);
+      },
+      onExit: (event) {
+        controller.setHoveredObject(null);
+      },
+      child: GestureDetector(
               onTapDown: (details) {
                 // Convert screen coordinates to canvas coordinates
                 final localPosition = details.localPosition;
@@ -3747,9 +3834,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
             ),
           );
-        },
-      ),
-    );
   }
 
   // Helper method to detect hovered object on the canvas

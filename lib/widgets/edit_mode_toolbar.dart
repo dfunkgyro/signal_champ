@@ -178,7 +178,74 @@ class EditModeToolbar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
 
-          // Selection tool indicator (always active in edit mode)
+          // Selection Tool Buttons
+          Tooltip(
+            message: 'Pointer Tool (Click to select)\nShortcut: V',
+            child: IconButton(
+              icon: Icon(
+                Icons.near_me,
+                color: controller.selectionMode == SelectionMode.pointer
+                    ? Colors.cyanAccent
+                    : Colors.white,
+              ),
+              onPressed: () => controller.setSelectionMode(SelectionMode.pointer),
+              splashRadius: 20,
+            ),
+          ),
+
+          Tooltip(
+            message: 'Quick Selection Tool (Auto-detect)\nShortcut: W',
+            child: IconButton(
+              icon: Icon(
+                Icons.auto_fix_high,
+                color: controller.selectionMode == SelectionMode.quickSelect
+                    ? Colors.cyanAccent
+                    : Colors.white,
+              ),
+              onPressed: () => controller.setSelectionMode(SelectionMode.quickSelect),
+              splashRadius: 20,
+            ),
+          ),
+
+          Tooltip(
+            message: 'Marquee Tool (Rectangular selection)\nShortcut: M',
+            child: IconButton(
+              icon: Icon(
+                Icons.crop_square,
+                color: controller.selectionMode == SelectionMode.marquee
+                    ? Colors.cyanAccent
+                    : Colors.white,
+              ),
+              onPressed: () => controller.setSelectionMode(SelectionMode.marquee),
+              splashRadius: 20,
+            ),
+          ),
+
+          Tooltip(
+            message: 'Lasso Tool (Freehand selection)\nShortcut: L',
+            child: IconButton(
+              icon: Icon(
+                Icons.gesture,
+                color: controller.selectionMode == SelectionMode.lasso
+                    ? Colors.cyanAccent
+                    : Colors.white,
+              ),
+              onPressed: () => controller.setSelectionMode(SelectionMode.lasso),
+              splashRadius: 20,
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Divider
+          Container(
+            width: 1,
+            height: 24,
+            color: Colors.white.withOpacity(0.5),
+          ),
+          const SizedBox(width: 8),
+
+          // Selection tool indicator (shows current selection)
           Tooltip(
             message: 'Selection Tool (ACTIVE)\n\nClick any component to select it\nDrag selected component to move\nPress Delete key to remove',
             child: Container(

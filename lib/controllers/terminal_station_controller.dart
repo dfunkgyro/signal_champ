@@ -15,6 +15,44 @@ import 'dart:async';
 import 'dart:math' as math;
 
 // ============================================================================
+// SELECTION MODE ENUM - Different selection tools
+// ============================================================================
+enum SelectionMode {
+  pointer,       // Default - click to select, drag to move (Photoshop Move Tool)
+  quickSelect,   // Click and drag to auto-detect component (Photoshop Quick Selection)
+  marquee,       // Click and drag rectangular selection box
+  lasso,         // Click and drag freehand selection
+}
+
+// ============================================================================
+// SELECTED COMPONENT - Represents a selected item
+// ============================================================================
+class SelectedComponent {
+  final String type;
+  final String id;
+  final double originalX;
+  final double originalY;
+
+  SelectedComponent({
+    required this.type,
+    required this.id,
+    required this.originalX,
+    required this.originalY,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SelectedComponent &&
+          runtimeType == other.runtimeType &&
+          type == other.type &&
+          id == other.id;
+
+  @override
+  int get hashCode => type.hashCode ^ id.hashCode;
+}
+
+// ============================================================================
 // AXLE COUNTER MODEL
 // ============================================================================
 class AxleCounter {
@@ -565,9 +603,13 @@ class TerminalStationController extends ChangeNotifier {
   // Edit Mode system
   bool editModeEnabled = false;
   double editModeGridSize = 10.0; // Snap-to-grid size in edit mode
-  String?
-      selectedComponentType; // Type of selected component (signal, point, etc.)
+
+  // Selection system
+  SelectionMode selectionMode = SelectionMode.pointer; // Current selection tool
+  String? selectedComponentType; // Type of selected component (signal, point, etc.)
   String? selectedComponentId; // ID of selected component
+  final List<SelectedComponent> multiSelection = []; // Multi-select support
+
   late CommandHistory commandHistory; // Undo/redo history
   Map<String, BufferStop> bufferStops = {}; // Buffer stops
   Map<String, Crossover> crossovers = {}; // Crossovers with point relationships
@@ -7369,10 +7411,44 @@ class TerminalStationController extends ChangeNotifier {
     return (value / editModeGridSize).round() * editModeGridSize;
   }
 
+  /// Change selection mode (pointer, quickSelect, marquee, lasso)
+  void setSelectionMode(SelectionMode mode) {
+    selectionMode = mode;
+    _logEvent('🔧 Selection mode: ${mode.toString().split('.').last}');
+    notifyListeners();
+  }
+
   /// Select a component for editing
-  void selectComponent(String type, String id) {
-    selectedComponentType = type;
-    selectedComponentId = id;
+  /// addToSelection: if true, adds to multi-selection (Shift key behavior)
+  /// removeFromSelection: if true, removes from selection (Alt/Option key behavior)
+  void selectComponent(String type, String id, {bool addToSelection = false, bool removeFromSelection = false}) {
+    if (removeFromSelection) {
+      // Alt/Option key - remove from selection
+      multiSelection.removeWhere((s) => s.type == type && s.id == id);
+      if (selectedComponentId == id && selectedComponentType == type) {
+        // If this was the primary selection, clear it
+        selectedComponentType = null;
+        selectedComponentId = null;
+      }
+      _logEvent('➖ Removed from selection: $type $id');
+    } else if (addToSelection) {
+      // Shift key - add to selection
+      if (!multiSelection.any((s) => s.type == type && s.id == id)) {
+        final component = SelectedComponent(
+          type: type,
+          id: id,
+          originalX: _getComponentX(type, id),
+          originalY: _getComponentY(type, id),
+        );
+        multiSelection.add(component);
+        _logEvent('➕ Added to selection: $type $id (${multiSelection.length} selected)');
+      }
+    } else {
+      // Normal click - replace selection
+      multiSelection.clear();
+      selectedComponentType = type;
+      selectedComponentId = id;
+    }
     notifyListeners();
   }
 
@@ -7380,7 +7456,99 @@ class TerminalStationController extends ChangeNotifier {
   void clearSelection() {
     selectedComponentType = null;
     selectedComponentId = null;
+    multiSelection.clear();
     notifyListeners();
+  }
+
+  /// Select all components in a rectangular area (Marquee tool)
+  void selectInRectangle(double x1, double y1, double x2, double y2) {
+    multiSelection.clear();
+    final minX = math.min(x1, x2);
+    final maxX = math.max(x1, x2);
+    final minY = math.min(y1, y2);
+    final maxY = math.max(y1, y2);
+
+    int count = 0;
+
+    // Check signals
+    for (final signal in signals.values) {
+      if (signal.x >= minX && signal.x <= maxX && signal.y >= minY && signal.y <= maxY) {
+        multiSelection.add(SelectedComponent(
+          type: 'signal',
+          id: signal.id,
+          originalX: signal.x,
+          originalY: signal.y,
+        ));
+        count++;
+      }
+    }
+
+    // Check points
+    for (final point in points.values) {
+      if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
+        multiSelection.add(SelectedComponent(
+          type: 'point',
+          id: point.id,
+          originalX: point.x,
+          originalY: point.y,
+        ));
+        count++;
+      }
+    }
+
+    // Check platforms
+    for (final platform in platforms) {
+      final centerX = platform.startX + (platform.endX - platform.startX) / 2;
+      if (centerX >= minX && centerX <= maxX && platform.y >= minY && platform.y <= maxY) {
+        multiSelection.add(SelectedComponent(
+          type: 'platform',
+          id: platform.id,
+          originalX: centerX,
+          originalY: platform.y,
+        ));
+        count++;
+      }
+    }
+
+    _logEvent('🔲 Marquee selection: $count components selected');
+    notifyListeners();
+  }
+
+  /// Get component X position (helper for selection)
+  double _getComponentX(String type, String id) {
+    switch (type.toLowerCase()) {
+      case 'signal':
+        return signals[id]?.x ?? 0;
+      case 'point':
+        return points[id]?.x ?? 0;
+      case 'platform':
+        final platform = platforms.firstWhereOrNull((p) => p.id == id);
+        return platform != null ? platform.startX + (platform.endX - platform.startX) / 2 : 0;
+      case 'trainstop':
+        return trainStops[id]?.x ?? 0;
+      case 'bufferstop':
+        return bufferStops[id]?.x ?? 0;
+      default:
+        return 0;
+    }
+  }
+
+  /// Get component Y position (helper for selection)
+  double _getComponentY(String type, String id) {
+    switch (type.toLowerCase()) {
+      case 'signal':
+        return signals[id]?.y ?? 0;
+      case 'point':
+        return points[id]?.y ?? 0;
+      case 'platform':
+        return platforms.firstWhereOrNull((p) => p.id == id)?.y ?? 0;
+      case 'trainstop':
+        return trainStops[id]?.y ?? 0;
+      case 'bufferstop':
+        return bufferStops[id]?.y ?? 0;
+      default:
+        return 0;
+    }
   }
 
   /// Delete the currently selected component
@@ -8114,15 +8282,11 @@ class TerminalStationController extends ChangeNotifier {
 
   /// Create buffer stop directly (called by command - no logging)
   void createBufferStopDirect(String id, double x, double y) {
-
     bufferStops[id] = BufferStop(
       id: id,
       x: x,
       y: y,
     );
-
-    _logEvent('✅ Created buffer stop $id at ($x, $y)');
-    notifyListeners();
   }
 
   /// Create a new axle counter at specified position

@@ -2808,16 +2808,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L02'] = Signal(
       id: 'L02',
-      x: -1010, // FIXED: 10 units from end of block 204 (before block 202)
-      y: 320, // FIXED: Changed to 320 to face correct direction (westbound on lower track)
+      x: -610, // FIXED: End of block 207/209 (-600) minus 10 units
+      y: 340, // Lower track westbound signal position
+      direction: SignalDirection.west,
       routes: [
         SignalRoute(
           id: 'L02_R1',
           name: 'West Platform 1 Departure',
-          requiredBlocksClear: ['204', '206'],
+          requiredBlocksClear: ['209', '211'],
           requiredPointPositions: {},
-          pathBlocks: ['204', '206'],
-          protectedBlocks: ['204', '206'],
+          pathBlocks: ['209', '211'],
+          protectedBlocks: ['209', '211'],
         ),
       ],
     );
@@ -2917,16 +2918,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L07'] = Signal(
       id: 'L07',
-      x: -1710, // FIXED: 10 units from end of block 199 (before block 201)
-      y: 320,
+      x: -990, // FIXED: End of block 203/205 (-1000) plus 10 units
+      y: 340, // Lower track westbound signal position
+      direction: SignalDirection.west,
       routes: [
         SignalRoute(
           id: 'L07_R1',
           name: 'West Loop',
-          requiredBlocksClear: ['205', '203', '201'],
-          requiredPointPositions: {}, // FIXED: Removed reference to deleted point 76B
-          pathBlocks: ['205', '203', '201'],
-          protectedBlocks: ['205', '203', '201'],
+          requiredBlocksClear: ['205', '207'],
+          requiredPointPositions: {},
+          pathBlocks: ['205', '207'],
+          protectedBlocks: ['205', '207'],
         ),
       ],
     );
@@ -3086,16 +3088,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R02'] = Signal(
       id: 'R02',
-      x: 2590, // FIXED: 10 units from end of block 308 (before block 306)
-      y: 320, // FIXED: Changed to 320 to face correct direction (westbound on lower track)
+      x: 2610, // FIXED: End of block 307/309 (2600) plus 10 units
+      y: 340, // Lower track westbound signal position
+      direction: SignalDirection.west,
       routes: [
         SignalRoute(
           id: 'R02_R1',
           name: 'East Platform 1 Departure',
-          requiredBlocksClear: ['304', '306'],
+          requiredBlocksClear: ['309', '307'],
           requiredPointPositions: {},
-          pathBlocks: ['304', '306'],
-          protectedBlocks: ['304', '306'],
+          pathBlocks: ['309', '307'],
+          protectedBlocks: ['309', '307'],
         ),
       ],
     );
@@ -3118,16 +3121,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R04'] = Signal(
       id: 'R04',
-      x: 3290, // FIXED: 10 units from end of block 316 (before block 314)
-      y: 320, // FIXED: Changed to 320 to face correct direction (westbound on lower track)
+      x: 3210, // FIXED: End of block 313/315 (3200) plus 10 units
+      y: 340, // Lower track westbound signal position
+      direction: SignalDirection.west,
       routes: [
         SignalRoute(
           id: 'R04_R1',
           name: 'East Loop Entry',
-          requiredBlocksClear: ['314', '316'],
-          requiredPointPositions: {}, // FIXED: Removed reference to deleted point 80A
-          pathBlocks: ['314', '316'],
-          protectedBlocks: ['314', '316'],
+          requiredBlocksClear: ['315', '313'],
+          requiredPointPositions: {},
+          pathBlocks: ['315', '313'],
+          protectedBlocks: ['315', '313'],
         ),
       ],
     );
@@ -3167,19 +3171,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R07'] = Signal(
       id: 'R07',
-      x: 1990, // FIXED: 10 units from end of block 303 (before block 301)
-      y: 320,
+      x: 1790, // FIXED: End of block 115/301 (1800) minus 10 units
+      y: 340, // Lower track westbound signal position
+      direction: SignalDirection.west,
       routes: [
         SignalRoute(
           id: 'R07_R1',
           name: 'To Central (Straight)',
-          requiredBlocksClear: ['305', '303', '301'],
-          requiredPointPositions: {
-            '79B': PointPosition.normal,
-            '80B': PointPosition.normal
-          },
-          pathBlocks: ['305', '303', '301'],
-          protectedBlocks: ['305', '303', '301'],
+          requiredBlocksClear: ['301', '115'],
+          requiredPointPositions: {},
+          pathBlocks: ['301', '115'],
+          protectedBlocks: ['301', '115'],
         ),
         SignalRoute(
           id: 'R07_R2',
@@ -3197,16 +3199,17 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R08'] = Signal(
       id: 'R08',
-      x: 1590, // FIXED: 10 units from end of block 115 (before block 113)
-      y: 80, // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
+      x: 2610, // FIXED: End of block 306/308 (2600) plus 10 units
+      y: 80, // Upper track signal position (eastbound)
+      direction: SignalDirection.east,
       routes: [
         SignalRoute(
           id: 'R08_R1',
           name: 'East Exit',
-          requiredBlocksClear: ['301', '115'],
+          requiredBlocksClear: ['308', '310'],
           requiredPointPositions: {},
-          pathBlocks: ['301', '115'],
-          protectedBlocks: ['301', '115'],
+          pathBlocks: ['308', '310'],
+          protectedBlocks: ['308', '310'],
         ),
       ],
     );
@@ -3215,7 +3218,7 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['TL01'] =
         TrainStop(id: 'TL01', signalId: 'L01', x: -1710, y: 120);
     trainStops['TL02'] =
-        TrainStop(id: 'TL02', signalId: 'L02', x: -1010, y: 340);
+        TrainStop(id: 'TL02', signalId: 'L02', x: -600, y: 340); // FIXED: End of block 209 (without minus 10)
     trainStops['TL03'] =
         TrainStop(id: 'TL03', signalId: 'L03', x: -810, y: 120);
     trainStops['TL04'] =
@@ -3225,7 +3228,7 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['TL06'] =
         TrainStop(id: 'TL06', signalId: 'L06', x: -1010, y: 120);
     trainStops['TL07'] =
-        TrainStop(id: 'TL07', signalId: 'L07', x: -1710, y: 340);
+        TrainStop(id: 'TL07', signalId: 'L07', x: -1000, y: 340); // FIXED: End of block 205 (without plus 10)
 
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
     trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1190, y: 120);
@@ -3247,11 +3250,11 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['TR01'] =
         TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
     trainStops['TR02'] =
-        TrainStop(id: 'TR02', signalId: 'R02', x: 2590, y: 340);
+        TrainStop(id: 'TR02', signalId: 'R02', x: 2600, y: 340); // FIXED: End of block 309 (without plus 10)
     trainStops['TR03'] =
         TrainStop(id: 'TR03', signalId: 'R03', x: 2790, y: 120);
     trainStops['TR04'] =
-        TrainStop(id: 'TR04', signalId: 'R04', x: 3290, y: 340);
+        TrainStop(id: 'TR04', signalId: 'R04', x: 3200, y: 340); // FIXED: End of block 315 (without plus 10)
     trainStops['TR05'] =
         TrainStop(id: 'TR05', signalId: 'R05', x: 2790, y: 340);
     trainStops['TR06'] = TrainStop(
@@ -3260,9 +3263,9 @@ class TerminalStationController extends ChangeNotifier {
         x: 2490,
         y: 340); // MOVED: Match R06 signal position
     trainStops['TR07'] =
-        TrainStop(id: 'TR07', signalId: 'R07', x: 1990, y: 340);
+        TrainStop(id: 'TR07', signalId: 'R07', x: 1800, y: 340); // FIXED: End of block 301 (without minus 10)
     trainStops['TR08'] =
-        TrainStop(id: 'TR08', signalId: 'R08', x: 1590, y: 120);
+        TrainStop(id: 'TR08', signalId: 'R08', x: 2600, y: 120); // FIXED: End of block 308 (without plus 10)
 
     // ═══════════════════════════════════════════════════════════════════════
     // CBTC INFRASTRUCTURE - WiFi and Transponders with individual control
@@ -6070,21 +6073,8 @@ class TerminalStationController extends ChangeNotifier {
         }
       }
 
-      // FIXED: Wrap around at track end (eastbound) - Extended track to 3400
-      if (train.direction > 0 && train.x > 3400) {
-        train.x = -1750;  // Wrap to LEFT section start
-        train.y = 100;
-        train.hasCommittedToMove = false;
-        train.lastPassedSignalId = null;
-      }
-
-      // FIXED: Wrap around at track start (westbound) - Extended track from -1800
-      if (train.direction < 0 && train.x < -1800) {
-        train.x = 3350;  // Wrap to RIGHT section end
-        train.y = 300;   // Lower track for westbound
-        train.hasCommittedToMove = false;
-        train.lastPassedSignalId = null;
-      }
+      // REMOVED: Wrap-around code deleted - trains should collide with bufferstops instead of looping
+      // Bufferstop collision detection will stop trains at the end of the line
     }
 
     // Re-enable train stops when trains clear the blocks

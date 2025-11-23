@@ -1092,22 +1092,42 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawBufferStop(Canvas canvas) {
-    final bufferPaint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
+    // FIXED: Draw all buffer stops from controller instead of hardcoded position
+    for (var bufferStop in controller.bufferStops.values) {
+      final bufferPaint = Paint()
+        ..color = Colors.red
+        ..style = PaintingStyle.fill;
 
-    canvas.drawRect(const Rect.fromLTWH(3400, 285, 20, 30), bufferPaint);
-
-    final stripePaint = Paint()
-      ..color = Colors.yellow
-      ..strokeWidth = 2;
-
-    for (int i = 0; i < 5; i++) {
-      canvas.drawLine(
-        Offset(3400 + (i * 5), 285),
-        Offset(3410 + (i * 5), 315),
-        stripePaint,
+      // Draw buffer stop rectangle at its position
+      canvas.drawRect(
+        Rect.fromLTWH(
+          bufferStop.x - bufferStop.width / 2,
+          bufferStop.y - bufferStop.height / 2,
+          bufferStop.width,
+          bufferStop.height,
+        ),
+        bufferPaint,
       );
+
+      // Draw yellow diagonal stripes
+      final stripePaint = Paint()
+        ..color = Colors.yellow
+        ..strokeWidth = 2;
+
+      final stripeCount = (bufferStop.width / 5).floor();
+      for (int i = 0; i < stripeCount; i++) {
+        canvas.drawLine(
+          Offset(
+            bufferStop.x - bufferStop.width / 2 + (i * 5),
+            bufferStop.y - bufferStop.height / 2,
+          ),
+          Offset(
+            bufferStop.x - bufferStop.width / 2 + 10 + (i * 5),
+            bufferStop.y + bufferStop.height / 2,
+          ),
+          stripePaint,
+        );
+      }
     }
   }
 
@@ -2388,11 +2408,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         break;
 
       case 'platform':
-        final platform = controller.platforms[id];
-        if (platform != null) {
+        try {
+          final platform = controller.platforms.firstWhere((p) => p.id == id);
           // Use midpoint for platforms
           x = platform.startX + (platform.endX - platform.startX) / 2;
           y = platform.y;
+        } catch (e) {
+          // Platform not found
         }
         break;
 
@@ -2405,9 +2427,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         break;
 
       case 'bufferstop':
-        // Buffer stops are hardcoded at specific positions
-        // Use a default position or skip highlighting
-        return;
+        // FIXED: Buffer stops are now dynamically positioned
+        final bufferStop = controller.bufferStops[id];
+        if (bufferStop != null) {
+          x = bufferStop.x;
+          y = bufferStop.y;
+        }
+        break;
 
       case 'axlecounter':
         final axleCounter = controller.axleCounters[id];

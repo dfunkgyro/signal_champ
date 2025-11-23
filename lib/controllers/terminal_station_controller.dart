@@ -2656,6 +2656,38 @@ class TerminalStationController extends ChangeNotifier {
         y: 300));
 
     // ═══════════════════════════════════════════════════════════════════════
+    // BUFFER STOPS - Placed at track ends
+    // ═══════════════════════════════════════════════════════════════════════
+    bufferStops['BS1'] = BufferStop(
+      id: 'BS1',
+      x: -1800,  // Left end, upper track
+      y: 100,
+      width: 30,
+      height: 20,
+    );
+    bufferStops['BS2'] = BufferStop(
+      id: 'BS2',
+      x: -1700,  // Left end, lower track
+      y: 300,
+      width: 30,
+      height: 20,
+    );
+    bufferStops['BS3'] = BufferStop(
+      id: 'BS3',
+      x: 3400,  // Right end, upper track (original hardcoded position)
+      y: 100,
+      width: 30,
+      height: 20,
+    );
+    bufferStops['BS4'] = BufferStop(
+      id: 'BS4',
+      x: 3400,  // Right end, lower track
+      y: 300,
+      width: 30,
+      height: 20,
+    );
+
+    // ═══════════════════════════════════════════════════════════════════════
     // SIGNALS - Comprehensive coverage across all 3 sections
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -4293,6 +4325,45 @@ class TerminalStationController extends ChangeNotifier {
 
     collisionAlarmActive = false;
     currentCollisionIncident = null;
+    notifyListeners();
+  }
+
+  /// Force collision resolution by moving trains 20 units apart
+  void forceCollisionResolution() {
+    if (currentCollisionIncident != null &&
+        currentCollisionIncident!.trainsInvolved.length >= 2) {
+      final train1Id = currentCollisionIncident!.trainsInvolved[0];
+      final train2Id = currentCollisionIncident!.trainsInvolved[1];
+
+      try {
+        final train1 = trains.firstWhere((t) => t.id == train1Id);
+        final train2 = trains.firstWhere((t) => t.id == train2Id);
+
+        // Move trains 20 units apart in opposite directions
+        train1.x -= 20 * train1.direction;
+        train2.x += 20 * train2.direction;
+
+        // Stop both trains and apply emergency brakes
+        train1.speed = 0;
+        train1.targetSpeed = 0;
+        train1.emergencyBrake = true;
+
+        train2.speed = 0;
+        train2.targetSpeed = 0;
+        train2.emergencyBrake = true;
+
+        _logEvent(
+            '🔧 FORCE RECOVERY: Trains moved 20 units apart from collision location');
+        _logEvent('⚠️ Emergency brakes applied to ${train1.name} and ${train2.name}');
+        _logEvent('ℹ️ Release emergency brakes to continue operations');
+
+        _updateBlockOccupation();
+      } catch (e) {
+        _logEvent('❌ Error in force collision resolution: $e');
+      }
+    }
+
+    // Don't clear collision alarm - require explicit acknowledgment
     notifyListeners();
   }
 
@@ -6008,23 +6079,7 @@ class TerminalStationController extends ChangeNotifier {
         case '112':
           return '114';
         case '114':
-          return '116';
-        case '116':
-          return '118';
-        case '118':
-          return '120';
-        case '120':
-          return '122';
-        case '122':
-          return '124';
-        case '124':
-          return '126';
-        case '126':
-          return '128';
-        case '128':
-          return '130';
-        case '130':
-          return '132';
+          return '300'; // FIXED: Block 114 continues to RIGHT SECTION block 300
         case '101':
           return '103';
         case '103':
@@ -6073,38 +6128,22 @@ class TerminalStationController extends ChangeNotifier {
 
       // RIGHT SECTION (301-315) - going west
       switch (currentBlock.id) {
-        case '132':
-          return '130';
-        case '130':
-          return '128';
-        case '128':
-          return '126';
-        case '126':
-          return '124';
-        case '124':
-          return '122';
-        case '122':
-          return '120';
-        case '120':
-          return '118';
-        case '118':
-          return '116';
-        case '116':
-          return '114';
-        case '114':
-          return '112';
-        case '112':
-          return '110';
-        case '110':
-          return '108';
-        case '108':
-          return '106';
-        case '106':
-          return '104';
-        case '104':
-          return '102';
-        case '102':
-          return '100';
+        case '315':
+          return '313';
+        case '313':
+          return '311';
+        case '311':
+          return '309';
+        case '309':
+          return '307';
+        case '307':
+          return '305';
+        case '305':
+          return '303';
+        case '303':
+          return '301';
+        case '301':
+          return '115'; // FIXED: Continue to MIDDLE SECTION block 115
         case '111':
           return '109';
         case '109':
@@ -6655,6 +6694,20 @@ class TerminalStationController extends ChangeNotifier {
   bool _checkPointCollision(Train train) {
     final currentBlockId = train.currentBlockId;
     if (currentBlockId == null) return false;
+
+    // FIXED: Don't check collision for trains currently traveling on crossovers
+    // Trains using crossovers legitimately need points in reverse position
+    final crossoverBlocks = [
+      'crossover_211_212',
+      'crossover106',
+      'crossover109',
+      'crossover_303_304',
+      'crossover_left',
+      'crossover_right',
+    ];
+    if (crossoverBlocks.contains(currentBlockId)) {
+      return false; // Train is on crossover, allow movement
+    }
 
     // LEFT CROSSOVER - Check points 76A, 76B, 77A, 77B
     // Eastbound approaching from converging side (lower track to upper via points in reverse)

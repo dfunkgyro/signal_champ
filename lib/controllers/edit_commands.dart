@@ -736,6 +736,121 @@ class DeleteCrossoverCommand implements EditCommand {
   String get description => 'Delete Crossover $crossoverId';
 }
 
+/// Command to add a new signal
+class AddSignalCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String signalId;
+  final double x, y;
+  final SignalDirection direction;
+
+  AddSignalCommand(
+    this.controller,
+    this.signalId,
+    this.x,
+    this.y, {
+    this.direction = SignalDirection.east,
+  });
+
+  @override
+  void execute() {
+    if (!controller.signals.containsKey(signalId)) {
+      controller.createSignalDirect(signalId, x, y, direction: direction);
+    }
+  }
+
+  @override
+  void undo() {
+    controller.signals.remove(signalId);
+    controller.logEvent('↩️ Removed signal $signalId');
+  }
+
+  @override
+  String get description => 'Add Signal $signalId';
+}
+
+/// Command to add a new point
+class AddPointCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String pointId;
+  final double x, y;
+
+  AddPointCommand(this.controller, this.pointId, this.x, this.y);
+
+  @override
+  void execute() {
+    if (!controller.points.containsKey(pointId)) {
+      controller.createPointDirect(pointId, x, y);
+    }
+  }
+
+  @override
+  void undo() {
+    controller.points.remove(pointId);
+    controller.logEvent('↩️ Removed point $pointId');
+  }
+
+  @override
+  String get description => 'Add Point $pointId';
+}
+
+/// Command to add a new platform
+class AddPlatformCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String platformId;
+  final String name;
+  final double startX, endX, y;
+
+  AddPlatformCommand(
+    this.controller,
+    this.platformId,
+    this.name,
+    this.startX,
+    this.endX,
+    this.y,
+  );
+
+  @override
+  void execute() {
+    if (!controller.platforms.any((p) => p.id == platformId)) {
+      controller.createPlatformDirect(platformId, name, startX, endX, y);
+    }
+  }
+
+  @override
+  void undo() {
+    controller.platforms.removeWhere((p) => p.id == platformId);
+    controller.logEvent('↩️ Removed platform $platformId');
+  }
+
+  @override
+  String get description => 'Add Platform $platformId';
+}
+
+/// Command to add a new buffer stop
+class AddBufferStopCommand implements EditCommand {
+  final TerminalStationController controller;
+  final String bufferStopId;
+  final double x, y;
+
+  AddBufferStopCommand(this.controller, this.bufferStopId, this.x, this.y);
+
+  @override
+  void execute() {
+    if (!controller.bufferStops.containsKey(bufferStopId)) {
+      controller.createBufferStopDirect(bufferStopId, x, y);
+    }
+  }
+
+  @override
+  void undo() {
+    controller.bufferStops.remove(bufferStopId);
+    controller.logEvent('↩️ Removed buffer stop $bufferStopId');
+  }
+
+  @override
+  String get description => 'Add Buffer Stop $bufferStopId';
+}
+
 /// Command History Manager - manages undo/redo stacks
 class CommandHistory {
   final List<EditCommand> _undoStack = [];

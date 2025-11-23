@@ -170,6 +170,59 @@ class EditModeToolbar extends StatelessWidget {
 
           const SizedBox(width: 8),
 
+          // Divider
+          Container(
+            width: 1,
+            height: 24,
+            color: Colors.white.withOpacity(0.5),
+          ),
+          const SizedBox(width: 8),
+
+          // Selection tool indicator (always active in edit mode)
+          Tooltip(
+            message: 'Selection Tool (ACTIVE)\n\nClick any component to select it\nDrag selected component to move\nPress Delete key to remove',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.cyan.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.cyan, width: 2),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.touch_app, color: Colors.cyan, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    controller.selectedComponentId != null
+                        ? 'Selected: ${controller.selectedComponentType} ${controller.selectedComponentId}'
+                        : 'Click to Select',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Clear selection button (visible only when something is selected)
+          if (controller.selectedComponentId != null)
+            Tooltip(
+              message: 'Clear Selection',
+              child: IconButton(
+                icon: const Icon(Icons.clear, color: Colors.white),
+                onPressed: () => controller.clearSelection(),
+                splashRadius: 20,
+              ),
+            ),
+
+          const SizedBox(width: 8),
+
           // Close edit mode button
           ElevatedButton.icon(
             onPressed: () => controller.toggleEditMode(),

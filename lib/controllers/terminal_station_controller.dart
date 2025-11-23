@@ -506,6 +506,14 @@ class TerminalStationController extends ChangeNotifier {
   final Map<String, CollisionRecoveryPlan> _activeCollisionRecoveries = {};
   Timer? _recoveryProgressTimer;
 
+  // Track acknowledged point collisions to prevent repeated alerts
+  // Map: trainId -> {pointId: acknowledgmentX}
+  final Map<String, Map<String, double>> _acknowledgedPointCollisions = {};
+
+  // Track which train has an active point collision (for UI to show acknowledge button)
+  String? activePointCollisionTrainId;
+  String? activePointCollisionPointId;
+
   // ENHANCEMENT 18: Spatial partitioning for performance optimization
   final Map<String, List<Train>> _spatialGrid = {};
   static const double _gridCellSize = 200.0; // 200x200 unit cells
@@ -1280,6 +1288,45 @@ class TerminalStationController extends ChangeNotifier {
 
     _logEvent('✅ Collision alarm acknowledged and cleared');
     notifyListeners();
+  }
+
+  /// Acknowledge point collision (running through points from converging side)
+  /// Allows train to continue journey, won't trigger alert again until 20 units clear
+  void acknowledgePointCollision() {
+    if (activePointCollisionTrainId == null || activePointCollisionPointId == null) {
+      return;
+    }
+
+    final train = trains.firstWhereOrNull((t) => t.id == activePointCollisionTrainId);
+    if (train == null) return;
+
+    // Record acknowledgment with current train position
+    if (!_acknowledgedPointCollisions.containsKey(train.id)) {
+      _acknowledgedPointCollisions[train.id] = {};
+    }
+    _acknowledgedPointCollisions[train.id]![activePointCollisionPointId!] = train.x;
+
+    // Release emergency brake to allow train to continue
+    train.emergencyBrake = false;
+
+    _logEvent('✅ Point collision acknowledged for ${train.name} at ${activePointCollisionPointId}');
+    _logEvent('ℹ️  Train can now continue - alert won\'t repeat until train clears point by 20 units');
+
+    // Clear active collision indicators
+    activePointCollisionTrainId = null;
+    activePointCollisionPointId = null;
+
+    notifyListeners();
+  }
+
+  /// Release emergency brake for a specific train (UI button)
+  void releaseEmergencyBrake(String trainId) {
+    final train = trains.firstWhereOrNull((t) => t.id == trainId);
+    if (train != null) {
+      train.emergencyBrake = false;
+      _logEvent('✅ Emergency brake released for ${train.name}');
+      notifyListeners();
+    }
   }
 
   // SIMPLIFIED COLLISION RECOVERY - Single button, moves trains 20 units back

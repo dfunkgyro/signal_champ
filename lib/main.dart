@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/canvas_theme_controller.dart';
 import '../services/supabase_service.dart';
@@ -383,10 +384,68 @@ class _MainScreenState extends State<MainScreen> {
     _initializeServices();
   }
 
+  /// Request necessary app permissions on startup
+  Future<void> _requestPermissions() async {
+    try {
+      // Request microphone permission for voice recognition and TTS
+      final micStatus = await Permission.microphone.status;
+      if (!micStatus.isGranted) {
+        debugPrint('  📢 Requesting microphone permission...');
+        final result = await Permission.microphone.request();
+        if (result.isGranted) {
+          debugPrint('  ✅ Microphone permission granted');
+        } else if (result.isPermanentlyDenied) {
+          debugPrint('  ❌ Microphone permission permanently denied - opening settings');
+          await openAppSettings();
+        } else {
+          debugPrint('  ⚠️ Microphone permission denied');
+        }
+      } else {
+        debugPrint('  ✅ Microphone permission already granted');
+      }
+
+      // Request speech recognition permission (if different from microphone)
+      final speechStatus = await Permission.speech.status;
+      if (!speechStatus.isGranted) {
+        debugPrint('  🗣️ Requesting speech permission...');
+        final result = await Permission.speech.request();
+        if (result.isGranted) {
+          debugPrint('  ✅ Speech permission granted');
+        } else {
+          debugPrint('  ⚠️ Speech permission denied');
+        }
+      } else {
+        debugPrint('  ✅ Speech permission already granted');
+      }
+
+      // Initialize speech recognition service after permissions granted
+      if (mounted) {
+        try {
+          final speechService = context.read<SpeechRecognitionService>();
+          await speechService.initialize();
+          debugPrint('  ✅ Speech recognition service initialized');
+        } catch (e) {
+          debugPrint('  ⚠️ Speech service initialization failed: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('  ❌ Permission request error: $e');
+    }
+  }
+
   Future<void> _initializeServices() async {
     debugPrint('🔧 MainScreen: Starting service initialization...');
 
     try {
+      // STEP 0: Request necessary permissions
+      try {
+        debugPrint('  → Requesting app permissions...');
+        await _requestPermissions();
+        debugPrint('  ✅ Permissions checked');
+      } catch (e) {
+        debugPrint('  ⚠️ Permission request failed (non-critical): $e');
+      }
+
       // STEP 1: Initialize Supabase presence (if available)
       try {
         debugPrint('  → Initializing Supabase presence...');

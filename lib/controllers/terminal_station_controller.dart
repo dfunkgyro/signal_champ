@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart'; // For firstWhereOrNull
 import 'package:rail_champ/screens/collision_analysis_system.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart'
     hide CollisionIncident;
@@ -8011,15 +8012,18 @@ class TerminalStationController extends ChangeNotifier {
   // COMPONENT CREATION (EDIT MODE)
   // ============================================================================
 
-  /// Create a new signal at specified position
+  /// Create a new signal at specified position (with undo/redo support)
   void createSignal(String id, double x, double y,
       {SignalDirection direction = SignalDirection.east}) {
-    if (signals.containsKey(id)) {
-      _logEvent('❌ Signal $id already exists');
-      return;
-    }
+    final command = AddSignalCommand(this, id, x, y, direction: direction);
+    commandHistory.executeCommand(command);
+    _logEvent('✅ Created signal $id at ($x, $y)');
+    notifyListeners();
+  }
 
-    // Create signal with default routes (user can configure later)
+  /// Create signal directly (called by command - no logging)
+  void createSignalDirect(String id, double x, double y,
+      {SignalDirection direction = SignalDirection.east}) {
     signals[id] = Signal(
       id: id,
       x: x,
@@ -8037,47 +8041,44 @@ class TerminalStationController extends ChangeNotifier {
       ],
       aspect: SignalAspect.red,
     );
+  }
 
-    _logEvent('✅ Created signal $id at ($x, $y)');
+  /// Create a new point at specified position (with undo/redo support)
+  void createPoint(String id, double x, double y) {
+    final command = AddPointCommand(this, id, x, y);
+    commandHistory.executeCommand(command);
+    _logEvent('✅ Created point $id at ($x, $y)');
     notifyListeners();
   }
 
-  /// Create a new point at specified position
-  void createPoint(String id, double x, double y) {
-    if (points.containsKey(id)) {
-      _logEvent('❌ Point $id already exists');
-      return;
-    }
-
+  /// Create point directly (called by command - no logging)
+  void createPointDirect(String id, double x, double y) {
     points[id] = Point(
       id: id,
       x: x,
       y: y,
       position: PointPosition.normal,
     );
+  }
 
-    _logEvent('✅ Created point $id at ($x, $y)');
+  /// Create a new platform at specified position (with undo/redo support)
+  void createPlatform(String id, String name, double x, double y,
+      {double length = 200}) {
+    final command = AddPlatformCommand(this, id, name, x, x + length, y);
+    commandHistory.executeCommand(command);
+    _logEvent('✅ Created platform $name ($id) at ($x, $y)');
     notifyListeners();
   }
 
-  /// Create a new platform at specified position
-  void createPlatform(String id, String name, double x, double y,
-      {double length = 200}) {
-    if (platforms.any((p) => p.id == id)) {
-      _logEvent('❌ Platform $id already exists');
-      return;
-    }
-
+  /// Create platform directly (called by command - no logging)
+  void createPlatformDirect(String id, String name, double startX, double endX, double y) {
     platforms.add(Platform(
       id: id,
       name: name,
-      startX: x,
-      endX: x + length,
+      startX: startX,
+      endX: endX,
       y: y,
     ));
-
-    _logEvent('✅ Created platform $name ($id) at ($x, $y)');
-    notifyListeners();
   }
 
   /// Create a new train stop at specified position
@@ -8103,12 +8104,16 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Create a new buffer stop at specified position
+  /// Create a new buffer stop at specified position (with undo/redo support)
   void createBufferStop(String id, double x, double y) {
-    if (bufferStops.containsKey(id)) {
-      _logEvent('❌ Buffer stop $id already exists');
-      return;
-    }
+    final command = AddBufferStopCommand(this, id, x, y);
+    commandHistory.executeCommand(command);
+    _logEvent('✅ Created buffer stop $id at ($x, $y)');
+    notifyListeners();
+  }
+
+  /// Create buffer stop directly (called by command - no logging)
+  void createBufferStopDirect(String id, double x, double y) {
 
     bufferStops[id] = BufferStop(
       id: id,

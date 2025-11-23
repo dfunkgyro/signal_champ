@@ -408,24 +408,27 @@ class Train {
       carriages[i].applyCurveSway(curveRadius, speed);
       carriages[i].y += carriages[i].lateralOffset;
 
-      // FIXED: Individual carriage rotation based on TRAIN'S rotation when carriage is on crossover
-      // Each carriage checks its OWN x position to determine if IT is on a crossover
-      final carriageX = carriages[i].x;
-      final isOnCrossover =
-          (carriageX >= -550 && carriageX < -450) ||  // Left crossover
-          (carriageX >= 600 && carriageX < 800) ||     // Center crossover
-          (carriageX >= 1900 && carriageX < 2000);     // Right crossover
+      // FIXED: Carriage rotation using improved methods
+      // REMOVED: Individual carriage angle orientation (caused disconnected appearance)
+      //
+      // Alternative Method #1: UNIFORM ROTATION (Current Implementation)
+      // All carriages share the lead carriage's rotation for connected appearance
+      carriages[i].rotation = rotation;
 
-      if (isOnCrossover) {
-        // Carriage is on crossover - use TRAIN's rotation (0.785398 = 45°)
-        // Apply slight lag based on carriage position for realistic articulation
-        final baseCrossoverRotation = 0.785398; // 45 degrees
-        final rotationLag = 0.02 * i; // Small lag per carriage
-        carriages[i].rotation = baseCrossoverRotation - (rotationLag * direction);
-      } else {
-        // Carriage is on straight track - align horizontally (rotation = 0)
-        carriages[i].rotation = 0.0;
-      }
+      // Alternative Method #2: CATENARY CURVE FOLLOWING (commented out)
+      // Each carriage points toward previous carriage
+      // final dx = carriages[i].x - carriages[i-1].x;
+      // final dy = carriages[i].y - carriages[i-1].y;
+      // carriages[i].rotation = atan2(dy, dx);
+
+      // Alternative Method #3: PIECE-WISE STRAIGHT (commented out)
+      // Carriages stay horizontal unless entire train on crossover
+      // carriages[i].rotation = (allCarriagesOnCrossover) ? rotation : 0.0;
+
+      // Alternative Method #4: VISUAL Y-OFFSET ONLY (commented out)
+      // Keep rotation 0, but shift Y position for visual curve effect
+      // final onCrossover = (carriageX >= crossoverStart && carriageX < crossoverEnd);
+      // carriages[i].y += onCrossover ? (i * 2.0 * sin(rotation)) : 0.0;
 
       carriages[i].wheelAngle = carriages[i].rotation * 0.8;
 

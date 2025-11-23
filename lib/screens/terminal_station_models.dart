@@ -408,9 +408,23 @@ class Train {
       carriages[i].applyCurveSway(curveRadius, speed);
       carriages[i].y += carriages[i].lateralOffset;
 
-      // ENHANCEMENT 5: Progressive rotation lag for realistic articulation
-      final rotationLag = 0.05 * i; // Each carriage lags slightly more
-      carriages[i].rotation = prevCarriage.rotation - (rotationLag * direction);
+      // FIXED: Individual carriage rotation based on its OWN position in crossover
+      // Each carriage only rotates when IT is on a crossover, then straightens when it exits
+      final carriageX = carriages[i].x;
+      final isOnCrossover =
+          (carriageX >= -550 && carriageX < -450) ||  // Left crossover
+          (carriageX >= 600 && carriageX < 800) ||     // Center crossover
+          (carriageX >= 1900 && carriageX < 2000);     // Right crossover
+
+      if (isOnCrossover) {
+        // Carriage is on crossover - apply angled rotation
+        final rotationLag = 0.05 * i; // Each carriage lags slightly more
+        carriages[i].rotation = prevCarriage.rotation - (rotationLag * direction);
+      } else {
+        // Carriage is on straight track - align horizontally (rotation = 0)
+        carriages[i].rotation = 0.0;
+      }
+
       carriages[i].wheelAngle = carriages[i].rotation * 0.8;
 
       // ENHANCEMENT 6: Speed propagation with slight delay

@@ -1254,38 +1254,69 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  /// Draw gap for double diamond crossover points - FIXED to match 78A/78B reference
+  /// Draw gap for double diamond crossover points - FIXED for correct orientation
   void _drawDoubleDiamondGap(Canvas canvas, Point point, Paint gapPaint) {
-    bool isUpper = point.y < 200;  // Upper track if y < 200 (handles any y position)
+    bool isUpper = point.y < 200;  // Upper track if y < 200
     bool isNormal = point.position == PointPosition.normal;
 
+    // Determine crossover type (left, middle, or right)
+    bool isLeftCrossover = (point.id == '76A' || point.id == '76B' || point.id == '77A' || point.id == '77B');
+    bool isRightCrossover = (point.id == '79A' || point.id == '79B' || point.id == '80A' || point.id == '80B');
+    bool isStartPoint = (point.id == '76A' || point.id == '76B' || point.id == '79A' || point.id == '79B');
+
     if (isUpper) {
-      // Upper track point (76A, 77A, 79A, 80A) - use 78A reference positioning
-      if (isNormal) {
-        // Match 78A normal: x-7.5, y+15
-        canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
-      } else {
-        // Match 78A reverse: path starting at x-3, y-22.5
-        final path = Path()
-          ..moveTo(point.x - 3, point.y - 22.5)
-          ..lineTo(point.x + 50, point.y - 22.5)
-          ..lineTo(point.x + 50, point.y + 23)
-          ..close();
-        canvas.drawPath(path, gapPaint);
+      // Upper track points (76A, 77A, 79A, 80A)
+      if (isLeftCrossover) {
+        // LEFT crossover - gaps face RIGHT (towards center)
+        if (isNormal) {
+          canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
+        } else {
+          final path = Path()
+            ..moveTo(point.x - 3, point.y - 22.5)
+            ..lineTo(point.x + 50, point.y - 22.5)
+            ..lineTo(point.x + 50, point.y + 23)
+            ..close();
+          canvas.drawPath(path, gapPaint);
+        }
+      } else if (isRightCrossover) {
+        // RIGHT crossover - gaps face LEFT (towards center) - MIRROR the geometry
+        if (isNormal) {
+          canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+        } else {
+          final path = Path()
+            ..moveTo(point.x + 3, point.y - 22.5)
+            ..lineTo(point.x - 50, point.y - 22.5)
+            ..lineTo(point.x - 50, point.y + 23)
+            ..close();
+          canvas.drawPath(path, gapPaint);
+        }
       }
     } else {
-      // Lower track point (76B, 77B, 79B, 80B) - use 78B reference positioning
-      if (isNormal) {
-        // Match 78B normal: x-42.5, y-27.6
-        canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y - 27.6, 50, 12), gapPaint);
-      } else {
-        // Match 78B reverse: path starting at x-40, y-21
-        final path = Path()
-          ..moveTo(point.x - 40, point.y - 21)
-          ..lineTo(point.x - 3, point.y + 17.5)
-          ..lineTo(point.x - 40, point.y + 17.5)
-          ..close();
-        canvas.drawPath(path, gapPaint);
+      // Lower track points (76B, 77B, 79B, 80B)
+      if (isLeftCrossover) {
+        // LEFT crossover - gaps face RIGHT (towards center)
+        if (isNormal) {
+          canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y - 27.6, 50, 12), gapPaint);
+        } else {
+          final path = Path()
+            ..moveTo(point.x - 40, point.y - 21)
+            ..lineTo(point.x - 3, point.y + 17.5)
+            ..lineTo(point.x - 40, point.y + 17.5)
+            ..close();
+          canvas.drawPath(path, gapPaint);
+        }
+      } else if (isRightCrossover) {
+        // RIGHT crossover - gaps face LEFT (towards center) - MIRROR the geometry
+        if (isNormal) {
+          canvas.drawRect(Rect.fromLTWH(point.x + 7.5, point.y - 27.6, 50, 12), gapPaint);
+        } else {
+          final path = Path()
+            ..moveTo(point.x + 40, point.y - 21)
+            ..lineTo(point.x + 3, point.y + 17.5)
+            ..lineTo(point.x + 40, point.y + 17.5)
+            ..close();
+          canvas.drawPath(path, gapPaint);
+        }
       }
     }
   }

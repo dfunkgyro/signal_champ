@@ -3541,18 +3541,87 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     (localPosition.dy - (_canvasHeight / 2)) / _zoom -
                         _cameraOffsetY;
 
-                // FIXED: In edit mode with a selected component, ANY pan gesture drags the component
-                // Don't require precise clicking - if something is selected, dragging moves it
-                if (controller.editModeEnabled &&
-                    controller.selectedComponentId != null) {
-                  _isDraggingComponent = true;
-                  _draggingComponentId = controller.selectedComponentId;
-                  _draggingComponentType = controller.selectedComponentType;
-                  _dragStartPosition = Offset(canvasX, canvasY);
-                  return; // Don't pan camera when component is selected
+                // FIXED: In edit mode, check if clicking on ANY component (not just selected one)
+                if (controller.editModeEnabled) {
+                  // Find component under cursor
+                  String? componentType;
+                  String? componentId;
+
+                  // Check all component types for a hit
+                  // Signals
+                  for (final signal in controller.signals.values) {
+                    final distance = ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
+                    if (distance < 30) {
+                      componentType = 'signal';
+                      componentId = signal.id;
+                      break;
+                    }
+                  }
+
+                  // Points (if no signal found)
+                  if (componentType == null) {
+                    for (final point in controller.points.values) {
+                      final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
+                      if (distance < 20) {
+                        componentType = 'point';
+                        componentId = point.id;
+                        break;
+                      }
+                    }
+                  }
+
+                  // Platforms
+                  if (componentType == null) {
+                    for (final platform in controller.platforms) {
+                      if (canvasX >= platform.startX &&
+                          canvasX <= platform.endX &&
+                          (canvasY - platform.y).abs() < 25) {
+                        componentType = 'platform';
+                        componentId = platform.id;
+                        break;
+                      }
+                    }
+                  }
+
+                  // Train stops
+                  if (componentType == null) {
+                    for (final trainStop in controller.trainStops.values) {
+                      final distance = ((trainStop.x - canvasX).abs() + (trainStop.y - canvasY).abs());
+                      if (distance < 20) {
+                        componentType = 'trainstop';
+                        componentId = trainStop.id;
+                        break;
+                      }
+                    }
+                  }
+
+                  // Buffer stops
+                  if (componentType == null) {
+                    for (final bufferStop in controller.bufferStops.values) {
+                      final distance = ((bufferStop.x - canvasX).abs() + (bufferStop.y - canvasY).abs());
+                      if (distance < 20) {
+                        componentType = 'bufferstop';
+                        componentId = bufferStop.id;
+                        break;
+                      }
+                    }
+                  }
+
+                  // If we found a component, select it and start dragging
+                  if (componentType != null && componentId != null) {
+                    controller.selectComponent(componentType, componentId);
+                    _isDraggingComponent = true;
+                    _draggingComponentId = componentId;
+                    _draggingComponentType = componentType;
+                    _dragStartPosition = Offset(canvasX, canvasY);
+                    return; // Don't pan camera when component is clicked
+                  }
+
+                  // No component clicked - clear selection and allow camera pan
+                  controller.clearSelection();
                 }
 
-                // Otherwise, pan the camera (no component selected in edit mode, or not in edit mode)
+                // Pan the camera (no component clicked, or not in edit mode)
                 _controller.disableAutoFollow();
               },
               onPanUpdate: (details) {

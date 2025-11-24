@@ -1261,12 +1261,12 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     bool isNormal = point.position == PointPosition.normal;
 
     // Identify which diagonal this point is on:
-    // RIGHTHAND (descending): 76A, 77B, 79A, 80B
-    // LEFTHAND (ascending): 76B, 77A, 79B, 80A
+    // RIGHTHAND (descending): 76A, 77B, 79A, 80B (FIXED: 76B swapped with 77B, 79B swapped with 80B)
+    // LEFTHAND (ascending): 76B, 77A, 79B, 80A (FIXED: 76B swapped with 77B, 79B swapped with 80B)
     final righthandUpperPoints = ['76A', '79A'];  // Upper points on righthand diagonal
-    final righthandLowerPoints = ['77B', '80B'];  // Lower points on righthand diagonal
+    final righthandLowerPoints = ['76B', '79B'];  // Lower points on righthand diagonal (FIXED: swapped 76B↔77B, 79B↔80B)
     final lefthandUpperPoints = ['77A', '80A'];   // Upper points on lefthand diagonal
-    final lefthandLowerPoints = ['76B', '79B'];   // Lower points on lefthand diagonal
+    final lefthandLowerPoints = ['77B', '80B'];   // Lower points on lefthand diagonal (FIXED: swapped 76B↔77B, 79B↔80B)
 
     if (righthandUpperPoints.contains(point.id)) {
       // RIGHTHAND upper (like 78A) - gaps face RIGHT
@@ -1293,17 +1293,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (lefthandUpperPoints.contains(point.id)) {
-      // LEFTHAND upper - mirror of righthand upper (mirror 78A for upper track)
-      // 77A and 80A should mirror 78A horizontally
+      // LEFTHAND upper - ROTATED 90° ANTI-CLOCKWISE (77A and 80A)
+      // Gap now points UPWARD instead of horizontal
       if (isNormal) {
-        // Mirror 78A normal: originally (x-7.5, y+15), flip X offset
-        canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+        // Rotated 90° anti-clockwise: vertical gap pointing upward
+        canvas.drawRect(Rect.fromLTWH(point.x - 6, point.y - 42.5, 12, 50), gapPaint);
       } else {
-        // Mirror 78A reverse: flip horizontally
+        // Rotated 90° anti-clockwise: triangle pointing downward-right
         final path = Path()
-          ..moveTo(point.x - 50, point.y - 22.5)
-          ..lineTo(point.x + 3, point.y - 22.5)
-          ..lineTo(point.x + 3, point.y + 23)
+          ..moveTo(point.x - 22.5, point.y - 50)
+          ..lineTo(point.x - 22.5, point.y + 3)
+          ..lineTo(point.x + 23, point.y + 3)
           ..close();
         canvas.drawPath(path, gapPaint);
       }

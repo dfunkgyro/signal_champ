@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'collision_analysis_system.dart' as collision_system;
 
 // ============================================================================
@@ -443,7 +444,10 @@ class Train {
     }
   }
 
-  // ENHANCED: Update carriage positions with advanced physics (120% improvement)
+  // ENHANCED: Update carriage positions with advanced physics and improved crossover alignment
+  // This method now implements proper track-following behavior where each carriage
+  // independently rotates based on its position, creating natural-looking curves through
+  // crossovers and preventing the "rigid train" appearance of the previous uniform rotation.
   void updateCarriagePositions() {
     if (carriages.isEmpty) {
       initializeCarriages();
@@ -468,35 +472,38 @@ class Train {
       // ENHANCEMENT 3: Dynamic spacing with coupling tension
       final spacing = baseSpacing * (1.0 + (prevCarriage.couplingTension * 0.1));
 
-      // Calculate position behind previous carriage
-      carriages[i].x = prevCarriage.x - (spacing * direction);
-      carriages[i].y = prevCarriage.y;
+      // IMPROVED: Calculate position with proper track following
+      // Use trigonometry to position carriage behind previous carriage
+      // considering the rotation of the previous carriage
+      final angleOffset = prevCarriage.rotation;
+      carriages[i].x = prevCarriage.x - (spacing * direction * math.cos(angleOffset));
+      carriages[i].y = prevCarriage.y - (spacing * direction * math.sin(angleOffset));
 
       // ENHANCEMENT 4: Apply lateral sway on curves for realism
       carriages[i].applyCurveSway(curveRadius, speed);
       carriages[i].y += carriages[i].lateralOffset;
 
-      // FIXED: Carriage rotation using improved methods
-      // REMOVED: Individual carriage angle orientation (caused disconnected appearance)
-      //
-      // Alternative Method #1: UNIFORM ROTATION (Current Implementation)
-      // All carriages share the lead carriage's rotation for connected appearance
-      carriages[i].rotation = rotation;
+      // IMPROVED: Individual carriage rotation based on position relative to previous carriage
+      // This creates smooth curve following behavior
+      final dx = carriages[i].x - prevCarriage.x;
+      final dy = carriages[i].y - prevCarriage.y;
 
-      // Alternative Method #2: CATENARY CURVE FOLLOWING (commented out)
-      // Each carriage points toward previous carriage
-      // final dx = carriages[i].x - carriages[i-1].x;
-      // final dy = carriages[i].y - carriages[i-1].y;
-      // carriages[i].rotation = atan2(dy, dx);
+      // Calculate rotation based on direction of travel
+      if (dx.abs() > 0.1 || dy.abs() > 0.1) {
+        // Only update rotation if there's meaningful movement
+        carriages[i].rotation = math.atan2(dy, -direction * dx);
+      } else {
+        // Use previous carriage rotation if positions are too close
+        carriages[i].rotation = prevCarriage.rotation;
+      }
 
-      // Alternative Method #3: PIECE-WISE STRAIGHT (commented out)
-      // Carriages stay horizontal unless entire train on crossover
-      // carriages[i].rotation = (allCarriagesOnCrossover) ? rotation : 0.0;
-
-      // Alternative Method #4: VISUAL Y-OFFSET ONLY (commented out)
-      // Keep rotation 0, but shift Y position for visual curve effect
-      // final onCrossover = (carriageX >= crossoverStart && carriageX < crossoverEnd);
-      // carriages[i].y += onCrossover ? (i * 2.0 * sin(rotation)) : 0.0;
+      // Smooth out rotation changes to prevent jitter
+      final rotationDiff = (carriages[i].rotation - prevCarriage.rotation).abs();
+      if (rotationDiff > 0.5) {
+        // Large rotation change - smooth it out
+        carriages[i].rotation = prevCarriage.rotation +
+          ((carriages[i].rotation - prevCarriage.rotation) * 0.3);
+      }
 
       carriages[i].wheelAngle = carriages[i].rotation * 0.8;
 

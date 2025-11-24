@@ -6729,6 +6729,11 @@ class TerminalStationController extends ChangeNotifier {
 
   // ========== EXISTING METHODS ==========
 
+  /// Update train Y position and rotation based on crossover state
+  /// IMPORTANT: When points are in REVERSE position, trains MUST take the crossover route
+  /// and maintain the appropriate angle (45 degrees) to match the physical track geometry.
+  /// This ensures the simulation matches the real-world behavior where trains cannot
+  /// go straight through a diverging crossover when points are reversed.
   void _updateTrainYPosition(Train train) {
     final point76A = points['76A'];
     final point76B = points['76B'];

@@ -3915,7 +3915,37 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               }
             }
 
-            // Platforms
+            // Check for platform resize handles FIRST (if platform is selected)
+            if (controller.selectedComponentType == 'platform' &&
+                controller.selectedComponentId != null) {
+              try {
+                final selectedPlatform = controller.platforms.firstWhere(
+                  (p) => p.id == controller.selectedComponentId,
+                );
+
+                // Check if clicking on left or right resize handle
+                final handleSize = 12.0;
+                final leftHandleDist = (canvasX - selectedPlatform.startX).abs();
+                final rightHandleDist = (canvasX - selectedPlatform.endX).abs();
+                final verticalDist = (canvasY - selectedPlatform.y).abs();
+
+                if (verticalDist < handleSize) {
+                  if (leftHandleDist < handleSize) {
+                    // Clicked on left resize handle
+                    controller.startResizingPlatform(selectedPlatform.id, 'left');
+                    return; // Start resizing, don't drag
+                  } else if (rightHandleDist < handleSize) {
+                    // Clicked on right resize handle
+                    controller.startResizingPlatform(selectedPlatform.id, 'right');
+                    return; // Start resizing, don't drag
+                  }
+                }
+              } catch (e) {
+                // Platform not found
+              }
+            }
+
+            // Platforms (regular body hit detection)
             if (componentType == null) {
               for (final platform in controller.platforms) {
                 if (canvasX >= platform.startX &&
@@ -3996,7 +4026,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               onPanUpdate: (details) {
                 // EDIT MODE BEHAVIOR
                 if (controller.editModeEnabled) {
-                  if (_isDraggingComponent &&
+                  // Check if resizing a platform
+                  if (controller.isResizingPlatform) {
+                    final canvasCoords = _screenToCanvasCoords(details.localPosition, controller.editModeEnabled);
+                    controller.updatePlatformResize(canvasCoords.dx);
+                  } else if (_isDraggingComponent &&
                       _draggingComponentId != null &&
                       _draggingComponentType != null) {
                     // Dragging a selected component
@@ -4021,6 +4055,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 }
               },
         onPanEnd: (details) {
+          // Finalize platform resize
+          if (controller.isResizingPlatform) {
+            controller.endPlatformResize();
+            return;
+          }
+
           // Finalize marquee selection
           if (_isDrawingMarquee && _marqueeStart != null && _marqueeEnd != null) {
             // Convert screen coordinates to canvas coordinates

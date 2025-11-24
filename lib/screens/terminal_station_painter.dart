@@ -1254,69 +1254,38 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  /// Draw gap for double diamond crossover points - FIXED for correct orientation
+  /// Draw gap for double diamond crossover points - Using 78A/78B as reference
+  /// 78A (upper, eastbound) has gaps facing RIGHT
+  /// 78B (lower, westbound) has gaps facing LEFT
   void _drawDoubleDiamondGap(Canvas canvas, Point point, Paint gapPaint) {
     bool isUpper = point.y < 200;  // Upper track if y < 200
     bool isNormal = point.position == PointPosition.normal;
 
-    // Determine crossover type (left, middle, or right)
-    bool isLeftCrossover = (point.id == '76A' || point.id == '76B' || point.id == '77A' || point.id == '77B');
-    bool isRightCrossover = (point.id == '79A' || point.id == '79B' || point.id == '80A' || point.id == '80B');
-    bool isStartPoint = (point.id == '76A' || point.id == '76B' || point.id == '79A' || point.id == '79B');
-
     if (isUpper) {
-      // Upper track points (76A, 77A, 79A, 80A)
-      if (isLeftCrossover) {
-        // LEFT crossover - gaps face RIGHT (towards center)
-        if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
-        } else {
-          final path = Path()
-            ..moveTo(point.x - 3, point.y - 22.5)
-            ..lineTo(point.x + 50, point.y - 22.5)
-            ..lineTo(point.x + 50, point.y + 23)
-            ..close();
-          canvas.drawPath(path, gapPaint);
-        }
-      } else if (isRightCrossover) {
-        // RIGHT crossover - gaps face LEFT (towards center) - MIRROR the geometry
-        if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
-        } else {
-          final path = Path()
-            ..moveTo(point.x + 3, point.y - 22.5)
-            ..lineTo(point.x - 50, point.y - 22.5)
-            ..lineTo(point.x - 50, point.y + 23)
-            ..close();
-          canvas.drawPath(path, gapPaint);
-        }
+      // Upper track points (76A, 77A, 79A, 80A) - ALL face RIGHT like 78A
+      // Use 78A geometry as reference
+      if (isNormal) {
+        canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
+      } else {
+        final path = Path()
+          ..moveTo(point.x - 3, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y + 23)
+          ..close();
+        canvas.drawPath(path, gapPaint);
       }
     } else {
-      // Lower track points (76B, 77B, 79B, 80B)
-      if (isLeftCrossover) {
-        // LEFT crossover - gaps face RIGHT (towards center)
-        if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y - 27.6, 50, 12), gapPaint);
-        } else {
-          final path = Path()
-            ..moveTo(point.x - 40, point.y - 21)
-            ..lineTo(point.x - 3, point.y + 17.5)
-            ..lineTo(point.x - 40, point.y + 17.5)
-            ..close();
-          canvas.drawPath(path, gapPaint);
-        }
-      } else if (isRightCrossover) {
-        // RIGHT crossover - gaps face LEFT (towards center) - MIRROR the geometry
-        if (isNormal) {
-          canvas.drawRect(Rect.fromLTWH(point.x + 7.5, point.y - 27.6, 50, 12), gapPaint);
-        } else {
-          final path = Path()
-            ..moveTo(point.x + 40, point.y - 21)
-            ..lineTo(point.x + 3, point.y + 17.5)
-            ..lineTo(point.x + 40, point.y + 17.5)
-            ..close();
-          canvas.drawPath(path, gapPaint);
-        }
+      // Lower track points (76B, 77B, 79B, 80B) - ALL face LEFT like 78B
+      // Use 78B geometry as reference
+      if (isNormal) {
+        canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y - 27.6, 50, 12), gapPaint);
+      } else {
+        final path = Path()
+          ..moveTo(point.x - 40, point.y - 21)
+          ..lineTo(point.x - 3, point.y + 17.5)
+          ..lineTo(point.x - 40, point.y + 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
       }
     }
   }
@@ -2518,6 +2487,98 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         ..strokeWidth = 2.0;
 
       canvas.drawCircle(Offset(x, y), 22, innerPaint);
+    }
+
+    // Draw platform resize handles if platform is selected
+    if (type.toLowerCase() == 'platform') {
+      _drawPlatformResizeHandles(canvas, id);
+    }
+  }
+
+  /// Draw resize handles for selected platform
+  void _drawPlatformResizeHandles(Canvas canvas, String platformId) {
+    try {
+      final platform = controller.platforms.firstWhere((p) => p.id == platformId);
+
+      // Draw resize handles at left and right edges
+      final handleSize = 12.0;
+      final handlePaint = Paint()
+        ..color = Colors.orange
+        ..style = PaintingStyle.fill;
+
+      final handleOutlinePaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+
+      // Left handle
+      final leftHandleRect = Rect.fromCenter(
+        center: Offset(platform.startX, platform.y),
+        width: handleSize,
+        height: handleSize,
+      );
+      canvas.drawRect(leftHandleRect, handlePaint);
+      canvas.drawRect(leftHandleRect, handleOutlinePaint);
+
+      // Right handle
+      final rightHandleRect = Rect.fromCenter(
+        center: Offset(platform.endX, platform.y),
+        width: handleSize,
+        height: handleSize,
+      );
+      canvas.drawRect(rightHandleRect, handlePaint);
+      canvas.drawRect(rightHandleRect, handleOutlinePaint);
+
+      // Draw width dimension line above platform
+      final dimensionY = platform.y - 30;
+      final dimensionPaint = Paint()
+        ..color = Colors.cyan.withOpacity(0.7)
+        ..strokeWidth = 1.5;
+
+      // Dimension line
+      canvas.drawLine(
+        Offset(platform.startX, dimensionY),
+        Offset(platform.endX, dimensionY),
+        dimensionPaint,
+      );
+
+      // End caps
+      canvas.drawLine(
+        Offset(platform.startX, dimensionY - 5),
+        Offset(platform.startX, dimensionY + 5),
+        dimensionPaint,
+      );
+      canvas.drawLine(
+        Offset(platform.endX, dimensionY - 5),
+        Offset(platform.endX, dimensionY + 5),
+        dimensionPaint,
+      );
+
+      // Width text
+      final width = platform.endX - platform.startX;
+      final textSpan = TextSpan(
+        text: '${width.toStringAsFixed(0)} units',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          backgroundColor: Colors.black.withOpacity(0.7),
+        ),
+      );
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(
+          (platform.startX + platform.endX) / 2 - textPainter.width / 2,
+          dimensionY - textPainter.height - 5,
+        ),
+      );
+    } catch (e) {
+      // Platform not found
     }
   }
 

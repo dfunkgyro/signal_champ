@@ -130,6 +130,18 @@ class EditModeToolbar extends StatelessWidget {
             ],
           ),
 
+          // Rename component button
+          Tooltip(
+            message: 'Rename Selected Component',
+            child: IconButton(
+              icon: const Icon(Icons.edit_note, color: Colors.white),
+              onPressed: controller.selectedComponentId != null
+                  ? () => _showRenameDialog(context, controller)
+                  : null,
+              splashRadius: 20,
+            ),
+          ),
+
           // Delete component button
           Tooltip(
             message: 'Delete Selected Component',
@@ -494,6 +506,143 @@ class EditModeToolbar extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('❌ Failed to create $componentType: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Show dialog to rename a component (points, crossovers, platforms)
+  void _showRenameDialog(BuildContext context, TerminalStationController controller) {
+    if (controller.selectedComponentId == null ||
+        controller.selectedComponentType == null) {
+      return;
+    }
+
+    final type = controller.selectedComponentType!;
+    final id = controller.selectedComponentId!;
+
+    // Get current name based on type
+    String currentName = id;
+    if (type == 'point') {
+      final point = controller.points[id];
+      currentName = point?.name ?? id;
+    } else if (type == 'crossover') {
+      final crossover = controller.crossovers[id];
+      currentName = crossover?.name ?? id;
+    } else if (type == 'platform') {
+      final platform = controller.platforms.firstWhere(
+        (p) => p.id == id,
+        orElse: () => null as dynamic,
+      );
+      currentName = platform?.name ?? id;
+    } else {
+      // Show message for unsupported types
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Renaming not supported for $type'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final nameController = TextEditingController(text: currentName);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Rename $type'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('ID: $id', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'New Name',
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  _performRename(context, controller, type, id, value.trim());
+                  Navigator.pop(context);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newName = nameController.text.trim();
+              if (newName.isNotEmpty) {
+                _performRename(context, controller, type, id, newName);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Perform the rename operation
+  void _performRename(
+    BuildContext context,
+    TerminalStationController controller,
+    String type,
+    String id,
+    String newName,
+  ) {
+    try {
+      if (type == 'point') {
+        final point = controller.points[id];
+        if (point != null) {
+          point.name = newName;
+          controller.notifyListeners();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Renamed point $id to "$newName"'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else if (type == 'crossover') {
+        final crossover = controller.crossovers[id];
+        if (crossover != null) {
+          crossover.name = newName;
+          controller.notifyListeners();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Renamed crossover $id to "$newName"'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else if (type == 'platform') {
+        // Platform renaming would need a method in the controller
+        // For now, we'll log it
+        controller.logEvent('Platform rename requested: $id -> $newName');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Platform renaming not yet implemented'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      controller.logEvent('❌ Error renaming $type: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to rename: $e'),
           backgroundColor: Colors.red,
         ),
       );

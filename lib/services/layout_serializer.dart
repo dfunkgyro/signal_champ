@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:rail_champ/screens/terminal_station_models.dart';
-import 'package:rail_champ/models/railway_model.dart';
+import 'package:rail_champ/models/railway_model.dart' show Transponder, WifiAntenna, TransponderType;
 
 /// Service for serializing and deserializing railway layouts to/from JSON
 class LayoutSerializer {

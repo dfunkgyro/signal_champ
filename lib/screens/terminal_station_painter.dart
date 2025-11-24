@@ -1255,15 +1255,21 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   /// Draw gap for double diamond crossover points - Using 78A/78B as reference
-  /// 78A (upper, eastbound) has gaps facing RIGHT
-  /// 78B (lower, westbound) has gaps facing LEFT
+  /// RIGHTHAND crossovers (descending diagonal): 76A→77B, 79A→80B use 78A/78B geometry
+  /// LEFTHAND crossovers (ascending diagonal): 76B→77A, 79B→80A use mirrored geometry
   void _drawDoubleDiamondGap(Canvas canvas, Point point, Paint gapPaint) {
-    bool isUpper = point.y < 200;  // Upper track if y < 200
     bool isNormal = point.position == PointPosition.normal;
 
-    if (isUpper) {
-      // Upper track points (76A, 77A, 79A, 80A) - ALL face RIGHT like 78A
-      // Use 78A geometry as reference
+    // Identify which diagonal this point is on:
+    // RIGHTHAND (descending): 76A, 77B, 79A, 80B
+    // LEFTHAND (ascending): 76B, 77A, 79B, 80A
+    final righthandUpperPoints = ['76A', '79A'];  // Upper points on righthand diagonal
+    final righthandLowerPoints = ['77B', '80B'];  // Lower points on righthand diagonal
+    final lefthandUpperPoints = ['77A', '80A'];   // Upper points on lefthand diagonal
+    final lefthandLowerPoints = ['76B', '79B'];   // Lower points on lefthand diagonal
+
+    if (righthandUpperPoints.contains(point.id)) {
+      // RIGHTHAND upper (like 78A) - gaps face RIGHT
       if (isNormal) {
         canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
       } else {
@@ -1274,9 +1280,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ..close();
         canvas.drawPath(path, gapPaint);
       }
-    } else {
-      // Lower track points (76B, 77B, 79B, 80B) - ALL face LEFT like 78B
-      // Use 78B geometry as reference
+    } else if (righthandLowerPoints.contains(point.id)) {
+      // RIGHTHAND lower (like 78B) - gaps face LEFT
       if (isNormal) {
         canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y - 27.6, 50, 12), gapPaint);
       } else {
@@ -1284,6 +1289,34 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ..moveTo(point.x - 40, point.y - 21)
           ..lineTo(point.x - 3, point.y + 17.5)
           ..lineTo(point.x - 40, point.y + 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (lefthandUpperPoints.contains(point.id)) {
+      // LEFTHAND upper - mirror of righthand lower (mirror 78B for upper track)
+      if (isNormal) {
+        // Mirror 78B normal: originally (x-42.5, y-27.6), mirror X offset to positive
+        canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
+      } else {
+        // Mirror 78B reverse: flip horizontally
+        final path = Path()
+          ..moveTo(point.x - 3, point.y - 21)
+          ..lineTo(point.x + 40, point.y + 17.5)
+          ..lineTo(point.x - 3, point.y + 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (lefthandLowerPoints.contains(point.id)) {
+      // LEFTHAND lower - mirror of righthand upper (mirror 78A for lower track)
+      if (isNormal) {
+        // Mirror 78A normal: originally (x-7.5, y+15), adjust Y to match lower track
+        canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+      } else {
+        // Mirror 78A reverse: flip horizontally
+        final path = Path()
+          ..moveTo(point.x - 40, point.y - 22.5)
+          ..lineTo(point.x - 3, point.y - 22.5)
+          ..lineTo(point.x - 3, point.y + 23)
           ..close();
         canvas.drawPath(path, gapPaint);
       }
@@ -2344,9 +2377,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     final tooltipX = x + 30;
     final tooltipY = y - tooltipHeight / 2;
 
-    // Draw tooltip background
+    // Draw tooltip background with 50% opacity as requested
     final tooltipBgPaint = Paint()
-      ..color = Colors.black.withOpacity(0.8)
+      ..color = Colors.black.withOpacity(0.5)  // 50% opacity
       ..style = PaintingStyle.fill;
 
     canvas.drawRRect(
@@ -2357,9 +2390,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       tooltipBgPaint,
     );
 
-    // Draw tooltip border
+    // Draw tooltip border with 50% opacity
     final tooltipBorderPaint = Paint()
-      ..color = Colors.yellow
+      ..color = Colors.yellow.withOpacity(0.5)  // 50% opacity
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 

@@ -279,7 +279,7 @@ class EditModeToolbar extends StatelessWidget {
           ),
 
           Tooltip(
-            message: 'Quick Selection Tool (Auto-detect)\nShortcut: W',
+            message: 'Magic Wand Tool (Auto-detect by shape)\nShortcut: W',
             child: IconButton(
               icon: Icon(
                 Icons.auto_fix_high,
@@ -409,6 +409,12 @@ class EditModeToolbar extends StatelessWidget {
     TerminalStationController controller,
     String componentType,
   ) {
+    // Special handling for points/crossings - show crossover type selection
+    if (componentType.toLowerCase() == 'point') {
+      _showCrossoverTypeDialog(context, controller);
+      return;
+    }
+
     final newId = controller.generateUniqueId(componentType);
 
     showDialog(
@@ -440,6 +446,145 @@ class EditModeToolbar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Show dialog to select crossover type
+  void _showCrossoverTypeDialog(
+    BuildContext context,
+    TerminalStationController controller,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Points & Crossings'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Select crossover type:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _createCrossover(context, controller, 'lefthand');
+              },
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Lefthand Crossover'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _createCrossover(context, controller, 'righthand');
+              },
+              icon: const Icon(Icons.arrow_forward),
+              label: const Text('Righthand Crossover'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _createCrossover(context, controller, 'double');
+              },
+              icon: const Icon(Icons.compare_arrows),
+              label: const Text('Double Crossover (Diamond)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Create a crossover based on type
+  void _createCrossover(
+    BuildContext context,
+    TerminalStationController controller,
+    String crossoverType,
+  ) {
+    try {
+      const double x = 0.0;
+      const double y = 100.0;  // Upper track
+
+      if (crossoverType == 'lefthand') {
+        // Create two points for lefthand crossover (ascending diagonal)
+        final pointId1 = controller.generateUniqueId('point');
+        final pointId2 = controller.generateUniqueId('point');
+        controller.createPoint(pointId1, x, y + 200);  // Lower left
+        controller.createPoint(pointId2, x + 200, y);  // Upper right
+        controller.selectComponent(pointId1, 'point');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Created lefthand crossover: $pointId1, $pointId2'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else if (crossoverType == 'righthand') {
+        // Create two points for righthand crossover (descending diagonal)
+        final pointId1 = controller.generateUniqueId('point');
+        final pointId2 = controller.generateUniqueId('point');
+        controller.createPoint(pointId1, x, y);  // Upper left
+        controller.createPoint(pointId2, x + 200, y + 200);  // Lower right
+        controller.selectComponent(pointId1, 'point');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Created righthand crossover: $pointId1, $pointId2'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else if (crossoverType == 'double') {
+        // Create four points for double diamond crossover
+        final pointId1 = controller.generateUniqueId('point');
+        final pointId2 = controller.generateUniqueId('point');
+        final pointId3 = controller.generateUniqueId('point');
+        final pointId4 = controller.generateUniqueId('point');
+        controller.createPoint(pointId1, x, y);          // Upper left
+        controller.createPoint(pointId2, x, y + 200);    // Lower left
+        controller.createPoint(pointId3, x + 200, y);    // Upper right
+        controller.createPoint(pointId4, x + 200, y + 200);  // Lower right
+        controller.selectComponent(pointId1, 'point');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Created double crossover: $pointId1, $pointId2, $pointId3, $pointId4'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      controller.logEvent('❌ Error creating crossover: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Failed to create crossover: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   /// Create a component using the controller's factory methods
@@ -900,6 +1045,27 @@ class EditModeKeyboardHandler extends StatelessWidget {
               // Escape = Clear selection
               else if (event.logicalKey == LogicalKeyboardKey.escape) {
                 controller.clearSelection();
+              }
+              // Tab = Cycle to next component (Shift+Tab = previous)
+              else if (event.logicalKey == LogicalKeyboardKey.tab) {
+                if (HardwareKeyboard.instance.isShiftPressed) {
+                  controller.selectPreviousComponent();
+                } else {
+                  controller.selectNextComponent();
+                }
+              }
+              // Selection tool shortcuts
+              else if (event.logicalKey == LogicalKeyboardKey.keyV) {
+                controller.setSelectionMode(SelectionMode.pointer);
+              }
+              else if (event.logicalKey == LogicalKeyboardKey.keyW) {
+                controller.setSelectionMode(SelectionMode.quickSelect);
+              }
+              else if (event.logicalKey == LogicalKeyboardKey.keyM) {
+                controller.setSelectionMode(SelectionMode.marquee);
+              }
+              else if (event.logicalKey == LogicalKeyboardKey.keyL) {
+                controller.setSelectionMode(SelectionMode.lasso);
               }
             }
           },

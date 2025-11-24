@@ -3762,12 +3762,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   Offset _screenToCanvasCoords(Offset localPosition, bool isEditMode) {
     if (isEditMode) {
       // In edit mode, local position is within the scrollable SizedBox
-      // Convert to canvas coordinates accounting for the offset origin
-      const double railwayMinX = -1800.0;
-      const double railwayMinY = 0.0;
+      // Convert to canvas coordinates (centered at 0,0)
+      final canvasMinX = -_canvasWidth / 2;
+      final canvasMinY = -_canvasHeight / 2;
 
-      final canvasX = (localPosition.dx / _zoom) + railwayMinX;
-      final canvasY = (localPosition.dy / _zoom) + railwayMinY;
+      final canvasX = (localPosition.dx / _zoom) + canvasMinX;
+      final canvasY = (localPosition.dy / _zoom) + canvasMinY;
       return Offset(canvasX, canvasY);
     } else {
       // Normal mode uses centered canvas with pan/zoom
@@ -3796,23 +3796,23 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   /// Build scrollable canvas for edit mode with scrollbars
   Widget _buildScrollableCanvas(TerminalStationController controller) {
-    // Calculate the full extent of the railway layout
-    // Railway extends from x: -1800 to x: 3400, y: 0 to y: 400
-    const double railwayMinX = -1800.0;
-    const double railwayMaxX = 3500.0; // Add margin
-    const double railwayMinY = 0.0;
-    const double railwayMaxY = 450.0; // Add margin
+    // Use actual canvas dimensions for scrollable area
+    // Canvas coordinates are centered, so they range from -width/2 to +width/2
+    final canvasMinX = -_canvasWidth / 2;
+    final canvasMaxX = _canvasWidth / 2;
+    final canvasMinY = -_canvasHeight / 2;
+    final canvasMaxY = _canvasHeight / 2;
 
-    final railwayWidth = railwayMaxX - railwayMinX;
-    final railwayHeight = railwayMaxY - railwayMinY;
+    final canvasWidth = _canvasWidth;
+    final canvasHeight = _canvasHeight;
 
     // Get current viewport size
     final viewportWidth = MediaQuery.of(context).size.width;
     final viewportHeight = MediaQuery.of(context).size.height;
 
-    // Calculate scrollable area size (railway extent * zoom)
-    final scrollableWidth = railwayWidth * _zoom;
-    final scrollableHeight = railwayHeight * _zoom;
+    // Calculate scrollable area size (canvas size * zoom)
+    final scrollableWidth = canvasWidth * _zoom;
+    final scrollableHeight = canvasHeight * _zoom;
 
     return Scrollbar(
       controller: _horizontalScrollController,
@@ -3833,17 +3833,17 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               onNotification: (notification) {
                 if (notification is ScrollUpdateNotification) {
                   // Update camera offset based on scroll position
-                  // Account for the railway starting at railwayMinX, not 0
+                  // Convert scroll position to canvas coordinates (centered at 0,0)
                   setState(() {
-                    _cameraOffsetX = (_horizontalScrollController.offset / _zoom) + railwayMinX;
-                    _cameraOffsetY = (_verticalScrollController.offset / _zoom) + railwayMinY;
+                    _cameraOffsetX = (_horizontalScrollController.offset / _zoom) + canvasMinX;
+                    _cameraOffsetY = (_verticalScrollController.offset / _zoom) + canvasMinY;
                   });
                 }
                 return true;
               },
               child: SizedBox(
-                width: scrollableWidth.clamp(viewportWidth, scrollableWidth),
-                height: scrollableHeight.clamp(viewportHeight, scrollableHeight),
+                width: scrollableWidth.clamp(viewportWidth, double.infinity),
+                height: scrollableHeight.clamp(viewportHeight, double.infinity),
                 child: _buildCanvasContent(controller),
               ),
             ),

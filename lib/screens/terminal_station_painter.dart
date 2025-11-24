@@ -1781,8 +1781,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         const double couplingWidth = 8.0;
         const double carHeight = 30.0;
 
-        // Update carriage positions for independent alignment
-        train.updateCarriagePositions();
+        // Update carriage positions for independent alignment with path-based positioning
+        train.updateCarriagePositions(controller.calculatePathPosition);
 
         // Draw each carriage at its individual position and rotation
         for (int i = 0; i < train.carriages.length; i++) {

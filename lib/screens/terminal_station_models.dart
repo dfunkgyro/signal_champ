@@ -444,11 +444,14 @@ class Train {
     }
   }
 
-  // ENHANCED: Update carriage positions with advanced physics and improved crossover alignment
-  // This method now implements proper track-following behavior where each carriage
-  // independently rotates based on its position, creating natural-looking curves through
-  // crossovers and preventing the "rigid train" appearance of the previous uniform rotation.
-  void updateCarriagePositions() {
+  // ENHANCED: Update carriage positions with path-based positioning
+  // This method implements proper track-following behavior where each carriage
+  // independently follows the track path based on its X position, creating
+  // natural-looking curves through crossovers.
+  //
+  // Parameters:
+  // - pathCalculator: Function that calculates Y position and rotation for a given X position
+  void updateCarriagePositions(Function(double x, double y, int direction) pathCalculator) {
     if (carriages.isEmpty) {
       initializeCarriages();
     }
@@ -463,38 +466,29 @@ class Train {
 
     // ENHANCEMENT 2: Realistic variable spacing based on train type
     final baseSpacing = _getCarriageSpacing();
-    final curveRadius = 200.0; // Estimate based on rotation change
 
-    // Following carriages maintain dynamic coupling with realistic physics
+    // Following carriages maintain spacing and use path-based positioning
     for (int i = 1; i < carriages.length; i++) {
       final prevCarriage = carriages[i - 1];
 
       // ENHANCEMENT 3: Dynamic spacing with coupling tension
       final spacing = baseSpacing * (1.0 + (prevCarriage.couplingTension * 0.1));
 
-      // IMPROVED: Calculate position with proper track following
-      // Use trigonometry to position carriage behind previous carriage
-      // considering the rotation of the previous carriage
-      final angleOffset = prevCarriage.rotation;
-      carriages[i].x = prevCarriage.x - (spacing * direction * math.cos(angleOffset));
-      carriages[i].y = prevCarriage.y - (spacing * direction * math.sin(angleOffset));
+      // PATH-BASED POSITIONING: Calculate X position behind previous carriage
+      // This is the key improvement - each carriage tracks its own X position
+      carriages[i].x = prevCarriage.x - (spacing * direction);
 
-      // ENHANCEMENT 4: Apply lateral sway on curves for realism
-      carriages[i].applyCurveSway(curveRadius, speed);
-      carriages[i].y += carriages[i].lateralOffset;
+      // Store the current Y for comparison (for rotation calculation)
+      final oldY = carriages[i].y;
 
-      // IMPROVED: Individual carriage rotation based on position relative to previous carriage
-      // This creates smooth curve following behavior
-      final dx = carriages[i].x - prevCarriage.x;
-      final dy = carriages[i].y - prevCarriage.y;
+      // Use the path calculator to determine Y position and rotation based on X position
+      // This makes each carriage follow the track path independently
+      final result = pathCalculator(carriages[i].x, carriages[i].y, direction);
 
-      // Calculate rotation based on direction of travel
-      if (dx.abs() > 0.1 || dy.abs() > 0.1) {
-        // Only update rotation if there's meaningful movement
-        carriages[i].rotation = math.atan2(dy, -direction * dx);
-      } else {
-        // Use previous carriage rotation if positions are too close
-        carriages[i].rotation = prevCarriage.rotation;
+      // The pathCalculator returns a Map with 'y' and 'rotation'
+      if (result is Map<String, double>) {
+        carriages[i].y = result['y'] ?? carriages[i].y;
+        carriages[i].rotation = result['rotation'] ?? carriages[i].rotation;
       }
 
       // Smooth out rotation changes to prevent jitter

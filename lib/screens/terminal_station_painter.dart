@@ -1293,30 +1293,32 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (lefthandUpperPoints.contains(point.id)) {
-      // LEFTHAND upper - mirror of righthand lower (mirror 78B for upper track)
+      // LEFTHAND upper - mirror of righthand upper (mirror 78A for upper track)
+      // 77A and 80A should mirror 78A horizontally
       if (isNormal) {
-        // Mirror 78B normal: originally (x-42.5, y-27.6), mirror X offset to positive
-        canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
-      } else {
-        // Mirror 78B reverse: flip horizontally
-        final path = Path()
-          ..moveTo(point.x - 3, point.y - 21)
-          ..lineTo(point.x + 40, point.y + 17.5)
-          ..lineTo(point.x - 3, point.y + 17.5)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (lefthandLowerPoints.contains(point.id)) {
-      // LEFTHAND lower - mirror of righthand upper (mirror 78A for lower track)
-      if (isNormal) {
-        // Mirror 78A normal: originally (x-7.5, y+15), adjust Y to match lower track
+        // Mirror 78A normal: originally (x-7.5, y+15), flip X offset
         canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
       } else {
         // Mirror 78A reverse: flip horizontally
         final path = Path()
-          ..moveTo(point.x - 40, point.y - 22.5)
-          ..lineTo(point.x - 3, point.y - 22.5)
-          ..lineTo(point.x - 3, point.y + 23)
+          ..moveTo(point.x - 50, point.y - 22.5)
+          ..lineTo(point.x + 3, point.y - 22.5)
+          ..lineTo(point.x + 3, point.y + 23)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (lefthandLowerPoints.contains(point.id)) {
+      // LEFTHAND lower - mirror of righthand lower (mirror 78B for lower track)
+      // 76B and 79B should mirror 78B horizontally
+      if (isNormal) {
+        // Mirror 78B normal: originally (x-42.5, y-27.6), flip X offset to positive
+        canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
+      } else {
+        // Mirror 78B reverse: flip horizontally
+        final path = Path()
+          ..moveTo(point.x + 40, point.y - 21)
+          ..lineTo(point.x + 3, point.y + 17.5)
+          ..lineTo(point.x + 40, point.y + 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }
@@ -1947,20 +1949,28 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         }
       }
 
-      // Wheels (2 wheels per car)
+      // Wheels (2 wheels per car) - Follow carriage positions and rotations
       final wheelPaint = Paint()..color = Colors.black;
       if (isMultiCar) {
-        // Multi-car train - draw wheels for each car (2 per car)
-        const double carWidth = 50.0;
-        const double couplingWidth = 8.0;
-        final totalWidth = (carCount * carWidth) + ((carCount - 1) * couplingWidth);
-        double xOffset = train.x - (totalWidth / 2);
+        // Multi-car train - draw wheels for each carriage using carriage positions
+        for (int i = 0; i < train.carriages.length; i++) {
+          final carriage = train.carriages[i];
 
-        for (int i = 0; i < carCount; i++) {
-          // Two wheels per car
-          canvas.drawCircle(Offset(xOffset + 12, train.y + 15), 6, wheelPaint);
-          canvas.drawCircle(Offset(xOffset + 38, train.y + 15), 6, wheelPaint);
-          xOffset += carWidth + couplingWidth;
+          // Save canvas state for individual wheel rotation
+          canvas.save();
+
+          // Apply carriage rotation to wheels
+          if (carriage.rotation != 0.0) {
+            canvas.translate(carriage.x, carriage.y);
+            canvas.rotate(carriage.rotation);
+            canvas.translate(-carriage.x, -carriage.y);
+          }
+
+          // Draw two wheels per carriage, positioned relative to carriage center
+          canvas.drawCircle(Offset(carriage.x - 13, carriage.y + 15), 6, wheelPaint);
+          canvas.drawCircle(Offset(carriage.x + 13, carriage.y + 15), 6, wheelPaint);
+
+          canvas.restore();
         }
       } else {
         // M1 train - draw wheels on single car (2 wheels)

@@ -6734,7 +6734,9 @@ class TerminalStationController extends ChangeNotifier {
   /// and maintain the appropriate angle (45 degrees) to match the physical track geometry.
   /// This ensures the simulation matches the real-world behavior where trains cannot
   /// go straight through a diverging crossover when points are reversed.
-  void _updateTrainYPosition(Train train) {
+  // Calculate path-based Y position and rotation for any X coordinate
+  // This is used by both trains and individual carriages for proper path following
+  Map<String, double> calculatePathPosition(double x, double currentY, int direction) {
     final point76A = points['76A'];
     final point76B = points['76B'];
     final point78A = points['78A'];
@@ -6742,87 +6744,98 @@ class TerminalStationController extends ChangeNotifier {
     final point80A = points['80A'];
     final point80B = points['80B'];
 
+    double y = currentY;
+    double rotation = 0.0;
+
     // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-550 to -450, points 76A, 76B)
-    if (train.x >= -550 && train.x < -450) {
+    if (x >= -550 && x < -450) {
       if (point76A?.position == PointPosition.reverse &&
           point76B?.position == PointPosition.reverse) {
-        // 135-degree crossover - train transitioning between upper and lower tracks
-        double progress = (train.x + 550) / 100; // 0 to 1 over the crossover
-        if (train.direction > 0) {
+        // 135-degree crossover - transitioning between upper and lower tracks
+        double progress = (x + 550) / 100; // 0 to 1 over the crossover
+        if (direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
-          train.y = 100 + (200 * progress);
-          train.rotation = 0.785398; // 45 degrees in radians (matches 78A/78B)
+          y = 100 + (200 * progress);
+          rotation = 0.785398; // 45 degrees in radians
         } else {
           // Moving left: lower track (y=300) to upper track (y=100)
-          train.y = 300 - (200 * progress);
-          train.rotation = 0.785398; // 45 degrees in radians (matches 78A/78B)
+          y = 300 - (200 * progress);
+          rotation = 0.785398; // 45 degrees in radians
         }
       } else {
         // Points in normal position - stay on current track
-        if (train.y < 200) {
-          train.y = 100;
+        if (currentY < 200) {
+          y = 100;
         } else {
-          train.y = 300;
+          y = 300;
         }
-        train.rotation = 0.0;
+        rotation = 0.0;
       }
     }
-    // CENTER SECTION DOUBLE CROSSOVER (x=600 to 800, points 78A, 78B) - EXISTING CODE
-    else if (train.x >= 600 && train.x < 800) {
+    // CENTER SECTION DOUBLE CROSSOVER (x=600 to 800, points 78A, 78B)
+    else if (x >= 600 && x < 800) {
       if (point78A?.position == PointPosition.reverse &&
           point78B?.position == PointPosition.reverse) {
-        if (train.x < 700) {
-          double progress = (train.x - 600) / 100;
-          train.y = 100 + (100 * progress);
-          train.rotation = 0.785398; // 45 degrees
+        if (x < 700) {
+          double progress = (x - 600) / 100;
+          y = 100 + (100 * progress);
+          rotation = 0.785398; // 45 degrees
         } else {
-          double progress = (train.x - 700) / 100;
-          train.y = 200 + (100 * progress);
-          train.rotation = 0.785398; // 45 degrees
+          double progress = (x - 700) / 100;
+          y = 200 + (100 * progress);
+          rotation = 0.785398; // 45 degrees
         }
       } else {
-        if (train.y < 200) {
-          train.y = 100;
+        if (currentY < 200) {
+          y = 100;
         } else {
-          train.y = 300;
+          y = 300;
         }
-        train.rotation = 0.0;
+        rotation = 0.0;
       }
     }
     // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (x=1900 to 2000, points 80A, 80B)
-    else if (train.x >= 1900 && train.x < 2000) {
+    else if (x >= 1900 && x < 2000) {
       if (point80A?.position == PointPosition.reverse &&
           point80B?.position == PointPosition.reverse) {
-        // 135-degree crossover - train transitioning between upper and lower tracks
-        double progress = (train.x - 1900) / 100; // 0 to 1 over the crossover
-        if (train.direction > 0) {
+        // 135-degree crossover - transitioning between upper and lower tracks
+        double progress = (x - 1900) / 100; // 0 to 1 over the crossover
+        if (direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
-          train.y = 100 + (200 * progress);
-          train.rotation = 0.785398; // 45 degrees in radians (matches 78A/78B)
+          y = 100 + (200 * progress);
+          rotation = 0.785398; // 45 degrees in radians
         } else {
           // Moving left: lower track (y=300) to upper track (y=100)
-          train.y = 300 - (200 * progress);
-          train.rotation = 0.785398; // 45 degrees in radians (matches 78A/78B)
+          y = 300 - (200 * progress);
+          rotation = 0.785398; // 45 degrees in radians
         }
       } else {
         // Points in normal position - stay on current track
-        if (train.y < 200) {
-          train.y = 100;
+        if (currentY < 200) {
+          y = 100;
         } else {
-          train.y = 300;
+          y = 300;
         }
-        train.rotation = 0.0;
+        rotation = 0.0;
       }
     }
     // ALL OTHER SECTIONS - maintain straight tracks
     else {
-      if (train.y > 200) {
-        train.y = 300;
+      if (currentY > 200) {
+        y = 300;
       } else {
-        train.y = 100;
+        y = 100;
       }
-      train.rotation = 0.0;
+      rotation = 0.0;
     }
+
+    return {'y': y, 'rotation': rotation};
+  }
+
+  void _updateTrainYPosition(Train train) {
+    final result = calculatePathPosition(train.x, train.y, train.direction);
+    train.y = result['y']!;
+    train.rotation = result['rotation']!;
   }
 
   void _updateBlockOccupation() {

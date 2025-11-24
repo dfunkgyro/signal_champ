@@ -7,6 +7,14 @@ import 'collision_analysis_system.dart' as collision_system;
 
 enum PointPosition { normal, reverse }
 
+enum CrossoverType {
+  lefthand,      // Points diverge to the left
+  righthand,     // Points diverge to the right
+  doubleDiamond, // Double diamond crossover (both tracks cross)
+  singleSlip,    // Single slip crossover
+  doubleSlip     // Double slip crossover
+}
+
 enum SignalDirection { east, west }
 
 enum SignalAspect { red, green, blue }
@@ -88,34 +96,62 @@ class BlockSection {
 
 class Crossover {
   final String id;
-  final String name;
+  String name;  // Made mutable for renaming in edit mode
   final List<String> pointIds;  // Points that belong to this crossover
   final String blockId;  // Associated block section
+  CrossoverType type;  // Type of crossover
+  double gapAngle;  // Angle of the point gaps (in degrees)
+  bool isActive;  // Whether this crossover is currently in use
 
   Crossover({
     required this.id,
     required this.name,
     required this.pointIds,
     required this.blockId,
+    this.type = CrossoverType.righthand,
+    this.gapAngle = 15.0,  // Default 15 degrees
+    this.isActive = false,
   });
+
+  // Get the correct gap angle based on crossover type
+  double getGapAngleForType() {
+    switch (type) {
+      case CrossoverType.lefthand:
+        return -gapAngle;  // Negative for lefthand
+      case CrossoverType.righthand:
+        return gapAngle;   // Positive for righthand
+      case CrossoverType.doubleDiamond:
+        return gapAngle * 1.5;  // Larger angle for double diamond
+      case CrossoverType.singleSlip:
+        return gapAngle * 0.8;  // Slightly smaller for single slip
+      case CrossoverType.doubleSlip:
+        return gapAngle;
+    }
+  }
 }
 
 class Point {
   final String id;
+  String name;  // Mutable name for renaming in edit mode
   double x;  // Made mutable for edit mode
   double y;  // Made mutable for edit mode
   PointPosition position;
   bool locked;
   bool lockedByAB;
+  double gapAngle;  // Gap angle based on crossover type
+  String? crossoverId;  // Associated crossover ID
 
   Point({
     required this.id,
+    String? name,
     required this.x,
     required this.y,
     this.position = PointPosition.normal,
     this.locked = false,
     this.lockedByAB = false,
-  });
+    this.gapAngle = 15.0,
+    this.crossoverId,
+  }) : name = name ?? id;  // Default name to id if not provided
 }
 
 class SignalRoute {
@@ -166,7 +202,11 @@ class Platform {
   double startX;  // Made mutable for edit mode
   double endX;    // Made mutable for edit mode
   double y;       // Made mutable for edit mode
+  double width;   // Made mutable for edit mode - visual width
+  double height;  // Made mutable for edit mode - visual height
   bool occupied;
+  bool showCountdown;  // Show countdown timer for CBTC
+  DateTime? doorCloseTime;  // When doors will close (for countdown)
 
   Platform({
     required this.id,
@@ -174,11 +214,21 @@ class Platform {
     required this.startX,
     required this.endX,
     required this.y,
+    this.width = 200.0,  // Default width
+    this.height = 40.0,  // Default height
     this.occupied = false,
+    this.showCountdown = false,
+    this.doorCloseTime,
   });
 
   double get centerX => startX + (endX - startX) / 2;
   double get length => endX - startX;
+
+  // Get remaining seconds until doors close
+  int get remainingSeconds {
+    if (doorCloseTime == null) return 0;
+    return doorCloseTime!.difference(DateTime.now()).inSeconds.clamp(0, 20);
+  }
 }
 
 /// Individual carriage in a multi-carriage train
@@ -273,6 +323,16 @@ class Train {
   int? earlyLateSeconds; // Positive = late, Negative = early, Null = not on timetable
   String? currentStationId; // Current platform/station ID for timing calculation
 
+  // Speed limit warnings
+  double? speedLimit; // Current speed limit for this train
+  bool speedLimitWarningActive; // Whether speed limit warning is currently shown
+  DateTime? speedLimitWarningTime; // When speed limit warning was triggered
+
+  // CBTC re-entry alert system
+  bool cbtcReentryAlertActive; // Alert after passing 2nd transponder
+  DateTime? cbtcReentryAlertTime; // When re-entry alert was triggered
+  bool awaitingCbtcReentry; // Waiting to re-enter CBTC coverage
+
   // Multi-carriage independent alignment
   List<Carriage> carriages = []; // Individual carriages for M2/M4/M8 trains
 
@@ -315,6 +375,12 @@ class Train {
     this.assignedServiceId,
     this.earlyLateSeconds,
     this.currentStationId,
+    this.speedLimit,
+    this.speedLimitWarningActive = false,
+    this.speedLimitWarningTime,
+    this.cbtcReentryAlertActive = false,
+    this.cbtcReentryAlertTime,
+    this.awaitingCbtcReentry = false,
   });
 
   // Helper to get wheel count based on train type

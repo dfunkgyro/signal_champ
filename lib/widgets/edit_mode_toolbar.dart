@@ -142,6 +142,18 @@ class EditModeToolbar extends StatelessWidget {
             ),
           ),
 
+          // Resize platform button (only for platforms)
+          if (controller.selectedComponentType == 'platform' &&
+              controller.selectedComponentId != null)
+            Tooltip(
+              message: 'Resize Platform',
+              child: IconButton(
+                icon: const Icon(Icons.straighten, color: Colors.white),
+                onPressed: () => _showResizePlatformDialog(context, controller),
+                splashRadius: 20,
+              ),
+            ),
+
           // Delete component button
           Tooltip(
             message: 'Delete Selected Component',
@@ -724,6 +736,113 @@ class EditModeToolbar extends StatelessWidget {
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
             child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show dialog to resize a platform
+  void _showResizePlatformDialog(BuildContext context, TerminalStationController controller) {
+    if (controller.selectedComponentId == null || controller.selectedComponentType != 'platform') {
+      return;
+    }
+
+    final platformId = controller.selectedComponentId!;
+    final platform = controller.platforms.firstWhere((p) => p.id == platformId);
+
+    final startXController = TextEditingController(text: platform.startX.toStringAsFixed(0));
+    final endXController = TextEditingController(text: platform.endX.toStringAsFixed(0));
+    final widthController = TextEditingController(text: (platform.endX - platform.startX).toStringAsFixed(0));
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Resize Platform ${platform.name}'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Platform ID: $platformId', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+
+              TextField(
+                controller: startXController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Start X Position',
+                  border: OutlineInputBorder(),
+                  helperText: 'Left edge of platform',
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: endXController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'End X Position',
+                  border: OutlineInputBorder(),
+                  helperText: 'Right edge of platform',
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: widthController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Platform Width',
+                  border: OutlineInputBorder(),
+                  helperText: 'Total width (auto-calculates end X)',
+                ),
+                onChanged: (value) {
+                  final width = double.tryParse(value);
+                  if (width != null) {
+                    final startX = double.tryParse(startXController.text) ?? platform.startX;
+                    endXController.text = (startX + width).toStringAsFixed(0);
+                  }
+                },
+              ),
+
+              const SizedBox(height: 16),
+              const Text('Tip: Drag the orange handles on the platform to resize visually',
+                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newStartX = double.tryParse(startXController.text);
+              final newEndX = double.tryParse(endXController.text);
+
+              if (newStartX != null && newEndX != null) {
+                if (newEndX > newStartX && (newEndX - newStartX) >= 50) {
+                  controller.resizePlatformWithHistory(platformId, newStartX, newEndX);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Resized ${platform.name} to ${(newEndX - newStartX).toStringAsFixed(0)} units'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Invalid size - platform must be at least 50 units wide'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Apply'),
           ),
         ],
       ),

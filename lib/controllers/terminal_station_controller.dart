@@ -610,6 +610,12 @@ class TerminalStationController extends ChangeNotifier {
   String? selectedComponentId; // ID of selected component
   final List<SelectedComponent> multiSelection = []; // Multi-select support
 
+  // Platform resize handle state
+  bool isResizingPlatform = false;
+  String? resizingPlatformId;
+  String? resizingHandle; // 'left' or 'right'
+  double? resizingStartX;
+
   late CommandHistory commandHistory; // Undo/redo history
   Map<String, BufferStop> bufferStops = {}; // Buffer stops
   Map<String, Crossover> crossovers = {}; // Crossovers with point relationships
@@ -8416,6 +8422,77 @@ class TerminalStationController extends ChangeNotifier {
     );
 
     commandHistory.executeCommand(command);
+    notifyListeners();
+  }
+
+  /// Start resizing a platform from a handle
+  void startResizingPlatform(String platformId, String handle) {
+    final platform = platforms.firstWhere((p) => p.id == platformId);
+    isResizingPlatform = true;
+    resizingPlatformId = platformId;
+    resizingHandle = handle;
+    resizingStartX = handle == 'left' ? platform.startX : platform.endX;
+    notifyListeners();
+  }
+
+  /// Update platform resize during drag
+  void updatePlatformResize(double newX) {
+    if (!isResizingPlatform || resizingPlatformId == null || resizingHandle == null) return;
+
+    final platform = platforms.firstWhere((p) => p.id == resizingPlatformId);
+
+    if (resizingHandle == 'left') {
+      // Dragging left handle - update startX
+      // Ensure minimum width of 50 units
+      platform.startX = snapToGrid(newX).clamp(platform.endX - 500, platform.endX - 50);
+    } else {
+      // Dragging right handle - update endX
+      // Ensure minimum width of 50 units
+      platform.endX = snapToGrid(newX).clamp(platform.startX + 50, platform.startX + 500);
+    }
+
+    notifyListeners();
+  }
+
+  /// End platform resizing and record in history
+  void endPlatformResize() {
+    if (!isResizingPlatform || resizingPlatformId == null || resizingHandle == null || resizingStartX == null) {
+      isResizingPlatform = false;
+      resizingPlatformId = null;
+      resizingHandle = null;
+      resizingStartX = null;
+      return;
+    }
+
+    final platform = platforms.firstWhere((p) => p.id == resizingPlatformId);
+    final finalStartX = platform.startX;
+    final finalEndX = platform.endX;
+
+    // Restore original position temporarily so command can record the change
+    if (resizingHandle == 'left') {
+      platform.startX = resizingStartX!;
+    } else {
+      platform.endX = resizingStartX!;
+    }
+
+    // Create and execute command
+    final command = ResizePlatformCommand(
+      this,
+      resizingPlatformId!,
+      platform.startX,
+      platform.endX,
+      finalStartX,
+      finalEndX,
+    );
+    commandHistory.executeCommand(command);
+
+    // Clear resize state
+    isResizingPlatform = false;
+    resizingPlatformId = null;
+    resizingHandle = null;
+    resizingStartX = null;
+
+    logEvent('📏 Resized platform ${platform.id} to ${(finalEndX - finalStartX).toStringAsFixed(0)} units');
     notifyListeners();
   }
 

@@ -2764,7 +2764,7 @@ class TerminalStationController extends ChangeNotifier {
     );
     bufferStops['BS2'] = BufferStop(
       id: 'BS2',
-      x: -1700,  // Left end, lower track
+      x: -1800,  // Left end, lower track (moved to end of block 199)
       y: 300,
       width: 30,
       height: 20,
@@ -4246,6 +4246,82 @@ class TerminalStationController extends ChangeNotifier {
         }
       }
     }
+  }
+
+  // Track trains that have hit bufferstops to prevent repeated alerts
+  final Map<String, String> _bufferStopCollisions = {}; // trainId -> bufferstopId
+
+  void _checkBufferStopCollisions() {
+    for (var train in trains) {
+      // Skip if train is already stopped
+      if (train.speed == 0 && train.emergencyBrake) continue;
+
+      for (var bufferStop in bufferStops.values) {
+        // Check if train is on the same track (y position)
+        if ((train.y - bufferStop.y).abs() > 50) continue;
+
+        // Calculate distance to bufferstop
+        final distance = (train.x - bufferStop.x).abs();
+
+        // If train is very close to bufferstop (within 40 units)
+        if (distance < 40) {
+          // Check if we've already handled this collision
+          if (_bufferStopCollisions[train.id] == bufferStop.id) {
+            continue; // Already handling this collision
+          }
+
+          _logEvent(
+              '💥 COLLISION: ${train.name} hit bufferstop ${bufferStop.id} at x=${bufferStop.x}');
+
+          // Track this collision
+          _bufferStopCollisions[train.id] = bufferStop.id;
+
+          // Stop the train
+          train.emergencyBrake = true;
+          train.speed = 0;
+          train.targetSpeed = 0;
+
+          // Initiate collision recovery
+          _initiateBufferStopCollisionRecovery(train, bufferStop);
+          break;
+        }
+      }
+
+      // Clear collision tracking if train has moved away from bufferstop
+      if (_bufferStopCollisions.containsKey(train.id)) {
+        final bufferstopId = _bufferStopCollisions[train.id];
+        final bufferStop = bufferStops[bufferstopId];
+        if (bufferStop != null) {
+          final distance = (train.x - bufferStop.x).abs();
+          if (distance > 60) {
+            // Train has moved away, clear the collision tracking
+            _bufferStopCollisions.remove(train.id);
+          }
+        }
+      }
+    }
+  }
+
+  void _initiateBufferStopCollisionRecovery(Train train, BufferStop bufferStop) {
+    final collisionId = 'bufferstop_${train.id}_${DateTime.now().millisecondsSinceEpoch}';
+
+    // Determine recovery direction (away from bufferstop)
+    final double recoveryOffset = train.x > bufferStop.x ? 20.0 : -20.0;
+
+    final recoveryPlan = CollisionRecoveryPlan(
+      collisionId: collisionId,
+      trainsInvolved: [train.id],
+      reverseInstructions: {train.id: train.currentBlockId ?? ''},
+      blocksToClear: [train.currentBlockId ?? ''],
+      detectedAt: DateTime.now(),
+      state: CollisionRecoveryState.detected,
+      collisionPositions: {train.id: train.x},
+      targetRecoveryPositions: {train.id: train.x + recoveryOffset},
+    );
+
+    activeRecoveryPlans[collisionId] = recoveryPlan;
+
+    _logEvent('🔄 Collision recovery initiated for ${train.name} - bufferstop collision');
   }
 
   void _handleCollision(List<String> trainIds, String location) {
@@ -6123,6 +6199,7 @@ class TerminalStationController extends ChangeNotifier {
     _updateBlockOccupation();
     _updateSignalAspects();
     _checkCollisions();
+    _checkBufferStopCollisions();
 
     // Auto-follow train if following mode is active
     if (followingTrainId != null) {
@@ -6816,11 +6893,26 @@ class TerminalStationController extends ChangeNotifier {
     return false;
   }
 
+  // Track trains that have had reverse point collisions to prevent repeated alerts
+  final Map<String, String> _reversePointCollisions = {}; // trainId -> blockId where collision occurred
+
   // Check if train is approaching points from converging side with points reversed
   // This should trigger emergency brake (collision scenario)
   bool _checkPointCollision(Train train) {
     final currentBlockId = train.currentBlockId;
     if (currentBlockId == null) return false;
+
+    // Check if train has cleared the collision area
+    final previousCollisionBlock = _reversePointCollisions[train.id];
+    if (previousCollisionBlock != null && previousCollisionBlock != currentBlockId) {
+      // Train has moved to a different block, clear the collision tracking
+      _reversePointCollisions.remove(train.id);
+    }
+
+    // If train already has a collision for this block, don't trigger again
+    if (_reversePointCollisions[train.id] == currentBlockId) {
+      return false; // Already handling this collision
+    }
 
     // FIXED: Don't check collision for trains currently traveling on crossovers
     // Trains using crossovers legitimately need points in reverse position
@@ -6836,6 +6928,12 @@ class TerminalStationController extends ChangeNotifier {
       return false; // Train is on crossover, allow movement
     }
 
+    // Check if train's NEXT block is a crossover - if so, allow movement
+    final nextBlock = _getNextBlockForTrain(train);
+    if (nextBlock != null && crossoverBlocks.contains(nextBlock)) {
+      return false; // Train is heading to crossover, allow movement
+    }
+
     // LEFT CROSSOVER - Check points 76A, 76B, 77A, 77B
     // Eastbound approaching from converging side (lower track to upper via points in reverse)
     if (train.direction > 0 && currentBlockId == '211') {
@@ -6845,9 +6943,11 @@ class TerminalStationController extends ChangeNotifier {
           point77B?.position == PointPosition.reverse) {
         _logEvent(
             '💥 COLLISION: ${train.name} running through reversed points 76B/77B from converging side!');
+        _reversePointCollisions[train.id] = currentBlockId; // Track collision
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
+        _initiateReversePointCollisionRecovery(train);
         return true;
       }
     }
@@ -6860,9 +6960,11 @@ class TerminalStationController extends ChangeNotifier {
           point77A?.position == PointPosition.reverse) {
         _logEvent(
             '💥 COLLISION: ${train.name} running through reversed points 76A/77A from converging side!');
+        _reversePointCollisions[train.id] = currentBlockId; // Track collision
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
+        _initiateReversePointCollisionRecovery(train);
         return true;
       }
     }
@@ -6874,9 +6976,11 @@ class TerminalStationController extends ChangeNotifier {
       if (point78B?.position == PointPosition.reverse) {
         _logEvent(
             '💥 COLLISION: ${train.name} running through reversed point 78B from converging side!');
+        _reversePointCollisions[train.id] = currentBlockId; // Track collision
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
+        _initiateReversePointCollisionRecovery(train);
         return true;
       }
     }
@@ -6887,9 +6991,11 @@ class TerminalStationController extends ChangeNotifier {
       if (point78A?.position == PointPosition.reverse) {
         _logEvent(
             '💥 COLLISION: ${train.name} running through reversed point 78A from converging side!');
+        _reversePointCollisions[train.id] = currentBlockId; // Track collision
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
+        _initiateReversePointCollisionRecovery(train);
         return true;
       }
     }
@@ -6903,9 +7009,11 @@ class TerminalStationController extends ChangeNotifier {
           point80B?.position == PointPosition.reverse) {
         _logEvent(
             '💥 COLLISION: ${train.name} running through reversed points 79B/80B from converging side!');
+        _reversePointCollisions[train.id] = currentBlockId; // Track collision
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
+        _initiateReversePointCollisionRecovery(train);
         return true;
       }
     }
@@ -6918,14 +7026,37 @@ class TerminalStationController extends ChangeNotifier {
           point80A?.position == PointPosition.reverse) {
         _logEvent(
             '💥 COLLISION: ${train.name} running through reversed points 79A/80A from converging side!');
+        _reversePointCollisions[train.id] = currentBlockId; // Track collision
         train.emergencyBrake = true;
         train.speed = 0;
         train.targetSpeed = 0;
+        _initiateReversePointCollisionRecovery(train);
         return true;
       }
     }
 
     return false;
+  }
+
+  // Initiate collision recovery for reverse point collision
+  void _initiateReversePointCollisionRecovery(Train train) {
+    // Create a collision recovery plan
+    final collisionId = 'reverse_point_${train.id}_${DateTime.now().millisecondsSinceEpoch}';
+
+    final recoveryPlan = CollisionRecoveryPlan(
+      collisionId: collisionId,
+      trainsInvolved: [train.id],
+      reverseInstructions: {train.id: train.currentBlockId ?? ''},
+      blocksToClear: [train.currentBlockId ?? ''],
+      detectedAt: DateTime.now(),
+      state: CollisionRecoveryState.detected,
+      collisionPositions: {train.id: train.x},
+      targetRecoveryPositions: {train.id: train.x - 20.0}, // Move 20 units back
+    );
+
+    activeRecoveryPlans[collisionId] = recoveryPlan;
+
+    _logEvent('🔄 Collision recovery initiated for ${train.name} - reverse point collision');
   }
 
   void _checkAutoSignals() {

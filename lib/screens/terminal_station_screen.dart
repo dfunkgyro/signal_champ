@@ -20,6 +20,7 @@ import 'terminal_station_painter.dart';
 import '../widgets/railway_search_bar.dart';
 import '../widgets/mini_map_widget.dart';
 import '../services/widget_preferences_service.dart';
+import '../services/sound_service.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -1873,6 +1874,57 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                         value: controller.relayRackVisible,
                         onChanged: (value) => controller.toggleRelayRack(),
                         activeColor: Colors.orange,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Audio Toggle
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        SoundService().isEnabled
+                            ? Icons.volume_up
+                            : Icons.volume_off,
+                        color: SoundService().isEnabled
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Audio',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              SoundService().isEnabled ? 'Unmuted' : 'Muted',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: SoundService().isEnabled,
+                        onChanged: (value) {
+                          setState(() {
+                            SoundService().setEnabled(value);
+                          });
+                        },
+                        activeColor: Colors.blue,
                       ),
                     ],
                   ),

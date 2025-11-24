@@ -340,11 +340,22 @@ class _WidgetSettingsPanelState extends State<WidgetSettingsPanel> {
 
         const SizedBox(height: 12),
 
-        // Wake word enabled toggle
+        // Search wake word toggle
         _buildToggle(
-          label: 'Wake Word Detection',
-          value: prefsService.wakeWordEnabled,
-          onChanged: (value) => prefsService.setWakeWordEnabled(value),
+          label: '"Search for" Wake Word',
+          value: prefsService.searchWakeWordEnabled,
+          onChanged: (value) => prefsService.setSearchWakeWordEnabled(value),
+          subtitle: 'Say "search for" to activate search bar',
+        ),
+
+        const SizedBox(height: 12),
+
+        // SSM wake word toggle
+        _buildToggle(
+          label: '"SSM" Wake Word',
+          value: prefsService.ssmWakeWordEnabled,
+          onChanged: (value) => prefsService.setSsmWakeWordEnabled(value),
+          subtitle: 'Say "SSM" to activate AI agent',
         ),
 
         const SizedBox(height: 16),
@@ -706,6 +717,7 @@ class _WidgetSettingsPanelState extends State<WidgetSettingsPanel> {
     required String label,
     required bool value,
     required ValueChanged<bool> onChanged,
+    String? subtitle,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -720,11 +732,28 @@ class _WidgetSettingsPanelState extends State<WidgetSettingsPanel> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           Switch(

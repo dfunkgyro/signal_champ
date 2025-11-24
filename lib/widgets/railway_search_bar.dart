@@ -319,8 +319,8 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
     TerminalStationController controller,
     WidgetPreferencesService prefs,
   ) async {
-    if (!prefs.wakeWordEnabled) {
-      _showSnackBar('Wake word is disabled in settings');
+    if (!prefs.searchWakeWordEnabled) {
+      _showSnackBar('"Search for" wake word is disabled in settings');
       return;
     }
 
@@ -437,7 +437,7 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
                           tooltip: 'Voice search',
                         ),
                       // Wake word toggle button
-                      if (prefs.wakeWordEnabled)
+                      if (prefs.searchWakeWordEnabled)
                         IconButton(
                           icon: Icon(
                             _isListeningForWakeWord
@@ -454,8 +454,8 @@ class _RailwaySearchBarEnhancedState extends State<RailwaySearchBarEnhanced> {
                             prefs,
                           ),
                           tooltip: _isListeningForWakeWord
-                              ? 'Wake word active'
-                              : 'Enable wake word',
+                              ? '"Search for" wake word active'
+                              : 'Enable "search for" wake word',
                         ),
                       // Clear button
                       if (_searchController.text.isNotEmpty)

@@ -5,6 +5,7 @@ import '../controllers/terminal_station_controller.dart';
 import '../screens/terminal_station_models.dart';
 import '../services/openai_service.dart';
 import '../services/voice_recognition_service.dart';
+import '../services/widget_preferences_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Floating Signalling System Manager panel for natural language railway control
@@ -138,8 +139,9 @@ Type "help" to see all available tutorials! 🤖''', isAI: true);
       }
     };
 
-    // Enable wake word mode by default for SSM
-    _voiceService.setWakeWordMode(true);
+    // Wake word mode will be controlled by user preference
+    // Check WidgetPreferencesService.ssmWakeWordEnabled to enable/disable
+    _voiceService.setWakeWordMode(false); // Start disabled, user can enable via toggle
     _voiceService.setVoiceEnabled(false); // Start disabled, user can enable
   }
 
@@ -1685,27 +1687,38 @@ All of these work! Speak naturally - I'll understand your intent.
                             ),
                             if (!compactMode) const SizedBox(width: 4),
                             // Voice recognition button
-                            IconButton(
-                              icon: Icon(
-                                _voiceService.isListening ? Icons.mic : Icons.mic_none,
-                                color: _voiceService.isListening ? Colors.red : Colors.white70,
-                              ),
-                              onPressed: () async {
-                                if (_voiceService.isListening) {
-                                  await _voiceService.stopListening();
-                                  _voiceService.setVoiceEnabled(false);
-                                } else {
-                                  _voiceService.setVoiceEnabled(true);
-                                  await _voiceService.startListening();
-                                }
-                                setState(() {});
+                            Consumer<WidgetPreferencesService>(
+                              builder: (context, prefs, _) {
+                                return IconButton(
+                                  icon: Icon(
+                                    _voiceService.isListening ? Icons.mic : Icons.mic_none,
+                                    color: _voiceService.isListening ? Colors.red : Colors.white70,
+                                  ),
+                                  onPressed: () async {
+                                    if (_voiceService.isListening) {
+                                      await _voiceService.stopListening();
+                                      _voiceService.setVoiceEnabled(false);
+                                      _voiceService.setWakeWordMode(false);
+                                    } else {
+                                      _voiceService.setVoiceEnabled(true);
+                                      // Enable wake word mode if preference is enabled
+                                      if (prefs.ssmWakeWordEnabled) {
+                                        _voiceService.setWakeWordMode(true);
+                                      }
+                                      await _voiceService.startListening();
+                                    }
+                                    setState(() {});
+                                  },
+                                  iconSize: compactMode ? 14 : 16,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  tooltip: _voiceService.isListening
+                                      ? 'Stop listening'
+                                      : prefs.ssmWakeWordEnabled
+                                          ? 'Voice input (say "ssm" + command)'
+                                          : 'Voice input (direct mode)',
+                                );
                               },
-                              iconSize: compactMode ? 14 : 16,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              tooltip: _voiceService.isListening
-                                  ? 'Stop listening'
-                                  : 'Voice input (say "ssm" + command)',
                             ),
                             const SizedBox(width: 4),
                             // Settings button

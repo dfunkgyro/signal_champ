@@ -632,11 +632,11 @@ class RailwayModel extends ChangeNotifier {
       if (train.direction == Direction.east) {
         train.x = 700 + (100 * train.progress);
         train.y = 200 + (100 * train.progress);
-        train.angle = -45 * (pi / 180);
+        train.angle = 45 * (pi / 180);
       } else {
         train.x = 800 - (100 * train.progress);
         train.y = 300 - (100 * train.progress);
-        train.angle = 135 * (pi / 180);
+        train.angle = 225 * (pi / 180);
       }
     }
   }

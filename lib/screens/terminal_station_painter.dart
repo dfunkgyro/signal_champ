@@ -1798,7 +1798,19 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             canvas.translate(-carriage.x, -carriage.y);
           }
 
-          // Draw car centered on carriage position
+          // Draw shadow for depth
+          final shadowPaint = Paint()
+            ..color = Colors.black.withOpacity(0.3)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(carriage.x - 24, carriage.y - 13, carWidth, carHeight),
+              const Radius.circular(6),
+            ),
+            shadowPaint,
+          );
+
+          // Draw car body centered on carriage position
           canvas.drawRRect(
             RRect.fromRectAndRadius(
               Rect.fromLTWH(carriage.x - 25, carriage.y - 15, carWidth, carHeight),
@@ -1812,6 +1824,25 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
               const Radius.circular(6),
             ),
             outlinePaint,
+          );
+
+          // Draw windows on each carriage
+          final windowPaint = Paint()
+            ..color = themeData.trainWindowColor
+            ..style = PaintingStyle.fill;
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(carriage.x - 18, carriage.y - 10, 10, 6),
+              const Radius.circular(2),
+            ),
+            windowPaint,
+          );
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(carriage.x + 8, carriage.y - 10, 10, 6),
+              const Radius.circular(2),
+            ),
+            windowPaint,
           );
 
           canvas.restore();
@@ -1829,6 +1860,18 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           }
         }
       } else {
+        // Draw shadow for single train
+        final shadowPaint = Paint()
+          ..color = Colors.black.withOpacity(0.3)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(train.x - 29, train.y - 13, 60, 30),
+            const Radius.circular(6),
+          ),
+          shadowPaint,
+        );
+
         // Draw single train body for M1 trains
         canvas.drawRRect(
           RRect.fromRectAndRadius(

@@ -4227,7 +4227,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     }
 
     // Check transponders
-    for (final transponder in controller.transponders) {
+    for (final transponder in controller.transponders.values) {
       final distance = ((transponder.x - canvasX).abs() + (transponder.y - canvasY).abs());
       if (distance < 20) {
         controller.setHoveredObject({
@@ -4241,7 +4241,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     }
 
     // Check wifi antennas
-    for (final antenna in controller.wifiAntennas) {
+    for (final antenna in controller.wifiAntennas.values) {
       final distance = ((antenna.x - canvasX).abs() + (antenna.y - canvasY).abs());
       if (distance < 20) {
         controller.setHoveredObject({

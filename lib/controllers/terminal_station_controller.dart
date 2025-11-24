@@ -6751,16 +6751,16 @@ class TerminalStationController extends ChangeNotifier {
     if (x >= -550 && x < -450) {
       if (point76A?.position == PointPosition.reverse &&
           point76B?.position == PointPosition.reverse) {
-        // 135-degree crossover - transitioning between upper and lower tracks
+        // FIXED: Crossover rotation should be 45° or 135° based on direction
         double progress = (x + 550) / 100; // 0 to 1 over the crossover
         if (direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
           y = 100 + (200 * progress);
-          rotation = 0.785398; // 45 degrees in radians
+          rotation = 0.785398; // 45 degrees (down-right)
         } else {
           // Moving left: lower track (y=300) to upper track (y=100)
           y = 300 - (200 * progress);
-          rotation = 0.785398; // 45 degrees in radians
+          rotation = 2.356194; // 135 degrees (up-left) - FIXED from 45°
         }
       } else {
         // Points in normal position - stay on current track
@@ -6779,11 +6779,11 @@ class TerminalStationController extends ChangeNotifier {
         if (x < 700) {
           double progress = (x - 600) / 100;
           y = 100 + (100 * progress);
-          rotation = 0.785398; // 45 degrees
+          rotation = direction > 0 ? 0.785398 : 2.356194; // 45° or 135° based on direction
         } else {
           double progress = (x - 700) / 100;
           y = 200 + (100 * progress);
-          rotation = 0.785398; // 45 degrees
+          rotation = direction > 0 ? 0.785398 : 2.356194; // 45° or 135° based on direction
         }
       } else {
         if (currentY < 200) {
@@ -6798,16 +6798,16 @@ class TerminalStationController extends ChangeNotifier {
     else if (x >= 1900 && x < 2000) {
       if (point80A?.position == PointPosition.reverse &&
           point80B?.position == PointPosition.reverse) {
-        // 135-degree crossover - transitioning between upper and lower tracks
+        // FIXED: Crossover rotation should be 45° or 135° based on direction
         double progress = (x - 1900) / 100; // 0 to 1 over the crossover
         if (direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
           y = 100 + (200 * progress);
-          rotation = 0.785398; // 45 degrees in radians
+          rotation = 0.785398; // 45 degrees (down-right)
         } else {
           // Moving left: lower track (y=300) to upper track (y=100)
           y = 300 - (200 * progress);
-          rotation = 0.785398; // 45 degrees in radians
+          rotation = 2.356194; // 135 degrees (up-left) - FIXED from 45°
         }
       } else {
         // Points in normal position - stay on current track

@@ -3762,12 +3762,22 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   Offset _screenToCanvasCoords(Offset localPosition, bool isEditMode) {
     if (isEditMode) {
       // In edit mode, local position is within the scrollable SizedBox
+      // Need to account for scroll offset AND viewport position
       // Convert to canvas coordinates (centered at 0,0)
       final canvasMinX = -_canvasWidth / 2;
       final canvasMinY = -_canvasHeight / 2;
 
-      final canvasX = (localPosition.dx / _zoom) + canvasMinX;
-      final canvasY = (localPosition.dy / _zoom) + canvasMinY;
+      // Add scroll offsets to account for scrolled position
+      final scrollOffsetX = _horizontalScrollController.hasClients
+          ? _horizontalScrollController.offset
+          : 0.0;
+      final scrollOffsetY = _verticalScrollController.hasClients
+          ? _verticalScrollController.offset
+          : 0.0;
+
+      // Calculate canvas coordinates: (localPosition + scrollOffset) / zoom + canvasMin
+      final canvasX = ((localPosition.dx + scrollOffsetX) / _zoom) + canvasMinX;
+      final canvasY = ((localPosition.dy + scrollOffsetY) / _zoom) + canvasMinY;
       return Offset(canvasX, canvasY);
     } else {
       // Normal mode uses centered canvas with pan/zoom
@@ -4150,6 +4160,95 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           'x': point.x,
           'y': point.y,
           'position': point.position.name,
+        });
+        return;
+      }
+    }
+
+    // Check platforms
+    for (final platform in controller.platforms) {
+      final centerX = (platform.startX + platform.endX) / 2;
+      if (canvasX >= platform.startX &&
+          canvasX <= platform.endX &&
+          (platform.y - canvasY).abs() < 30) {
+        controller.setHoveredObject({
+          'type': 'Platform',
+          'id': platform.id,
+          'name': platform.name,
+          'x': centerX,
+          'y': platform.y,
+        });
+        return;
+      }
+    }
+
+    // Check train stops
+    for (final stop in controller.trainStops.values) {
+      final distance = ((stop.x - canvasX).abs() + (stop.y - canvasY).abs());
+      if (distance < 20) {
+        controller.setHoveredObject({
+          'type': 'Train Stop',
+          'id': stop.id,
+          'x': stop.x,
+          'y': stop.y,
+          'active': stop.active ? 'Yes' : 'No',
+        });
+        return;
+      }
+    }
+
+    // Check buffer stops
+    for (final buffer in controller.bufferStops.values) {
+      final distance = ((buffer.x - canvasX).abs() + (buffer.y - canvasY).abs());
+      if (distance < 20) {
+        controller.setHoveredObject({
+          'type': 'Buffer Stop',
+          'id': buffer.id,
+          'x': buffer.x,
+          'y': buffer.y,
+        });
+        return;
+      }
+    }
+
+    // Check axle counters
+    for (final counter in controller.axleCounters.values) {
+      final distance = ((counter.x - canvasX).abs() + (counter.y - canvasY).abs());
+      if (distance < 20) {
+        controller.setHoveredObject({
+          'type': 'Axle Counter',
+          'id': counter.id,
+          'x': counter.x,
+          'y': counter.y,
+          'blockId': counter.blockId,
+        });
+        return;
+      }
+    }
+
+    // Check transponders
+    for (final transponder in controller.transponders) {
+      final distance = ((transponder.x - canvasX).abs() + (transponder.y - canvasY).abs());
+      if (distance < 20) {
+        controller.setHoveredObject({
+          'type': 'Transponder',
+          'id': transponder.id,
+          'x': transponder.x,
+          'y': transponder.y,
+        });
+        return;
+      }
+    }
+
+    // Check wifi antennas
+    for (final antenna in controller.wifiAntennas) {
+      final distance = ((antenna.x - canvasX).abs() + (antenna.y - canvasY).abs());
+      if (distance < 20) {
+        controller.setHoveredObject({
+          'type': 'WiFi Antenna',
+          'id': antenna.id,
+          'x': antenna.x,
+          'y': antenna.y,
         });
         return;
       }

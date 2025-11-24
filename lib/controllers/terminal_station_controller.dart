@@ -7754,6 +7754,66 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Cycle to the next component (Tab key)
+  void selectNextComponent() {
+    // Build list of all selectable components
+    final allComponents = <Map<String, String>>[];
+
+    signals.forEach((id, signal) => allComponents.add({'type': 'signal', 'id': id}));
+    points.forEach((id, point) => allComponents.add({'type': 'point', 'id': id}));
+    platforms.forEach((platform) => allComponents.add({'type': 'platform', 'id': platform.id}));
+    trainStops.forEach((id, stop) => allComponents.add({'type': 'trainstop', 'id': id}));
+    bufferStops.forEach((id, buffer) => allComponents.add({'type': 'bufferstop', 'id': id}));
+    axleCounters.forEach((id, counter) => allComponents.add({'type': 'axlecounter', 'id': id}));
+
+    if (allComponents.isEmpty) return;
+
+    // Find current index
+    int currentIndex = -1;
+    if (selectedComponentType != null && selectedComponentId != null) {
+      currentIndex = allComponents.indexWhere(
+        (c) => c['type'] == selectedComponentType && c['id'] == selectedComponentId
+      );
+    }
+
+    // Move to next component (wrap around)
+    final nextIndex = (currentIndex + 1) % allComponents.length;
+    final nextComponent = allComponents[nextIndex];
+
+    selectComponent(nextComponent['type']!, nextComponent['id']!);
+    _logEvent('⇥ Cycled to ${nextComponent['type']} ${nextComponent['id']}');
+  }
+
+  /// Cycle to the previous component (Shift+Tab key)
+  void selectPreviousComponent() {
+    // Build list of all selectable components
+    final allComponents = <Map<String, String>>[];
+
+    signals.forEach((id, signal) => allComponents.add({'type': 'signal', 'id': id}));
+    points.forEach((id, point) => allComponents.add({'type': 'point', 'id': id}));
+    platforms.forEach((platform) => allComponents.add({'type': 'platform', 'id': platform.id}));
+    trainStops.forEach((id, stop) => allComponents.add({'type': 'trainstop', 'id': id}));
+    bufferStops.forEach((id, buffer) => allComponents.add({'type': 'bufferstop', 'id': id}));
+    axleCounters.forEach((id, counter) => allComponents.add({'type': 'axlecounter', 'id': id}));
+
+    if (allComponents.isEmpty) return;
+
+    // Find current index
+    int currentIndex = -1;
+    if (selectedComponentType != null && selectedComponentId != null) {
+      currentIndex = allComponents.indexWhere(
+        (c) => c['type'] == selectedComponentType && c['id'] == selectedComponentId
+      );
+    }
+
+    // Move to previous component (wrap around)
+    final prevIndex = currentIndex <= 0 ? allComponents.length - 1 : currentIndex - 1;
+    final prevComponent = allComponents[prevIndex];
+
+    selectComponent(prevComponent['type']!, prevComponent['id']!);
+    _logEvent('⇤ Cycled to ${prevComponent['type']} ${prevComponent['id']}');
+  }
+
   /// Select all components in a rectangular area (Marquee tool)
   void selectInRectangle(double x1, double y1, double x2, double y2) {
     multiSelection.clear();
@@ -7799,6 +7859,45 @@ class TerminalStationController extends ChangeNotifier {
           id: platform.id,
           originalX: centerX,
           originalY: platform.y,
+        ));
+        count++;
+      }
+    }
+
+    // Check train stops
+    for (final stop in trainStops.values) {
+      if (stop.x >= minX && stop.x <= maxX && stop.y >= minY && stop.y <= maxY) {
+        multiSelection.add(SelectedComponent(
+          type: 'trainstop',
+          id: stop.id,
+          originalX: stop.x,
+          originalY: stop.y,
+        ));
+        count++;
+      }
+    }
+
+    // Check buffer stops
+    for (final buffer in bufferStops.values) {
+      if (buffer.x >= minX && buffer.x <= maxX && buffer.y >= minY && buffer.y <= maxY) {
+        multiSelection.add(SelectedComponent(
+          type: 'bufferstop',
+          id: buffer.id,
+          originalX: buffer.x,
+          originalY: buffer.y,
+        ));
+        count++;
+      }
+    }
+
+    // Check axle counters
+    for (final counter in axleCounters.values) {
+      if (counter.x >= minX && counter.x <= maxX && counter.y >= minY && counter.y <= maxY) {
+        multiSelection.add(SelectedComponent(
+          type: 'axlecounter',
+          id: counter.id,
+          originalX: counter.x,
+          originalY: counter.y,
         ));
         count++;
       }

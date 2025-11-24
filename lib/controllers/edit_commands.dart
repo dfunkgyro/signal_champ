@@ -855,7 +855,23 @@ class AddBufferStopCommand implements EditCommand {
 class CommandHistory {
   final List<EditCommand> _undoStack = [];
   final List<EditCommand> _redoStack = [];
-  static const int maxHistorySize = 50;
+
+  // Adjustable history size (default: 20, max: 50)
+  int _maxHistorySize = 20;
+  static const int minHistorySize = 10;
+  static const int maxAllowedHistorySize = 50;
+
+  /// Get current maximum history size
+  int get maxHistorySize => _maxHistorySize;
+
+  /// Set maximum history size (clamped between 10 and 50)
+  set maxHistorySize(int value) {
+    _maxHistorySize = value.clamp(minHistorySize, maxAllowedHistorySize);
+    // Trim undo stack if it exceeds new limit
+    while (_undoStack.length > _maxHistorySize) {
+      _undoStack.removeAt(0);
+    }
+  }
 
   /// Execute a command and add to history
   void executeCommand(EditCommand command) {
@@ -864,7 +880,7 @@ class CommandHistory {
     _redoStack.clear(); // Clear redo stack when new command executed
 
     // Limit history size to prevent memory issues
-    if (_undoStack.length > maxHistorySize) {
+    if (_undoStack.length > _maxHistorySize) {
       _undoStack.removeAt(0);
     }
   }

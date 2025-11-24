@@ -61,6 +61,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   final ScrollController _horizontalScrollController = ScrollController();
   final ScrollController _verticalScrollController = ScrollController();
 
+  // Draggable Add Train Button position
+  Offset _addTrainButtonPosition = const Offset(100, 100); // Default position
+
+  // Top panel adjustable height
+  double _topPanelHeight = 120.0; // Default height
+  final double _minTopPanelHeight = 80.0;
+  final double _maxTopPanelHeight = 300.0;
+
   // FIXED: Canvas size controls for expanded 7000×1200 closed-loop network
   double _canvasWidth = 7000.0; // Expanded width for full loop
   double _canvasHeight = 1200.0; // Expanded height for return line
@@ -415,6 +423,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                               ),
                             );
                           },
+                          onRemoveTrains: () {
+                            controller.removeCollisionTrains();
+                          },
                         )
                       : const SizedBox.shrink(),
                 );
@@ -458,6 +469,60 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             child: const Center(
               child: EditModeToolbar(),
             ),
+          ),
+
+          // Draggable Floating Add Train Button (Layer 11)
+          Consumer<TerminalStationController>(
+            builder: (context, controller, _) {
+              return Positioned(
+                left: _addTrainButtonPosition.dx,
+                top: _addTrainButtonPosition.dy,
+                child: Draggable(
+                  feedback: Material(
+                    elevation: 8,
+                    shape: const CircleBorder(),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.7),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add_circle,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                  childWhenDragging: Container(),
+                  onDragEnd: (details) {
+                    setState(() {
+                      _addTrainButtonPosition = details.offset;
+                    });
+                  },
+                  child: Material(
+                    elevation: 8,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: controller.editModeEnabled ? null : () => controller.addTrain(),
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: controller.editModeEnabled ? Colors.grey : Colors.green,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.add_circle,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
 
           // Dot Matrix Display moved to right sidebar (removed from here)
@@ -665,29 +730,32 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   // Top Control Panel Method
   Widget _buildTopControlPanel() {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline,
-            width: 2,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: _topPanelHeight,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(context).colorScheme.outline,
+                width: 2,
+              ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                spreadRadius: 2,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 6,
-            spreadRadius: 2,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Consumer<TerminalStationController>(
-        builder: (context, controller, _) {
-          return Column(
-            children: [
+          child: Consumer<TerminalStationController>(
+            builder: (context, controller, _) {
+              return Column(
+                children: [
               // Header with close button
               Container(
                 height: 16,
@@ -759,10 +827,35 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   ),
                 ),
               ),
-            ],
-          );
-        },
-      ),
+                ],
+              );
+            },
+          ),
+        ),
+        // Drag handle for resizing top panel
+        GestureDetector(
+          onVerticalDragUpdate: (details) {
+            setState(() {
+              _topPanelHeight = (_topPanelHeight + details.delta.dy)
+                  .clamp(_minTopPanelHeight, _maxTopPanelHeight);
+            });
+          },
+          child: Container(
+            height: 8,
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

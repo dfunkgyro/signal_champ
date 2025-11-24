@@ -1321,6 +1321,39 @@ class TerminalStationController extends ChangeNotifier {
     return;
   }
 
+  /// Remove trains involved in collision for quick recovery
+  void removeCollisionTrains() {
+    if (!collisionAlarmActive || currentCollisionIncident == null) {
+      _logEvent('❌ No active collision to clear');
+      return;
+    }
+
+    // Get all trains involved in active collisions
+    final trainsToRemove = <String>[];
+    for (var plan in _activeCollisionRecoveries.values) {
+      trainsToRemove.addAll(plan.trainsInvolved);
+    }
+
+    // Remove the trains
+    int removedCount = 0;
+    for (var trainId in trainsToRemove) {
+      final train = trains.firstWhereOrNull((t) => t.id == trainId);
+      if (train != null) {
+        trains.remove(train);
+        removedCount++;
+        _logEvent('🗑️  Removed collision train: ${train.name}');
+      }
+    }
+
+    // Clear all collision states
+    _activeCollisionRecoveries.clear();
+    collisionAlarmActive = false;
+    currentCollisionIncident = null;
+
+    _logEvent('✅ Removed $removedCount collision train(s) - collision cleared');
+    notifyListeners();
+  }
+
   // Acknowledge and clear collision alarm
   void acknowledgeCollisionAlarm() {
     _activeCollisionRecoveries.clear();
@@ -5652,6 +5685,36 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reset layout to default positions
+  void resetLayoutToDefault() {
+    // Clear all trains first
+    trains.clear();
+
+    // Clear blocks, signals, points, platforms, etc
+    blocks.clear();
+    signals.clear();
+    points.clear();
+    platforms.clear();
+    trainStops.clear();
+    bufferStops.clear();
+    axleCounters.clear();
+    transponders.clear();
+    wifiAntennas.clear();
+    crossovers.clear();
+
+    // Clear command history
+    commandHistory.clear();
+
+    // Re-initialize layout with default positions
+    _initializeLayout();
+
+    // Reset simulation state
+    resetSimulation();
+
+    _logEvent('🔄 Layout reset to default');
+    notifyListeners();
+  }
+
   void setSimulationSpeed(double speed) {
     simulationSpeed = speed;
     notifyListeners();
@@ -5901,36 +5964,50 @@ class TerminalStationController extends ChangeNotifier {
           if (train.manualStop) {
             train.targetSpeed = 0;
           } else {
-            // Check for trains ahead (stop 20 units before)
-            final trainAhead = _getTrainAhead(train, 50.0);
-            if (trainAhead != null) {
-              final distance = (trainAhead.x - train.x).abs();
-              if (distance < 20.0) {
+            // Check for buffer stops ahead (stop 20 units before)
+            final bufferStopAhead = _getBufferStopAhead(train, 50.0);
+            if (bufferStopAhead != null) {
+              final distance = (bufferStopAhead.x - train.x) * train.direction;
+              if (distance < 20.0 && distance > 0) {
                 train.targetSpeed = 0;
                 _logEvent(
-                    '🛑 CBTC ${train.name} stopped: Train ahead within 20 units');
+                    '🛑 CBTC ${train.name} stopped: Buffer stop ahead within 20 units');
               } else {
                 train.targetSpeed = 2.0;
               }
             } else {
-              // Check for occupied AB ahead (stop 20 units before)
-              final occupiedAB = _getOccupiedABAhead(train, 50.0);
-              if (occupiedAB != null) {
-                final abPosition = _getABPosition(occupiedAB);
-                if (abPosition != null) {
-                  final distance = (abPosition - train.x) * train.direction;
-                  if (distance < 20.0 && distance > 0) {
-                    train.targetSpeed = 0;
-                    _logEvent(
-                        '🛑 CBTC ${train.name} stopped: Occupied AB ahead within 20 units');
-                  } else {
-                    train.targetSpeed = 2.0;
-                  }
+              // Check for trains ahead (stop 20 units before)
+              final trainAhead = _getTrainAhead(train, 50.0);
+              if (trainAhead != null) {
+                final distance = (trainAhead.x - train.x).abs();
+                if (distance < 20.0) {
+                  train.targetSpeed = 0;
+                  _logEvent(
+                      '🛑 CBTC ${train.name} stopped: Train ahead within 20 units');
                 } else {
                   train.targetSpeed = 2.0;
                 }
-              } else {
-                train.targetSpeed = 2.0;
+                } else {
+                  // Check for occupied AB ahead (stop 20 units before)
+                  final occupiedAB = _getOccupiedABAhead(train, 50.0);
+                  if (occupiedAB != null) {
+                    final abPosition = _getABPosition(occupiedAB);
+                    if (abPosition != null) {
+                      final distance = (abPosition - train.x) * train.direction;
+                      if (distance < 20.0 && distance > 0) {
+                        train.targetSpeed = 0;
+                        _logEvent(
+                            '🛑 CBTC ${train.name} stopped: Occupied AB ahead within 20 units');
+                      } else {
+                        train.targetSpeed = 2.0;
+                      }
+                    } else {
+                      train.targetSpeed = 2.0;
+                    }
+                  } else {
+                    train.targetSpeed = 2.0;
+                  }
+                }
               }
             }
 
@@ -5944,6 +6021,17 @@ class TerminalStationController extends ChangeNotifier {
           if (train.manualStop) {
             train.targetSpeed = 0;
           } else {
+            // Check for buffer stops ahead and auto emergency brake
+            final bufferStopAhead = _getBufferStopAhead(train, 30.0);
+            if (bufferStopAhead != null) {
+              final distance = (bufferStopAhead.x - train.x) * train.direction;
+              if (distance < 20.0 && distance > 0) {
+                train.emergencyBrake = true;
+                _logEvent(
+                    '⚠️ CBTC PM ${train.name}: Emergency brake - Buffer stop ahead within 20 units');
+              }
+            }
+
             // Check for obstacles within 20 units and auto emergency brake
             final trainAhead = _getTrainAhead(train, 30.0);
             if (trainAhead != null) {
@@ -6751,6 +6839,10 @@ class TerminalStationController extends ChangeNotifier {
         if (block.containsPosition(train.x, train.y)) {
           block.occupied = true;
           block.occupyingTrainId = train.id;
+          // Track previous block before updating current
+          if (train.currentBlockId != block.id) {
+            train.previousBlockId = train.currentBlockId;
+          }
           train.currentBlockId = block.id;
         }
       }
@@ -6914,8 +7006,8 @@ class TerminalStationController extends ChangeNotifier {
       return false; // Already handling this collision
     }
 
-    // FIXED: Don't check collision for trains currently traveling on crossovers
-    // Trains using crossovers legitimately need points in reverse position
+    // ENHANCED SMART DETECTION: Don't check collision for trains legitimately using crossovers
+    // Trains using crossovers need points in reverse position
     final crossoverBlocks = [
       'crossover_211_212',
       'crossover106',
@@ -6924,14 +7016,36 @@ class TerminalStationController extends ChangeNotifier {
       'crossover_left',
       'crossover_right',
     ];
+
+    // 1. Train is currently ON a crossover block
     if (crossoverBlocks.contains(currentBlockId)) {
       return false; // Train is on crossover, allow movement
     }
 
-    // Check if train's NEXT block is a crossover - if so, allow movement
+    // 2. Train's NEXT block is a crossover - train is approaching crossover
     final nextBlock = _getNextBlockForTrain(train);
     if (nextBlock != null && crossoverBlocks.contains(nextBlock)) {
       return false; // Train is heading to crossover, allow movement
+    }
+
+    // 3. Train came FROM a crossover block - train just exited crossover
+    if (train.previousBlockId != null && crossoverBlocks.contains(train.previousBlockId!)) {
+      return false; // Train just left crossover, allow movement
+    }
+
+    // 4. Check if train is on a valid crossover route by checking block sequence
+    // If previous block was crossover-adjacent and next block is crossover-adjacent, allow movement
+    final crossoverAdjacentBlocks = [
+      '211', '212', '214', '201', // Left crossover adjacent blocks
+      '106', '108', '109', '105', '107', // Central crossover adjacent blocks
+      '303', '304', '306', '301', // Right crossover adjacent blocks
+    ];
+
+    if (train.previousBlockId != null &&
+        crossoverAdjacentBlocks.contains(train.previousBlockId!) &&
+        nextBlock != null &&
+        (crossoverBlocks.contains(nextBlock) || crossoverAdjacentBlocks.contains(nextBlock))) {
+      return false; // Train is on valid crossover route sequence
     }
 
     // LEFT CROSSOVER - Check points 76A, 76B, 77A, 77B
@@ -7153,6 +7267,27 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     return nearestTrain;
+  }
+
+  /// Get the nearest buffer stop ahead of the train within maxDistance
+  BufferStop? _getBufferStopAhead(Train train, double maxDistance) {
+    BufferStop? nearestBufferStop;
+    double minDistance = maxDistance;
+
+    for (var bufferStop in bufferStops.values) {
+      // Check if buffer stop is in same direction lane
+      final isSameLane = (train.y - bufferStop.y).abs() < 50;
+      if (!isSameLane) continue;
+
+      // Check if buffer stop is ahead
+      final distance = (bufferStop.x - train.x) * train.direction;
+      if (distance > 0 && distance < minDistance) {
+        minDistance = distance;
+        nearestBufferStop = bufferStop;
+      }
+    }
+
+    return nearestBufferStop;
   }
 
   /// Get the AB section that a train is currently in

@@ -240,6 +240,7 @@ class Train {
   bool manualStop;
   bool emergencyBrake;
   String? currentBlockId;
+  String? previousBlockId; // Track previous block for smart collision detection
   bool hasCommittedToMove;
   String? lastPassedSignalId;
   double rotation;
@@ -290,6 +291,7 @@ class Train {
     this.manualStop = false,
     this.emergencyBrake = false,
     this.currentBlockId,
+    this.previousBlockId,
     this.hasCommittedToMove = false,
     this.lastPassedSignalId,
     this.rotation = 0.0,

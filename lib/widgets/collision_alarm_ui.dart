@@ -13,6 +13,7 @@ class CollisionAlarmWidget extends StatefulWidget {
   final bool isSPAD; // New parameter for SPAD incidents
   final String? trainStopId; // New parameter for train stop ID
   final VoidCallback? onForceResolve; // Force resolve callback
+  final VoidCallback? onRemoveTrains; // Remove collision trains callback
 
   const CollisionAlarmWidget({
     Key? key,
@@ -22,6 +23,7 @@ class CollisionAlarmWidget extends StatefulWidget {
     this.isSPAD = false,
     this.trainStopId,
     this.onForceResolve,
+    this.onRemoveTrains,
   }) : super(key: key);
 
   @override
@@ -172,6 +174,21 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
                 ),
                 const SizedBox(width: 8),
               ],
+              // Remove collision trains button
+              if (!widget.isSPAD && widget.onRemoveTrains != null) ...[
+                ElevatedButton.icon(
+                  onPressed: () {
+                    _confirmRemoveTrains(context);
+                  },
+                  icon: const Icon(Icons.delete_forever),
+                  label: const Text('Remove Trains'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade900,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               ElevatedButton.icon(
                 onPressed: () {
                   _showIncidentReport(
@@ -251,6 +268,48 @@ class _CollisionAlarmWidgetState extends State<CollisionAlarmWidget>
               backgroundColor: Colors.purple.shade700,
             ),
             child: const Text('Force Resolve'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRemoveTrains(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.delete_forever, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Remove Collision Trains'),
+          ],
+        ),
+        content: const Text(
+            'This will permanently remove all trains involved in this collision from the simulation. '
+            'This action cannot be undone.\n\n'
+            'Are you sure you want to proceed?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              widget.onRemoveTrains?.call();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('🗑️ Collision trains removed'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade900,
+            ),
+            child: const Text('Remove Trains'),
           ),
         ],
       ),

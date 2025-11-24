@@ -75,6 +75,19 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   final double _defaultCanvasWidth = 7000.0;
   final double _defaultCanvasHeight = 1200.0;
 
+  // Hit detection radii (Euclidean distance in canvas units)
+  static const double _hitRadiusSignal = 30.0;
+  static const double _hitRadiusPoint = 20.0;
+  static const double _hitRadiusPlatform = 25.0;
+  static const double _hitRadiusTrainStop = 20.0;
+  static const double _hitRadiusBufferStop = 20.0;
+  static const double _hitRadiusAxleCounter = 20.0;
+  static const double _hitRadiusTransponder = 20.0;
+  static const double _hitRadiusWifiAntenna = 25.0;
+  static const double _hitRadiusTrain = 40.0;
+  static const double _hitRadiusBlock = 20.0;
+  static const double _hitRadiusResizeHandle = 12.0;
+
   @override
   void initState() {
     super.initState();
@@ -3787,6 +3800,164 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     }
   }
 
+  /// Calculate Euclidean distance between two points
+  double _calculateDistance(double x1, double y1, double x2, double y2) {
+    final dx = x2 - x1;
+    final dy = y2 - y1;
+    return math.sqrt(dx * dx + dy * dy);
+  }
+
+  /// Find the closest component to the given canvas coordinates
+  /// Returns a map with 'type', 'id', and 'distance' keys, or null if no component is within range
+  Map<String, dynamic>? _findClosestComponent(
+    TerminalStationController controller,
+    double canvasX,
+    double canvasY,
+  ) {
+    Map<String, dynamic>? closest;
+    double minDistance = double.infinity;
+
+    // Check signals
+    for (final signal in controller.signals.values) {
+      final distance = _calculateDistance(canvasX, canvasY, signal.x, signal.y);
+      if (distance < _hitRadiusSignal && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'signal',
+          'id': signal.id,
+          'distance': distance,
+          'x': signal.x,
+          'y': signal.y,
+        };
+      }
+    }
+
+    // Check points
+    for (final point in controller.points.values) {
+      final distance = _calculateDistance(canvasX, canvasY, point.x, point.y);
+      if (distance < _hitRadiusPoint && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'point',
+          'id': point.id,
+          'distance': distance,
+          'x': point.x,
+          'y': point.y,
+        };
+      }
+    }
+
+    // Check platforms (rectangular hit detection, but use distance to nearest edge)
+    for (final platform in controller.platforms) {
+      // Check if within rectangular bounds
+      if (canvasX >= platform.startX && canvasX <= platform.endX) {
+        final distance = (canvasY - platform.y).abs();
+        if (distance < _hitRadiusPlatform && distance < minDistance) {
+          minDistance = distance;
+          closest = {
+            'type': 'platform',
+            'id': platform.id,
+            'distance': distance,
+            'x': (platform.startX + platform.endX) / 2,
+            'y': platform.y,
+          };
+        }
+      }
+    }
+
+    // Check train stops
+    for (final trainStop in controller.trainStops.values) {
+      final distance = _calculateDistance(canvasX, canvasY, trainStop.x, trainStop.y);
+      if (distance < _hitRadiusTrainStop && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'trainstop',
+          'id': trainStop.id,
+          'distance': distance,
+          'x': trainStop.x,
+          'y': trainStop.y,
+        };
+      }
+    }
+
+    // Check buffer stops
+    for (final bufferStop in controller.bufferStops.values) {
+      final distance = _calculateDistance(canvasX, canvasY, bufferStop.x, bufferStop.y);
+      if (distance < _hitRadiusBufferStop && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'bufferstop',
+          'id': bufferStop.id,
+          'distance': distance,
+          'x': bufferStop.x,
+          'y': bufferStop.y,
+        };
+      }
+    }
+
+    // Check axle counters
+    for (final counter in controller.axleCounters.values) {
+      final distance = _calculateDistance(canvasX, canvasY, counter.x, counter.y);
+      if (distance < _hitRadiusAxleCounter && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'axlecounter',
+          'id': counter.id,
+          'distance': distance,
+          'x': counter.x,
+          'y': counter.y,
+        };
+      }
+    }
+
+    // Check transponders
+    for (final transponder in controller.transponders.values) {
+      final distance = _calculateDistance(canvasX, canvasY, transponder.x, transponder.y);
+      if (distance < _hitRadiusTransponder && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'transponder',
+          'id': transponder.id,
+          'distance': distance,
+          'x': transponder.x,
+          'y': transponder.y,
+        };
+      }
+    }
+
+    // Check wifi antennas
+    for (final antenna in controller.wifiAntennas.values) {
+      final distance = _calculateDistance(canvasX, canvasY, antenna.x, antenna.y);
+      if (distance < _hitRadiusWifiAntenna && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'wifiantenna',
+          'id': antenna.id,
+          'distance': distance,
+          'x': antenna.x,
+          'y': antenna.y,
+        };
+      }
+    }
+
+    // Check trains
+    for (final train in controller.trains) {
+      final distance = _calculateDistance(canvasX, canvasY, train.x, train.y);
+      if (distance < _hitRadiusTrain && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'train',
+          'id': train.name,
+          'distance': distance,
+          'x': train.x,
+          'y': train.y,
+        };
+      }
+    }
+
+    return closest;
+  }
+
   Widget _buildStationCanvas() {
     return Container(
       color: Colors.grey[200],
@@ -3898,33 +4069,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
           // FIXED: In edit mode, check if clicking on ANY component (not just selected one)
           if (controller.editModeEnabled) {
-            // Find component under cursor
-            String? componentType;
-            String? componentId;
-
-            // Check all component types for a hit
-            // Signals
-            for (final signal in controller.signals.values) {
-              final distance = ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
-              if (distance < 30) {
-                componentType = 'signal';
-                componentId = signal.id;
-                break;
-              }
-            }
-
-            // Points (if no signal found)
-            if (componentType == null) {
-              for (final point in controller.points.values) {
-                final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
-                if (distance < 20) {
-                  componentType = 'point';
-                  componentId = point.id;
-                  break;
-                }
-              }
-            }
-
             // Check for platform resize handles FIRST (if platform is selected)
             if (controller.selectedComponentType == 'platform' &&
                 controller.selectedComponentId != null) {
@@ -3933,100 +4077,67 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   (p) => p.id == controller.selectedComponentId,
                 );
 
-                // Check if clicking on left or right resize handle
-                final handleSize = 12.0;
-                final leftHandleDist = (canvasX - selectedPlatform.startX).abs();
-                final rightHandleDist = (canvasX - selectedPlatform.endX).abs();
-                final verticalDist = (canvasY - selectedPlatform.y).abs();
+                // Check if clicking on left or right resize handle using Euclidean distance
+                final leftHandleDist = _calculateDistance(
+                  canvasX, canvasY, selectedPlatform.startX, selectedPlatform.y);
+                final rightHandleDist = _calculateDistance(
+                  canvasX, canvasY, selectedPlatform.endX, selectedPlatform.y);
 
-                if (verticalDist < handleSize) {
-                  if (leftHandleDist < handleSize) {
-                    // Clicked on left resize handle
-                    controller.startResizingPlatform(selectedPlatform.id, 'left');
-                    return; // Start resizing, don't drag
-                  } else if (rightHandleDist < handleSize) {
-                    // Clicked on right resize handle
-                    controller.startResizingPlatform(selectedPlatform.id, 'right');
-                    return; // Start resizing, don't drag
-                  }
+                if (leftHandleDist < _hitRadiusResizeHandle) {
+                  // Clicked on left resize handle
+                  controller.startResizingPlatform(selectedPlatform.id, 'left');
+                  return; // Start resizing, don't drag
+                } else if (rightHandleDist < _hitRadiusResizeHandle) {
+                  // Clicked on right resize handle
+                  controller.startResizingPlatform(selectedPlatform.id, 'right');
+                  return; // Start resizing, don't drag
                 }
               } catch (e) {
                 // Platform not found
               }
             }
 
-            // Platforms (regular body hit detection)
-            if (componentType == null) {
-              for (final platform in controller.platforms) {
-                if (canvasX >= platform.startX &&
-                    canvasX <= platform.endX &&
-                    (canvasY - platform.y).abs() < 25) {
-                  componentType = 'platform';
-                  componentId = platform.id;
-                  break;
-                }
+            // Find the closest component using Euclidean distance
+            final closestComponent = _findClosestComponent(controller, canvasX, canvasY);
+
+            // If we found a component, select it and start dragging (Pointer/Quick Select mode)
+            if (closestComponent != null) {
+              final componentType = closestComponent['type'] as String;
+              final componentId = closestComponent['id'] as String;
+
+              if (controller.selectionMode == SelectionMode.pointer ||
+                  controller.selectionMode == SelectionMode.quickSelect) {
+                controller.selectComponent(componentType, componentId);
+                _isDraggingComponent = true;
+                _draggingComponentId = componentId;
+                _draggingComponentType = componentType;
+                _dragStartPosition = Offset(canvasX, canvasY);
+                return; // Start dragging component
               }
             }
 
-            // Train stops
-            if (componentType == null) {
-              for (final trainStop in controller.trainStops.values) {
-                final distance = ((trainStop.x - canvasX).abs() + (trainStop.y - canvasY).abs());
-                if (distance < 20) {
-                  componentType = 'trainstop';
-                  componentId = trainStop.id;
-                  break;
-                }
-              }
+            // Check if using Marquee tool
+            if (controller.selectionMode == SelectionMode.marquee) {
+              // Start drawing marquee rectangle
+              setState(() {
+                _isDrawingMarquee = true;
+                _marqueeStart = details.localPosition;
+                _marqueeEnd = details.localPosition;
+              });
+              return; // Start marquee selection
             }
 
-            // Buffer stops
-            if (componentType == null) {
-              for (final bufferStop in controller.bufferStops.values) {
-                final distance = ((bufferStop.x - canvasX).abs() + (bufferStop.y - canvasY).abs());
-                if (distance < 20) {
-                  componentType = 'bufferstop';
-                  componentId = bufferStop.id;
-                  break;
-                }
-              }
+            // Check if using Lasso tool
+            if (controller.selectionMode == SelectionMode.lasso) {
+              // Start drawing lasso path (future implementation)
+              return;
             }
 
-                  // If we found a component, select it and start dragging (Pointer/Quick Select mode)
-                  if (componentType != null && componentId != null) {
-                    if (controller.selectionMode == SelectionMode.pointer ||
-                        controller.selectionMode == SelectionMode.quickSelect) {
-                      controller.selectComponent(componentType, componentId);
-                      _isDraggingComponent = true;
-                      _draggingComponentId = componentId;
-                      _draggingComponentType = componentType;
-                      _dragStartPosition = Offset(canvasX, canvasY);
-                      return; // Start dragging component
-                    }
-                  }
-
-                  // Check if using Marquee tool
-                  if (controller.selectionMode == SelectionMode.marquee) {
-                    // Start drawing marquee rectangle
-                    setState(() {
-                      _isDrawingMarquee = true;
-                      _marqueeStart = details.localPosition;
-                      _marqueeEnd = details.localPosition;
-                    });
-                    return; // Start marquee selection
-                  }
-
-                  // Check if using Lasso tool
-                  if (controller.selectionMode == SelectionMode.lasso) {
-                    // Start drawing lasso path (future implementation)
-                    return;
-                  }
-
-                  // No component clicked and not using selection tool - clear selection
-                  if (controller.selectionMode == SelectionMode.pointer) {
-                    controller.clearSelection();
-                  }
-                }
+            // No component clicked and not using selection tool - clear selection
+            if (controller.selectionMode == SelectionMode.pointer) {
+              controller.clearSelection();
+            }
+          }
 
                 // NORMAL MODE: Pan the camera (edit mode off)
                 if (!controller.editModeEnabled) {
@@ -4131,304 +4242,254 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           );
   }
 
-  // Helper method to detect hovered object on the canvas
+  // Helper method to detect hovered object on the canvas using Euclidean distance
   void _detectHoveredObject(
       TerminalStationController controller, double canvasX, double canvasY) {
-    // Check signals first
+    Map<String, dynamic>? closest;
+    double minDistance = double.infinity;
+
+    // Check signals
     for (final signal in controller.signals.values) {
-      final distance =
-          ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
-      if (distance < 30) {
-        controller.setHoveredObject({
+      final distance = _calculateDistance(canvasX, canvasY, signal.x, signal.y);
+      if (distance < _hitRadiusSignal && distance < minDistance) {
+        minDistance = distance;
+        closest = {
           'type': 'Signal',
           'id': signal.id,
           'x': signal.x,
           'y': signal.y,
           'aspect': signal.aspect.name,
-        });
-        return;
+        };
       }
     }
 
     // Check points
     for (final point in controller.points.values) {
-      final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
-      if (distance < 20) {
-        controller.setHoveredObject({
+      final distance = _calculateDistance(canvasX, canvasY, point.x, point.y);
+      if (distance < _hitRadiusPoint && distance < minDistance) {
+        minDistance = distance;
+        closest = {
           'type': 'Point',
           'id': point.id,
           'x': point.x,
           'y': point.y,
           'position': point.position.name,
-        });
-        return;
+        };
       }
     }
 
-    // Check platforms
+    // Check platforms (rectangular hit detection)
     for (final platform in controller.platforms) {
       final centerX = (platform.startX + platform.endX) / 2;
-      if (canvasX >= platform.startX &&
-          canvasX <= platform.endX &&
-          (platform.y - canvasY).abs() < 30) {
-        controller.setHoveredObject({
-          'type': 'Platform',
-          'id': platform.id,
-          'name': platform.name,
-          'x': centerX,
-          'y': platform.y,
-        });
-        return;
+      if (canvasX >= platform.startX && canvasX <= platform.endX) {
+        final distance = (platform.y - canvasY).abs();
+        if (distance < _hitRadiusPlatform && distance < minDistance) {
+          minDistance = distance;
+          closest = {
+            'type': 'Platform',
+            'id': platform.id,
+            'name': platform.name,
+            'x': centerX,
+            'y': platform.y,
+          };
+        }
       }
     }
 
     // Check train stops
     for (final stop in controller.trainStops.values) {
-      final distance = ((stop.x - canvasX).abs() + (stop.y - canvasY).abs());
-      if (distance < 20) {
-        controller.setHoveredObject({
+      final distance = _calculateDistance(canvasX, canvasY, stop.x, stop.y);
+      if (distance < _hitRadiusTrainStop && distance < minDistance) {
+        minDistance = distance;
+        closest = {
           'type': 'Train Stop',
           'id': stop.id,
           'x': stop.x,
           'y': stop.y,
           'active': stop.active ? 'Yes' : 'No',
-        });
-        return;
+        };
       }
     }
 
     // Check buffer stops
     for (final buffer in controller.bufferStops.values) {
-      final distance = ((buffer.x - canvasX).abs() + (buffer.y - canvasY).abs());
-      if (distance < 20) {
-        controller.setHoveredObject({
+      final distance = _calculateDistance(canvasX, canvasY, buffer.x, buffer.y);
+      if (distance < _hitRadiusBufferStop && distance < minDistance) {
+        minDistance = distance;
+        closest = {
           'type': 'Buffer Stop',
           'id': buffer.id,
           'x': buffer.x,
           'y': buffer.y,
-        });
-        return;
+        };
       }
     }
 
     // Check axle counters
     for (final counter in controller.axleCounters.values) {
-      final distance = ((counter.x - canvasX).abs() + (counter.y - canvasY).abs());
-      if (distance < 20) {
-        controller.setHoveredObject({
+      final distance = _calculateDistance(canvasX, canvasY, counter.x, counter.y);
+      if (distance < _hitRadiusAxleCounter && distance < minDistance) {
+        minDistance = distance;
+        closest = {
           'type': 'Axle Counter',
           'id': counter.id,
           'x': counter.x,
           'y': counter.y,
           'blockId': counter.blockId,
-        });
-        return;
+        };
       }
     }
 
     // Check transponders
     for (final transponder in controller.transponders.values) {
-      final distance = ((transponder.x - canvasX).abs() + (transponder.y - canvasY).abs());
-      if (distance < 20) {
-        controller.setHoveredObject({
+      final distance = _calculateDistance(canvasX, canvasY, transponder.x, transponder.y);
+      if (distance < _hitRadiusTransponder && distance < minDistance) {
+        minDistance = distance;
+        closest = {
           'type': 'Transponder',
           'id': transponder.id,
           'x': transponder.x,
           'y': transponder.y,
-        });
-        return;
+        };
       }
     }
 
     // Check wifi antennas
     for (final antenna in controller.wifiAntennas.values) {
-      final distance = ((antenna.x - canvasX).abs() + (antenna.y - canvasY).abs());
-      if (distance < 20) {
-        controller.setHoveredObject({
+      final distance = _calculateDistance(canvasX, canvasY, antenna.x, antenna.y);
+      if (distance < _hitRadiusWifiAntenna && distance < minDistance) {
+        minDistance = distance;
+        closest = {
           'type': 'WiFi Antenna',
           'id': antenna.id,
           'x': antenna.x,
           'y': antenna.y,
-        });
-        return;
+        };
       }
     }
 
     // Check trains
     for (final train in controller.trains) {
-      final distance = ((train.x - canvasX).abs() + (train.y - canvasY).abs());
-      if (distance < 40) {
-        controller.setHoveredObject({
+      final distance = _calculateDistance(canvasX, canvasY, train.x, train.y);
+      if (distance < _hitRadiusTrain && distance < minDistance) {
+        minDistance = distance;
+        closest = {
           'type': 'Train',
           'id': train.name,
           'x': train.x,
           'y': train.y,
           'speed': train.speed.toStringAsFixed(1),
-        });
-        return;
+        };
       }
     }
 
-    // Check blocks
+    // Check blocks (rectangular hit detection)
     for (final block in controller.blocks.values) {
-      if (canvasX >= block.startX &&
-          canvasX <= block.endX &&
-          (block.y - canvasY).abs() < 20) {
-        controller.setHoveredObject({
-          'type': 'Block',
-          'id': block.id,
-          'x': (block.startX + block.endX) / 2,
-          'y': block.y,
-          'occupied': block.occupied ? 'Yes' : 'No',
-        });
-        return;
+      if (canvasX >= block.startX && canvasX <= block.endX) {
+        final distance = (block.y - canvasY).abs();
+        if (distance < _hitRadiusBlock && distance < minDistance) {
+          minDistance = distance;
+          closest = {
+            'type': 'Block',
+            'id': block.id,
+            'x': (block.startX + block.endX) / 2,
+            'y': block.y,
+            'occupied': block.occupied ? 'Yes' : 'No',
+          };
+        }
       }
     }
 
-    // No object found - clear hover
-    controller.setHoveredObject(null);
+    // Set the closest hovered object or clear if none found
+    controller.setHoveredObject(closest);
   }
 
-  // Handle click on canvas objects (signals, points, and blocks)
+  // Handle click on canvas objects (signals, points, and blocks) using Euclidean distance
   void _handleCanvasClick(
       TerminalStationController controller, double canvasX, double canvasY) {
+    // Find the closest clickable component
+    String? closestType;
+    String? closestId;
+    double minDistance = double.infinity;
+
     // Check for signal clicks
     for (final signal in controller.signals.values) {
-      final distance =
-          ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
-      if (distance < 30) {
-        _showSignalRouteDialog(controller, signal);
-        return;
+      final distance = _calculateDistance(canvasX, canvasY, signal.x, signal.y);
+      if (distance < _hitRadiusSignal && distance < minDistance) {
+        minDistance = distance;
+        closestType = 'signal';
+        closestId = signal.id;
       }
     }
 
     // Check for point clicks
     for (final point in controller.points.values) {
-      final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
-      if (distance < 20) {
-        _showPointDialog(controller, point);
-        return;
+      final distance = _calculateDistance(canvasX, canvasY, point.x, point.y);
+      if (distance < _hitRadiusPoint && distance < minDistance) {
+        minDistance = distance;
+        closestType = 'point';
+        closestId = point.id;
       }
     }
 
-    // Check for block clicks (CTRL+click for block controls)
+    // Check for block clicks
     for (final block in controller.blocks.values) {
-      if (canvasX >= block.startX &&
-          canvasX <= block.endX &&
-          (canvasY - block.y).abs() < 15) {
-        _showBlockDialog(controller, block);
-        return;
+      if (canvasX >= block.startX && canvasX <= block.endX) {
+        final distance = (canvasY - block.y).abs();
+        if (distance < 15 && distance < minDistance) {
+          minDistance = distance;
+          closestType = 'block';
+          closestId = block.id;
+        }
       }
+    }
+
+    // Show dialog for the closest component
+    if (closestType == 'signal' && closestId != null) {
+      final signal = controller.signals[closestId];
+      if (signal != null) _showSignalRouteDialog(controller, signal);
+    } else if (closestType == 'point' && closestId != null) {
+      final point = controller.points[closestId];
+      if (point != null) _showPointDialog(controller, point);
+    } else if (closestType == 'block' && closestId != null) {
+      final block = controller.blocks[closestId];
+      if (block != null) _showBlockDialog(controller, block);
     }
   }
 
-  /// Handle click in edit mode - select components instead of showing dialogs
+  /// Handle click in edit mode - select components instead of showing dialogs using Euclidean distance
   void _handleEditModeClick(
       TerminalStationController controller, double canvasX, double canvasY) {
-    // Check for signal clicks
-    for (final signal in controller.signals.values) {
-      final distance =
-          ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
-      if (distance < 30) {
-        controller.selectComponent('signal', signal.id);
-        controller.logEvent('📍 Selected signal ${signal.id}');
-        return;
-      }
-    }
+    // Find the closest component using improved hit detection
+    final closestComponent = _findClosestComponent(controller, canvasX, canvasY);
 
-    // Check for point clicks
-    for (final point in controller.points.values) {
-      final distance = ((point.x - canvasX).abs() + (point.y - canvasY).abs());
-      if (distance < 20) {
-        controller.selectComponent('point', point.id);
-        controller.logEvent('📍 Selected point ${point.id}');
-        return;
-      }
+    if (closestComponent != null) {
+      final componentType = closestComponent['type'] as String;
+      final componentId = closestComponent['id'] as String;
+      controller.selectComponent(componentType, componentId);
+      controller.logEvent('📍 Selected $componentType $componentId');
+    } else {
+      // No component clicked - clear selection
+      controller.clearSelection();
     }
-
-    // Check for platform clicks
-    for (final platform in controller.platforms) {
-      if (canvasX >= platform.startX &&
-          canvasX <= platform.endX &&
-          (canvasY - platform.y).abs() < 25) {
-        controller.selectComponent('platform', platform.id);
-        controller.logEvent('📍 Selected platform ${platform.id}');
-        return;
-      }
-    }
-
-    // Check for train stop clicks
-    for (final trainStop in controller.trainStops.values) {
-      final distance = ((trainStop.x - canvasX).abs() + (trainStop.y - canvasY).abs());
-      if (distance < 20) {
-        controller.selectComponent('trainstop', trainStop.id);
-        controller.logEvent('📍 Selected train stop ${trainStop.id}');
-        return;
-      }
-    }
-
-    // Check for buffer stop clicks
-    for (final bufferStop in controller.bufferStops.values) {
-      final distance = ((bufferStop.x - canvasX).abs() + (bufferStop.y - canvasY).abs());
-      if (distance < 20) {
-        controller.selectComponent('bufferstop', bufferStop.id);
-        controller.logEvent('📍 Selected buffer stop ${bufferStop.id}');
-        return;
-      }
-    }
-
-    // Check for axle counter clicks
-    for (final axleCounter in controller.axleCounters.values) {
-      final distance = ((axleCounter.x - canvasX).abs() + (axleCounter.y - canvasY).abs());
-      if (distance < 20) {
-        controller.selectComponent('axlecounter', axleCounter.id);
-        controller.logEvent('📍 Selected axle counter ${axleCounter.id}');
-        return;
-      }
-    }
-
-    // Check for transponder clicks
-    for (final transponder in controller.transponders.values) {
-      final distance = ((transponder.x - canvasX).abs() + (transponder.y - canvasY).abs());
-      if (distance < 20) {
-        controller.selectComponent('transponder', transponder.id);
-        controller.logEvent('📍 Selected transponder ${transponder.id}');
-        return;
-      }
-    }
-
-    // Check for WiFi antenna clicks
-    for (final wifiAntenna in controller.wifiAntennas.values) {
-      final distance = ((wifiAntenna.x - canvasX).abs() + (wifiAntenna.y - canvasY).abs());
-      if (distance < 25) {
-        controller.selectComponent('wifiantenna', wifiAntenna.id);
-        controller.logEvent('📍 Selected WiFi antenna ${wifiAntenna.id}');
-        return;
-      }
-    }
-
-    // No component clicked - clear selection
-    controller.clearSelection();
   }
 
-  /// Check if user is clicking on a specific component
+  /// Check if user is clicking on a specific component using Euclidean distance
   bool _isClickingOnComponent(TerminalStationController controller,
       String type, String id, double canvasX, double canvasY) {
     switch (type.toLowerCase()) {
       case 'signal':
         final signal = controller.signals[id];
         if (signal != null) {
-          final distance =
-              ((signal.x - canvasX).abs() + (signal.y - canvasY).abs());
-          return distance < 30;
+          final distance = _calculateDistance(canvasX, canvasY, signal.x, signal.y);
+          return distance < _hitRadiusSignal;
         }
         break;
       case 'point':
         final point = controller.points[id];
         if (point != null) {
-          final distance =
-              ((point.x - canvasX).abs() + (point.y - canvasY).abs());
-          return distance < 20;
+          final distance = _calculateDistance(canvasX, canvasY, point.x, point.y);
+          return distance < _hitRadiusPoint;
         }
         break;
       case 'platform':
@@ -4436,48 +4497,43 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           final platform = controller.platforms.firstWhere((p) => p.id == id);
           return canvasX >= platform.startX &&
               canvasX <= platform.endX &&
-              (canvasY - platform.y).abs() < 25;
+              (canvasY - platform.y).abs() < _hitRadiusPlatform;
         } catch (e) {
           return false;
         }
       case 'trainstop':
         final trainStop = controller.trainStops[id];
         if (trainStop != null) {
-          final distance =
-              ((trainStop.x - canvasX).abs() + (trainStop.y - canvasY).abs());
-          return distance < 20;
+          final distance = _calculateDistance(canvasX, canvasY, trainStop.x, trainStop.y);
+          return distance < _hitRadiusTrainStop;
         }
         break;
       case 'bufferstop':
         final bufferStop = controller.bufferStops[id];
         if (bufferStop != null) {
-          final distance =
-              ((bufferStop.x - canvasX).abs() + (bufferStop.y - canvasY).abs());
-          return distance < 20;
+          final distance = _calculateDistance(canvasX, canvasY, bufferStop.x, bufferStop.y);
+          return distance < _hitRadiusBufferStop;
         }
         break;
       case 'axlecounter':
         final axleCounter = controller.axleCounters[id];
         if (axleCounter != null) {
-          final distance =
-              ((axleCounter.x - canvasX).abs() + (axleCounter.y - canvasY).abs());
-          return distance < 20;
+          final distance = _calculateDistance(canvasX, canvasY, axleCounter.x, axleCounter.y);
+          return distance < _hitRadiusAxleCounter;
         }
         break;
       case 'transponder':
         final transponder = controller.transponders[id];
         if (transponder != null) {
-          final distance =
-              ((transponder.x - canvasX).abs() + (transponder.y - canvasY).abs());
-          return distance < 20;
+          final distance = _calculateDistance(canvasX, canvasY, transponder.x, transponder.y);
+          return distance < _hitRadiusTransponder;
         }
         break;
       case 'wifiantenna':
         final wifiAntenna = controller.wifiAntennas[id];
         if (wifiAntenna != null) {
-          final distance =
-              ((wifiAntenna.x - canvasX).abs() + (wifiAntenna.y - canvasY).abs());
-          return distance < 25;
+          final distance = _calculateDistance(canvasX, canvasY, wifiAntenna.x, wifiAntenna.y);
+          return distance < _hitRadiusWifiAntenna;
         }
         break;
     }

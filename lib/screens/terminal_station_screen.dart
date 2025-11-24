@@ -2025,6 +2025,115 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
               const SizedBox(height: 12),
 
+              // Voice Wake Word Toggles
+              Consumer<WidgetPreferencesService>(
+                builder: (context, prefs, _) {
+                  return Column(
+                    children: [
+                      // Search Wake Word Toggle
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                prefs.searchWakeWordEnabled
+                                    ? Icons.search
+                                    : Icons.search_off,
+                                color: prefs.searchWakeWordEnabled
+                                    ? Colors.purple
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Search Wake Word',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      prefs.searchWakeWordEnabled
+                                          ? 'Say "search for"'
+                                          : 'Disabled',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: prefs.searchWakeWordEnabled,
+                                onChanged: (value) =>
+                                    prefs.setSearchWakeWordEnabled(value),
+                                activeColor: Colors.purple,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // SSM Wake Word Toggle
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                prefs.ssmWakeWordEnabled
+                                    ? Icons.smart_toy
+                                    : Icons.smart_toy_outlined,
+                                color: prefs.ssmWakeWordEnabled
+                                    ? Colors.cyan
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'SSM Wake Word',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      prefs.ssmWakeWordEnabled
+                                          ? 'Say "SSM"'
+                                          : 'Disabled',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: prefs.ssmWakeWordEnabled,
+                                onChanged: (value) =>
+                                    prefs.setSsmWakeWordEnabled(value),
+                                activeColor: Colors.cyan,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                },
+              ),
+
               Row(
                 children: [
                   Expanded(

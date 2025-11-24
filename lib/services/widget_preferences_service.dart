@@ -22,7 +22,9 @@ class WidgetPreferencesService extends ChangeNotifier {
 
   static const String _voiceEnabledKey = 'voice_enabled';
   static const String _ttsEnabledKey = 'tts_enabled';
-  static const String _wakeWordEnabledKey = 'wake_word_enabled';
+  static const String _wakeWordEnabledKey = 'wake_word_enabled'; // Legacy - kept for compatibility
+  static const String _searchWakeWordEnabledKey = 'search_wake_word_enabled';
+  static const String _ssmWakeWordEnabledKey = 'ssm_wake_word_enabled';
   static const String _voiceLanguageKey = 'voice_language';
   static const String _speechRateKey = 'speech_rate';
   static const String _voicePitchKey = 'voice_pitch';
@@ -52,7 +54,9 @@ class WidgetPreferencesService extends ChangeNotifier {
   // Voice settings
   bool _voiceEnabled = true;
   bool _ttsEnabled = true;
-  bool _wakeWordEnabled = false;
+  bool _wakeWordEnabled = false; // Legacy - kept for compatibility
+  bool _searchWakeWordEnabled = false; // Toggle for "search for" wake word
+  bool _ssmWakeWordEnabled = false; // Toggle for "ssm" wake word
   String _voiceLanguage = 'en-US';
   double _speechRate = 1.0;
   double _voicePitch = 1.0;
@@ -80,7 +84,9 @@ class WidgetPreferencesService extends ChangeNotifier {
   // Getters - Voice
   bool get voiceEnabled => _voiceEnabled;
   bool get ttsEnabled => _ttsEnabled;
-  bool get wakeWordEnabled => _wakeWordEnabled;
+  bool get wakeWordEnabled => _wakeWordEnabled; // Legacy - kept for compatibility
+  bool get searchWakeWordEnabled => _searchWakeWordEnabled;
+  bool get ssmWakeWordEnabled => _ssmWakeWordEnabled;
   String get voiceLanguage => _voiceLanguage;
   double get speechRate => _speechRate;
   double get voicePitch => _voicePitch;
@@ -118,7 +124,9 @@ class WidgetPreferencesService extends ChangeNotifier {
     // Voice
     _voiceEnabled = _prefs!.getBool(_voiceEnabledKey) ?? true;
     _ttsEnabled = _prefs!.getBool(_ttsEnabledKey) ?? true;
-    _wakeWordEnabled = _prefs!.getBool(_wakeWordEnabledKey) ?? false;
+    _wakeWordEnabled = _prefs!.getBool(_wakeWordEnabledKey) ?? false; // Legacy
+    _searchWakeWordEnabled = _prefs!.getBool(_searchWakeWordEnabledKey) ?? false;
+    _ssmWakeWordEnabled = _prefs!.getBool(_ssmWakeWordEnabledKey) ?? false;
     _voiceLanguage = _prefs!.getString(_voiceLanguageKey) ?? 'en-US';
     _speechRate = _prefs!.getDouble(_speechRateKey) ?? 1.0;
     _voicePitch = _prefs!.getDouble(_voicePitchKey) ?? 1.0;
@@ -232,6 +240,18 @@ class WidgetPreferencesService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setSearchWakeWordEnabled(bool value) async {
+    _searchWakeWordEnabled = value;
+    await _prefs?.setBool(_searchWakeWordEnabledKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setSsmWakeWordEnabled(bool value) async {
+    _ssmWakeWordEnabled = value;
+    await _prefs?.setBool(_ssmWakeWordEnabledKey, value);
+    notifyListeners();
+  }
+
   Future<void> setVoiceLanguage(String value) async {
     _voiceLanguage = value;
     await _prefs?.setString(_voiceLanguageKey, value);
@@ -276,6 +296,8 @@ class WidgetPreferencesService extends ChangeNotifier {
     _voiceEnabled = true;
     _ttsEnabled = true;
     _wakeWordEnabled = false;
+    _searchWakeWordEnabled = false;
+    _ssmWakeWordEnabled = false;
     _voiceLanguage = 'en-US';
     _speechRate = 1.0;
     _voicePitch = 1.0;

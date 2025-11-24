@@ -683,7 +683,6 @@ class TerminalStationController extends ChangeNotifier {
 
   Duration get simulationRunningTime => _simulationRunningTime;
   DateTime get currentTime => _currentTime;
-  DateTime? get simulationStartTime => _simulationStartTime;
 
   String getFormattedRunningTime() {
     final duration = _simulationRunningTime;
@@ -1351,21 +1350,6 @@ class TerminalStationController extends ChangeNotifier {
     currentCollisionIncident = null;
 
     _logEvent('✅ Removed $removedCount collision train(s) - collision cleared');
-    notifyListeners();
-  }
-
-  // Acknowledge and clear collision alarm
-  void acknowledgeCollisionAlarm() {
-    _activeCollisionRecoveries.clear();
-    collisionAlarmActive = false;
-    currentCollisionIncident = null;
-
-    // Release emergency brakes
-    for (var train in trains) {
-      train.emergencyBrake = false;
-    }
-
-    _logEvent('✅ Collision alarm acknowledged and cleared');
     notifyListeners();
   }
 
@@ -4346,13 +4330,12 @@ class TerminalStationController extends ChangeNotifier {
       trainsInvolved: [train.id],
       reverseInstructions: {train.id: train.currentBlockId ?? ''},
       blocksToClear: [train.currentBlockId ?? ''],
-      detectedAt: DateTime.now(),
       state: CollisionRecoveryState.detected,
       collisionPositions: {train.id: train.x},
       targetRecoveryPositions: {train.id: train.x + recoveryOffset},
     );
 
-    activeRecoveryPlans[collisionId] = recoveryPlan;
+    _activeCollisionRecoveries[collisionId] = recoveryPlan;
 
     _logEvent('🔄 Collision recovery initiated for ${train.name} - bufferstop collision');
   }
@@ -4562,8 +4545,12 @@ class TerminalStationController extends ChangeNotifier {
       _updateBlockOccupation();
     }
 
+    // Clear all active collision recoveries
+    _activeCollisionRecoveries.clear();
     collisionAlarmActive = false;
     currentCollisionIncident = null;
+
+    _logEvent('✅ Collision alarm acknowledged and cleared');
     notifyListeners();
   }
 
@@ -5987,26 +5974,25 @@ class TerminalStationController extends ChangeNotifier {
                 } else {
                   train.targetSpeed = 2.0;
                 }
-                } else {
-                  // Check for occupied AB ahead (stop 20 units before)
-                  final occupiedAB = _getOccupiedABAhead(train, 50.0);
-                  if (occupiedAB != null) {
-                    final abPosition = _getABPosition(occupiedAB);
-                    if (abPosition != null) {
-                      final distance = (abPosition - train.x) * train.direction;
-                      if (distance < 20.0 && distance > 0) {
-                        train.targetSpeed = 0;
-                        _logEvent(
-                            '🛑 CBTC ${train.name} stopped: Occupied AB ahead within 20 units');
-                      } else {
-                        train.targetSpeed = 2.0;
-                      }
+              } else {
+                // Check for occupied AB ahead (stop 20 units before)
+                final occupiedAB = _getOccupiedABAhead(train, 50.0);
+                if (occupiedAB != null) {
+                  final abPosition = _getABPosition(occupiedAB);
+                  if (abPosition != null) {
+                    final distance = (abPosition - train.x) * train.direction;
+                    if (distance < 20.0 && distance > 0) {
+                      train.targetSpeed = 0;
+                      _logEvent(
+                          '🛑 CBTC ${train.name} stopped: Occupied AB ahead within 20 units');
                     } else {
                       train.targetSpeed = 2.0;
                     }
                   } else {
                     train.targetSpeed = 2.0;
                   }
+                } else {
+                  train.targetSpeed = 2.0;
                 }
               }
             }
@@ -7162,13 +7148,12 @@ class TerminalStationController extends ChangeNotifier {
       trainsInvolved: [train.id],
       reverseInstructions: {train.id: train.currentBlockId ?? ''},
       blocksToClear: [train.currentBlockId ?? ''],
-      detectedAt: DateTime.now(),
       state: CollisionRecoveryState.detected,
       collisionPositions: {train.id: train.x},
       targetRecoveryPositions: {train.id: train.x - 20.0}, // Move 20 units back
     );
 
-    activeRecoveryPlans[collisionId] = recoveryPlan;
+    _activeCollisionRecoveries[collisionId] = recoveryPlan;
 
     _logEvent('🔄 Collision recovery initiated for ${train.name} - reverse point collision');
   }

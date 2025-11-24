@@ -120,7 +120,7 @@ class EditModeToolbar extends StatelessWidget {
             onSelected: (type) => _showAddComponentDialog(context, controller, type),
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'signal', child: Text('📍 Add Signal')),
-              const PopupMenuItem(value: 'point', child: Text('🔀 Add Point')),
+              const PopupMenuItem(value: 'point', child: Text('🔀 Add Points & Crossings')),
               const PopupMenuItem(value: 'platform', child: Text('🚉 Add Platform')),
               const PopupMenuItem(value: 'trainstop', child: Text('🛑 Add Train Stop')),
               const PopupMenuItem(value: 'bufferstop', child: Text('🛑 Add Buffer Stop')),
@@ -165,6 +165,67 @@ class EditModeToolbar extends StatelessWidget {
                 controller.notifyListeners();
               },
               splashRadius: 20,
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Undo history size control
+          Tooltip(
+            message: 'Adjust Undo History (${controller.commandHistory.maxHistorySize} steps)',
+            child: PopupMenuButton<int>(
+              icon: const Icon(Icons.history, color: Colors.white),
+              tooltip: 'Undo History Settings',
+              onSelected: (size) {
+                controller.commandHistory.maxHistorySize = size;
+                controller.notifyListeners();
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 10,
+                  child: Text('10 steps (Minimum)'),
+                ),
+                PopupMenuItem(
+                  value: 20,
+                  child: Row(
+                    children: [
+                      Text('20 steps (Default)'),
+                      if (controller.commandHistory.maxHistorySize == 20)
+                        const Icon(Icons.check, size: 16, color: Colors.green),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 30,
+                  child: Row(
+                    children: [
+                      Text('30 steps'),
+                      if (controller.commandHistory.maxHistorySize == 30)
+                        const Icon(Icons.check, size: 16, color: Colors.green),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 40,
+                  child: Row(
+                    children: [
+                      Text('40 steps'),
+                      if (controller.commandHistory.maxHistorySize == 40)
+                        const Icon(Icons.check, size: 16, color: Colors.green),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 50,
+                  child: Row(
+                    children: [
+                      Text('50 steps (Maximum)'),
+                      if (controller.commandHistory.maxHistorySize == 50)
+                        const Icon(Icons.check, size: 16, color: Colors.green),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -287,6 +348,18 @@ class EditModeToolbar extends StatelessWidget {
                 splashRadius: 20,
               ),
             ),
+
+          const SizedBox(width: 8),
+
+          // Reset to default layout button
+          Tooltip(
+            message: 'Reset Layout to Default',
+            child: IconButton(
+              icon: const Icon(Icons.restore, color: Colors.white),
+              onPressed: () => _confirmResetLayout(context, controller),
+              splashRadius: 20,
+            ),
+          ),
 
           const SizedBox(width: 8),
 
@@ -468,6 +541,40 @@ class EditModeToolbar extends StatelessWidget {
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Confirm reset to default layout
+  void _confirmResetLayout(BuildContext context, TerminalStationController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Layout to Default?'),
+        content: const Text(
+          'This will reset all signals, points, platforms, and blocks to their default positions. '
+          'This action cannot be undone. Are you sure?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              controller.resetLayoutToDefault();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Layout reset to default'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Reset'),
           ),
         ],
       ),

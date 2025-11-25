@@ -766,14 +766,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         drawDash = !drawDash;
       }
     } else if (block.id == 'crossover109') {
-      // 135-degree crossover from upper-right to lower-left
+      // 45-degree crossover from upper-left to lower-right (continuation of crossover106)
       double totalDistance = math.sqrt(math.pow(100, 2) + math.pow(100, 2));
       double currentDistance = 0;
       bool drawDash = true;
 
-      // Calculate perpendicular offset for 135-degree angle
-      final offsetX = reservationOffset * math.cos(3 * math.pi / 4 + math.pi / 2);
-      final offsetY = reservationOffset * math.sin(3 * math.pi / 4 + math.pi / 2);
+      // Calculate perpendicular offset for 45-degree angle
+      final offsetX = reservationOffset * math.cos(math.pi / 4 + math.pi / 2);
+      final offsetY = reservationOffset * math.sin(math.pi / 4 + math.pi / 2);
 
       while (currentDistance < totalDistance) {
         double t1 = currentDistance / totalDistance;
@@ -1018,7 +1018,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  // Helper method to draw a double diamond crossover with 135° and 45° angles
+  // Helper method to draw a double diamond crossover with 45° angles
   void _drawDoubleDiamondCrossover(
       Canvas canvas,
       double startX,
@@ -1033,7 +1033,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     final midY = 200.0;
     final lowerY = 300.0;
 
-    // First crossover: upper-left to lower-right (135° - main diagonal)
+    // First crossover: upper-left to lower-right (45° - main diagonal)
     _drawSingleCrossover(canvas, startX, upperY, midX, midY, outerPaint,
         innerPaint, sleeperPaint, railSpacing);
     _drawSingleCrossover(canvas, midX, midY, endX, lowerY, outerPaint,
@@ -1261,12 +1261,12 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     bool isNormal = point.position == PointPosition.normal;
 
     // Identify which diagonal this point is on:
-    // RIGHTHAND (descending): 76A, 77B, 79A, 80B (FIXED: 76B swapped with 77B, 79B swapped with 80B)
-    // LEFTHAND (ascending): 76B, 77A, 79B, 80A (FIXED: 76B swapped with 77B, 79B swapped with 80B)
+    // RIGHTHAND (descending): 76A, 77B, 79A, 80B
+    // LEFTHAND (ascending): 76B, 77A, 79B, 80A
     final righthandUpperPoints = ['76A', '79A'];  // Upper points on righthand diagonal
-    final righthandLowerPoints = ['76B', '79B'];  // Lower points on righthand diagonal (FIXED: swapped 76B↔77B, 79B↔80B)
+    final righthandLowerPoints = ['77B', '80B'];  // Lower points on righthand diagonal
     final lefthandUpperPoints = ['77A', '80A'];   // Upper points on lefthand diagonal
-    final lefthandLowerPoints = ['77B', '80B'];   // Lower points on lefthand diagonal (FIXED: swapped 76B↔77B, 79B↔80B)
+    final lefthandLowerPoints = ['76B', '79B'];   // Lower points on lefthand diagonal
 
     if (righthandUpperPoints.contains(point.id)) {
       // RIGHTHAND upper (like 78A) - gaps face RIGHT
@@ -1293,32 +1293,30 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (lefthandUpperPoints.contains(point.id)) {
-      // LEFTHAND upper - ROTATED 90° ANTI-CLOCKWISE (77A and 80A)
-      // Gap now points UPWARD instead of horizontal
+      // LEFTHAND upper - mirror of righthand lower (mirror 78B for upper track)
       if (isNormal) {
-        // Rotated 90° anti-clockwise: vertical gap pointing upward
-        canvas.drawRect(Rect.fromLTWH(point.x - 6, point.y - 42.5, 12, 50), gapPaint);
-      } else {
-        // Rotated 90° anti-clockwise: triangle pointing downward-right
-        final path = Path()
-          ..moveTo(point.x - 22.5, point.y - 50)
-          ..lineTo(point.x - 22.5, point.y + 3)
-          ..lineTo(point.x + 23, point.y + 3)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (lefthandLowerPoints.contains(point.id)) {
-      // LEFTHAND lower - mirror of righthand lower (mirror 78B for lower track)
-      // 76B and 79B should mirror 78B horizontally
-      if (isNormal) {
-        // Mirror 78B normal: originally (x-42.5, y-27.6), flip X offset to positive
+        // Mirror 78B normal: originally (x-42.5, y-27.6), mirror X offset to positive
         canvas.drawRect(Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
       } else {
         // Mirror 78B reverse: flip horizontally
         final path = Path()
-          ..moveTo(point.x + 40, point.y - 21)
-          ..lineTo(point.x + 3, point.y + 17.5)
+          ..moveTo(point.x - 3, point.y - 21)
           ..lineTo(point.x + 40, point.y + 17.5)
+          ..lineTo(point.x - 3, point.y + 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (lefthandLowerPoints.contains(point.id)) {
+      // LEFTHAND lower - mirror of righthand upper (mirror 78A for lower track)
+      if (isNormal) {
+        // Mirror 78A normal: originally (x-7.5, y+15), adjust Y to match lower track
+        canvas.drawRect(Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+      } else {
+        // Mirror 78A reverse: flip horizontally
+        final path = Path()
+          ..moveTo(point.x - 50, point.y - 22.5)
+          ..lineTo(point.x + 3, point.y - 22.5)
+          ..lineTo(point.x + 3, point.y + 23)
           ..close();
         canvas.drawPath(path, gapPaint);
       }
@@ -1920,33 +1918,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
         canvas.drawRect(leftDoorRect, doorOutlinePaint);
         canvas.drawRect(rightDoorRect, doorOutlinePaint);
-      } else {
-        // Windows for closed doors
+      } else if (!isMultiCar) {
+        // Windows for closed doors - only for single-car trains
+        // Multi-car trains already have windows drawn in the carriage loop
         final windowPaint = Paint()..color = themeData.trainWindowColor;
-        if (isMultiCar) {
-          // Multi-car train - draw windows on each car
-          const double carWidth = 50.0;
-          const double couplingWidth = 8.0;
-          final totalWidth = (carCount * carWidth) + ((carCount - 1) * couplingWidth);
-          double xOffset = train.x - (totalWidth / 2);
-
-          for (int i = 0; i < carCount; i++) {
-            // Two windows per car
-            canvas.drawRect(
-                Rect.fromLTWH(xOffset + 8, train.y - 10, 12, 8), windowPaint);
-            canvas.drawRect(
-                Rect.fromLTWH(xOffset + 30, train.y - 10, 12, 8), windowPaint);
-            xOffset += carWidth + couplingWidth;
-          }
-        } else {
-          // M1 train - draw windows on single car
-          canvas.drawRect(
-              Rect.fromLTWH(train.x - 22, train.y - 10, 12, 8), windowPaint);
-          canvas.drawRect(
-              Rect.fromLTWH(train.x - 6, train.y - 10, 12, 8), windowPaint);
-          canvas.drawRect(
-              Rect.fromLTWH(train.x + 10, train.y - 10, 12, 8), windowPaint);
-        }
+        // M1 train - draw windows on single car
+        canvas.drawRect(
+            Rect.fromLTWH(train.x - 22, train.y - 10, 12, 8), windowPaint);
+        canvas.drawRect(
+            Rect.fromLTWH(train.x - 6, train.y - 10, 12, 8), windowPaint);
+        canvas.drawRect(
+            Rect.fromLTWH(train.x + 10, train.y - 10, 12, 8), windowPaint);
       }
 
       // Wheels (2 wheels per car) - Follow carriage positions and rotations

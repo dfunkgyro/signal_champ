@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'terminal_station_models.dart';
-import '../controllers/terminal_station_controller.dart';
-import '../controllers/canvas_theme_controller.dart';
+import 'package:rail_champ/controllers/terminal_station_controller.dart';
+import 'package:rail_champ/controllers/canvas_theme_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
 import '../widgets/ai_agent_panel.dart';
 import '../widgets/relay_rack_panel.dart';
@@ -3776,9 +3776,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     if (isEditMode) {
       // In edit mode, local position is within the scrollable SizedBox
       // Need to account for scroll offset AND viewport position
-      // Convert to canvas coordinates (centered at 0,0)
-      final canvasMinX = -_canvasWidth / 2;
-      final canvasMinY = -_canvasHeight / 2;
+      // Canvas center is at (canvasWidth/2, canvasHeight/2) in screen coords
 
       // Add scroll offsets to account for scrolled position
       final scrollOffsetX = _horizontalScrollController.hasClients
@@ -3788,9 +3786,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ? _verticalScrollController.offset
           : 0.0;
 
-      // Calculate canvas coordinates: (localPosition + scrollOffset) / zoom + canvasMin
-      final canvasX = ((localPosition.dx + scrollOffsetX) / _zoom) + canvasMinX;
-      final canvasY = ((localPosition.dy + scrollOffsetY) / _zoom) + canvasMinY;
+      // Calculate canvas coordinates: (localPosition + scrollOffset - canvasCenter) / zoom
+      // This matches the painter's transformation: canvas.translate(size.width/2, size.height/2); canvas.scale(zoom);
+      final canvasX = (localPosition.dx + scrollOffsetX - _canvasWidth / 2) / _zoom;
+      final canvasY = (localPosition.dy + scrollOffsetY - _canvasHeight / 2) / _zoom;
       return Offset(canvasX, canvasY);
     } else {
       // Normal mode uses centered canvas with pan/zoom

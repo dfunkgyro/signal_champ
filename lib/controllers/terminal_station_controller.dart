@@ -165,37 +165,17 @@ class AxleCounterEvaluator {
     abResults['AB106'] = _calculateBidirectionalSection('AB106', ac107, ac106);
     abResults['AB108'] = _calculateBidirectionalSection('AB108', ac108, ac112);
     abResults['AB108'] = _calculateBidirectionalSection('AB108', ac112, ac108);
+
+    // FIXED: AB111 uses BOTH ac109 and ac111 counters for proper occupancy detection
     abResults['AB111'] = _calculateBidirectionalSection('AB111', ac109, ac111);
-    abResults['AB111'] = _calculateBidirectionalSection('AB111', ac111, ac109);
 
     // Remove AB104 and AB109 from results
     abResults.remove('AB104');
     abResults.remove('AB109');
 
-    // SIMPLE LOGIC FOR AB111 - Only track ac109 for entry/exit
-    abResults['AB111'] = _calculateAB111Simple(ac109);
-
     print(
         '🔢 ACE Results: ${abResults.entries.map((e) => '${e.key}=${e.value}').join(', ')}');
   }
-
-// ULTRA-SIMPLE AB111 CALCULATION - Only track ac109
-  int _calculateAB111Simple(int ac109) {
-    // Initialize tracking
-    final result = ac109 % 2 == 1 ? 1 : 0;
-
-    if (result == 1) {
-      print('🚂 AB111: OCCUPIED (ac109:$ac109 is ODD)');
-    } else {
-      print('🚂 AB111: CLEAR (ac109:$ac109 is EVEN)');
-    }
-
-    return result;
-  }
-
-// Add these instance variables to the AxleCounterEvaluator class:
-  int? _lastAC109Count;
-  int _ab111EntryCount = 0;
 
   // BIDIRECTIONAL SECTION CALCULATION
   int _calculateBidirectionalSection(
@@ -324,8 +304,6 @@ class AxleCounterEvaluator {
       case 'AB111':
         axleCounters['ac109']?.count = 0;
         axleCounters['ac111']?.count = 0;
-        _lastAC109Count = 0;
-        _ab111EntryCount = 0;
         break;
     }
   }

@@ -196,6 +196,75 @@ controller.logEvent('➕ Added $componentType $newId');
 
 ---
 
+### 4. AB111 Invisible Obstacle Collision ✅ FIXED
+
+**Symptom:** CBTC trains collide with invisible obstacle when traveling from block 111 towards block 113
+
+**Root Cause:** AB111 axle block section was using a simplified calculation that only checked the ac109 (entry) counter and completely ignored the ac111 (exit) counter
+
+**Fix Location:** `lib/controllers/terminal_station_controller.dart:159-178`
+
+**What Changed:**
+
+**The Problem Flow:**
+1. Train enters block 111 from block 109 → ac109 counter increments
+2. AB111 calculation: `ac109 % 2 == 1 ? OCCUPIED : CLEAR`
+3. Train moves forward into block 113 → ac111 counter should decrement occupancy
+4. ❌ BUT: ac111 counter was never checked!
+5. AB111 stayed "occupied" even though train had moved past
+6. CBTC system detected AB111 as "obstacle ahead" and stopped the train
+
+**Before (Broken):**
+```dart
+// Update AB sections with bidirectional handling
+abResults['AB111'] = _calculateBidirectionalSection('AB111', ac109, ac111);
+abResults['AB111'] = _calculateBidirectionalSection('AB111', ac111, ac109);
+
+// PROBLEMATIC: Overrides proper calculation with simplified version
+abResults['AB111'] = _calculateAB111Simple(ac109);  // ❌ Only uses ac109!
+
+// Simplified calculation (WRONG)
+int _calculateAB111Simple(int ac109) {
+  final result = ac109 % 2 == 1 ? 1 : 0;  // Ignores ac111 completely
+  return result;
+}
+```
+
+**After (Fixed):**
+```dart
+// FIXED: AB111 uses BOTH ac109 and ac111 counters for proper occupancy detection
+abResults['AB111'] = _calculateBidirectionalSection('AB111', ac109, ac111);
+// Removed _calculateAB111Simple() method entirely
+```
+
+**Technical Details:**
+- **ac109** at x=850: Entry counter when train comes from block 109
+- **ac111** at x=1150: Exit counter when train leaves toward block 113
+- **AB111** at x=1000: Positioned between the two counters
+- **Block 111**: startX=1000, endX=1200
+- **Block 113**: startX=1200, endX=1400
+
+**How Bidirectional Calculation Works:**
+```dart
+int _calculateBidirectionalSection(String sectionId, int entryCounter, int exitCounter) {
+  // When train enters: entryCounter > exitCounter → Section OCCUPIED
+  // When train exits: entryCounter == exitCounter → Section CLEAR
+  return entryCounter > exitCounter ? 1 : 0;
+}
+```
+
+**Verification:**
+1. Train enters block 111: ac109=1, ac111=0 → AB111=1 (OCCUPIED) ✅
+2. Train exits to block 113: ac109=1, ac111=1 → AB111=0 (CLEAR) ✅
+3. No more invisible obstacles!
+
+**Related Commits:**
+- Fix AB111 calculation: `32024f5`
+- Fix train crossover routing: `6fa1819`
+- Standardize point gap positioning: `82f9165`
+
+---
+
 ## 🔧 How to Apply Fixes
 
 ### Quick Fix (Already Applied - Just Pull)
@@ -254,6 +323,14 @@ flutter run
 - [ ] Can add components in edit mode
 - [ ] Events appear in event log
 - [ ] No compile errors about `_logEvent`
+
+### AB111 Invisible Obstacle
+- [ ] CBTC trains can enter block 111 from block 109
+- [ ] CBTC trains can travel from block 111 to block 113 without stopping
+- [ ] AB111 shows OCCUPIED when train is between ac109 and ac111
+- [ ] AB111 shows CLEAR after train passes ac111 into block 113
+- [ ] No "OBSTACLE: Occupied AB ahead" errors when moving 111→113
+- [ ] Axle counters ac109 and ac111 both increment/decrement properly
 
 ---
 
@@ -399,15 +476,17 @@ If you're still experiencing problems:
 
 ## 🎉 Summary
 
-✅ **4 Critical bugs fixed**
+✅ **5 Critical bugs fixed**
 ✅ **App starts reliably** (even with failed service initialization)
 ✅ **SQL migrations work safely**
 ✅ **Code compiles without errors**
+✅ **Trains move correctly through all blocks** (no invisible obstacles)
 
 **Fixed Issues:**
 1. **Service initialization crash** (SharedPreferences, speech recognition, TTS)
 2. **Supabase client crash** (offline mode support)
 3. **SQL partitioning errors** (safe migration script)
 4. **_logEvent method error** (public API)
+5. **AB111 invisible obstacle** (CBTC trains can now travel block 111→113)
 
 All fixes are backward compatible and include fallbacks for robustness.

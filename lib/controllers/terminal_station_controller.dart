@@ -5435,6 +5435,14 @@ class TerminalStationController extends ChangeNotifier {
   void reverseTrain(String id) {
     final train = trains.firstWhere((t) => t.id == id);
 
+    // FIXED: Reverse carriages list so back becomes front (no turning animation)
+    train.carriages = train.carriages.reversed.toList();
+
+    // Update offsets for reversed consist
+    for (int i = 0; i < train.carriages.length; i++) {
+      train.carriages[i].offsetFromLead = i * 50.0; // 50.0 is carriageSpacing
+    }
+
     // Auto trains in block 111 should stop and wait for depart
     if (train.controlMode == TrainControlMode.automatic &&
         train.currentBlockId == '111' &&
@@ -6262,8 +6270,8 @@ class TerminalStationController extends ChangeNotifier {
         // Move is valid - proceed
         train.x = nextX;
 
-        // Update Y position based on track
-        _updateTrainYPosition(train);
+        // NOTE: Y position and rotation are now updated via carriage system in painter
+        // Old immediate method removed to prevent double crossover movement
 
         // Check if entered new block - update commitment and reservations
         _updateBlockOccupation();
@@ -6296,12 +6304,12 @@ class TerminalStationController extends ChangeNotifier {
           }
         }
 
-        // Buffer stop check
-        if (train.direction > 0 && train.y > 250 && train.x >= 1190) {
+        // Buffer stop check - FIXED: Should trigger AFTER block 111 ends (at x >= 1400, end of block 113)
+        if (train.direction > 0 && train.y > 250 && train.x >= 1400) {
           if (train.controlMode == TrainControlMode.manual) {
             _handleBufferCollision(train.id);
           } else {
-            train.x = 1190;
+            train.x = 1400;
             train.speed = 0;
             train.targetSpeed = 0;
             train.emergencyBrake = true;

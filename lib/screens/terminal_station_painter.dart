@@ -1241,19 +1241,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  /// Draw gap for standard crossover (78A, 78B) - uses specific geometry
+  /// Draw gap for standard crossover (78A, 78B) - uses simple horizontal rectangles in normal position
   void _drawStandardCrossoverGap(Canvas canvas, Point point, Paint gapPaint) {
     if (point.id == '78A') {
       if (point.position == PointPosition.normal) {
-        // Normal position: straight route active, cover diagonal crossover down-right
-        // Crossover goes from (600,100) to (700,200) - cover the beginning of this diagonal
-        final path = Path()
-          ..moveTo(point.x + 3, point.y + 12)  // Start just right and below point center
-          ..lineTo(point.x + 45, point.y + 45)  // End diagonally down-right
-          ..lineTo(point.x + 45, point.y + 57)  // Widen the gap for visibility
-          ..lineTo(point.x + 3, point.y + 24)   // Back to near start
-          ..close();
-        canvas.drawPath(path, gapPaint);
+        // Normal position: simple horizontal rectangle visual illusion
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
       } else {
         // Reverse position: crossover active, cover straight route
         final path = Path()
@@ -1265,15 +1259,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
     } else if (point.id == '78B') {
       if (point.position == PointPosition.normal) {
-        // Normal position: straight route active, cover diagonal crossover from up-left
-        // Crossover comes from (700,200) to (800,300) - cover the end of this diagonal
-        final path = Path()
-          ..moveTo(point.x - 45, point.y - 57)  // Start diagonally up-left
-          ..lineTo(point.x - 3, point.y - 24)   // End near point
-          ..lineTo(point.x - 3, point.y - 12)   // Point center area
-          ..lineTo(point.x - 45, point.y - 45)  // Back diagonally
-          ..close();
-        canvas.drawPath(path, gapPaint);
+        // Normal position: simple horizontal rectangle visual illusion
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
       } else {
         // Reverse position: crossover active, cover straight route
         final path = Path()
@@ -1286,32 +1274,16 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  /// Draw gap for double diamond crossover points - Using 78A/78B as reference
-  /// FIXED: Correct categorization based on crossover entry/exit positions
+  /// Draw gap for double diamond crossover points - simple horizontal rectangles for normal position
+  /// Using correct points (76A, 79A, 79B) as reference for others
   void _drawDoubleDiamondGap(Canvas canvas, Point point, Paint gapPaint) {
     bool isNormal = point.position == PointPosition.normal;
 
-    // CORRECTED CATEGORIZATION based on actual crossover geometry:
-    // Points that should match 78A geometry (upper track entry/similar flow)
-    final match78A_Points = ['76A', '79A']; // These stay same as 78A
-    
-    // Points that should match 78B geometry (lower track entry/similar flow)
-    final match78B_Points = ['77B', '80B']; // These stay same as 78B
-    
-    // Points that need 78A-mirrored geometry (user says "80A correct for 79B")
-    final match80A_Points = ['79B']; // 79B should match current 80A
-    
-    // Points that need 78B-mirrored geometry (user says "79B correct for 80B")
-    final match79B_Points = ['80B']; // 80B should match current 79B... wait this conflicts!
-    
-    // LEFT SIDE: User says 76B should match current 77A, 77B should match current 76B
-    final match77A_Points = ['76B']; // 76B should match current 77A
-    final match76B_Points = ['77B']; // 77B should match current 76B... conflict again!
-    
-    // I need to think about this differently. Let me use point-specific geometry:
-    
+    // All normal positions use simple horizontal rectangles (visual illusion)
+    // Only reverse positions have complex shapes
+
     if (point.id == '76A' || point.id == '79A') {
-      // ENTRY UPPER - Match 78A exactly
+      // CORRECT - These points work properly
       if (isNormal) {
         canvas.drawRect(
             Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
@@ -1323,73 +1295,81 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ..close();
         canvas.drawPath(path, gapPaint);
       }
-    } else if (point.id == '77B') {
-      // User says: 77B should face like current 76B
-      // Current 76B uses lefthandLowerPoints geometry
+    } else if (point.id == '79B') {
+      // CORRECT - Reference point for similar geometry
       if (isNormal) {
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
       } else {
         final path = Path()
-          ..moveTo(point.x + 37, point.y - 21)
+          ..moveTo(point.x - 40, point.y - 21)
           ..lineTo(point.x - 3, point.y + 17.5)
-          ..lineTo(point.x + 37, point.y + 17.5)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (point.id == '80B') {
-      // User says: 80B should face like current 79B  
-      // Current 79B uses lefthandLowerPoints geometry
-      if (isNormal) {
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
-      } else {
-        final path = Path()
-          ..moveTo(point.x + 37, point.y - 21)
-          ..lineTo(point.x - 3, point.y + 17.5)
-          ..lineTo(point.x + 37, point.y + 17.5)
+          ..lineTo(point.x - 40, point.y + 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '76B') {
-      // User says: 76B should face like current 77A
-      // Current 77A uses lefthandUpperPoints geometry
+      // FIX: Match 79B geometry (lower track, left side)
       if (isNormal) {
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 42.5, point.y - 27.6, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
       } else {
         final path = Path()
-          ..moveTo(point.x - 40, point.y - 22.5)
-          ..lineTo(point.x - 40, point.y + 23)
-          ..lineTo(point.x - 3, point.y + 23)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (point.id == '79B') {
-      // User says: 79B should face like current 80A
-      // Current 80A uses lefthandUpperPoints geometry
-      if (isNormal) {
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 42.5, point.y - 27.6, 50, 12), gapPaint);
-      } else {
-        final path = Path()
-          ..moveTo(point.x - 40, point.y - 22.5)
-          ..lineTo(point.x - 40, point.y + 23)
-          ..lineTo(point.x - 3, point.y + 23)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (point.id == '77A' || point.id == '80A') {
-      // User says: none of the other points are correct for these
-      // These need unique geometry - try 78B mirrored/rotated
-      if (isNormal) {
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
-      } else {
-        final path = Path()
-          ..moveTo(point.x + 37, point.y - 21)
-          ..lineTo(point.x - 3, point.y - 21)
+          ..moveTo(point.x - 40, point.y - 21)
           ..lineTo(point.x - 3, point.y + 17.5)
+          ..lineTo(point.x - 40, point.y + 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '77A') {
+      // FIX: Match 76A/79A geometry (upper track)
+      if (isNormal) {
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 7.5, point.y - 27, 50, 12), gapPaint);
+      } else {
+        final path = Path()
+          ..moveTo(point.x - 3, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y + 23)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '77B') {
+      // FIX: Match 76A/79A geometry (opposite track)
+      if (isNormal) {
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
+      } else {
+        final path = Path()
+          ..moveTo(point.x - 3, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y + 23)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '80A') {
+      // FIX: Match 77A geometry (upper track, right side)
+      if (isNormal) {
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 7.5, point.y - 27, 50, 12), gapPaint);
+      } else {
+        final path = Path()
+          ..moveTo(point.x - 3, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y + 23)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '80B') {
+      // FIX: Match 79B geometry (lower track, right side)
+      if (isNormal) {
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+      } else {
+        final path = Path()
+          ..moveTo(point.x - 40, point.y - 21)
+          ..lineTo(point.x - 3, point.y + 17.5)
+          ..lineTo(point.x - 40, point.y + 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }

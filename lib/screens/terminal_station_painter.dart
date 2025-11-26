@@ -1245,11 +1245,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   void _drawStandardCrossoverGap(Canvas canvas, Point point, Paint gapPaint) {
     if (point.id == '78A') {
       if (point.position == PointPosition.normal) {
-        // Relative offset: x-7.5, y+15
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
+        // Normal position: straight route active, cover diagonal crossover down-right
+        // Crossover goes from (600,100) to (700,200) - cover the beginning of this diagonal
+        final path = Path()
+          ..moveTo(point.x + 3, point.y + 12)  // Start just right and below point center
+          ..lineTo(point.x + 45, point.y + 45)  // End diagonally down-right
+          ..lineTo(point.x + 45, point.y + 57)  // Widen the gap for visibility
+          ..lineTo(point.x + 3, point.y + 24)   // Back to near start
+          ..close();
+        canvas.drawPath(path, gapPaint);
       } else {
-        // Relative offsets: moveTo(x-3, y-22.5)
+        // Reverse position: crossover active, cover straight route
         final path = Path()
           ..moveTo(point.x - 3, point.y - 22.5)
           ..lineTo(point.x + 50, point.y - 22.5)
@@ -1259,11 +1265,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
     } else if (point.id == '78B') {
       if (point.position == PointPosition.normal) {
-        // Relative offset: x-42.5, y-27.6
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 42.5, point.y - 27.6, 50, 12), gapPaint);
+        // Normal position: straight route active, cover diagonal crossover from up-left
+        // Crossover comes from (700,200) to (800,300) - cover the end of this diagonal
+        final path = Path()
+          ..moveTo(point.x - 45, point.y - 57)  // Start diagonally up-left
+          ..lineTo(point.x - 3, point.y - 24)   // End near point
+          ..lineTo(point.x - 3, point.y - 12)   // Point center area
+          ..lineTo(point.x - 45, point.y - 45)  // Back diagonally
+          ..close();
+        canvas.drawPath(path, gapPaint);
       } else {
-        // Relative offsets: moveTo(x-40, y-21)
+        // Reverse position: crossover active, cover straight route
         final path = Path()
           ..moveTo(point.x - 40, point.y - 21)
           ..lineTo(point.x - 3, point.y + 17.5)

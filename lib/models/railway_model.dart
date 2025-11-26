@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'track_geometry.dart';
+import 'railway_network_editor.dart';
 
 enum SignalState { red, green, yellow, blue }
 
@@ -51,17 +52,27 @@ class WifiAntenna {
   });
 }
 
+enum TrackCategory { mainLine, siding, yard, reversing, platform }
+
 class BlockSection {
   final String id;
-  final double startX;
-  final double endX;
-  final double y;
-  final String? nextBlock;
-  final String? prevBlock;
+  double startX;         // MADE MUTABLE for editing
+  double endX;           // MADE MUTABLE for editing
+  double y;              // MADE MUTABLE for editing
+  String? nextBlock;     // MADE MUTABLE for topology editing
+  String? prevBlock;     // MADE MUTABLE for topology editing
   bool occupied;
-  final bool isCrossover;
+  bool isCrossover;      // MADE MUTABLE to convert types
   final bool isReversingArea;
-  bool closedBySmc; // SMC track closure status
+  bool closedBySmc;
+
+  // NEW: Professional track attributes
+  double gradient;       // Track slope in % (positive = uphill eastbound)
+  double maxSpeed;       // Maximum speed in km/h for this section
+  TrackCategory category;
+  bool electrified;
+  List<String> allowedTrainTypes; // Which train categories can use this track
+  String? trackOwner;    // Railway company or authority
 
   BlockSection({
     required this.id,
@@ -74,18 +85,66 @@ class BlockSection {
     this.isCrossover = false,
     this.isReversingArea = false,
     this.closedBySmc = false,
-  });
+    this.gradient = 0.0,
+    this.maxSpeed = 100.0, // Default 100 km/h
+    this.category = TrackCategory.mainLine,
+    this.electrified = true,
+    List<String>? allowedTrainTypes,
+    this.trackOwner,
+  }) : allowedTrainTypes = allowedTrainTypes ?? ['all'];
+
+  /// Calculate physical length of the block
+  double get length => (endX - startX).abs();
+
+  /// Update track geometry and regenerate path
+  void updateGeometry({
+    double? newStartX,
+    double? newEndX,
+    double? newY,
+  }) {
+    if (newStartX != null) startX = newStartX;
+    if (newEndX != null) endX = newEndX;
+    if (newY != null) y = newY;
+  }
+
+  /// Update track connections (topology)
+  void updateConnections({
+    String? newNextBlock,
+    String? newPrevBlock,
+  }) {
+    if (newNextBlock != null) nextBlock = newNextBlock;
+    if (newPrevBlock != null) prevBlock = newPrevBlock;
+  }
 }
+
+enum SignalType {
+  main,        // Main signal (absolute stop)
+  distant,     // Distant signal (advance warning)
+  shunting,    // Shunting signal (yard movements)
+  repeater,    // Repeater signal (extends visibility)
+  coasting,    // Coasting signal (power off for electrified trains)
+  combined,    // Combined main + distant
+}
+
+enum SignalDirection { eastbound, westbound, bidirectional }
 
 class Signal {
   final String id;
-  final double x;
-  final double y;
+  double x;                  // MADE MUTABLE for editing
+  double y;                  // MADE MUTABLE for editing
   SignalState state;
   int? route;
-  final List<String> controlledBlocks;
-  final List<String> requiredPointPositions;
+  List<String> controlledBlocks;         // MADE MUTABLE for editing
+  List<String> requiredPointPositions;   // MADE MUTABLE for editing
   String lastStateChangeReason;
+
+  // NEW: Professional signal attributes
+  SignalType signalType;
+  SignalDirection direction;
+  List<SignalState> availableAspects; // What aspects this signal can display
+  double sightDistance;      // Visibility distance in meters
+  bool isAutomatic;          // Automatic (track circuit) vs. manual
+  String? protectedRoute;    // Which route/junction this protects
 
   Signal({
     required this.id,
@@ -96,17 +155,48 @@ class Signal {
     required this.controlledBlocks,
     this.requiredPointPositions = const [],
     this.lastStateChangeReason = '',
-  });
+    this.signalType = SignalType.main,
+    this.direction = SignalDirection.eastbound,
+    List<SignalState>? availableAspects,
+    this.sightDistance = 200.0,
+    this.isAutomatic = true,
+    this.protectedRoute,
+  }) : availableAspects = availableAspects ??
+        [SignalState.red, SignalState.yellow, SignalState.green];
+
+  /// Move signal to new position
+  void moveTo(double newX, double newY) {
+    x = newX;
+    y = newY;
+  }
+
+  /// Update which blocks this signal protects
+  void updateControlledBlocks(List<String> newBlocks) {
+    controlledBlocks = newBlocks;
+  }
+
+  /// Update point position requirements for routes
+  void updatePointRequirements(List<String> newRequirements) {
+    requiredPointPositions = newRequirements;
+  }
 }
 
 class Point {
   final String id;
-  final double x;
-  final double y;
+  double x;              // MADE MUTABLE for editing
+  double y;              // MADE MUTABLE for editing
   PointPosition position;
   double animationProgress;
-  String? reservedByVin; // VIN of train that has reserved this point
-  String? reservedDestination; // Destination of reserving train
+  String? reservedByVin;
+  String? reservedDestination;
+
+  // NEW: Professional point/crossover attributes
+  double divergingRouteAngle;    // Angle of diverging route in degrees
+  double divergingRouteRadius;   // Radius of diverging curve in meters
+  double divergingSpeedLimit;    // Speed limit on diverging route (km/h)
+  String? straightTrackId;       // Block ID for straight/normal route
+  String? divergingTrackId;      // Block ID for diverging/reverse route
+  bool isLeftHand;               // Left-hand vs. right-hand turnout
 
   Point({
     required this.id,
@@ -116,7 +206,39 @@ class Point {
     this.animationProgress = 0.0,
     this.reservedByVin,
     this.reservedDestination,
+    this.divergingRouteAngle = 15.0,    // Default 15° turnout
+    this.divergingRouteRadius = 300.0,  // Default 300m radius
+    this.divergingSpeedLimit = 40.0,    // Default 40 km/h on diverging
+    this.straightTrackId,
+    this.divergingTrackId,
+    this.isLeftHand = true,
   });
+
+  /// Move point to new position
+  void moveTo(double newX, double newY) {
+    x = newX;
+    y = newY;
+  }
+
+  /// Update diverging route geometry
+  void updateDivergingRoute({
+    double? angle,
+    double? radius,
+    double? speedLimit,
+  }) {
+    if (angle != null) divergingRouteAngle = angle;
+    if (radius != null) divergingRouteRadius = radius;
+    if (speedLimit != null) divergingSpeedLimit = speedLimit;
+  }
+
+  /// Update track connections
+  void updateConnections({
+    String? straight,
+    String? diverging,
+  }) {
+    if (straight != null) straightTrackId = straight;
+    if (diverging != null) divergingTrackId = diverging;
+  }
 }
 
 class MovementAuthority {
@@ -247,6 +369,35 @@ class RailwayModel extends ChangeNotifier {
 
   // Track Network Geometry System
   final TrackNetworkGeometry trackGeometry = TrackNetworkGeometry();
+
+  // Railway Network Editor - Professional editing system
+  RailwayNetworkEditor? _networkEditor;
+  RailwayNetworkEditor get networkEditor {
+    _networkEditor ??= RailwayNetworkEditor(
+      notifyListeners: notifyListeners,
+      blocks: blocks,
+      signals: signals,
+      points: points,
+      trackGeometry: trackGeometry,
+      addEvent: _addEvent,
+    );
+    return _networkEditor!;
+  }
+
+  // Edit Mode State
+  bool _editModeEnabled = false;
+  bool get editModeEnabled => _editModeEnabled;
+
+  void toggleEditMode() {
+    _editModeEnabled = !_editModeEnabled;
+    if (_editModeEnabled) {
+      _addEvent('🔧 Edit Mode ENABLED - Simulation paused');
+      // In full implementation, would pause train movement
+    } else {
+      _addEvent('✅ Edit Mode DISABLED - Simulation resumed');
+    }
+    notifyListeners();
+  }
 
   // CBTC System
   bool _cbtcDevicesEnabled = false;

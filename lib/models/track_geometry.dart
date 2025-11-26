@@ -224,6 +224,63 @@ class TrackNetworkGeometry {
     return _paths.containsKey(blockId);
   }
 
+  /// Remove a path from the network
+  void removePath(String blockId) {
+    _paths.remove(blockId);
+  }
+
+  /// Update an existing path's geometry
+  void updatePath(String blockId, TrackPath newPath) {
+    _paths[blockId] = newPath;
+  }
+
+  /// Regenerate path for a block based on its current geometry
+  void regeneratePathForBlock(dynamic block) {
+    if (block.isCrossover) {
+      // For crossovers, need special handling - keep existing for now
+      // In full implementation, would calculate based on point positions
+      return;
+    }
+
+    // Generate straight path based on block coordinates
+    final path = TrackPath.straight(
+      id: block.id,
+      startX: block.startX,
+      endX: block.endX,
+      y: block.y,
+    );
+    updatePath(block.id, path);
+  }
+
+  /// Generate crossover path based on point geometry
+  TrackPath generateCrossoverPath({
+    required String id,
+    required double startX,
+    required double startY,
+    required double endX,
+    required double endY,
+    required double speedLimit,
+  }) {
+    return TrackPath.crossover(
+      id: id,
+      startX: startX,
+      startY: startY,
+      endX: endX,
+      endY: endY,
+      speedLimit: speedLimit,
+    );
+  }
+
+  /// Get all path IDs
+  List<String> getAllPathIds() {
+    return _paths.keys.toList();
+  }
+
+  /// Clear all paths
+  void clearAll() {
+    _paths.clear();
+  }
+
   /// Initialize default track geometry for the railway
   void initializeDefaultGeometry() {
     // Upper track - straight segments

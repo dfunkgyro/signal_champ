@@ -141,6 +141,12 @@ class RailwayPainter extends CustomPainter {
   
   void _drawBlocks(Canvas canvas) {
     for (final block in blocks) {
+      // NEW: Special handling for crossover blocks
+      if (block.isCrossover) {
+        _drawCrossoverBlock(canvas, block);
+        continue;
+      }
+
       // Track base - closed tracks are red, occupied are red-ish, normal are grey
       Color trackColor;
       if (block.closedBySmc) {
@@ -154,7 +160,7 @@ class RailwayPainter extends CustomPainter {
       final trackPaint = Paint()
         ..color = trackColor
         ..style = PaintingStyle.fill;
-      
+
       final trackRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(
           block.startX,
@@ -164,41 +170,41 @@ class RailwayPainter extends CustomPainter {
         ),
         const Radius.circular(4),
       );
-      
+
       canvas.drawRRect(trackRect, trackPaint);
-      
+
       // Track outline
       final outlinePaint = Paint()
         ..color = theme.colorScheme.primary
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
-      
+
       canvas.drawRRect(trackRect, outlinePaint);
-      
+
       // Rails
       final railPaint = Paint()
         ..color = Colors.grey[600]!
         ..strokeWidth = 3;
-      
+
       // Top rail
       canvas.drawLine(
         Offset(block.startX, block.y - 6),
         Offset(block.endX, block.y - 6),
         railPaint,
       );
-      
+
       // Bottom rail
       canvas.drawLine(
         Offset(block.startX, block.y + 6),
         Offset(block.endX, block.y + 6),
         railPaint,
       );
-      
+
       // Sleepers (ties)
       final sleeperPaint = Paint()
         ..color = Colors.brown[700]!
         ..strokeWidth = 4;
-      
+
       for (double x = block.startX; x < block.endX; x += 15) {
         canvas.drawLine(
           Offset(x, block.y - 8),
@@ -206,6 +212,105 @@ class RailwayPainter extends CustomPainter {
           sleeperPaint,
         );
       }
+    }
+  }
+
+  /// Draw diagonal crossover blocks with proper geometry
+  void _drawCrossoverBlock(Canvas canvas, dynamic block) {
+    // Determine start and end coordinates based on block ID
+    double startX, startY, endX, endY;
+
+    if (block.id == 'crossover106') {
+      startX = 600;
+      startY = 100;
+      endX = 700;
+      endY = 200;
+    } else if (block.id == 'crossover109') {
+      startX = 700;
+      startY = 200;
+      endX = 800;
+      endY = 300;
+    } else {
+      // Unknown crossover, fallback to straight rendering
+      return;
+    }
+
+    // Track color
+    Color trackColor;
+    if (block.closedBySmc) {
+      trackColor = Colors.red;
+    } else if (block.occupied) {
+      trackColor = Colors.red.withOpacity(0.3);
+    } else {
+      trackColor = Colors.grey[700]!;
+    }
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.fill;
+
+    // Draw diagonal track path
+    final path = Path();
+    final angle = math.atan2(endY - startY, endX - startX);
+    final perpX = math.sin(angle) * 10;
+    final perpY = -math.cos(angle) * 10;
+
+    path.moveTo(startX - perpX, startY - perpY);
+    path.lineTo(startX + perpX, startY + perpY);
+    path.lineTo(endX + perpX, endY + perpY);
+    path.lineTo(endX - perpX, endY - perpY);
+    path.close();
+
+    canvas.drawPath(path, trackPaint);
+
+    // Track outline
+    final outlinePaint = Paint()
+      ..color = theme.colorScheme.primary
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawPath(path, outlinePaint);
+
+    // Rails
+    final railPaint = Paint()
+      ..color = Colors.grey[600]!
+      ..strokeWidth = 3;
+
+    // Top rail (parallel to diagonal)
+    final railOffset = 6;
+    final railPerpX = math.sin(angle) * railOffset;
+    final railPerpY = -math.cos(angle) * railOffset;
+
+    canvas.drawLine(
+      Offset(startX - railPerpX, startY - railPerpY),
+      Offset(endX - railPerpX, endY - railPerpY),
+      railPaint,
+    );
+
+    // Bottom rail
+    canvas.drawLine(
+      Offset(startX + railPerpX, startY + railPerpY),
+      Offset(endX + railPerpX, endY + railPerpY),
+      railPaint,
+    );
+
+    // Sleepers (ties) along the diagonal
+    final sleeperPaint = Paint()
+      ..color = Colors.brown[700]!
+      ..strokeWidth = 4;
+
+    final length = math.sqrt(math.pow(endX - startX, 2) + math.pow(endY - startY, 2));
+    final steps = (length / 15).floor();
+
+    for (int i = 0; i <= steps; i++) {
+      final t = i / steps;
+      final x = startX + (endX - startX) * t;
+      final y = startY + (endY - startY) * t;
+
+      canvas.drawLine(
+        Offset(x - perpX * 0.8, y - perpY * 0.8),
+        Offset(x + perpX * 0.8, y + perpY * 0.8),
+        sleeperPaint,
+      );
     }
   }
   
@@ -265,82 +370,90 @@ class RailwayPainter extends CustomPainter {
   
   void _drawTrains(Canvas canvas) {
     for (final train in trains) {
-      canvas.save();
-      canvas.translate(train.x, train.y);
-      canvas.rotate(train.angle * math.pi / 180);
-      
-      // Train body
-      final bodyPaint = Paint()
-        ..color = train.color
-        ..style = PaintingStyle.fill;
-      
-      final trainRect = RRect.fromRectAndRadius(
-        const Rect.fromLTWH(-20, -8, 40, 16),
-        const Radius.circular(4),
-      );
-      
-      canvas.drawRRect(trainRect, bodyPaint);
-      
-      // Train outline
-      final outlinePaint = Paint()
-        ..color = Colors.black
+      // NEW: Draw each carriage individually following track path
+      for (int i = 0; i < train.carriages.length; i++) {
+        final carriage = train.carriages[i];
+        _drawCarriage(canvas, carriage, train, i == 0);
+      }
+    }
+  }
+
+  void _drawCarriage(Canvas canvas, dynamic carriage, dynamic train, bool isLead) {
+    canvas.save();
+    canvas.translate(carriage.x, carriage.y);
+    canvas.rotate(carriage.rotation);
+
+    // Carriage body
+    final bodyPaint = Paint()
+      ..color = train.color
+      ..style = PaintingStyle.fill;
+
+    final carriageRect = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(-20, -8, 40, 16),
+      const Radius.circular(4),
+    );
+
+    canvas.drawRRect(carriageRect, bodyPaint);
+
+    // Carriage outline
+    final outlinePaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    canvas.drawRRect(carriageRect, outlinePaint);
+
+    // Windows
+    final windowPaint = Paint()
+      ..color = Colors.lightBlue[100]!
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(
+      const Rect.fromLTWH(-15, -5, 8, 6),
+      windowPaint,
+    );
+    canvas.drawRect(
+      const Rect.fromLTWH(-3, -5, 8, 6),
+      windowPaint,
+    );
+    canvas.drawRect(
+      const Rect.fromLTWH(9, -5, 8, 6),
+      windowPaint,
+    );
+
+    // Wheels
+    final wheelPaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(const Offset(-12, 8), 4, wheelPaint);
+    canvas.drawCircle(const Offset(12, 8), 4, wheelPaint);
+
+    // Direction indicator (only on lead carriage)
+    if (isLead && train.speed > 0) {
+      final arrowPaint = Paint()
+        ..color = Colors.white
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
-      
-      canvas.drawRRect(trainRect, outlinePaint);
-      
-      // Windows
-      final windowPaint = Paint()
-        ..color = Colors.lightBlue[100]!
-        ..style = PaintingStyle.fill;
-      
-      canvas.drawRect(
-        const Rect.fromLTWH(-15, -5, 8, 6),
-        windowPaint,
+
+      canvas.drawLine(
+        const Offset(15, 0),
+        const Offset(20, 0),
+        arrowPaint,
       );
-      canvas.drawRect(
-        const Rect.fromLTWH(-3, -5, 8, 6),
-        windowPaint,
+      canvas.drawLine(
+        const Offset(20, 0),
+        const Offset(17, -3),
+        arrowPaint,
       );
-      canvas.drawRect(
-        const Rect.fromLTWH(9, -5, 8, 6),
-        windowPaint,
+      canvas.drawLine(
+        const Offset(20, 0),
+        const Offset(17, 3),
+        arrowPaint,
       );
-      
-      // Wheels
-      final wheelPaint = Paint()
-        ..color = Colors.black
-        ..style = PaintingStyle.fill;
-      
-      canvas.drawCircle(const Offset(-12, 8), 4, wheelPaint);
-      canvas.drawCircle(const Offset(12, 8), 4, wheelPaint);
-      
-      // Direction indicator
-      if (train.speed > 0) {
-        final arrowPaint = Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-        
-        canvas.drawLine(
-          const Offset(15, 0),
-          const Offset(20, 0),
-          arrowPaint,
-        );
-        canvas.drawLine(
-          const Offset(20, 0),
-          const Offset(17, -3),
-          arrowPaint,
-        );
-        canvas.drawLine(
-          const Offset(20, 0),
-          const Offset(17, 3),
-          arrowPaint,
-        );
-      }
-      
-      canvas.restore();
     }
+
+    canvas.restore();
   }
   
   void _drawLabels(Canvas canvas) {

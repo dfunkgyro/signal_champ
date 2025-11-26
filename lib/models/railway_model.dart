@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'track_geometry.dart';
 
 enum SignalState { red, green, yellow, blue }
 
@@ -130,12 +131,27 @@ class MovementAuthority {
   });
 }
 
+/// Represents a single carriage in a train consist
+class Carriage {
+  double x;
+  double y;
+  double rotation; // Angle in radians
+  final double offsetFromLead; // Distance behind the lead carriage (in chainage units)
+
+  Carriage({
+    required this.x,
+    required this.y,
+    required this.rotation,
+    required this.offsetFromLead,
+  });
+}
+
 class Train {
   final String id;
   final String name;
   final String vin; // Vehicle Identification Number
-  double x;
-  double y;
+  double x; // Lead carriage position (for backwards compatibility)
+  double y; // Lead carriage position (for backwards compatibility)
   double speed;
   String currentBlock;
   TrainStatus status;
@@ -144,7 +160,7 @@ class Train {
   Direction direction;
   double progress;
   Color color;
-  double angle;
+  double angle; // Lead carriage angle (for backwards compatibility)
   List<String> routeHistory;
   String stopReason;
   DateTime? lastStatusChange;
@@ -152,6 +168,10 @@ class Train {
   CbtcMode cbtcMode;
   String? smcDestination; // SMC-assigned destination (block ID or platform name)
   MovementAuthority? movementAuthority; // CBTC movement authority visualization
+
+  // NEW: Chainage-based positioning and multi-carriage support
+  double chainage; // Distance traveled along current track path
+  List<Carriage> carriages; // Individual carriages in the consist
 
   Train({
     required this.id,
@@ -175,12 +195,58 @@ class Train {
     this.cbtcMode = CbtcMode.off,
     this.smcDestination,
     this.movementAuthority,
-  });
+    this.chainage = 0.0,
+    List<Carriage>? carriages,
+  }) : carriages = carriages ?? [] {
+    // Initialize carriages if not provided
+    if (this.carriages.isEmpty) {
+      _initializeCarriages();
+    }
+  }
+
+  /// Initialize default 4-carriage consist
+  void _initializeCarriages() {
+    const carriageSpacing = 50.0; // Distance between carriage centers
+
+    for (int i = 0; i < 4; i++) {
+      carriages.add(Carriage(
+        x: x,
+        y: y,
+        rotation: angle,
+        offsetFromLead: i * carriageSpacing,
+      ));
+    }
+  }
+
+  /// Update all carriage positions based on track path
+  void updateCarriagePositions(TrackPath trackPath) {
+    for (int i = 0; i < carriages.length; i++) {
+      final carriage = carriages[i];
+      final carriageChainage = chainage - carriage.offsetFromLead;
+
+      if (carriageChainage >= 0) {
+        final position = trackPath.getPositionAtChainage(carriageChainage);
+        carriage.x = position.x;
+        carriage.y = position.y;
+        carriage.rotation = position.tangentAngle;
+
+        // Update lead carriage properties for backwards compatibility
+        if (i == 0) {
+          x = position.x;
+          y = position.y;
+          angle = position.tangentAngle;
+        }
+      }
+    }
+  }
 }
 
 class RailwayModel extends ChangeNotifier {
   final List<String> _eventLog = [];
   List<String> get eventLog => _eventLog;
+
+  // Track Network Geometry System
+  final TrackNetworkGeometry trackGeometry = TrackNetworkGeometry();
 
   // CBTC System
   bool _cbtcDevicesEnabled = false;
@@ -192,6 +258,12 @@ class RailwayModel extends ChangeNotifier {
   bool get cbtcModeActive => _cbtcModeActive;
   List<Transponder> get transponders => _transponders;
   List<WifiAntenna> get wifiAntennas => _wifiAntennas;
+
+  // Constructor
+  RailwayModel() {
+    // Initialize track geometry on construction
+    trackGeometry.initializeDefaultGeometry();
+  }
 
   List<BlockSection> blocks = [
     BlockSection(
@@ -596,17 +668,40 @@ class RailwayModel extends ChangeNotifier {
     final train = trains.firstWhere((t) => t.id == trainId);
     train.progress = newProgress.clamp(0.0, 1.0);
 
-    final block = blocks.firstWhere((b) => b.id == train.currentBlock);
-    if (block.isCrossover) {
-      _updateCrossoverPosition(train, block);
-    } else {
-      _updateStraightPosition(train, block);
-    }
+    // NEW: Path-constrained movement using chainage
+    _updateTrainPositionAlongPath(train);
 
     notifyListeners();
   }
 
-  void _updateStraightPosition(Train train, BlockSection block) {
+  /// Update train position using chainage along track path
+  void _updateTrainPositionAlongPath(Train train) {
+    final trackPath = trackGeometry.getPath(train.currentBlock);
+    if (trackPath == null) {
+      // Fallback to old positioning if no path defined
+      _updateLegacyPosition(train);
+      return;
+    }
+
+    // Calculate chainage based on progress through the block
+    final totalLength = trackPath.totalLength;
+    if (train.direction == Direction.east) {
+      train.chainage = totalLength * train.progress;
+    } else {
+      // Westbound: chainage goes from end to start
+      train.chainage = totalLength * (1.0 - train.progress);
+    }
+
+    // Update all carriage positions based on track path geometry
+    train.updateCarriagePositions(trackPath);
+
+    notifyListeners();
+  }
+
+  /// Legacy positioning for blocks without defined paths
+  void _updateLegacyPosition(Train train) {
+    final block = blocks.firstWhere((b) => b.id == train.currentBlock);
+
     if (train.direction == Direction.east) {
       train.x = block.startX + ((block.endX - block.startX) * train.progress);
       train.angle = 0.0;
@@ -615,29 +710,12 @@ class RailwayModel extends ChangeNotifier {
       train.angle = pi;
     }
     train.y = block.y - 15;
-  }
 
-  void _updateCrossoverPosition(Train train, BlockSection block) {
-    if (block.id == 'crossover106') {
-      if (train.direction == Direction.east) {
-        train.x = 600 + (100 * train.progress);
-        train.y = 100 + (100 * train.progress);
-        train.angle = 45 * (pi / 180);
-      } else {
-        train.x = 700 - (100 * train.progress);
-        train.y = 200 - (100 * train.progress);
-        train.angle = 225 * (pi / 180);
-      }
-    } else if (block.id == 'crossover109') {
-      if (train.direction == Direction.east) {
-        train.x = 700 + (100 * train.progress);
-        train.y = 200 + (100 * train.progress);
-        train.angle = 45 * (pi / 180);
-      } else {
-        train.x = 800 - (100 * train.progress);
-        train.y = 300 - (100 * train.progress);
-        train.angle = 225 * (pi / 180);
-      }
+    // Update lead carriage for legacy mode
+    if (train.carriages.isNotEmpty) {
+      train.carriages[0].x = train.x;
+      train.carriages[0].y = train.y;
+      train.carriages[0].rotation = train.angle;
     }
   }
 
@@ -840,6 +918,24 @@ class RailwayModel extends ChangeNotifier {
     return !blocksToCheck.any((blockId) => isBlockOccupied(blockId));
   }
 
+  /// Get effective speed considering track path restrictions
+  double _getEffectiveSpeed(Train train) {
+    final trackPath = trackGeometry.getPath(train.currentBlock);
+    if (trackPath == null) {
+      // No path defined, use train's nominal speed
+      return train.speed;
+    }
+
+    // Get speed limit at current chainage
+    final speedLimit = trackPath.getSpeedLimitAtChainage(train.chainage);
+
+    // Return the minimum of train speed and track speed limit
+    if (speedLimit.isInfinite) {
+      return train.speed;
+    }
+    return min(train.speed, speedLimit);
+  }
+
   void updateAllTrainPositions() {
     // First, calculate movement authorities for all CBTC trains
     _updateMovementAuthorities();
@@ -879,7 +975,10 @@ class RailwayModel extends ChangeNotifier {
           speedMultiplier = 0.8; // 20% slower
         }
 
-        final newProgress = train.progress + (0.005 * train.speed * speedMultiplier);
+        // NEW: Enforce speed restrictions based on track path geometry
+        final effectiveSpeed = _getEffectiveSpeed(train) * speedMultiplier;
+
+        final newProgress = train.progress + (0.005 * effectiveSpeed);
         if (newProgress >= 1.0) {
           moveTrainToNextBlock(train.id);
         } else {

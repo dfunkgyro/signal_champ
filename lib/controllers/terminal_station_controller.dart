@@ -6560,8 +6560,9 @@ class TerminalStationController extends ChangeNotifier {
         // Move is valid - proceed
         train.x = nextX;
 
-        // NOTE: Y position and rotation are now updated via carriage system in painter
-        // Old immediate method removed to prevent double crossover movement
+        // Update train's Y position and rotation based on current X position
+        // This ensures the lead carriage gets correct positioning at crossovers
+        _updateTrainYPosition(train);
 
         // Check if entered new block - update commitment and reservations
         _updateBlockOccupation();

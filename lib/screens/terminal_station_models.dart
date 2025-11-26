@@ -458,11 +458,19 @@ class Train {
       initializeCarriages();
     }
 
-    // Lead carriage follows train position exactly
+    // Lead carriage follows train position with path calculation
+    // This ensures it correctly follows crossover routes when points are reversed
     if (carriages.isNotEmpty) {
       carriages[0].x = x;
-      carriages[0].y = y;
-      carriages[0].rotation = rotation;
+      // Use path calculator to get correct Y and rotation based on current X position
+      final result = pathCalculator(x, y, direction);
+      if (result is Map<String, double>) {
+        carriages[0].y = result['y'] ?? y;
+        carriages[0].rotation = result['rotation'] ?? rotation;
+      } else {
+        carriages[0].y = y;
+        carriages[0].rotation = rotation;
+      }
       carriages[0].speed = speed;
     }
 

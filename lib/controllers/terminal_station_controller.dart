@@ -18,10 +18,10 @@ import 'dart:math' as math;
 // SELECTION MODE ENUM - Different selection tools
 // ============================================================================
 enum SelectionMode {
-  pointer,       // Default - click to select, drag to move (Photoshop Move Tool)
-  quickSelect,   // Click and drag to auto-detect component (Photoshop Quick Selection)
-  marquee,       // Click and drag rectangular selection box
-  lasso,         // Click and drag freehand selection
+  pointer, // Default - click to select, drag to move (Photoshop Move Tool)
+  quickSelect, // Click and drag to auto-detect component (Photoshop Quick Selection)
+  marquee, // Click and drag rectangular selection box
+  lasso, // Click and drag freehand selection
 }
 
 // ============================================================================
@@ -603,15 +603,22 @@ class TerminalStationController extends ChangeNotifier {
   // Edit Mode system
   bool editModeEnabled = false;
   double editModeGridSize = 10.0; // Snap-to-grid size in edit mode
+  bool snapToGridEnabled = true; // NEW: Enable/disable snap-to-grid
+  double gridSnapSize = 25.0; // NEW: Configurable snap size
+
+  // Clipboard for copy/paste operations
+  Map<String, dynamic>? _clipboard; // NEW: Stores copied component data
+  Offset? _clipboardOffset; // NEW: Original position of copied component
 
   // Selection system
   SelectionMode selectionMode = SelectionMode.pointer; // Current selection tool
-  String? selectedComponentType; // Type of selected component (signal, point, etc.)
+  String?
+      selectedComponentType; // Type of selected component (signal, point, etc.)
   String? selectedComponentId; // ID of selected component
   final List<SelectedComponent> multiSelection = []; // Multi-select support
 
   // Platform resize handle state
-  bool isResizingPlatform = false;
+  bool isResizingPlatform = false; // Non-nullable with default false
   String? resizingPlatformId;
   String? resizingHandle; // 'left' or 'right'
   double? resizingStartX;
@@ -753,7 +760,9 @@ class TerminalStationController extends ChangeNotifier {
 
   void toggleDotMatrixDisplayVisibility() {
     dotMatrixDisplayVisible = !dotMatrixDisplayVisible;
-    _logEvent(dotMatrixDisplayVisible ? '📟 Train info display shown' : '📟 Train info display hidden');
+    _logEvent(dotMatrixDisplayVisible
+        ? '📟 Train info display shown'
+        : '📟 Train info display hidden');
     notifyListeners();
   }
 
@@ -1316,13 +1325,15 @@ class TerminalStationController extends ChangeNotifier {
   // Only Force Recovery (via acknowledgeCollisionAlarm) is supported
   void startAutomaticCollisionRecovery() {
     _logEvent('❌ Automatic collision recovery is disabled');
-    _logEvent('ℹ️  Use Force Recovery (Acknowledge button) to resolve collisions');
+    _logEvent(
+        'ℹ️  Use Force Recovery (Acknowledge button) to resolve collisions');
     return;
   }
 
   void startManualCollisionRecovery() {
     _logEvent('❌ Manual collision recovery is disabled');
-    _logEvent('ℹ️  Use Force Recovery (Acknowledge button) to resolve collisions');
+    _logEvent(
+        'ℹ️  Use Force Recovery (Acknowledge button) to resolve collisions');
     return;
   }
 
@@ -1362,24 +1373,29 @@ class TerminalStationController extends ChangeNotifier {
   /// Acknowledge point collision (running through points from converging side)
   /// Allows train to continue journey, won't trigger alert again until 20 units clear
   void acknowledgePointCollision() {
-    if (activePointCollisionTrainId == null || activePointCollisionPointId == null) {
+    if (activePointCollisionTrainId == null ||
+        activePointCollisionPointId == null) {
       return;
     }
 
-    final train = trains.firstWhereOrNull((t) => t.id == activePointCollisionTrainId);
+    final train =
+        trains.firstWhereOrNull((t) => t.id == activePointCollisionTrainId);
     if (train == null) return;
 
     // Record acknowledgment with current train position
     if (!_acknowledgedPointCollisions.containsKey(train.id)) {
       _acknowledgedPointCollisions[train.id] = {};
     }
-    _acknowledgedPointCollisions[train.id]![activePointCollisionPointId!] = train.x;
+    _acknowledgedPointCollisions[train.id]![activePointCollisionPointId!] =
+        train.x;
 
     // Release emergency brake to allow train to continue
     train.emergencyBrake = false;
 
-    _logEvent('✅ Point collision acknowledged for ${train.name} at ${activePointCollisionPointId}');
-    _logEvent('ℹ️  Train can now continue - alert won\'t repeat until train clears point by 20 units');
+    _logEvent(
+        '✅ Point collision acknowledged for ${train.name} at ${activePointCollisionPointId}');
+    _logEvent(
+        'ℹ️  Train can now continue - alert won\'t repeat until train clears point by 20 units');
 
     // Clear active collision indicators
     activePointCollisionTrainId = null;
@@ -2708,12 +2724,14 @@ class TerminalStationController extends ChangeNotifier {
     // 45-degree crossovers with proper 200-unit span for correct geometry
     points['76A'] =
         Point(id: '76A', x: -550, y: 100); // Start of double diamond
-    points['76B'] =
-        Point(id: '76B', x: -550, y: 300); // Start of double diamond
+    points['76B'] = Point(
+        id: '76B', x: -300, y: 300); // FIXED: Moved to block 213 (was at -550)
     points['77A'] = Point(
         id: '77A', x: -350, y: 100); // End of double diamond (200 units span)
     points['77B'] = Point(
-        id: '77B', x: -350, y: 300); // End of double diamond (200 units span)
+        id: '77B',
+        x: -500,
+        y: 300); // FIXED: Moved to block 211 (was at -350)
 
     // Middle points (crossover106/109) - Standard crossover
     points['78A'] = Point(id: '78A', x: 600, y: 100);
@@ -2723,12 +2741,14 @@ class TerminalStationController extends ChangeNotifier {
     // 45-degree crossovers with proper 200-unit span for correct geometry
     points['79A'] =
         Point(id: '79A', x: 1900, y: 100); // Start of double diamond
-    points['79B'] =
-        Point(id: '79B', x: 1900, y: 300); // Start of double diamond
+    points['79B'] = Point(
+        id: '79B', x: 2100, y: 300); // FIXED: Moved to block 305 (was at 1900)
     points['80A'] = Point(
         id: '80A', x: 2100, y: 100); // End of double diamond (200 units span)
     points['80B'] = Point(
-        id: '80B', x: 2100, y: 300); // End of double diamond (200 units span)
+        id: '80B',
+        x: 1900,
+        y: 300); // FIXED: Moved to block 303 (was at 2100)
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)
@@ -2780,28 +2800,28 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
     bufferStops['BS1'] = BufferStop(
       id: 'BS1',
-      x: -1800,  // Left end, upper track
+      x: -1800, // Left end, upper track
       y: 100,
       width: 30,
       height: 20,
     );
     bufferStops['BS2'] = BufferStop(
       id: 'BS2',
-      x: -1800,  // Left end, lower track (moved to end of block 199)
+      x: -1800, // Left end, lower track (moved to end of block 199)
       y: 300,
       width: 30,
       height: 20,
     );
     bufferStops['BS3'] = BufferStop(
       id: 'BS3',
-      x: 3400,  // Right end, upper track (original hardcoded position)
+      x: 3400, // Right end, upper track (original hardcoded position)
       y: 100,
       width: 30,
       height: 20,
     );
     bufferStops['BS4'] = BufferStop(
       id: 'BS4',
-      x: 3400,  // Right end, lower track
+      x: 3400, // Right end, lower track
       y: 300,
       width: 30,
       height: 20,
@@ -3270,8 +3290,11 @@ class TerminalStationController extends ChangeNotifier {
     // TRAIN STOPS for all signals - UPDATED to match new signal positions
     trainStops['TL01'] =
         TrainStop(id: 'TL01', signalId: 'L01', x: -1710, y: 120);
-    trainStops['TL02'] =
-        TrainStop(id: 'TL02', signalId: 'L02', x: -600, y: 340); // FIXED: End of block 209 (without minus 10)
+    trainStops['TL02'] = TrainStop(
+        id: 'TL02',
+        signalId: 'L02',
+        x: -600,
+        y: 340); // FIXED: End of block 209 (without minus 10)
     trainStops['TL03'] =
         TrainStop(id: 'TL03', signalId: 'L03', x: -810, y: 120);
     trainStops['TL04'] =
@@ -3280,8 +3303,11 @@ class TerminalStationController extends ChangeNotifier {
         TrainStop(id: 'TL05', signalId: 'L05', x: -200, y: 120);
     trainStops['TL06'] =
         TrainStop(id: 'TL06', signalId: 'L06', x: -1010, y: 120);
-    trainStops['TL07'] =
-        TrainStop(id: 'TL07', signalId: 'L07', x: -1000, y: 340); // FIXED: End of block 205 (without plus 10)
+    trainStops['TL07'] = TrainStop(
+        id: 'TL07',
+        signalId: 'L07',
+        x: -1000,
+        y: 340); // FIXED: End of block 205 (without plus 10)
 
     trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
     trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1190, y: 120);
@@ -3302,12 +3328,18 @@ class TerminalStationController extends ChangeNotifier {
 
     trainStops['TR01'] =
         TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
-    trainStops['TR02'] =
-        TrainStop(id: 'TR02', signalId: 'R02', x: 2600, y: 340); // FIXED: End of block 309 (without plus 10)
+    trainStops['TR02'] = TrainStop(
+        id: 'TR02',
+        signalId: 'R02',
+        x: 2600,
+        y: 340); // FIXED: End of block 309 (without plus 10)
     trainStops['TR03'] =
         TrainStop(id: 'TR03', signalId: 'R03', x: 2790, y: 120);
-    trainStops['TR04'] =
-        TrainStop(id: 'TR04', signalId: 'R04', x: 3200, y: 340); // FIXED: End of block 315 (without plus 10)
+    trainStops['TR04'] = TrainStop(
+        id: 'TR04',
+        signalId: 'R04',
+        x: 3200,
+        y: 340); // FIXED: End of block 315 (without plus 10)
     trainStops['TR05'] =
         TrainStop(id: 'TR05', signalId: 'R05', x: 2790, y: 340);
     trainStops['TR06'] = TrainStop(
@@ -3315,10 +3347,16 @@ class TerminalStationController extends ChangeNotifier {
         signalId: 'R06',
         x: 2490,
         y: 340); // MOVED: Match R06 signal position
-    trainStops['TR07'] =
-        TrainStop(id: 'TR07', signalId: 'R07', x: 1800, y: 340); // FIXED: End of block 301 (without minus 10)
-    trainStops['TR08'] =
-        TrainStop(id: 'TR08', signalId: 'R08', x: 2600, y: 120); // FIXED: End of block 308 (without plus 10)
+    trainStops['TR07'] = TrainStop(
+        id: 'TR07',
+        signalId: 'R07',
+        x: 1800,
+        y: 340); // FIXED: End of block 301 (without minus 10)
+    trainStops['TR08'] = TrainStop(
+        id: 'TR08',
+        signalId: 'R08',
+        x: 2600,
+        y: 120); // FIXED: End of block 308 (without plus 10)
 
     // ═══════════════════════════════════════════════════════════════════════
     // CBTC INFRASTRUCTURE - WiFi and Transponders with individual control
@@ -4197,9 +4235,8 @@ class TerminalStationController extends ChangeNotifier {
       final train1 = trains[i];
 
       // ENHANCEMENT 22: Only check nearby trains instead of all trains
-      final nearbyTrains = _performanceOptimizationLevel > 0
-          ? _getNearbyTrains(train1)
-          : trains;
+      final nearbyTrains =
+          _performanceOptimizationLevel > 0 ? _getNearbyTrains(train1) : trains;
 
       for (var train2 in nearbyTrains) {
         if (train1.id == train2.id || trains.indexOf(train2) <= i) continue;
@@ -4210,9 +4247,11 @@ class TerminalStationController extends ChangeNotifier {
 
         // ENHANCEMENT 10: Predict future positions based on velocity
         final futureSeconds = 5.0; // Look ahead 5 seconds
-        final futureX1 = train1.x + (train1.speed * train1.direction * futureSeconds);
+        final futureX1 =
+            train1.x + (train1.speed * train1.direction * futureSeconds);
         final futureY1 = train1.y;
-        final futureX2 = train2.x + (train2.speed * train2.direction * futureSeconds);
+        final futureX2 =
+            train2.x + (train2.speed * train2.direction * futureSeconds);
         final futureY2 = train2.y;
 
         final predictedDistance = math.sqrt(
@@ -4235,7 +4274,8 @@ class TerminalStationController extends ChangeNotifier {
         // ENHANCEMENT 12: Dynamic warning zones based on speed
         final warningDistance = 80 + (train1.speed + train2.speed) * 5;
         if (distance < warningDistance && distance > 30) {
-          final timeToCollision = distance / ((train1.speed + train2.speed).abs() + 0.1);
+          final timeToCollision =
+              distance / ((train1.speed + train2.speed).abs() + 0.1);
           _logEvent(
             '⚠️ WARNING ZONE: ${train1.name} & ${train2.name} - '
             '${distance.toStringAsFixed(1)} units (ETA: ${timeToCollision.toStringAsFixed(1)}s)',
@@ -4272,7 +4312,8 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   // Track trains that have hit bufferstops to prevent repeated alerts
-  final Map<String, String> _bufferStopCollisions = {}; // trainId -> bufferstopId
+  final Map<String, String> _bufferStopCollisions =
+      {}; // trainId -> bufferstopId
 
   void _checkBufferStopCollisions() {
     for (var train in trains) {
@@ -4325,8 +4366,10 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
-  void _initiateBufferStopCollisionRecovery(Train train, BufferStop bufferStop) {
-    final collisionId = 'bufferstop_${train.id}_${DateTime.now().millisecondsSinceEpoch}';
+  void _initiateBufferStopCollisionRecovery(
+      Train train, BufferStop bufferStop) {
+    final collisionId =
+        'bufferstop_${train.id}_${DateTime.now().millisecondsSinceEpoch}';
 
     // Determine recovery direction (away from bufferstop)
     final double recoveryOffset = train.x > bufferStop.x ? 20.0 : -20.0;
@@ -4343,7 +4386,8 @@ class TerminalStationController extends ChangeNotifier {
 
     _activeCollisionRecoveries[collisionId] = recoveryPlan;
 
-    _logEvent('🔄 Collision recovery initiated for ${train.name} - bufferstop collision');
+    _logEvent(
+        '🔄 Collision recovery initiated for ${train.name} - bufferstop collision');
   }
 
   void _handleCollision(List<String> trainIds, String location) {
@@ -4586,7 +4630,8 @@ class TerminalStationController extends ChangeNotifier {
 
         _logEvent(
             '🔧 FORCE RECOVERY: Trains moved 20 units apart from collision location');
-        _logEvent('⚠️ Emergency brakes applied to ${train1.name} and ${train2.name}');
+        _logEvent(
+            '⚠️ Emergency brakes applied to ${train1.name} and ${train2.name}');
         _logEvent('ℹ️ Release emergency brakes to continue operations');
 
         _updateBlockOccupation();
@@ -5787,7 +5832,9 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       // 1.2. CBTC MODE CHECK - Trains in OFF or STORAGE mode cannot move
-      if (train.isCbtcTrain && (train.cbtcMode == CbtcMode.off || train.cbtcMode == CbtcMode.storage)) {
+      if (train.isCbtcTrain &&
+          (train.cbtcMode == CbtcMode.off ||
+              train.cbtcMode == CbtcMode.storage)) {
         train.targetSpeed = 0;
         train.speed = 0;
         // Don't log repeatedly - only when mode is first set
@@ -5875,7 +5922,8 @@ class TerminalStationController extends ChangeNotifier {
 
       // 4.5. CBTC OFF/STORAGE MODE - Trains cannot move in these modes
       if (train.isCbtcTrain &&
-          (train.cbtcMode == CbtcMode.off || train.cbtcMode == CbtcMode.storage)) {
+          (train.cbtcMode == CbtcMode.off ||
+              train.cbtcMode == CbtcMode.storage)) {
         train.targetSpeed = 0;
         train.speed = 0;
         // Do not log repeatedly to avoid spam
@@ -5890,7 +5938,8 @@ class TerminalStationController extends ChangeNotifier {
           train.emergencyBrake = true;
           train.targetSpeed = 0;
           train.speed = 0;
-          _logEvent('🚨 NCT ALERT: ${train.name} cannot enter AUTO/PM while NCT - switching to RM mode');
+          _logEvent(
+              '🚨 NCT ALERT: ${train.name} cannot enter AUTO/PM while NCT - switching to RM mode');
           continue;
         }
       }
@@ -6451,9 +6500,29 @@ class TerminalStationController extends ChangeNotifier {
         case '113':
           return '111';
         case '111':
-          return '109';
+          // FIXED: Check if crossover points 78A/78B are reversed
+          final point78A = points['78A'];
+          final point78B = points['78B'];
+          if (point78A?.position == PointPosition.reverse &&
+              point78B?.position == PointPosition.reverse) {
+            // Points reversed - take crossover to upper track
+            return 'crossover109';
+          } else {
+            // Points normal - stay on lower track
+            return '109';
+          }
         case '109':
-          return '107';
+          // FIXED: Check if we came from crossover or normal route
+          final point78A = points['78A'];
+          final point78B = points['78B'];
+          if (point78A?.position == PointPosition.reverse &&
+              point78B?.position == PointPosition.reverse) {
+            // If points are reversed and we're at 109, we should be on upper track already
+            // This shouldn't happen in normal flow
+            return '107';
+          } else {
+            return '107';
+          }
         case '107':
           return '105';
         case '105':
@@ -6736,7 +6805,8 @@ class TerminalStationController extends ChangeNotifier {
   /// go straight through a diverging crossover when points are reversed.
   // Calculate path-based Y position and rotation for any X coordinate
   // This is used by both trains and individual carriages for proper path following
-  Map<String, double> calculatePathPosition(double x, double currentY, int direction) {
+  Map<String, double> calculatePathPosition(
+      double x, double currentY, int direction) {
     final point76A = points['76A'];
     final point76B = points['76B'];
     final point78A = points['78A'];
@@ -6747,12 +6817,13 @@ class TerminalStationController extends ChangeNotifier {
     double y = currentY;
     double rotation = 0.0;
 
-    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-550 to -450, points 76A, 76B)
-    if (x >= -550 && x < -450) {
+    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-550 to -300, points 76A/77B/76B)
+    // FIXED: Updated range to match new point positions (77B at -500, 76B at -300)
+    if (x >= -550 && x < -300) {
       if (point76A?.position == PointPosition.reverse &&
           point76B?.position == PointPosition.reverse) {
         // FIXED: Crossover rotation should be 45° or 135° based on direction
-        double progress = (x + 550) / 100; // 0 to 1 over the crossover
+        double progress = (x + 550) / 250; // 0 to 1 over 250 units (-550 to -300)
         if (direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
           y = 100 + (200 * progress);
@@ -6773,19 +6844,24 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
     // CENTER SECTION DOUBLE CROSSOVER (x=600 to 800, points 78A, 78B)
+    // FIXED: Treat as single continuous crossover from y=100 to y=300
     else if (x >= 600 && x < 800) {
       if (point78A?.position == PointPosition.reverse &&
           point78B?.position == PointPosition.reverse) {
-        if (x < 700) {
-          double progress = (x - 600) / 100;
-          y = 100 + (100 * progress);
-          rotation = direction > 0 ? 0.785398 : 2.356194; // 45° or 135° based on direction
+        // Calculate progress across the ENTIRE crossover (0.0 to 1.0)
+        double progress = (x - 600) / 200; // 200 units total (600 to 800)
+
+        if (direction > 0) {
+          // Moving right/east: upper track (y=100) to lower track (y=300)
+          y = 100 + (200 * progress); // Smooth interpolation across full range
+          rotation = 0.785398; // 45 degrees (down-right) - constant diagonal
         } else {
-          double progress = (x - 700) / 100;
-          y = 200 + (100 * progress);
-          rotation = direction > 0 ? 0.785398 : 2.356194; // 45° or 135° based on direction
+          // Moving left/west: lower track (y=300) to upper track (y=100)
+          y = 300 - (200 * progress); // Smooth interpolation in reverse
+          rotation = 2.356194; // 135 degrees (up-left) - constant diagonal
         }
       } else {
+        // Points in normal position - stay on current track
         if (currentY < 200) {
           y = 100;
         } else {
@@ -6794,12 +6870,13 @@ class TerminalStationController extends ChangeNotifier {
         rotation = 0.0;
       }
     }
-    // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (x=1900 to 2000, points 80A, 80B)
-    else if (x >= 1900 && x < 2000) {
+    // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (x=1900 to 2100, points 79A/80B/79B)
+    // FIXED: Updated range to match new point positions (80B at 1900, 79B at 2100)
+    else if (x >= 1900 && x < 2100) {
       if (point80A?.position == PointPosition.reverse &&
           point80B?.position == PointPosition.reverse) {
         // FIXED: Crossover rotation should be 45° or 135° based on direction
-        double progress = (x - 1900) / 100; // 0 to 1 over the crossover
+        double progress = (x - 1900) / 200; // 0 to 1 over 200 units (1900 to 2100)
         if (direction > 0) {
           // Moving right: upper track (y=100) to lower track (y=300)
           y = 100 + (200 * progress);
@@ -6996,7 +7073,8 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   // Track trains that have had reverse point collisions to prevent repeated alerts
-  final Map<String, String> _reversePointCollisions = {}; // trainId -> blockId where collision occurred
+  final Map<String, String> _reversePointCollisions =
+      {}; // trainId -> blockId where collision occurred
 
   // Check if train is approaching points from converging side with points reversed
   // This should trigger emergency brake (collision scenario)
@@ -7006,7 +7084,8 @@ class TerminalStationController extends ChangeNotifier {
 
     // Check if train has cleared the collision area
     final previousCollisionBlock = _reversePointCollisions[train.id];
-    if (previousCollisionBlock != null && previousCollisionBlock != currentBlockId) {
+    if (previousCollisionBlock != null &&
+        previousCollisionBlock != currentBlockId) {
       // Train has moved to a different block, clear the collision tracking
       _reversePointCollisions.remove(train.id);
     }
@@ -7039,7 +7118,8 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     // 3. Train came FROM a crossover block - train just exited crossover
-    if (train.previousBlockId != null && crossoverBlocks.contains(train.previousBlockId!)) {
+    if (train.previousBlockId != null &&
+        crossoverBlocks.contains(train.previousBlockId!)) {
       return false; // Train just left crossover, allow movement
     }
 
@@ -7054,7 +7134,8 @@ class TerminalStationController extends ChangeNotifier {
     if (train.previousBlockId != null &&
         crossoverAdjacentBlocks.contains(train.previousBlockId!) &&
         nextBlock != null &&
-        (crossoverBlocks.contains(nextBlock) || crossoverAdjacentBlocks.contains(nextBlock))) {
+        (crossoverBlocks.contains(nextBlock) ||
+            crossoverAdjacentBlocks.contains(nextBlock))) {
       return false; // Train is on valid crossover route sequence
     }
 
@@ -7165,7 +7246,8 @@ class TerminalStationController extends ChangeNotifier {
   // Initiate collision recovery for reverse point collision
   void _initiateReversePointCollisionRecovery(Train train) {
     // Create a collision recovery plan
-    final collisionId = 'reverse_point_${train.id}_${DateTime.now().millisecondsSinceEpoch}';
+    final collisionId =
+        'reverse_point_${train.id}_${DateTime.now().millisecondsSinceEpoch}';
 
     final recoveryPlan = CollisionRecoveryPlan(
       collisionId: collisionId,
@@ -7179,7 +7261,8 @@ class TerminalStationController extends ChangeNotifier {
 
     _activeCollisionRecoveries[collisionId] = recoveryPlan;
 
-    _logEvent('🔄 Collision recovery initiated for ${train.name} - reverse point collision');
+    _logEvent(
+        '🔄 Collision recovery initiated for ${train.name} - reverse point collision');
   }
 
   void _checkAutoSignals() {
@@ -7718,11 +7801,6 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Snap value to grid
-  double snapToGrid(double value) {
-    return (value / editModeGridSize).round() * editModeGridSize;
-  }
-
   /// Change selection mode (pointer, quickSelect, marquee, lasso)
   void setSelectionMode(SelectionMode mode) {
     selectionMode = mode;
@@ -7733,7 +7811,8 @@ class TerminalStationController extends ChangeNotifier {
   /// Select a component for editing
   /// addToSelection: if true, adds to multi-selection (Shift key behavior)
   /// removeFromSelection: if true, removes from selection (Alt/Option key behavior)
-  void selectComponent(String type, String id, {bool addToSelection = false, bool removeFromSelection = false}) {
+  void selectComponent(String type, String id,
+      {bool addToSelection = false, bool removeFromSelection = false}) {
     if (removeFromSelection) {
       // Alt/Option key - remove from selection
       multiSelection.removeWhere((s) => s.type == type && s.id == id);
@@ -7753,7 +7832,8 @@ class TerminalStationController extends ChangeNotifier {
           originalY: _getComponentY(type, id),
         );
         multiSelection.add(component);
-        _logEvent('➕ Added to selection: $type $id (${multiSelection.length} selected)');
+        _logEvent(
+            '➕ Added to selection: $type $id (${multiSelection.length} selected)');
       }
     } else {
       // Normal click - replace selection
@@ -7777,21 +7857,26 @@ class TerminalStationController extends ChangeNotifier {
     // Build list of all selectable components
     final allComponents = <Map<String, String>>[];
 
-    signals.forEach((id, signal) => allComponents.add({'type': 'signal', 'id': id}));
-    points.forEach((id, point) => allComponents.add({'type': 'point', 'id': id}));
-    platforms.forEach((platform) => allComponents.add({'type': 'platform', 'id': platform.id}));
-    trainStops.forEach((id, stop) => allComponents.add({'type': 'trainstop', 'id': id}));
-    bufferStops.forEach((id, buffer) => allComponents.add({'type': 'bufferstop', 'id': id}));
-    axleCounters.forEach((id, counter) => allComponents.add({'type': 'axlecounter', 'id': id}));
+    signals.forEach(
+        (id, signal) => allComponents.add({'type': 'signal', 'id': id}));
+    points
+        .forEach((id, point) => allComponents.add({'type': 'point', 'id': id}));
+    platforms.forEach((platform) =>
+        allComponents.add({'type': 'platform', 'id': platform.id}));
+    trainStops.forEach(
+        (id, stop) => allComponents.add({'type': 'trainstop', 'id': id}));
+    bufferStops.forEach(
+        (id, buffer) => allComponents.add({'type': 'bufferstop', 'id': id}));
+    axleCounters.forEach(
+        (id, counter) => allComponents.add({'type': 'axlecounter', 'id': id}));
 
     if (allComponents.isEmpty) return;
 
     // Find current index
     int currentIndex = -1;
     if (selectedComponentType != null && selectedComponentId != null) {
-      currentIndex = allComponents.indexWhere(
-        (c) => c['type'] == selectedComponentType && c['id'] == selectedComponentId
-      );
+      currentIndex = allComponents.indexWhere((c) =>
+          c['type'] == selectedComponentType && c['id'] == selectedComponentId);
     }
 
     // Move to next component (wrap around)
@@ -7807,25 +7892,31 @@ class TerminalStationController extends ChangeNotifier {
     // Build list of all selectable components
     final allComponents = <Map<String, String>>[];
 
-    signals.forEach((id, signal) => allComponents.add({'type': 'signal', 'id': id}));
-    points.forEach((id, point) => allComponents.add({'type': 'point', 'id': id}));
-    platforms.forEach((platform) => allComponents.add({'type': 'platform', 'id': platform.id}));
-    trainStops.forEach((id, stop) => allComponents.add({'type': 'trainstop', 'id': id}));
-    bufferStops.forEach((id, buffer) => allComponents.add({'type': 'bufferstop', 'id': id}));
-    axleCounters.forEach((id, counter) => allComponents.add({'type': 'axlecounter', 'id': id}));
+    signals.forEach(
+        (id, signal) => allComponents.add({'type': 'signal', 'id': id}));
+    points
+        .forEach((id, point) => allComponents.add({'type': 'point', 'id': id}));
+    platforms.forEach((platform) =>
+        allComponents.add({'type': 'platform', 'id': platform.id}));
+    trainStops.forEach(
+        (id, stop) => allComponents.add({'type': 'trainstop', 'id': id}));
+    bufferStops.forEach(
+        (id, buffer) => allComponents.add({'type': 'bufferstop', 'id': id}));
+    axleCounters.forEach(
+        (id, counter) => allComponents.add({'type': 'axlecounter', 'id': id}));
 
     if (allComponents.isEmpty) return;
 
     // Find current index
     int currentIndex = -1;
     if (selectedComponentType != null && selectedComponentId != null) {
-      currentIndex = allComponents.indexWhere(
-        (c) => c['type'] == selectedComponentType && c['id'] == selectedComponentId
-      );
+      currentIndex = allComponents.indexWhere((c) =>
+          c['type'] == selectedComponentType && c['id'] == selectedComponentId);
     }
 
     // Move to previous component (wrap around)
-    final prevIndex = currentIndex <= 0 ? allComponents.length - 1 : currentIndex - 1;
+    final prevIndex =
+        currentIndex <= 0 ? allComponents.length - 1 : currentIndex - 1;
     final prevComponent = allComponents[prevIndex];
 
     selectComponent(prevComponent['type']!, prevComponent['id']!);
@@ -7844,7 +7935,10 @@ class TerminalStationController extends ChangeNotifier {
 
     // Check signals
     for (final signal in signals.values) {
-      if (signal.x >= minX && signal.x <= maxX && signal.y >= minY && signal.y <= maxY) {
+      if (signal.x >= minX &&
+          signal.x <= maxX &&
+          signal.y >= minY &&
+          signal.y <= maxY) {
         multiSelection.add(SelectedComponent(
           type: 'signal',
           id: signal.id,
@@ -7857,7 +7951,10 @@ class TerminalStationController extends ChangeNotifier {
 
     // Check points
     for (final point in points.values) {
-      if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
+      if (point.x >= minX &&
+          point.x <= maxX &&
+          point.y >= minY &&
+          point.y <= maxY) {
         multiSelection.add(SelectedComponent(
           type: 'point',
           id: point.id,
@@ -7871,7 +7968,10 @@ class TerminalStationController extends ChangeNotifier {
     // Check platforms
     for (final platform in platforms) {
       final centerX = platform.startX + (platform.endX - platform.startX) / 2;
-      if (centerX >= minX && centerX <= maxX && platform.y >= minY && platform.y <= maxY) {
+      if (centerX >= minX &&
+          centerX <= maxX &&
+          platform.y >= minY &&
+          platform.y <= maxY) {
         multiSelection.add(SelectedComponent(
           type: 'platform',
           id: platform.id,
@@ -7884,7 +7984,10 @@ class TerminalStationController extends ChangeNotifier {
 
     // Check train stops
     for (final stop in trainStops.values) {
-      if (stop.x >= minX && stop.x <= maxX && stop.y >= minY && stop.y <= maxY) {
+      if (stop.x >= minX &&
+          stop.x <= maxX &&
+          stop.y >= minY &&
+          stop.y <= maxY) {
         multiSelection.add(SelectedComponent(
           type: 'trainstop',
           id: stop.id,
@@ -7897,7 +8000,10 @@ class TerminalStationController extends ChangeNotifier {
 
     // Check buffer stops
     for (final buffer in bufferStops.values) {
-      if (buffer.x >= minX && buffer.x <= maxX && buffer.y >= minY && buffer.y <= maxY) {
+      if (buffer.x >= minX &&
+          buffer.x <= maxX &&
+          buffer.y >= minY &&
+          buffer.y <= maxY) {
         multiSelection.add(SelectedComponent(
           type: 'bufferstop',
           id: buffer.id,
@@ -7910,7 +8016,10 @@ class TerminalStationController extends ChangeNotifier {
 
     // Check axle counters
     for (final counter in axleCounters.values) {
-      if (counter.x >= minX && counter.x <= maxX && counter.y >= minY && counter.y <= maxY) {
+      if (counter.x >= minX &&
+          counter.x <= maxX &&
+          counter.y >= minY &&
+          counter.y <= maxY) {
         multiSelection.add(SelectedComponent(
           type: 'axlecounter',
           id: counter.id,
@@ -7921,8 +8030,428 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
 
-    _logEvent('🔲 Marquee selection: $count components selected');
+    _logEvent('🔲 Selected $count components in rectangle');
     notifyListeners();
+  }
+
+  // ============================================================================
+  // PHASE 2: SELECT SIMILAR & BY TYPE
+  // ============================================================================
+
+  /// Select all components similar to the selected one (same type)
+  void selectSimilar() {
+    if (selectedComponentType == null || selectedComponentId == null) {
+      _logEvent('❌ No component selected');
+      return;
+    }
+
+    multiSelection.clear();
+    final type = selectedComponentType!.toLowerCase();
+    int count = 0;
+
+    switch (type) {
+      case 'signal':
+        for (final signal in signals.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'signal',
+            id: signal.id,
+            originalX: signal.x,
+            originalY: signal.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'point':
+        for (final point in points.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'point',
+            id: point.id,
+            originalX: point.x,
+            originalY: point.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'trainstop':
+        for (final stop in trainStops.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'trainstop',
+            id: stop.id,
+            originalX: stop.x,
+            originalY: stop.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'bufferstop':
+        for (final buffer in bufferStops.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'bufferstop',
+            id: buffer.id,
+            originalX: buffer.x,
+            originalY: buffer.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'axlecounter':
+        for (final counter in axleCounters.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'axlecounter',
+            id: counter.id,
+            originalX: counter.x,
+            originalY: counter.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'transponder':
+        // Assuming 'transponders' is a Map<String, Transponder>
+        // and Transponder has id, x, y properties
+        // If not, this case will need adjustment based on actual data structure
+        // For now, adding a placeholder assuming it exists.
+        // If transponders is not defined, this will cause a compile error.
+        // This is a placeholder for a future feature.
+        // for (final transponder in transponders.values) {
+        //   multiSelection.add(SelectedComponent(
+        //     type: 'transponder',
+        //     id: transponder.id,
+        //     originalX: transponder.x,
+        //     originalY: transponder.y,
+        //   ));
+        //   count++;
+        // }
+        break;
+
+      case 'wifiantenna':
+        // Assuming 'wifiAntennas' is a Map<String, WifiAntenna>
+        // and WifiAntenna has id, x, y properties
+        // If not, this case will need adjustment based on actual data structure
+        // For now, adding a placeholder assuming it exists.
+        // If wifiAntennas is not defined, this will cause a compile error.
+        // This is a placeholder for a future feature.
+        // for (final antenna in wifiAntennas.values) {
+        //   multiSelection.add(SelectedComponent(
+        //     type: 'wifiantenna',
+        //     id: antenna.id,
+        //     originalX: antenna.x,
+        //     originalY: antenna.y,
+        //   ));
+        //   count++;
+        // }
+        break;
+
+      case 'platform':
+        for (final platform in platforms) {
+          final centerX =
+              platform.startX + (platform.endX - platform.startX) / 2;
+          multiSelection.add(SelectedComponent(
+            type: 'platform',
+            id: platform.id,
+            originalX: centerX,
+            originalY: platform.y,
+          ));
+          count++;
+        }
+        break;
+    }
+
+    _logEvent('🔍 Selected all $count $type components');
+    notifyListeners();
+  }
+
+  /// Select all components of a specific type
+  void selectByType(String type) {
+    multiSelection.clear();
+    selectedComponentType = type;
+    selectedComponentId = null;
+    int count = 0;
+
+    switch (type.toLowerCase()) {
+      case 'signal':
+        for (final signal in signals.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'signal',
+            id: signal.id,
+            originalX: signal.x,
+            originalY: signal.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'point':
+        for (final point in points.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'point',
+            id: point.id,
+            originalX: point.x,
+            originalY: point.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'trainstop':
+        for (final stop in trainStops.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'trainstop',
+            id: stop.id,
+            originalX: stop.x,
+            originalY: stop.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'bufferstop':
+        for (final buffer in bufferStops.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'bufferstop',
+            id: buffer.id,
+            originalX: buffer.x,
+            originalY: buffer.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'axlecounter':
+        for (final counter in axleCounters.values) {
+          multiSelection.add(SelectedComponent(
+            type: 'axlecounter',
+            id: counter.id,
+            originalX: counter.x,
+            originalY: counter.y,
+          ));
+          count++;
+        }
+        break;
+
+      case 'platform':
+        for (final platform in platforms) {
+          final centerX =
+              platform.startX + (platform.endX - platform.startX) / 2;
+          multiSelection.add(SelectedComponent(
+            type: 'platform',
+            id: platform.id,
+            originalX: centerX,
+            originalY: platform.y,
+          ));
+          count++;
+        }
+        break;
+    }
+
+    _logEvent('🎯 Selected $count $type components');
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // ALIGNMENT TOOLS
+  // ============================================================================
+
+  /// Align selected components to the left (min X)
+  void alignLeft() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected');
+      return;
+    }
+
+    final minX = multiSelection.map((c) => c.originalX).reduce(math.min);
+
+    for (final component in multiSelection) {
+      _moveComponent(
+          component.type, component.id, minX - component.originalX, 0);
+    }
+
+    _logEvent(
+        '◀️ Aligned ${multiSelection.length} components to left (x=$minX)');
+    notifyListeners();
+  }
+
+  /// Align selected components to the right (max X)
+  void alignRight() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected');
+      return;
+    }
+
+    final maxX = multiSelection.map((c) => c.originalX).reduce(math.max);
+
+    for (final component in multiSelection) {
+      _moveComponent(
+          component.type, component.id, maxX - component.originalX, 0);
+    }
+
+    _logEvent(
+        '▶️ Aligned ${multiSelection.length} components to right (x=$maxX)');
+    notifyListeners();
+  }
+
+  /// Align selected components to the top (min Y)
+  void alignTop() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected');
+      return;
+    }
+
+    final minY = multiSelection.map((c) => c.originalY).reduce(math.min);
+
+    for (final component in multiSelection) {
+      _moveComponent(
+          component.type, component.id, 0, minY - component.originalY);
+    }
+
+    _logEvent(
+        '🔼 Aligned ${multiSelection.length} components to top (y=$minY)');
+    notifyListeners();
+  }
+
+  /// Align selected components to the bottom (max Y)
+  void alignBottom() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected');
+      return;
+    }
+
+    final maxY = multiSelection.map((c) => c.originalY).reduce(math.max);
+
+    for (final component in multiSelection) {
+      _moveComponent(
+          component.type, component.id, 0, maxY - component.originalY);
+    }
+
+    _logEvent(
+        '🔽 Aligned ${multiSelection.length} components to bottom (y=$maxY)');
+    notifyListeners();
+  }
+
+  /// Align selected components to center horizontally
+  void alignCenterHorizontal() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected');
+      return;
+    }
+
+    final avgX =
+        multiSelection.map((c) => c.originalX).reduce((a, b) => a + b) /
+            multiSelection.length;
+
+    for (final component in multiSelection) {
+      _moveComponent(
+          component.type, component.id, avgX - component.originalX, 0);
+    }
+
+    _logEvent(
+        '↔️ Aligned ${multiSelection.length} components to center horizontal (x=$avgX)');
+    notifyListeners();
+  }
+
+  /// Align selected components to middle vertically
+  void alignMiddleVertical() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected');
+      return;
+    }
+
+    final avgY =
+        multiSelection.map((c) => c.originalY).reduce((a, b) => a + b) /
+            multiSelection.length;
+
+    for (final component in multiSelection) {
+      _moveComponent(
+          component.type, component.id, 0, avgY - component.originalY);
+    }
+
+    _logEvent(
+        '↕️ Aligned ${multiSelection.length} components to middle vertical (y=$avgY)');
+    notifyListeners();
+  }
+
+  /// Helper method to move a component by delta
+  void _moveComponent(String type, String id, double dx, double dy) {
+    final currentX = _getComponentX(type, id);
+    final currentY = _getComponentY(type, id);
+    moveComponentById(type, id, currentX + dx, currentY + dy);
+  }
+
+  /// Move component by ID (helper for alignment tools)
+  void moveComponentById(String type, String id, double newX, double newY) {
+    switch (type.toLowerCase()) {
+      case 'signal':
+        final signal = signals[id];
+        if (signal != null) {
+          signal.x = newX;
+          signal.y = newY;
+        }
+        break;
+
+      case 'point':
+        final point = points[id];
+        if (point != null) {
+          point.x = newX;
+          point.y = newY;
+        }
+        break;
+
+      case 'trainstop':
+        final stop = trainStops[id];
+        if (stop != null) {
+          stop.x = newX;
+          stop.y = newY;
+        }
+        break;
+
+      case 'bufferstop':
+        final buffer = bufferStops[id];
+        if (buffer != null) {
+          buffer.x = newX;
+          buffer.y = newY;
+        }
+        break;
+
+      case 'axlecounter':
+        final counter = axleCounters[id];
+        if (counter != null) {
+          counter.x = newX;
+          counter.y = newY;
+        }
+        break;
+
+      case 'transponder':
+        // Placeholder for transponder movement
+        // final transponder = transponders[id];
+        // if (transponder != null) {
+        //   transponder.x = newX;
+        //   transponder.y = newY;
+        // }
+        break;
+
+      case 'wifiantenna':
+        // Placeholder for wifiantenna movement
+        // final antenna = wifiAntennas[id];
+        // if (antenna != null) {
+        //   antenna.x = newX;
+        //   antenna.y = newY;
+        // }
+        break;
+
+      case 'platform':
+        final platform = platforms.firstWhereOrNull((p) => p.id == id);
+        if (platform != null) {
+          final width = platform.endX - platform.startX;
+          platform.startX = newX - width / 2;
+          platform.endX = newX + width / 2;
+          platform.y = newY;
+        }
+        break;
+    }
   }
 
   /// Get component X position (helper for selection)
@@ -7934,7 +8463,9 @@ class TerminalStationController extends ChangeNotifier {
         return points[id]?.x ?? 0;
       case 'platform':
         final platform = platforms.firstWhereOrNull((p) => p.id == id);
-        return platform != null ? platform.startX + (platform.endX - platform.startX) / 2 : 0;
+        return platform != null
+            ? platform.startX + (platform.endX - platform.startX) / 2
+            : 0;
       case 'trainstop':
         return trainStops[id]?.x ?? 0;
       case 'bufferstop':
@@ -7970,7 +8501,8 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     // Get component data for undo
-    final componentData = getComponentData(selectedComponentType!, selectedComponentId!);
+    final componentData =
+        getComponentData(selectedComponentType!, selectedComponentId!);
 
     if (componentData.isEmpty) {
       _logEvent('❌ Component $selectedComponentId not found');
@@ -8006,7 +8538,8 @@ class TerminalStationController extends ChangeNotifier {
       case 'signal':
         final signal = signals[id];
         if (signal != null) {
-          final command = MoveSignalCommand(this, id, signal.x, signal.y, newX, newY);
+          final command =
+              MoveSignalCommand(this, id, signal.x, signal.y, newX, newY);
           commandHistory.executeCommand(command);
           notifyListeners();
         }
@@ -8014,7 +8547,8 @@ class TerminalStationController extends ChangeNotifier {
       case 'point':
         final point = points[id];
         if (point != null) {
-          final command = MovePointCommand(this, id, point.x, point.y, newX, newY);
+          final command =
+              MovePointCommand(this, id, point.x, point.y, newX, newY);
           commandHistory.executeCommand(command);
           notifyListeners();
         }
@@ -8040,7 +8574,8 @@ class TerminalStationController extends ChangeNotifier {
       case 'trainstop':
         final stop = trainStops[id];
         if (stop != null) {
-          final command = MoveTrainStopCommand(this, id, stop.x, stop.y, newX, newY);
+          final command =
+              MoveTrainStopCommand(this, id, stop.x, stop.y, newX, newY);
           commandHistory.executeCommand(command);
           notifyListeners();
         }
@@ -8048,12 +8583,206 @@ class TerminalStationController extends ChangeNotifier {
       case 'axlecounter':
         final counter = axleCounters[id];
         if (counter != null) {
-          final command = MoveAxleCounterCommand(this, id, counter.x, counter.y, newX, newY);
+          final command = MoveAxleCounterCommand(
+              this, id, counter.x, counter.y, newX, newY);
           commandHistory.executeCommand(command);
           notifyListeners();
         }
         break;
     }
+  }
+
+  // ============================================================================
+  // COPY/PASTE/DUPLICATE OPERATIONS
+  // ============================================================================
+
+  /// Copy selected component to clipboard
+  void copySelectedComponent() {
+    if (selectedComponentType == null || selectedComponentId == null) {
+      _logEvent('❌ No component selected to copy');
+      return;
+    }
+
+    final componentData =
+        getComponentData(selectedComponentType!, selectedComponentId!);
+    if (componentData.isEmpty) {
+      _logEvent('❌ Component not found');
+      return;
+    }
+
+    _clipboard = {
+      'type': selectedComponentType,
+      'id': selectedComponentId,
+      'data': componentData,
+    };
+    _clipboardOffset = Offset(
+      _getComponentX(selectedComponentType!, selectedComponentId!),
+      _getComponentY(selectedComponentType!, selectedComponentId!),
+    );
+
+    _logEvent('📋 Copied ${selectedComponentType!} ${selectedComponentId!}');
+    notifyListeners();
+  }
+
+  /// Paste clipboard component at specified position (or with offset from original)
+  void pasteComponent({Offset? pastePosition}) {
+    if (_clipboard == null) {
+      _logEvent('❌ Clipboard is empty');
+      return;
+    }
+
+    final type = _clipboard!['type'] as String;
+    final originalData = _clipboard!['data'] as Map<String, dynamic>;
+
+    // Calculate paste position
+    final originalOffset = _clipboardOffset ?? Offset.zero;
+    final targetPosition = pastePosition ??
+        Offset(
+          originalOffset.dx + 50, // Offset by 50 units
+          originalOffset.dy + 50,
+        );
+
+    // Apply snap to grid if enabled
+    final snappedPosition = snapToGridOffset(targetPosition);
+
+    // Generate new ID
+    final newId = _generateUniqueId(type);
+
+    // Create copy of data with new position
+    final newData = Map<String, dynamic>.from(originalData);
+    newData['x'] = snappedPosition.dx;
+    newData['y'] = snappedPosition.dy;
+    newData['id'] = newId;
+
+    // Add the component
+    try {
+      _addComponentFromData(type, newId, newData);
+      _logEvent(
+          '📌 Pasted $type $newId at (${snappedPosition.dx.toInt()}, ${snappedPosition.dy.toInt()})');
+
+      // Select the newly pasted component
+      selectComponent(type, newId);
+    } catch (e) {
+      _logEvent('❌ Failed to paste: $e');
+    }
+  }
+
+  /// Duplicate selected component with offset
+  void duplicateSelectedComponent() {
+    if (selectedComponentType == null || selectedComponentId == null) {
+      _logEvent('❌ No component selected to duplicate');
+      return;
+    }
+
+    // Copy and paste in one operation
+    copySelectedComponent();
+    pasteComponent(); // Will use default offset
+  }
+
+  /// Generate unique ID for component type
+  String _generateUniqueId(String type) {
+    final prefix = type.substring(0, 1).toUpperCase();
+    int counter = 1;
+    String newId;
+
+    do {
+      newId = '$prefix$counter';
+      counter++;
+    } while (_componentExists(type, newId));
+
+    return newId;
+  }
+
+  /// Check if component with given type and ID exists
+  bool _componentExists(String type, String id) {
+    switch (type.toLowerCase()) {
+      case 'signal':
+        return signals.containsKey(id);
+      case 'point':
+        return points.containsKey(id);
+      case 'trainstop':
+        return trainStops.containsKey(id);
+      case 'bufferstop':
+        return bufferStops.containsKey(id);
+      case 'axlecounter':
+        return axleCounters.containsKey(id);
+      case 'transponder':
+        return transponders.containsKey(id);
+      case 'wifiantenna':
+        return wifiAntennas.containsKey(id);
+      case 'platform':
+        return platforms.any((p) => p.id == id);
+      default:
+        return false;
+    }
+  }
+
+  /// Add component from data map (placeholder - needs full implementation)
+  void _addComponentFromData(
+      String type, String id, Map<String, dynamic> data) {
+    // This would be a full implementation that creates components
+    // For now, just log - full implementation would require typed constructors
+    _logEvent('⚠️ Component paste not fully implemented for $type');
+    // TODO: Implement full component creation from data
+  }
+
+  // ============================================================================
+  // SNAP TO GRID
+  // ============================================================================
+
+  /// Snap position to grid if enabled (Offset version)
+  Offset snapToGridOffset(Offset position) {
+    if (!snapToGridEnabled) return position;
+
+    return Offset(
+      (position.dx / gridSnapSize).round() * gridSnapSize,
+      (position.dy / gridSnapSize).round() * gridSnapSize,
+    );
+  }
+
+  /// Snap value to grid (double version for platform resize)
+  double snapToGrid(double value) {
+    if (!snapToGridEnabled) return value;
+    return (value / gridSnapSize).round() * gridSnapSize;
+  }
+
+  /// Toggle snap to grid on/off
+  void toggleSnapToGrid() {
+    snapToGridEnabled = !snapToGridEnabled;
+    _logEvent(snapToGridEnabled
+        ? '🧲 Snap to grid ENABLED (${gridSnapSize.toInt()} units)'
+        : '🧲 Snap to grid DISABLED');
+    notifyListeners();
+  }
+
+  /// Set grid snap size
+  void setGridSnapSize(double size) {
+    gridSnapSize = size.clamp(5.0, 100.0);
+    _logEvent('📏 Grid snap size: ${gridSnapSize.toInt()} units');
+    notifyListeners();
+  }
+
+  // ============================================================================
+  // COMPONENT MOVEMENT WITH KEYBOARD
+  // ============================================================================
+
+  /// Nudge selected component by delta
+  void nudgeSelectedComponent(double dx, double dy) {
+    if (selectedComponentType == null || selectedComponentId == null) return;
+
+    final currentX =
+        _getComponentX(selectedComponentType!, selectedComponentId!);
+    final currentY =
+        _getComponentY(selectedComponentType!, selectedComponentId!);
+
+    var newPosition = Offset(currentX + dx, currentY + dy);
+
+    // Apply snap to grid if enabled
+    if (snapToGridEnabled) {
+      newPosition = snapToGridOffset(newPosition);
+    }
+
+    moveSelectedComponent(newPosition.dx, newPosition.dy);
   }
 
   // ============================================================================
@@ -8102,7 +8831,8 @@ class TerminalStationController extends ChangeNotifier {
     commandHistory.executeCommand(command);
     notifyListeners();
 
-    _logEvent('✅ Created crossover $crossoverId at (${x.toInt()}, ${y.toInt()}) - Validation passed');
+    _logEvent(
+        '✅ Created crossover $crossoverId at (${x.toInt()}, ${y.toInt()}) - Validation passed');
   }
 
   // ENHANCEMENT 16: Comprehensive crossover placement validation
@@ -8119,7 +8849,8 @@ class TerminalStationController extends ChangeNotifier {
       if (distance < minSpacing) {
         return {
           'valid': false,
-          'reason': 'Too close to block ${block.id} (${distance.toInt()} units)',
+          'reason':
+              'Too close to block ${block.id} (${distance.toInt()} units)',
         };
       }
     }
@@ -8133,7 +8864,8 @@ class TerminalStationController extends ChangeNotifier {
       if (distance < minSpacing / 2) {
         return {
           'valid': false,
-          'reason': 'Too close to point ${point.id} (${distance.toInt()} units)',
+          'reason':
+              'Too close to point ${point.id} (${distance.toInt()} units)',
         };
       }
     }
@@ -8147,7 +8879,8 @@ class TerminalStationController extends ChangeNotifier {
       if (distance < minSpacing / 3) {
         return {
           'valid': false,
-          'reason': 'Too close to signal ${signal.id} (${distance.toInt()} units)',
+          'reason':
+              'Too close to signal ${signal.id} (${distance.toInt()} units)',
         };
       }
     }
@@ -8554,18 +9287,22 @@ class TerminalStationController extends ChangeNotifier {
 
   /// Update platform resize during drag
   void updatePlatformResize(double newX) {
-    if (!isResizingPlatform || resizingPlatformId == null || resizingHandle == null) return;
+    if (!isResizingPlatform ||
+        resizingPlatformId == null ||
+        resizingHandle == null) return;
 
     final platform = platforms.firstWhere((p) => p.id == resizingPlatformId);
 
     if (resizingHandle == 'left') {
       // Dragging left handle - update startX
       // Ensure minimum width of 50 units
-      platform.startX = snapToGrid(newX).clamp(platform.endX - 500, platform.endX - 50);
+      platform.startX =
+          snapToGrid(newX).clamp(platform.endX - 500, platform.endX - 50);
     } else {
       // Dragging right handle - update endX
       // Ensure minimum width of 50 units
-      platform.endX = snapToGrid(newX).clamp(platform.startX + 50, platform.startX + 500);
+      platform.endX =
+          snapToGrid(newX).clamp(platform.startX + 50, platform.startX + 500);
     }
 
     notifyListeners();
@@ -8573,7 +9310,10 @@ class TerminalStationController extends ChangeNotifier {
 
   /// End platform resizing and record in history
   void endPlatformResize() {
-    if (!isResizingPlatform || resizingPlatformId == null || resizingHandle == null || resizingStartX == null) {
+    if (!isResizingPlatform ||
+        resizingPlatformId == null ||
+        resizingHandle == null ||
+        resizingStartX == null) {
       isResizingPlatform = false;
       resizingPlatformId = null;
       resizingHandle = null;
@@ -8609,7 +9349,8 @@ class TerminalStationController extends ChangeNotifier {
     resizingHandle = null;
     resizingStartX = null;
 
-    logEvent('📏 Resized platform ${platform.id} to ${(finalEndX - finalStartX).toStringAsFixed(0)} units');
+    logEvent(
+        '📏 Resized platform ${platform.id} to ${(finalEndX - finalStartX).toStringAsFixed(0)} units');
     notifyListeners();
   }
 
@@ -8721,7 +9462,8 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   /// Create platform directly (called by command - no logging)
-  void createPlatformDirect(String id, String name, double startX, double endX, double y) {
+  void createPlatformDirect(
+      String id, String name, double startX, double endX, double y) {
     platforms.add(Platform(
       id: id,
       name: name,

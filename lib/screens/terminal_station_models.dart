@@ -451,7 +451,7 @@ class Train {
   //
   // Parameters:
   // - pathCalculator: Function that calculates Y position and rotation for a given X position
-  void updateCarriagePositions(Function(double x, double y, int direction) pathCalculator) {
+  void updateCarriagePositions(Map<String, double> Function(double x, double y, int direction) pathCalculator) {
     if (carriages.isEmpty) {
       initializeCarriages();
     }
@@ -472,20 +472,47 @@ class Train {
       final prevCarriage = carriages[i - 1];
 
       // ENHANCEMENT 3: Dynamic spacing with coupling tension
-      final spacing = baseSpacing * (1.0 + (prevCarriage.couplingTension * 0.1));
+      final targetSpacing = baseSpacing * (1.0 + (prevCarriage.couplingTension * 0.1));
 
-      // PATH-BASED POSITIONING: Calculate X position behind previous carriage
-      // This is the key improvement - each carriage tracks its own X position
-      carriages[i].x = prevCarriage.x - (spacing * direction);
+      // ITERATIVE PATH SOLVER: Find the X position that gives the correct Euclidean distance
+      // We need to find 'x' such that distance(prev, curr) == targetSpacing
+      // Since y is a function of x (via pathCalculator), this is a 1D root finding problem.
 
-      // Store the current Y for comparison (for rotation calculation)
-      final oldY = carriages[i].y;
+      // Initial guess: Assume straight track in the direction of the previous carriage's rotation
+      // This is a much better guess than just subtracting spacing from X
+      double guessX = prevCarriage.x - (targetSpacing * math.cos(prevCarriage.rotation) * direction);
 
-      // Use the path calculator to determine Y position and rotation based on X position
-      // This makes each carriage follow the track path independently
+      // Iterative refinement (3 iterations is usually sufficient for this geometry)
+      for (int iter = 0; iter < 3; iter++) {
+        // Calculate Y and Rotation for the guess X
+        final result = pathCalculator(guessX, prevCarriage.y, direction); // Pass prev Y as hint
+        double guessY = prevCarriage.y; // Default fallback
+
+        if (result is Map<String, double>) {
+          guessY = result['y'] ?? guessY;
+        }
+
+        // Calculate actual distance with this guess
+        final dx = prevCarriage.x - guessX;
+        final dy = prevCarriage.y - guessY;
+        final currentDist = math.sqrt(dx*dx + dy*dy);
+
+        if (currentDist == 0) break; // Avoid division by zero
+
+        // Error correction: Move guessX closer/further to match targetSpacing
+        // We adjust along the vector from guess to prev
+        final errorRatio = targetSpacing / currentDist;
+
+        // New position is prev - (current_vector * errorRatio)
+        // We only care about X for the input to pathCalculator
+        guessX = prevCarriage.x - (dx * errorRatio);
+      }
+
+      // Apply final position
+      carriages[i].x = guessX;
+
+      // Update Y and Rotation one last time
       final result = pathCalculator(carriages[i].x, carriages[i].y, direction);
-
-      // The pathCalculator returns a Map with 'y' and 'rotation'
       if (result is Map<String, double>) {
         carriages[i].y = result['y'] ?? carriages[i].y;
         carriages[i].rotation = result['rotation'] ?? carriages[i].rotation;
@@ -515,20 +542,22 @@ class Train {
   }
 
   // ENHANCEMENT 8: Get realistic spacing based on train configuration
+  // UPDATED: Added 1-unit gap between carriages
+  // UPDATED: Reduced to moderate spacing for better visual balance
   double _getCarriageSpacing() {
     switch (trainType) {
       case TrainType.m1:
       case TrainType.cbtcM1:
-        return 20.0; // Single carriage, no spacing needed
+        return 40.0; // Single carriage (reduced from 70)
       case TrainType.m2:
       case TrainType.cbtcM2:
-        return 22.0; // Short coupling for 2-car trains
+        return 45.0; // 2-car trains (reduced from 75)
       case TrainType.m4:
       case TrainType.cbtcM4:
-        return 24.0; // Medium coupling for 4-car trains
+        return 50.0; // 4-car trains (reduced from 80)
       case TrainType.m8:
       case TrainType.cbtcM8:
-        return 26.0; // Longer coupling for 8-car trains
+        return 55.0; // 8-car trains (reduced from 85)
     }
   }
 }

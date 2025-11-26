@@ -65,7 +65,7 @@ dependencies:
 
   # Speech Recognition & TTS
   # Updated to fix Android namespace issues while maintaining Xcode 14.2 compatibility
-  speech_to_text: ^6.6.2  # Fixed namespace issues in Android build
+  speech_to_text: ^5.1.0  # Fixed namespace issues in Android build
   flutter_tts: ^4.1.0     # Stable version without switch statement warnings
 
   # Performance

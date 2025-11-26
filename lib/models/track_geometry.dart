@@ -300,6 +300,8 @@ class TrackNetworkGeometry {
     addPath(TrackPath.straight(id: '107', startX: 600, endX: 800, y: 300));
     addPath(TrackPath.straight(id: '109', startX: 800, endX: 1000, y: 300));
     addPath(TrackPath.straight(id: '111', startX: 1000, endX: 1200, y: 300));
+    addPath(TrackPath.straight(id: '113', startX: 1200, endX: 1400, y: 300));
+    addPath(TrackPath.straight(id: '115', startX: 1400, endX: 1600, y: 300));
 
     // Crossover segments - diagonal paths with speed restrictions
     addPath(TrackPath.crossover(

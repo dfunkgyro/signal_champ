@@ -514,8 +514,22 @@ class RailwayModel extends ChangeNotifier {
         startX: 1000,
         endX: 1200,
         y: 300,
-        nextBlock: '101',
-        prevBlock: '109',
+        nextBlock: '113',  // UPDATED: Can go eastbound to 113
+        prevBlock: '109'),
+    BlockSection(
+        id: '113',
+        startX: 1200,
+        endX: 1400,
+        y: 300,
+        nextBlock: '115',
+        prevBlock: '111'),
+    BlockSection(
+        id: '115',
+        startX: 1400,
+        endX: 1600,
+        y: 300,
+        nextBlock: '101',  // Connects to reversing area
+        prevBlock: '113',
         isReversingArea: true),
     BlockSection(
         id: 'crossover106',

@@ -6423,6 +6423,12 @@ class TerminalStationController extends ChangeNotifier {
           return '109';
         case '109':
           return '111';
+        case '111':
+          return '113';  // NEW: Eastbound from 111 to 113
+        case '113':
+          return '115';  // NEW: Continue eastbound to 115
+        case '115':
+          return '101';  // NEW: Connect to reversing area
         case 'crossover106':
           return 'crossover109';
         case 'crossover109':

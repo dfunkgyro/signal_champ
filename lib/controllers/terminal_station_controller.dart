@@ -259,7 +259,7 @@ class AxleCounterEvaluator {
 
   String? findNearestAxleCounter(double trainX, double trainY) {
     String? nearestCounter;
-    double minDistance = 50.0; // Increased detection range
+    double minDistance = 15.0; // Reduced detection range by 70% (from 50.0)
 
     for (final counter in axleCounters.values) {
       final distance = math.sqrt(

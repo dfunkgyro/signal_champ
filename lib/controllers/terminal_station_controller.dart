@@ -165,37 +165,17 @@ class AxleCounterEvaluator {
     abResults['AB106'] = _calculateBidirectionalSection('AB106', ac107, ac106);
     abResults['AB108'] = _calculateBidirectionalSection('AB108', ac108, ac112);
     abResults['AB108'] = _calculateBidirectionalSection('AB108', ac112, ac108);
+
+    // FIXED: AB111 uses BOTH ac109 and ac111 counters for proper occupancy detection
     abResults['AB111'] = _calculateBidirectionalSection('AB111', ac109, ac111);
-    abResults['AB111'] = _calculateBidirectionalSection('AB111', ac111, ac109);
 
     // Remove AB104 and AB109 from results
     abResults.remove('AB104');
     abResults.remove('AB109');
 
-    // SIMPLE LOGIC FOR AB111 - Only track ac109 for entry/exit
-    abResults['AB111'] = _calculateAB111Simple(ac109);
-
     print(
         '🔢 ACE Results: ${abResults.entries.map((e) => '${e.key}=${e.value}').join(', ')}');
   }
-
-// ULTRA-SIMPLE AB111 CALCULATION - Only track ac109
-  int _calculateAB111Simple(int ac109) {
-    // Initialize tracking
-    final result = ac109 % 2 == 1 ? 1 : 0;
-
-    if (result == 1) {
-      print('🚂 AB111: OCCUPIED (ac109:$ac109 is ODD)');
-    } else {
-      print('🚂 AB111: CLEAR (ac109:$ac109 is EVEN)');
-    }
-
-    return result;
-  }
-
-// Add these instance variables to the AxleCounterEvaluator class:
-  int? _lastAC109Count;
-  int _ab111EntryCount = 0;
 
   // BIDIRECTIONAL SECTION CALCULATION
   int _calculateBidirectionalSection(
@@ -324,8 +304,6 @@ class AxleCounterEvaluator {
       case 'AB111':
         axleCounters['ac109']?.count = 0;
         axleCounters['ac111']?.count = 0;
-        _lastAC109Count = 0;
-        _ab111EntryCount = 0;
         break;
     }
   }
@@ -6560,8 +6538,9 @@ class TerminalStationController extends ChangeNotifier {
         // Move is valid - proceed
         train.x = nextX;
 
-        // NOTE: Y position and rotation are now updated via carriage system in painter
-        // Old immediate method removed to prevent double crossover movement
+        // Update train's Y position and rotation based on current X position
+        // This ensures the lead carriage gets correct positioning at crossovers
+        _updateTrainYPosition(train);
 
         // Check if entered new block - update commitment and reservations
         _updateBlockOccupation();
@@ -7122,21 +7101,35 @@ class TerminalStationController extends ChangeNotifier {
     double rotation = 0.0;
 
     // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-550 to -300, points 76A/77B/76B)
-    // FIXED: Updated range to match new point positions (77B at -500, 76B at -300)
+    // FIXED: Check both current track AND direction to determine crossover routing
     if (x >= -550 && x < -300) {
       if (point76A?.position == PointPosition.reverse &&
           point76B?.position == PointPosition.reverse) {
-        // FIXED: Crossover rotation should be 45° or 135° based on direction
         double progress =
             (x + 550) / 250; // 0 to 1 over 250 units (-550 to -300)
-        if (direction > 0) {
-          // Moving right: upper track (y=100) to lower track (y=300)
-          y = 100 + (200 * progress);
-          rotation = 0.785398; // 45 degrees (down-right)
+        
+        if (currentY < 200) {
+          // Train on UPPER track (y=100)
+          if (direction > 0) {
+            // Eastbound: cross DOWN to lower track
+            y = 100 + (200 * progress);
+            rotation = 0.785398; // 45 degrees (down-right)
+          } else {
+            // Westbound: stay on upper track (no crossover)
+            y = 100;
+            rotation = 0.0;
+          }
         } else {
-          // Moving left: lower track (y=300) to upper track (y=100)
-          y = 300 - (200 * progress);
-          rotation = 2.356194; // 135 degrees (up-left) - FIXED from 45°
+          // Train on LOWER track (y=300)
+          if (direction > 0) {
+            // Eastbound: stay on lower track (no crossover)
+            y = 300;
+            rotation = 0.0;
+          } else {
+            // Westbound: cross UP to upper track
+            y = 300 - (200 * progress);
+            rotation = 2.356194; // 135 degrees (up-left)
+          }
         }
       } else {
         // Points in normal position - stay on current track
@@ -7149,21 +7142,35 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
     // CENTER SECTION DOUBLE CROSSOVER (x=600 to 800, points 78A, 78B)
-    // FIXED: Treat as single continuous crossover from y=100 to y=300
+    // FIXED: Check both current track AND direction to determine crossover routing
     else if (x >= 600 && x < 800) {
       if (point78A?.position == PointPosition.reverse &&
           point78B?.position == PointPosition.reverse) {
         // Calculate progress across the ENTIRE crossover (0.0 to 1.0)
         double progress = (x - 600) / 200; // 200 units total (600 to 800)
 
-        if (direction > 0) {
-          // Moving right/east: upper track (y=100) to lower track (y=300)
-          y = 100 + (200 * progress); // Smooth interpolation across full range
-          rotation = 0.785398; // 45 degrees (down-right) - constant diagonal
+        if (currentY < 200) {
+          // Train on UPPER track (y=100)
+          if (direction > 0) {
+            // Eastbound: cross DOWN to lower track
+            y = 100 + (200 * progress); // Smooth interpolation down
+            rotation = 0.785398; // 45 degrees (down-right)
+          } else {
+            // Westbound: stay on upper track (no crossover)
+            y = 100;
+            rotation = 0.0;
+          }
         } else {
-          // Moving left/west: lower track (y=300) to upper track (y=100)
-          y = 300 - (200 * progress); // Smooth interpolation in reverse
-          rotation = 2.356194; // 135 degrees (up-left) - constant diagonal
+          // Train on LOWER track (y=300)
+          if (direction > 0) {
+            // Eastbound: stay on lower track (no crossover)
+            y = 300;
+            rotation = 0.0;
+          } else {
+            // Westbound: cross UP to upper track
+            y = 300 - (200 * progress); // Smooth interpolation up
+            rotation = 2.356194; // 135 degrees (up-left)
+          }
         }
       } else {
         // Points in normal position - stay on current track
@@ -7176,21 +7183,35 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
     // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (x=1900 to 2100, points 79A/80B/79B)
-    // FIXED: Updated range to match new point positions (80B at 1900, 79B at 2100)
+    // FIXED: Check both current track AND direction to determine crossover routing
     else if (x >= 1900 && x < 2100) {
       if (point80A?.position == PointPosition.reverse &&
           point80B?.position == PointPosition.reverse) {
-        // FIXED: Crossover rotation should be 45° or 135° based on direction
         double progress =
             (x - 1900) / 200; // 0 to 1 over 200 units (1900 to 2100)
-        if (direction > 0) {
-          // Moving right: upper track (y=100) to lower track (y=300)
-          y = 100 + (200 * progress);
-          rotation = 0.785398; // 45 degrees (down-right)
+        
+        if (currentY < 200) {
+          // Train on UPPER track (y=100)
+          if (direction > 0) {
+            // Eastbound: cross DOWN to lower track
+            y = 100 + (200 * progress);
+            rotation = 0.785398; // 45 degrees (down-right)
+          } else {
+            // Westbound: stay on upper track (no crossover)
+            y = 100;
+            rotation = 0.0;
+          }
         } else {
-          // Moving left: lower track (y=300) to upper track (y=100)
-          y = 300 - (200 * progress);
-          rotation = 2.356194; // 135 degrees (up-left) - FIXED from 45°
+          // Train on LOWER track (y=300)
+          if (direction > 0) {
+            // Eastbound: stay on lower track (no crossover)
+            y = 300;
+            rotation = 0.0;
+          } else {
+            // Westbound: cross UP to upper track
+            y = 300 - (200 * progress);
+            rotation = 2.356194; // 135 degrees (up-left)
+          }
         }
       } else {
         // Points in normal position - stay on current track
@@ -7228,16 +7249,32 @@ class TerminalStationController extends ChangeNotifier {
     });
 
     for (var train in trains) {
+      // FIXED: Prioritize crossover blocks over regular blocks
+      // Check crossover blocks first
+      BlockSection? assignedBlock;
+      
       for (var block in blocks.values) {
         if (block.containsPosition(train.x, train.y)) {
-          block.occupied = true;
-          block.occupyingTrainId = train.id;
-          // Track previous block before updating current
-          if (train.currentBlockId != block.id) {
-            train.previousBlockId = train.currentBlockId;
+          // Prioritize crossover blocks (they have 'crossover' in their name)
+          if (block.name?.contains('crossover') ?? false) {
+            assignedBlock = block;
+            break; // Stop searching, crossover takes priority
+          } else if (assignedBlock == null) {
+            // Only assign to regular block if no crossover found yet
+            assignedBlock = block;
           }
-          train.currentBlockId = block.id;
         }
+      }
+      
+      // Assign train to the selected block
+      if (assignedBlock != null) {
+        assignedBlock.occupied = true;
+        assignedBlock.occupyingTrainId = train.id;
+        // Track previous block before updating current
+        if (train.currentBlockId != assignedBlock.id) {
+          train.previousBlockId = train.currentBlockId;
+        }
+        train.currentBlockId = assignedBlock.id;
       }
     }
   }

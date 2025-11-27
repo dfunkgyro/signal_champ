@@ -89,7 +89,17 @@ class BlockSection {
   });
 
   bool containsPosition(double x, double y) {
-    return x >= startX && x <= endX && (this.y - y).abs() < 50;
+    // Check X range first
+    if (x < startX || x > endX) return false;
+    
+    // Crossover blocks (y=150 or y=250) need wider Y tolerance
+    // because trains cross diagonally between y=100 and y=300
+    if (name?.contains('crossover') ?? false) {
+      return (this.y - y).abs() < 100;
+    }
+    
+    // Regular blocks use standard 50-unit tolerance
+    return (this.y - y).abs() < 50;
   }
 
   double get centerX => startX + (endX - startX) / 2;
@@ -458,11 +468,19 @@ class Train {
       initializeCarriages();
     }
 
-    // Lead carriage follows train position exactly
+    // Lead carriage follows train position with path calculation
+    // This ensures it correctly follows crossover routes when points are reversed
     if (carriages.isNotEmpty) {
       carriages[0].x = x;
-      carriages[0].y = y;
-      carriages[0].rotation = rotation;
+      // Use path calculator to get correct Y and rotation based on current X position
+      final result = pathCalculator(x, y, direction);
+      if (result is Map<String, double>) {
+        carriages[0].y = result['y'] ?? y;
+        carriages[0].rotation = result['rotation'] ?? rotation;
+      } else {
+        carriages[0].y = y;
+        carriages[0].rotation = rotation;
+      }
       carriages[0].speed = speed;
     }
 
@@ -486,8 +504,9 @@ class Train {
 
       // Iterative refinement (3 iterations is usually sufficient for this geometry)
       for (int iter = 0; iter < 3; iter++) {
-        // Calculate Y and Rotation for the guess X
-        final result = pathCalculator(guessX, prevCarriage.y, direction); // Pass prev Y as hint
+        // FIXED: Use lead carriage Y for path calculation to ensure all carriages
+        // follow the same crossover routing logic during diagonal traversal
+        final result = pathCalculator(guessX, carriages[0].y, direction);
         double guessY = prevCarriage.y; // Default fallback
 
         if (result is Map<String, double>) {
@@ -513,8 +532,8 @@ class Train {
       // Apply final position
       carriages[i].x = guessX;
 
-      // Update Y and Rotation one last time
-      final result = pathCalculator(carriages[i].x, carriages[i].y, direction);
+      // FIXED: Update Y and Rotation using lead carriage Y for consistent crossover routing
+      final result = pathCalculator(carriages[i].x, carriages[0].y, direction);
       if (result is Map<String, double>) {
         carriages[i].y = result['y'] ?? carriages[i].y;
         carriages[i].rotation = result['rotation'] ?? carriages[i].rotation;

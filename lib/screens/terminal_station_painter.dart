@@ -1259,9 +1259,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
     } else if (point.id == '78B') {
       if (point.position == PointPosition.normal) {
-        // Normal position: simple horizontal rectangle visual illusion
+        // Normal position: B-end template (-45, -27.6)
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
       } else {
         // Reverse position: crossover active, cover straight route
         final path = Path()
@@ -1296,10 +1296,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '79B') {
-      // CORRECT - Reference point for similar geometry
+      // B-end template (-45, -27.6)
       if (isNormal) {
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
       } else {
         final path = Path()
           ..moveTo(point.x - 40, point.y - 21)
@@ -1309,10 +1309,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '76B') {
-      // FIX: Match 79B geometry (lower track, left side)
+      // B-end template (-45, -27.6)
       if (isNormal) {
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
       } else {
         final path = Path()
           ..moveTo(point.x - 40, point.y - 21)
@@ -1322,54 +1322,58 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '77A') {
-      // FIX: Match 76A/79A geometry (upper track)
-      if (isNormal) {
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y - 27, 50, 12), gapPaint);
-      } else {
-        final path = Path()
-          ..moveTo(point.x - 3, point.y - 22.5)
-          ..lineTo(point.x + 50, point.y - 22.5)
-          ..lineTo(point.x + 50, point.y + 23)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (point.id == '77B') {
-      // FIX: Match 76A/79A geometry (opposite track)
+      // A-end template (-7.5, +15)
       if (isNormal) {
         canvas.drawRect(
             Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
       } else {
+        // Reverse: Mirror of 79B (template from 80A)
         final path = Path()
-          ..moveTo(point.x - 3, point.y - 22.5)
-          ..lineTo(point.x + 50, point.y - 22.5)
-          ..lineTo(point.x + 50, point.y + 23)
+          ..moveTo(point.x + 40, point.y - 21)
+          ..lineTo(point.x + 3, point.y + 17.5)
+          ..lineTo(point.x + 40, point.y + 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '77B') {
+      // B-end template (-45, -27.6)
+      if (isNormal) {
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
+      } else {
+        // Reverse: Mirror of 79A (template from 80B)
+        final path = Path()
+          ..moveTo(point.x + 3, point.y - 22.5)
+          ..lineTo(point.x - 50, point.y - 22.5)
+          ..lineTo(point.x - 50, point.y + 23)
           ..close();
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '80A') {
-      // FIX: Match 77A geometry (upper track, right side)
+      // A-end template (-7.5, +15)
       if (isNormal) {
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y - 27, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
       } else {
+        // Reverse: Mirror of 79B (flipped horizontally)
         final path = Path()
-          ..moveTo(point.x - 3, point.y - 22.5)
-          ..lineTo(point.x + 50, point.y - 22.5)
-          ..lineTo(point.x + 50, point.y + 23)
+          ..moveTo(point.x + 40, point.y - 21)
+          ..lineTo(point.x + 3, point.y + 17.5)
+          ..lineTo(point.x + 40, point.y + 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '80B') {
-      // FIX: Match 79B geometry (lower track, right side)
+      // B-end template (-45, -27.6)
       if (isNormal) {
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 42.5, point.y + 15, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
       } else {
+        // Reverse: Mirror of 79A (flipped horizontally)
         final path = Path()
-          ..moveTo(point.x - 40, point.y - 21)
-          ..lineTo(point.x - 3, point.y + 17.5)
-          ..lineTo(point.x - 40, point.y + 17.5)
+          ..moveTo(point.x + 3, point.y - 22.5)
+          ..lineTo(point.x - 50, point.y - 22.5)
+          ..lineTo(point.x - 50, point.y + 23)
           ..close();
         canvas.drawPath(path, gapPaint);
       }

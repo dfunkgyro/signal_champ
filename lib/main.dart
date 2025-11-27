@@ -516,15 +516,7 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
       ),
-      floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton(
-              onPressed: () {
-                context.read<TerminalStationController>().addTrain();
-              },
-              child: const Icon(Icons.add),
-              tooltip: 'Add Train',
-            )
-          : null,
+
     );
   }
 }

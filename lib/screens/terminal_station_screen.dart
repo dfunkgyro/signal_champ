@@ -63,6 +63,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   // Draggable Add Train Button position
   Offset _addTrainButtonPosition = const Offset(100, 100); // Default position
+  
+  // Draggable Simulation Button position
+  Offset _simButtonOffset = const Offset(20, 200); // Default position
 
   // Top panel adjustable height
   double _topPanelHeight = 120.0; // Default height
@@ -538,6 +541,66 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             },
           ),
 
+          // Draggable Floating Simulation Button (Layer 12)
+          Consumer<TerminalStationController>(
+            builder: (context, controller, _) {
+              return Positioned(
+                left: _simButtonOffset.dx,
+                top: _simButtonOffset.dy,
+                child: Draggable(
+                  feedback: Material(
+                    elevation: 8,
+                    shape: const CircleBorder(),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: controller.isRunning ? Colors.orange.withOpacity(0.7) : Colors.green.withOpacity(0.7),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        controller.isRunning ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                  childWhenDragging: Container(),
+                  onDragEnd: (details) {
+                    setState(() {
+                      _simButtonOffset = details.offset;
+                    });
+                  },
+                  child: Material(
+                    elevation: 8,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: () {
+                        if (controller.isRunning) {
+                          controller.pauseSimulation();
+                        } else {
+                          controller.startSimulation();
+                        }
+                      },
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: controller.isRunning ? Colors.orange : Colors.green,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          controller.isRunning ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
           // Dot Matrix Display moved to right sidebar (removed from here)
         ],
       ),
@@ -932,14 +995,99 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
+  Widget _buildPointControl(
+    BuildContext context,
+    TerminalStationController controller,
+    String pointId, {
+    bool isDeadlocked = false,
+    String? deadlockReason,
+  }) {
+    final point = controller.points[pointId];
+    if (point == null) return const SizedBox.shrink();
+
+    final isLocked = isDeadlocked || point.locked;
+
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Text(
+                pointId,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isLocked ? Colors.red : Colors.black),
+              ),
+              if (isLocked) ...[
+                const SizedBox(width: 4),
+                const Icon(Icons.block, size: 10, color: Colors.red),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: isLocked
+                    ? null
+                    : () {
+                        point.position = PointPosition.normal;
+                        controller.notifyListeners();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: point.position == PointPosition.normal
+                      ? Colors.red
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(40, 30),
+                ),
+                child: const Text('N', style: TextStyle(fontSize: 10)),
+              ),
+              const SizedBox(width: 4),
+              ElevatedButton(
+                onPressed: isLocked
+                    ? null
+                    : () {
+                        point.position = PointPosition.reverse;
+                        controller.notifyListeners();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: point.position == PointPosition.reverse
+                      ? Colors.green
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(40, 30),
+                ),
+                child: const Text('R', style: TextStyle(fontSize: 10)),
+              ),
+            ],
+          ),
+          if (deadlockReason != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              deadlockReason,
+              style: TextStyle(
+                fontSize: 8,
+                color: isLocked ? Colors.red : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   // Top Panel Points Section
   Widget _buildTopPointsSection(TerminalStationController controller) {
-    final point78A = controller.points['78A'];
-    final point78B = controller.points['78B'];
+    // Deadlock logic for 78A/B
     final ab104Occupied = controller.ace.isABOccupied('AB104');
     final ab106Occupied = controller.ace.isABOccupied('AB106');
     final ab109Occupied = controller.ace.isABOccupied('AB109');
-
     final ab106DeadlockActive = ab106Occupied;
     final anyABDeadlock = ab104Occupied || ab106Occupied || ab109Occupied;
 
@@ -972,194 +1120,41 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ],
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            // Point 78A Control
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '78A',
-                        style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: (ab104Occupied || ab106Occupied)
-                                ? (ab106Occupied
-                                    ? Colors.deepOrange
-                                    : Colors.red)
-                                : Colors.black),
-                      ),
-                      if (ab104Occupied || ab106Occupied) ...[
-                        const SizedBox(width: 4),
-                        Icon(Icons.block,
-                            size: 10,
-                            color:
-                                ab106Occupied ? Colors.deepOrange : Colors.red),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: ((ab104Occupied || ab106Occupied) ||
-                                (point78A?.locked ?? false))
-                            ? null
-                            : () {
-                                point78A!.position = PointPosition.normal;
-                                controller.notifyListeners();
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              point78A?.position == PointPosition.normal
-                                  ? Colors.red
-                                  : Colors.grey,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: const Size(40, 30),
-                        ),
-                        child: const Text('N', style: TextStyle(fontSize: 10)),
-                      ),
-                      const SizedBox(width: 4),
-                      ElevatedButton(
-                        onPressed: ((ab104Occupied || ab106Occupied) ||
-                                (point78A?.locked ?? false))
-                            ? null
-                            : () {
-                                point78A!.position = PointPosition.reverse;
-                                controller.notifyListeners();
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              point78A?.position == PointPosition.reverse
-                                  ? Colors.green
-                                  : Colors.grey,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: const Size(40, 30),
-                        ),
-                        child: const Text('R', style: TextStyle(fontSize: 10)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    ab106Occupied
-                        ? 'AB106 Occupied'
-                        : ab104Occupied
-                            ? 'AB104 Occupied'
-                            : 'Free',
-                    style: TextStyle(
-                      fontSize: 8,
-                      color: ab106Occupied
-                          ? Colors.deepOrange
-                          : ab104Occupied
-                              ? Colors.red
-                              : Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              // 76A/B
+              _buildPointControl(context, controller, '76A'),
+              _buildPointControl(context, controller, '76B'),
+              // 77A/B
+              _buildPointControl(context, controller, '77A'),
+              _buildPointControl(context, controller, '77B'),
+              // 78A/B (with specific deadlock logic)
+              _buildPointControl(
+                context, 
+                controller, 
+                '78A', 
+                isDeadlocked: ab104Occupied || ab106Occupied,
+                deadlockReason: ab106Occupied ? 'AB106 Occ' : (ab104Occupied ? 'AB104 Occ' : 'Free'),
               ),
-            ),
-
-            // Point 78B Control
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '78B',
-                        style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: (ab109Occupied || ab106Occupied)
-                                ? (ab106Occupied
-                                    ? Colors.deepOrange
-                                    : Colors.red)
-                                : Colors.black),
-                      ),
-                      if (ab109Occupied || ab106Occupied) ...[
-                        const SizedBox(width: 4),
-                        Icon(Icons.block,
-                            size: 10,
-                            color:
-                                ab106Occupied ? Colors.deepOrange : Colors.red),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: ((ab109Occupied || ab106Occupied) ||
-                                (point78B?.locked ?? false))
-                            ? null
-                            : () {
-                                point78B!.position = PointPosition.normal;
-                                controller.notifyListeners();
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              point78B?.position == PointPosition.normal
-                                  ? Colors.red
-                                  : Colors.grey,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: const Size(40, 30),
-                        ),
-                        child: const Text('N', style: TextStyle(fontSize: 10)),
-                      ),
-                      const SizedBox(width: 4),
-                      ElevatedButton(
-                        onPressed: ((ab109Occupied || ab106Occupied) ||
-                                (point78B?.locked ?? false))
-                            ? null
-                            : () {
-                                point78B!.position = PointPosition.reverse;
-                                controller.notifyListeners();
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              point78B?.position == PointPosition.reverse
-                                  ? Colors.green
-                                  : Colors.grey,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: const Size(40, 30),
-                        ),
-                        child: const Text('R', style: TextStyle(fontSize: 10)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    ab106Occupied
-                        ? 'AB106 Occupied'
-                        : ab109Occupied
-                            ? 'AB109 Occupied'
-                            : 'Free',
-                    style: TextStyle(
-                      fontSize: 8,
-                      color: ab106Occupied
-                          ? Colors.deepOrange
-                          : ab109Occupied
-                              ? Colors.red
-                              : Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              _buildPointControl(
+                context, 
+                controller, 
+                '78B',
+                isDeadlocked: ab109Occupied || ab106Occupied,
+                deadlockReason: ab106Occupied ? 'AB106 Occ' : (ab109Occupied ? 'AB109 Occ' : 'Free'),
               ),
-            ),
-          ],
+              // 79A/B
+              _buildPointControl(context, controller, '79A'),
+              _buildPointControl(context, controller, '79B'),
+              // 80A/B
+              _buildPointControl(context, controller, '80A'),
+              _buildPointControl(context, controller, '80B'),
+            ],
+          ),
         ),
-
+        
         // AB106 status indicator
         if (ab106Occupied) ...[
           const SizedBox(height: 8),
@@ -1173,9 +1168,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.warning, size: 12, color: Colors.deepOrange),
+                const Icon(Icons.warning, size: 12, color: Colors.deepOrange),
                 const SizedBox(width: 4),
-                Text(
+                const Text(
                   'Crossover Occupied - Both Points Locked',
                   style: TextStyle(
                     fontSize: 10,

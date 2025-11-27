@@ -349,6 +349,10 @@ class Train {
   // Multi-carriage independent alignment
   List<Carriage> carriages = []; // Individual carriages for M2/M4/M8 trains
 
+  // Crossover tracking for UI visualization
+  String? currentCrossoverRoute; // e.g., "104→crossover106→crossover109→109"
+  bool isOnCrossover = false; // True when actively traversing a crossover
+
   Train({
     required this.id,
     required this.name,

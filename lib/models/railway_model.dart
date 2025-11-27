@@ -295,6 +295,10 @@ class Train {
   double chainage; // Distance traveled along current track path
   List<Carriage> carriages; // Individual carriages in the consist
 
+  // NEW: Crossover tracking for UI visualization
+  String? currentCrossoverRoute; // e.g., "104→crossover106→crossover109→109"
+  bool isOnCrossover = false; // True when actively traversing a crossover
+
   Train({
     required this.id,
     required this.name,
@@ -922,6 +926,9 @@ class RailwayModel extends ChangeNotifier {
     markBlockOccupied(nextBlockId, true);
     _addEvent('${train.name} entered block $nextBlockId');
 
+    // Track crossover routing for UI visualization
+    _updateCrossoverTracking(train, nextBlockId);
+
     _handleBlockTransition(train, nextBlockId);
     notifyListeners();
   }
@@ -978,6 +985,36 @@ class RailwayModel extends ChangeNotifier {
     return true;
   }
 
+  /// Update crossover tracking for UI visualization
+  void _updateCrossoverTracking(Train train, String nextBlockId) {
+    final isEastbound = train.direction == Direction.east;
+    final currentBlock = train.currentBlock;
+
+    // Entering crossover from block 104 eastbound
+    if (currentBlock == '104' && nextBlockId == 'crossover106' && isEastbound) {
+      train.currentCrossoverRoute = '104→crossover106→crossover109→109';
+      train.isOnCrossover = true;
+    }
+
+    // Entering crossover from block 109 westbound
+    if (currentBlock == '109' && nextBlockId == 'crossover109' && !isEastbound) {
+      train.currentCrossoverRoute = '109→crossover109→crossover106→104';
+      train.isOnCrossover = true;
+    }
+
+    // Exiting crossover to block 109 (eastbound complete)
+    if (currentBlock == 'crossover109' && nextBlockId == '109' && isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+
+    // Exiting crossover to block 104 (westbound complete)
+    if (currentBlock == 'crossover106' && nextBlockId == '104' && !isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+  }
+
   void _handleBlockTransition(Train train, String newBlockId) {
     // Handle train completion at terminal blocks
     if ((newBlockId == '114' && train.direction == Direction.east) ||
@@ -1025,8 +1062,44 @@ class RailwayModel extends ChangeNotifier {
 
   void reverseTrainDirection(String trainId) {
     final train = trains.firstWhere((t) => t.id == trainId);
+
+    // Reverse direction
     train.direction =
         train.direction == Direction.east ? Direction.west : Direction.east;
+
+    // REALISTIC MULTI-CARRIAGE REVERSAL
+    // In real trains, when direction reverses:
+    // - Physical positions stay the same
+    // - Front carriage becomes rear carriage
+    // - Rear carriage becomes front carriage
+    // - Carriage order reverses
+
+    if (train.carriages.isNotEmpty) {
+      // Reverse the carriage list order
+      // [Loco, Car1, Car2, Tail] becomes [Tail, Car2, Car1, Loco]
+      train.carriages = train.carriages.reversed.toList();
+
+      // Recalculate offsetFromLead for each carriage
+      // The new front carriage (former rear) becomes offset 0
+      // Each subsequent carriage gets the next offset value
+      const carriageSpacing = 50.0;
+      for (int i = 0; i < train.carriages.length; i++) {
+        train.carriages[i] = Carriage(
+          x: train.carriages[i].x,
+          y: train.carriages[i].y,
+          rotation: train.carriages[i].rotation,
+          offsetFromLead: i * carriageSpacing,
+        );
+      }
+
+      // Update train's lead carriage position to match new front carriage
+      if (train.carriages.isNotEmpty) {
+        train.x = train.carriages[0].x;
+        train.y = train.carriages[0].y;
+        train.angle = train.carriages[0].rotation;
+      }
+    }
+
     train.status = TrainStatus.moving;
     train.stopReason = '';
     _addEvent('${train.name} reversed direction to ${train.direction.name.toUpperCase()}');
@@ -1044,27 +1117,34 @@ class RailwayModel extends ChangeNotifier {
     final isEastbound = direction == Direction.east;
     final block = blocks.firstWhere((b) => b.id == currentBlock);
 
-    // Handle crossover transitions
+    // Handle crossover transitions - FIXED to follow railway physics
+    // Points only control routing at their location, not downstream
+
+    // ✅ CORRECT: Block 104 eastbound approaching point 78A at X=600
     if (currentBlock == '104' && isEastbound) {
       final point78A = points.firstWhere((p) => p.id == '78A');
       if (point78A.position == PointPosition.reverse) {
-        return 'crossover106';
+        return 'crossover106'; // Diverge to crossover
       }
+      return '106'; // Straight through (78A normal)
     }
 
+    // ✅ CORRECT: Block 109 westbound approaching point 78B at X=800
+    if (currentBlock == '109' && !isEastbound) {
+      final point78B = points.firstWhere((p) => p.id == '78B');
+      if (point78B.position == PointPosition.reverse) {
+        return 'crossover109'; // Diverge to crossover
+      }
+      return '107'; // Straight through (78B normal)
+    }
+
+    // Crossover traversal (committed path, no point checks needed)
     if (currentBlock == 'crossover106' && isEastbound) {
       return 'crossover109';
     }
 
     if (currentBlock == 'crossover109' && isEastbound) {
       return '109';
-    }
-
-    if (currentBlock == '107' && !isEastbound) {
-      final point78B = points.firstWhere((p) => p.id == '78B');
-      if (point78B.position == PointPosition.reverse) {
-        return 'crossover109';
-      }
     }
 
     if (currentBlock == 'crossover109' && !isEastbound) {
@@ -1075,6 +1155,7 @@ class RailwayModel extends ChangeNotifier {
       return '104';
     }
 
+    // Default: use block topology for all other cases
     return isEastbound ? block.nextBlock : block.prevBlock;
   }
 

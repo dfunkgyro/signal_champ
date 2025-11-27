@@ -2490,7 +2490,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       tooltipText += '\nPhysical Buffer Protection';
       final buffer = controller.bufferStops[id];
       if (buffer != null) {
-        tooltipText += '\nOrientation: ${buffer.direction > 0 ? "East Facing" : "West Facing"}';
+        // Infer orientation from position: left side faces east, right side faces west
+        final isEastFacing = buffer.x < 0;
+        tooltipText += '\nOrientation: ${isEastFacing ? "East Facing" : "West Facing"}';
       }
     } else if (type == 'Axle Counter') {
       final blockId = hovered['blockId'] as String?;
@@ -2502,8 +2504,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         tooltipText += '\nCount: ${counter.count}';
         tooltipText += '\nD1 Sensor: ${counter.d1Active ? "ACTIVE" : "Inactive"}';
         tooltipText += '\nD2 Sensor: ${counter.d2Active ? "ACTIVE" : "Inactive"}';
-        if (counter.lastDirection != null) {
-          tooltipText += '\nLast Direction: ${counter.lastDirection! > 0 ? "East ➜" : "West ⬅"}';
+        if (counter.lastDirection.isNotEmpty) {
+          // lastDirection is a String like 'Eastbound', 'Westbound', 'D1', or 'D2'
+          final isEast = counter.lastDirection.contains('East') || counter.lastDirection == 'D1';
+          tooltipText += '\nLast Direction: ${isEast ? "East ➜" : "West ⬅"}';
         }
         tooltipText += '\nDetection Range: 15.0 units';
       }

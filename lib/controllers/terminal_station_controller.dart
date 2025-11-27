@@ -6679,7 +6679,12 @@ class TerminalStationController extends ChangeNotifier {
         case '102':
           return '104';
         case '104':
-          return '106';
+          // ✅ FIXED: Check point 78A position for crossover entry
+          final point78A = points['78A'];
+          if (point78A?.position == PointPosition.reverse) {
+            return 'crossover106'; // Diverge to crossover
+          }
+          return '106'; // Straight through (78A normal)
         case '106':
           return '108';
         case '108':
@@ -6783,29 +6788,14 @@ class TerminalStationController extends ChangeNotifier {
         case '113':
           return '111';
         case '111':
-          // FIXED: Check if crossover points 78A/78B are reversed
-          final point78A = points['78A'];
-          final point78B = points['78B'];
-          if (point78A?.position == PointPosition.reverse &&
-              point78B?.position == PointPosition.reverse) {
-            // Points reversed - take crossover to upper track
-            return 'crossover109';
-          } else {
-            // Points normal - stay on lower track
-            return '109';
-          }
+          return '109'; // Westbound from 111 to 109 (no crossover check)
         case '109':
-          // FIXED: Check if we came from crossover or normal route
-          final point78A = points['78A'];
+          // ✅ FIXED: Check point 78B position for crossover entry
           final point78B = points['78B'];
-          if (point78A?.position == PointPosition.reverse &&
-              point78B?.position == PointPosition.reverse) {
-            // If points are reversed and we're at 109, we should be on upper track already
-            // This shouldn't happen in normal flow
-            return '107';
-          } else {
-            return '107';
+          if (point78B?.position == PointPosition.reverse) {
+            return 'crossover109'; // Diverge to crossover
           }
+          return '107'; // Straight through (78B normal)
         case '107':
           return '105';
         case '105':
@@ -7273,9 +7263,42 @@ class TerminalStationController extends ChangeNotifier {
         // Track previous block before updating current
         if (train.currentBlockId != assignedBlock.id) {
           train.previousBlockId = train.currentBlockId;
+          // Update crossover tracking for UI visualization
+          _updateCrossoverTracking(train, train.currentBlockId, assignedBlock.id);
         }
         train.currentBlockId = assignedBlock.id;
       }
+    }
+  }
+
+  /// Update crossover tracking for UI visualization
+  void _updateCrossoverTracking(Train train, String? fromBlock, String toBlock) {
+    if (fromBlock == null) return;
+
+    final isEastbound = train.direction > 0;
+
+    // Entering crossover from block 104 eastbound
+    if (fromBlock == '104' && toBlock == 'crossover106' && isEastbound) {
+      train.currentCrossoverRoute = '104→crossover106→crossover109→109';
+      train.isOnCrossover = true;
+    }
+
+    // Entering crossover from block 109 westbound
+    if (fromBlock == '109' && toBlock == 'crossover109' && !isEastbound) {
+      train.currentCrossoverRoute = '109→crossover109→crossover106→104';
+      train.isOnCrossover = true;
+    }
+
+    // Exiting crossover to block 109 (eastbound complete)
+    if (fromBlock == 'crossover109' && toBlock == '109' && isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+
+    // Exiting crossover to block 104 (westbound complete)
+    if (fromBlock == 'crossover106' && toBlock == '104' && !isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
     }
   }
 

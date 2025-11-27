@@ -21,6 +21,7 @@ import '../widgets/railway_search_bar.dart';
 import '../widgets/mini_map_widget.dart';
 import '../services/widget_preferences_service.dart';
 import '../services/sound_service.dart';
+import '../widgets/crossover_route_table_terminal.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -5130,6 +5131,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                         'AB109 Occupied',
                         stats['ab109_occupied'] ? 'YES' : 'NO',
                         stats['ab109_occupied'] ? Colors.orange : Colors.green),
+                    const Divider(height: 32),
+
+                    // Crossover Route Table
+                    CrossoverRouteTableTerminal(controller: controller),
                     const Divider(height: 32),
 
                     // Points Status

@@ -145,11 +145,42 @@ class _CrossoverRouteTableState extends State<CrossoverRouteTable> {
     return route
         .replaceAll('104', 'Track 104')
         .replaceAll('109', 'Track 109')
+        .replaceAll('208', 'Track 208')
+        .replaceAll('210', 'Track 210')
+        .replaceAll('211', 'Track 211')
+        .replaceAll('213', 'Track 213')
+        .replaceAll('300', 'Track 300')
+        .replaceAll('301', 'Track 301')
+        .replaceAll('302', 'Track 302')
+        .replaceAll('303', 'Track 303')
+        .replaceAll('crossover106', 'Crossover 106')
+        .replaceAll('crossover109', 'Crossover 109')
+        .replaceAll('crossover_211_212', 'Crossover 211-212')
+        .replaceAll('crossover_303_304', 'Crossover 303-304')
         .replaceAll('→', ' → ');
   }
 
   List<Map<String, dynamic>> _getAllCrossoverRoutes() {
     return [
+      // Left section crossovers (76A/76B, 77A/77B)
+      {
+        'route': '208→crossover_211_212→211',
+        'description': 'Eastbound (Upper Track → Lower Track via 76A/76B reversed)',
+      },
+      {
+        'route': '210→crossover_211_212→213',
+        'description': 'Eastbound (Upper Track → Lower Track via 77A/77B reversed)',
+      },
+      {
+        'route': '211→crossover_211_212→208',
+        'description': 'Westbound (Lower Track → Upper Track via 76B/76A reversed)',
+      },
+      {
+        'route': '213→crossover_211_212→210',
+        'description': 'Westbound (Lower Track → Upper Track via 77B/77A reversed)',
+      },
+
+      // Middle section crossovers (78A/78B)
       {
         'route': '104→crossover106→crossover109→109',
         'description': 'Eastbound (Upper Track → Lower Track via 78A/78B reversed)',
@@ -157,6 +188,24 @@ class _CrossoverRouteTableState extends State<CrossoverRouteTable> {
       {
         'route': '109→crossover109→crossover106→104',
         'description': 'Westbound (Lower Track → Upper Track via 78B/78A reversed)',
+      },
+
+      // Right section crossovers (79A/79B, 80A/80B)
+      {
+        'route': '300→crossover_303_304→301',
+        'description': 'Eastbound (Upper Track → Lower Track via 79A/79B reversed)',
+      },
+      {
+        'route': '302→crossover_303_304→303',
+        'description': 'Eastbound (Upper Track → Lower Track via 80A/80B reversed)',
+      },
+      {
+        'route': '301→crossover_303_304→300',
+        'description': 'Westbound (Lower Track → Upper Track via 79B/79A reversed)',
+      },
+      {
+        'route': '303→crossover_303_304→302',
+        'description': 'Westbound (Lower Track → Upper Track via 80B/80A reversed)',
       },
     ];
   }

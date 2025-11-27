@@ -2465,6 +2465,63 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           tooltipText += '\nName: ${block.name}';
         }
       }
+    } else if (type == 'Platform') {
+      final platform = hovered['name'] as String?;
+      if (platform != null) {
+        tooltipText += '\nName: $platform';
+      }
+      final platformObj = controller.platforms.firstWhere(
+        (p) => p.id == id,
+        orElse: () => controller.platforms.first,
+      );
+      tooltipText += '\nLength: ${(platformObj.endX - platformObj.startX).toStringAsFixed(1)}m';
+      tooltipText += '\nStart: ${platformObj.startX.toStringAsFixed(1)}';
+      tooltipText += '\nEnd: ${platformObj.endX.toStringAsFixed(1)}';
+    } else if (type == 'Train Stop') {
+      final stopActive = hovered['active'] as String?;
+      tooltipText += '\nActive: ${stopActive ?? "Unknown"}';
+      final stop = controller.trainStops[id];
+      if (stop != null) {
+        tooltipText += '\nPlatform Zone Marker';
+        tooltipText += '\nAutomatic Stopping Point';
+      }
+    } else if (type == 'Buffer Stop') {
+      tooltipText += '\nEnd of Track Marker';
+      tooltipText += '\nPhysical Buffer Protection';
+      final buffer = controller.bufferStops[id];
+      if (buffer != null) {
+        tooltipText += '\nOrientation: ${buffer.direction > 0 ? "East Facing" : "West Facing"}';
+      }
+    } else if (type == 'Axle Counter') {
+      final blockId = hovered['blockId'] as String?;
+      if (blockId != null) {
+        tooltipText += '\nBlock: $blockId';
+      }
+      final counter = controller.axleCounters[id];
+      if (counter != null) {
+        tooltipText += '\nCount: ${counter.count}';
+        tooltipText += '\nD1 Sensor: ${counter.d1Active ? "ACTIVE" : "Inactive"}';
+        tooltipText += '\nD2 Sensor: ${counter.d2Active ? "ACTIVE" : "Inactive"}';
+        if (counter.lastDirection != null) {
+          tooltipText += '\nLast Direction: ${counter.lastDirection! > 0 ? "East ➜" : "West ⬅"}';
+        }
+        tooltipText += '\nDetection Range: 15.0 units';
+      }
+    } else if (type == 'Transponder') {
+      final transponder = controller.transponders[id];
+      if (transponder != null) {
+        tooltipText += '\nType: ${transponder.type}';
+        tooltipText += '\nTrack Position Marker';
+        tooltipText += '\nCBTC Communication Point';
+      }
+    } else if (type == 'WiFi Antenna') {
+      final antenna = controller.wifiAntennas[id];
+      if (antenna != null) {
+        tooltipText += '\nStatus: ${antenna.isActive ? "ACTIVE" : "Inactive"}';
+        tooltipText += '\nCoverage Range: 350.0 units';
+        tooltipText += '\nCBTC Wireless Communication';
+        tooltipText += '\nTrain-to-Wayside Data Link';
+      }
     }
 
     final textPainter = TextPainter(

@@ -4528,6 +4528,18 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           return distance < _hitRadiusWifiAntenna;
         }
         break;
+      case 'block':
+        final block = controller.blocks[id];
+        if (block != null) {
+          return canvasX >= block.startX &&
+              canvasX <= block.endX &&
+              (canvasY - block.y).abs() < _hitRadiusBlock;
+        }
+        break;
+      case 'train':
+        final train = controller.trains.firstWhere((t) => t.name == id, orElse: () => controller.trains.first);
+        final distance = _calculateDistance(canvasX, canvasY, train.x, train.y);
+        return distance < _hitRadiusTrain;
     }
     return false;
   }
@@ -4637,6 +4649,31 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           }
           controller.notifyListeners();
         }
+        break;
+      case 'block':
+        final block = controller.blocks[id];
+        if (block != null) {
+          final length = block.endX - block.startX;
+          block.startX += dx;
+          block.endX = block.startX + length;
+          block.y += dy;
+          if (controller.gridVisible) {
+            block.startX = controller.snapToGrid(block.startX);
+            block.endX = controller.snapToGrid(block.endX);
+            block.y = controller.snapToGrid(block.y);
+          }
+          controller.notifyListeners();
+        }
+        break;
+      case 'train':
+        final train = controller.trains.firstWhere((t) => t.name == id, orElse: () => controller.trains.first);
+        train.x += dx;
+        train.y += dy;
+        if (controller.gridVisible) {
+          train.x = controller.snapToGrid(train.x);
+          train.y = controller.snapToGrid(train.y);
+        }
+        controller.notifyListeners();
         break;
     }
   }

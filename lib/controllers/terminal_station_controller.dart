@@ -6906,14 +6906,17 @@ class TerminalStationController extends ChangeNotifier {
         case '100':
           return '102';
         case '102':
-          return '104';
-        case '104':
-          // ✅ FIXED: Check point 78A position for crossover entry
+          // ✅ CRITICAL FIX: Check point 78A BEFORE entering block 104
+          // Point 78A is at x=400 (end of block 102 / start of block 104)
+          // Must decide route BEFORE entering block 104
           final point78A = points['78A'];
           if (point78A?.position == PointPosition.reverse) {
-            return 'crossover106'; // Diverge to crossover
+            return 'crossover106'; // Diverge to crossover (upper to lower)
           }
-          return '106'; // Straight through (78A normal)
+          return '104'; // Straight through (78A normal)
+        case '104':
+          // Continue straight (already past point 78A)
+          return '106';
         case '106':
           return '108';
         case '108':
@@ -6994,16 +6997,8 @@ class TerminalStationController extends ChangeNotifier {
           return '301';
         case '301':
           return '115'; // FIXED: Continue to MIDDLE SECTION block 115
-        case '111':
-          return '109';
-        case '109':
-          return '107';
-        case '107':
-          return '105';
-        case '105':
-          return '103';
-        case '103':
-          return '101';
+        // REMOVED duplicate cases for 111/109/107/105/103/101
+        // These are now handled in MIDDLE SECTION switch below with proper point checks
         case 'crossover109':
           return 'crossover106';
         case 'crossover106':
@@ -7319,13 +7314,15 @@ class TerminalStationController extends ChangeNotifier {
     double y = currentY;
     double rotation = 0.0;
 
-    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-550 to -300, points 76A/77B/76B)
+    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-600 to -300, points 76A/77B/76B)
+    // CRITICAL FIX: Corrected x-range to match actual crossover block
+    // crossover_211_212: startX=-600, endX=-300, y=200
     // FIXED: Check both current track AND direction to determine crossover routing
-    if (x >= -550 && x < -300) {
+    if (x >= -600 && x < -300) {
       if (point76A?.position == PointPosition.reverse &&
           point76B?.position == PointPosition.reverse) {
         double progress =
-            (x + 550) / 250; // 0 to 1 over 250 units (-550 to -300)
+            (x + 600) / 300; // 0 to 1 over 300 units (-600 to -300)
         
         if (currentY < 200) {
           // Train on UPPER track (y=100)
@@ -7360,13 +7357,16 @@ class TerminalStationController extends ChangeNotifier {
         rotation = 0.0;
       }
     }
-    // CENTER SECTION DOUBLE CROSSOVER (x=600 to 800, points 78A, 78B)
+    // CENTER SECTION DOUBLE CROSSOVER (x=400 to 600, points 78A, 78B)
+    // CRITICAL FIX: Corrected x-range to match actual crossover blocks
+    // crossover106: startX=400, endX=500, y=150
+    // crossover109: startX=500, endX=600, y=300
     // FIXED: Check both current track AND direction to determine crossover routing
-    else if (x >= 600 && x < 800) {
+    else if (x >= 400 && x < 600) {
       if (point78A?.position == PointPosition.reverse &&
           point78B?.position == PointPosition.reverse) {
         // Calculate progress across the ENTIRE crossover (0.0 to 1.0)
-        double progress = (x - 600) / 200; // 200 units total (600 to 800)
+        double progress = (x - 400) / 200; // 200 units total (400 to 600)
 
         if (currentY < 200) {
           // Train on UPPER track (y=100)
@@ -7401,13 +7401,15 @@ class TerminalStationController extends ChangeNotifier {
         rotation = 0.0;
       }
     }
-    // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (x=1900 to 2100, points 79A/80B/79B)
+    // RIGHT SECTION DOUBLE DIAMOND CROSSOVER (x=1800 to 2100, points 79A/80B/79B)
+    // CRITICAL FIX: Corrected x-range to match actual crossover block
+    // crossover_303_304: startX=1800, endX=2100, y=200
     // FIXED: Check both current track AND direction to determine crossover routing
-    else if (x >= 1900 && x < 2100) {
+    else if (x >= 1800 && x < 2100) {
       if (point80A?.position == PointPosition.reverse &&
           point80B?.position == PointPosition.reverse) {
         double progress =
-            (x - 1900) / 200; // 0 to 1 over 200 units (1900 to 2100)
+            (x - 1800) / 300; // 0 to 1 over 300 units (1800 to 2100)
         
         if (currentY < 200) {
           // Train on UPPER track (y=100)

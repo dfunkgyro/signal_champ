@@ -3558,72 +3558,75 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
-    // TRAIN STOPS for all signals - UPDATED to match new signal positions
+    // TRAIN STOPS for all signals - UPDATED: All trainstops positioned 10 units in front of their signals
+    // LEFT SECTION: Signals and trainstops
     trainStops['TL01'] =
-        TrainStop(id: 'TL01', signalId: 'L01', x: -1710, y: 120);
+        TrainStop(id: 'TL01', signalId: 'L01', x: -1700, y: 120); // Signal at -1710, eastbound +10
     trainStops['TL02'] = TrainStop(
         id: 'TL02',
         signalId: 'L02',
-        x: -600,
-        y: 340); // FIXED: End of block 209 (without minus 10)
+        x: -620,
+        y: 340); // Signal at -610, westbound -10
     trainStops['TL03'] =
-        TrainStop(id: 'TL03', signalId: 'L03', x: -810, y: 120);
+        TrainStop(id: 'TL03', signalId: 'L03', x: -800, y: 120); // Signal at -810, eastbound +10
     trainStops['TL04'] =
-        TrainStop(id: 'TL04', signalId: 'L04', x: -100, y: 340);
+        TrainStop(id: 'TL04', signalId: 'L04', x: -110, y: 340); // Signal at -100, westbound -10
     trainStops['TL05'] =
-        TrainStop(id: 'TL05', signalId: 'L05', x: -200, y: 120);
+        TrainStop(id: 'TL05', signalId: 'L05', x: -190, y: 120); // Signal at -200, eastbound +10
     trainStops['TL06'] =
-        TrainStop(id: 'TL06', signalId: 'L06', x: -1010, y: 120);
+        TrainStop(id: 'TL06', signalId: 'L06', x: -1000, y: 120); // Signal at -1010, eastbound +10
     trainStops['TL07'] = TrainStop(
         id: 'TL07',
         signalId: 'L07',
         x: -1000,
-        y: 340); // FIXED: End of block 205 (without plus 10)
+        y: 340); // Signal at -990, westbound -10
 
-    trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 400, y: 120);
-    trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1190, y: 120);
+    // MIDDLE SECTION: Signals and trainstops
+    trainStops['T31'] = TrainStop(id: 'T31', signalId: 'C31', x: 300, y: 120); // Signal at 290, eastbound +10
+    trainStops['T33'] = TrainStop(id: 'T33', signalId: 'C33', x: 1200, y: 120); // Signal at 1190, eastbound +10
     trainStops['T30'] = TrainStop(
         id: 'T30',
         signalId: 'C30',
-        x: 1000,
-        y: 340); // FIXED: Match C30 signal x-position
-    trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 50, y: 120);
+        x: 900,
+        y: 340); // Signal at 910, westbound -10
+    trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 60, y: 120); // Signal at 50, eastbound +10
     // REMOVED TC02 - was within 20 units of T30 (duplicate, C02 signal removed)
     trainStops['TC03'] =
-        TrainStop(id: 'TC03', signalId: 'C03', x: 1190, y: 340);
+        TrainStop(id: 'TC03', signalId: 'C03', x: 1180, y: 340); // Signal at 1190, westbound -10
     // trainStops['TC04'] removed - signal C04 no longer exists
 
+    // RIGHT SECTION: Signals and trainstops
     trainStops['TR01'] =
-        TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
+        TrainStop(id: 'TR01', signalId: 'R01', x: 1800, y: 120); // Signal at 1790, eastbound +10
     trainStops['TR02'] = TrainStop(
         id: 'TR02',
         signalId: 'R02',
         x: 2600,
-        y: 340); // FIXED: End of block 309 (without plus 10)
+        y: 340); // Signal at 2610, westbound -10
     trainStops['TR03'] =
-        TrainStop(id: 'TR03', signalId: 'R03', x: 2790, y: 120);
+        TrainStop(id: 'TR03', signalId: 'R03', x: 2800, y: 120); // Signal at 2790, eastbound +10
     trainStops['TR04'] = TrainStop(
         id: 'TR04',
         signalId: 'R04',
         x: 3200,
-        y: 340); // FIXED: End of block 315 (without plus 10)
+        y: 340); // Signal at 3210, westbound -10
     trainStops['TR05'] =
-        TrainStop(id: 'TR05', signalId: 'R05', x: 2790, y: 340);
+        TrainStop(id: 'TR05', signalId: 'R05', x: 2780, y: 340); // Signal at 2790, westbound -10
     trainStops['TR06'] = TrainStop(
         id: 'TR06',
         signalId: 'R06',
-        x: 2490,
-        y: 340); // MOVED: Match R06 signal position
+        x: 2480,
+        y: 340); // Signal at 2490, westbound -10
     trainStops['TR07'] = TrainStop(
         id: 'TR07',
         signalId: 'R07',
-        x: 1800,
-        y: 340); // FIXED: End of block 301 (without minus 10)
+        x: 1780,
+        y: 340); // Signal at 1790, westbound -10
     trainStops['TR08'] = TrainStop(
         id: 'TR08',
         signalId: 'R08',
-        x: 2600,
-        y: 120); // FIXED: End of block 308 (without plus 10)
+        x: 2620,
+        y: 120); // Signal at 2610, eastbound +10
 
     // ═══════════════════════════════════════════════════════════════════════
     // CBTC INFRASTRUCTURE - WiFi and Transponders with individual control
@@ -6892,13 +6895,25 @@ class TerminalStationController extends ChangeNotifier {
         case '206':
           return '208';
         case '208':
-          return '210';
+          // ✅ CRITICAL FIX: Check point 76A position before entering block 210
+          final point76A = points['76A'];
+          if (point76A?.position == PointPosition.reverse) {
+            return 'crossover_211_212'; // Diverge to crossover (upper to lower)
+          }
+          return '210'; // Straight through (76A normal)
         case '210':
           return '212';
         case '212':
           return '214';
         case '214':
           return '100'; // Continue to MIDDLE section
+        case 'crossover_211_212':
+          // Eastbound through crossover (upper to lower)
+          final point77B = points['77B'];
+          if (point77B?.position == PointPosition.reverse) {
+            return '213'; // Exit to block 213 (lower track)
+          }
+          return '212'; // Continue straight (should not happen if routed correctly)
       }
 
       // MIDDLE SECTION (100-114)
@@ -6954,7 +6969,12 @@ class TerminalStationController extends ChangeNotifier {
         case '300':
           return '302';
         case '302':
-          return '304';
+          // ✅ CRITICAL FIX: Check point 79A position before entering crossover
+          final point79A = points['79A'];
+          if (point79A?.position == PointPosition.reverse) {
+            return 'crossover_303_304'; // Diverge to crossover (upper to lower)
+          }
+          return '304'; // Straight through (79A normal)
         case '304':
           return '306';
         case '306':
@@ -6966,16 +6986,19 @@ class TerminalStationController extends ChangeNotifier {
         case '312':
           return '314';
         case '314':
-          return 'crossover_right'; // Use right crossover to switch to lower track
+          return '200'; // FIXED: Loop back to beginning (continuous loop)
+        case 'crossover_303_304':
+          // Eastbound through crossover (upper to lower)
+          final point80B = points['80B'];
+          if (point80B?.position == PointPosition.reverse) {
+            return '305'; // Exit to block 305 (lower track)
+          }
+          return '304'; // Continue straight (should not happen if routed correctly)
       }
 
       // Crossovers
-      if (currentBlock.id == 'crossover_right')
-        return '315'; // Switch to lower track
       if (currentBlock.id == 'crossover106') return 'crossover109';
       if (currentBlock.id == 'crossover109') return '109';
-      if (currentBlock.id == 'crossover_left')
-        return '201'; // Switch to lower track
     } else {
       // ========== WESTBOUND (Lower Track) ==========
 
@@ -6992,13 +7015,23 @@ class TerminalStationController extends ChangeNotifier {
         case '307':
           return '305';
         case '305':
-          return '303';
+          // ✅ CRITICAL FIX: Check point 79B position before entering crossover westbound
+          final point79B = points['79B'];
+          if (point79B?.position == PointPosition.reverse) {
+            return 'crossover_303_304'; // Diverge to crossover (lower to upper)
+          }
+          return '303'; // Straight through (79B normal)
         case '303':
           return '301';
         case '301':
           return '115'; // FIXED: Continue to MIDDLE SECTION block 115
-        // REMOVED duplicate cases for 111/109/107/105/103/101
-        // These are now handled in MIDDLE SECTION switch below with proper point checks
+        case 'crossover_303_304':
+          // Westbound through crossover (lower to upper)
+          final point80A = points['80A'];
+          if (point80A?.position == PointPosition.reverse) {
+            return '302'; // Exit to block 302 (upper track)
+          }
+          return '304'; // Continue straight (should not happen if routed correctly)
         case 'crossover109':
           return 'crossover106';
         case 'crossover106':
@@ -7035,7 +7068,12 @@ class TerminalStationController extends ChangeNotifier {
         case '215':
           return '213';
         case '213':
-          return '211';
+          // ✅ CRITICAL FIX: Check point 76B position before entering crossover westbound
+          final point76B = points['76B'];
+          if (point76B?.position == PointPosition.reverse) {
+            return 'crossover_211_212'; // Diverge to crossover (lower to upper)
+          }
+          return '211'; // Straight through (76B normal)
         case '211':
           return '209';
         case '209':
@@ -7047,16 +7085,19 @@ class TerminalStationController extends ChangeNotifier {
         case '203':
           return '201';
         case '201':
-          return 'crossover_left'; // Use left crossover to switch to upper track
+          return '315'; // FIXED: Loop back to right section (continuous loop)
+        case 'crossover_211_212':
+          // Westbound through crossover (lower to upper)
+          final point77A = points['77A'];
+          if (point77A?.position == PointPosition.reverse) {
+            return '210'; // Exit to block 210 (upper track)
+          }
+          return '212'; // Continue straight (should not happen if routed correctly)
       }
 
       // Crossovers
-      if (currentBlock.id == 'crossover_left')
-        return '200'; // Complete loop - switch to upper track
       if (currentBlock.id == 'crossover109') return 'crossover106';
       if (currentBlock.id == 'crossover106') return '104';
-      if (currentBlock.id == 'crossover_right')
-        return '314'; // Back to upper track
     }
 
     return null;

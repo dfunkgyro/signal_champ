@@ -2440,7 +2440,7 @@ class TerminalStationController extends ChangeNotifier {
 
     // Right section crossover - UPDATED to match renamed crossover
     axleCounters['ac_cx303_304'] = AxleCounter(
-        id: 'ac_cx303_304', blockId: 'crossover_303_304', x: 2075, y: 200);
+        id: 'ac_cx303_304', blockId: 'crossover_303_304', x: 2175, y: 200);
 
     _logEvent(
         '🔢 Initialized ${axleCounters.length} axle counters across all sections');
@@ -2992,8 +2992,8 @@ class TerminalStationController extends ChangeNotifier {
     blocks['crossover_303_304'] = BlockSection(
       id: 'crossover_303_304',
       name: 'East Terminal Double Diamond',
-      startX: 2100,
-      endX: 2250,
+      startX: 2200,
+      endX: 2350,
       y: 200,
     );
 
@@ -3018,16 +3018,16 @@ class TerminalStationController extends ChangeNotifier {
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // CRITICAL FIX: Aligned with crossover_303_304 block coordinates (x: 2100 to 2250)
+    // CRITICAL FIX: Aligned with crossover_303_304 block coordinates (x: 2200 to 2350)
     // Creates proper 45-degree double diamond crossover geometry
     points['79A'] = Point(
-        id: '79A', x: 2100, y: 100); // FIXED: Crossover START, upper track entry
+        id: '79A', x: 2000, y: 100); // FIXED: Crossover START, upper track entry
     points['79B'] = Point(
-        id: '79B', x: 2250, y: 300); // FIXED: Crossover END, lower track exit
+        id: '79B', x: 2150, y: 300); // FIXED: Crossover END, lower track exit
     points['80A'] = Point(
-        id: '80A', x: 2250, y: 100); // FIXED: Crossover END, upper track exit
+        id: '80A', x: 2150, y: 100); // FIXED: Crossover END, upper track exit
     points['80B'] = Point(
-        id: '80B', x: 2100, y: 300); // FIXED: Crossover START, lower track entry
+        id: '80B', x: 2000, y: 300); // FIXED: Crossover START, lower track entry
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)

@@ -77,12 +77,48 @@ class PredefinedLayouts {
         data: _complexJunctionData(),
       );
 
+  /// Layout 4: Default Full Terminal Station (matches startup layout)
+  static LayoutConfiguration get defaultFullTerminal => LayoutConfiguration(
+        id: 'default_full_terminal',
+        name: 'Default Full Terminal',
+        description: 'Complete 3-section terminal station with all features (startup default)',
+        data: {}, // Empty data - handled specially by resetLayoutToDefault()
+      );
+
+  /// Layout 5: Simple Shuttle Service
+  static LayoutConfiguration get simpleShuttle => LayoutConfiguration(
+        id: 'simple_shuttle',
+        name: 'Simple Shuttle Service',
+        description: 'Basic shuttle service with 2 platforms - perfect for beginners',
+        data: _simpleShuttleData(),
+      );
+
+  /// Layout 6: Metro Ring Line
+  static LayoutConfiguration get metroRing => LayoutConfiguration(
+        id: 'metro_ring',
+        name: 'Metro Ring Line',
+        description: 'Circular metro line with 6 stations and bidirectional operation',
+        data: _metroRingData(),
+      );
+
+  /// Layout 7: Mainline Junction with Goods Yard
+  static LayoutConfiguration get mainlineJunction => LayoutConfiguration(
+        id: 'mainline_junction',
+        name: 'Mainline Junction with Goods Yard',
+        description: 'Complex mainline junction with passenger platforms and freight sidings',
+        data: _mainlineJunctionData(),
+      );
+
   /// Get all predefined layouts
   static List<LayoutConfiguration> getAll() {
     return [
+      defaultFullTerminal, // Put default first
       classicTerminal,
       expressThroughStation,
       complexJunction,
+      simpleShuttle,
+      metroRing,
+      mainlineJunction,
     ];
   }
 
@@ -164,12 +200,27 @@ class PredefinedLayouts {
 
   static List<Map<String, dynamic>> _createClassicSignals() {
     return [
+      // Upper track signals (y=100)
       {'id': '1A', 'x': -750.0, 'y': 80.0, 'aspect': 'green'},
       {'id': '1B', 'x': -350.0, 'y': 80.0, 'aspect': 'yellow'},
       {'id': '1C', 'x': 50.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': '1D', 'x': 450.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': '1E', 'x': 850.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': '1F', 'x': 1250.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': '1G', 'x': 1650.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': '1H', 'x': 2050.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': '1I', 'x': 2450.0, 'y': 80.0, 'aspect': 'green'},
+
+      // Lower track signals (y=300)
       {'id': '2A', 'x': -750.0, 'y': 320.0, 'aspect': 'green'},
       {'id': '2B', 'x': -350.0, 'y': 320.0, 'aspect': 'yellow'},
       {'id': '2C', 'x': 50.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': '2D', 'x': 450.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': '2E', 'x': 850.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': '2F', 'x': 1250.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': '2G', 'x': 1650.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': '2H', 'x': 2050.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': '2I', 'x': 2450.0, 'y': 320.0, 'aspect': 'green'},
     ];
   }
 
@@ -272,12 +323,30 @@ class PredefinedLayouts {
 
   static List<Map<String, dynamic>> _createExpressSignals() {
     return [
+      // Express track signals (y=50)
       {'id': 'ES1', 'x': -900.0, 'y': 30.0, 'aspect': 'green'},
       {'id': 'ES2', 'x': -400.0, 'y': 30.0, 'aspect': 'green'},
+      {'id': 'ES3', 'x': 600.0, 'y': 30.0, 'aspect': 'green'},
+      {'id': 'ES4', 'x': 1600.0, 'y': 30.0, 'aspect': 'green'},
+      {'id': 'ES5', 'x': 2600.0, 'y': 30.0, 'aspect': 'green'},
+
+      // Local track signals (y=150)
       {'id': 'LS1', 'x': -900.0, 'y': 130.0, 'aspect': 'green'},
       {'id': 'LS2', 'x': -400.0, 'y': 130.0, 'aspect': 'yellow'},
+      {'id': 'LS3', 'x': 100.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'LS4', 'x': 700.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'LS5', 'x': 1100.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'LS6', 'x': 1700.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'LS7', 'x': 2100.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'LS8', 'x': 2600.0, 'y': 130.0, 'aspect': 'green'},
+
+      // Return track signals (y=250)
       {'id': 'RS1', 'x': -900.0, 'y': 270.0, 'aspect': 'green'},
       {'id': 'RS2', 'x': -400.0, 'y': 270.0, 'aspect': 'green'},
+      {'id': 'RS3', 'x': 100.0, 'y': 270.0, 'aspect': 'green'},
+      {'id': 'RS4', 'x': 700.0, 'y': 270.0, 'aspect': 'green'},
+      {'id': 'RS5', 'x': 1200.0, 'y': 270.0, 'aspect': 'green'},
+      {'id': 'RS6', 'x': 1700.0, 'y': 270.0, 'aspect': 'green'},
     ];
   }
 
@@ -385,12 +454,27 @@ class PredefinedLayouts {
 
   static List<Map<String, dynamic>> _createJunctionSignals() {
     return [
+      // North main line signals (y=50)
       {'id': 'JN1', 'x': -700.0, 'y': 30.0, 'aspect': 'green'},
       {'id': 'JN2', 'x': -100.0, 'y': 30.0, 'aspect': 'yellow'},
+      {'id': 'JN3', 'x': 300.0, 'y': 30.0, 'aspect': 'green'},
+      {'id': 'JN4', 'x': 600.0, 'y': 30.0, 'aspect': 'green'},
+
+      // South main line signals (y=350)
       {'id': 'JS1', 'x': -700.0, 'y': 370.0, 'aspect': 'green'},
       {'id': 'JS2', 'x': -100.0, 'y': 370.0, 'aspect': 'yellow'},
+      {'id': 'JS3', 'x': 300.0, 'y': 370.0, 'aspect': 'green'},
+      {'id': 'JS4', 'x': 600.0, 'y': 370.0, 'aspect': 'green'},
+
+      // West branch signals (y=200)
       {'id': 'JW1', 'x': -700.0, 'y': 180.0, 'aspect': 'green'},
-      {'id': 'JE1', 'x': 500.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'JW2', 'x': -100.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'JW3', 'x': 200.0, 'y': 180.0, 'aspect': 'green'},
+
+      // East branch signals (y=200)
+      {'id': 'JE1', 'x': 400.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'JE2', 'x': 700.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'JE3', 'x': 1200.0, 'y': 180.0, 'aspect': 'green'},
     ];
   }
 
@@ -475,6 +559,390 @@ class PredefinedLayouts {
       {'id': 'JT1', 'x': -600.0, 'y': 50.0, 'type': 'CBTC'},
       {'id': 'JT2', 'x': -600.0, 'y': 350.0, 'type': 'CBTC'},
       {'id': 'JT3', 'x': -600.0, 'y': 200.0, 'type': 'CBTC'},
+    ];
+  }
+
+  // ============================================================================
+  // SIMPLE SHUTTLE SERVICE DATA
+  // ============================================================================
+
+  static Map<String, dynamic> _simpleShuttleData() {
+    return {
+      'blocks': _createShuttleBlocks(),
+      'signals': _createShuttleSignals(),
+      'points': _createShuttlePoints(),
+      'crossovers': _createShuttleCrossovers(),
+      'platforms': _createShuttlePlatforms(),
+      'trainStops': _createShuttleTrainStops(),
+      'bufferStops': _createShuttleBufferStops(),
+      'axleCounters': _createShuttleAxleCounters(),
+      'transponders': _createShuttleTransponders(),
+    };
+  }
+
+  static List<Map<String, dynamic>> _createShuttleBlocks() {
+    return [
+      // Main shuttle line
+      {'id': 'SH100', 'startX': -800.0, 'endX': -400.0, 'y': 150.0, 'name': 'West Approach', 'occupied': false},
+      {'id': 'SH101', 'startX': -400.0, 'endX': 0.0, 'y': 150.0, 'name': 'Platform 1', 'occupied': false},
+      {'id': 'SH102', 'startX': 0.0, 'endX': 400.0, 'y': 150.0, 'name': 'Middle Section', 'occupied': false},
+      {'id': 'SH103', 'startX': 400.0, 'endX': 800.0, 'y': 150.0, 'name': 'Platform 2', 'occupied': false},
+      {'id': 'SH104', 'startX': 800.0, 'endX': 1200.0, 'y': 150.0, 'name': 'East Departure', 'occupied': false},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createShuttleSignals() {
+    return [
+      {'id': 'SH_S1', 'x': -700.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'SH_S2', 'x': -350.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'SH_S3', 'x': 50.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'SH_S4', 'x': 450.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'SH_S5', 'x': 850.0, 'y': 130.0, 'aspect': 'green'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createShuttlePoints() {
+    return [
+      {'id': 'SH_P1', 'x': -600.0, 'y': 150.0, 'position': 'normal'},
+      {'id': 'SH_P2', 'x': 200.0, 'y': 150.0, 'position': 'normal'},
+      {'id': 'SH_P3', 'x': 600.0, 'y': 150.0, 'position': 'normal'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createShuttleCrossovers() {
+    return [];
+  }
+
+  static List<Map<String, dynamic>> _createShuttlePlatforms() {
+    return [
+      {'id': 'SH_PF1', 'name': 'Shuttle Platform 1', 'startX': -350.0, 'endX': -50.0, 'y': 150.0},
+      {'id': 'SH_PF2', 'name': 'Shuttle Platform 2', 'startX': 450.0, 'endX': 750.0, 'y': 150.0},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createShuttleTrainStops() {
+    return [
+      {'id': 'SH_TS1', 'x': -200.0, 'y': 150.0, 'active': true},
+      {'id': 'SH_TS2', 'x': 600.0, 'y': 150.0, 'active': true},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createShuttleBufferStops() {
+    return [
+      {'id': 'SH_BS1', 'x': -800.0, 'y': 150.0},
+      {'id': 'SH_BS2', 'x': 1200.0, 'y': 150.0},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createShuttleAxleCounters() {
+    return [
+      {'id': 'SH_AC1', 'x': -700.0, 'y': 150.0, 'blockId': 'SH100'},
+      {'id': 'SH_AC2', 'x': 100.0, 'y': 150.0, 'blockId': 'SH102'},
+      {'id': 'SH_AC3', 'x': 900.0, 'y': 150.0, 'blockId': 'SH104'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createShuttleTransponders() {
+    return [
+      {'id': 'SH_T1', 'x': -600.0, 'y': 150.0, 'type': 'CBTC'},
+      {'id': 'SH_T2', 'x': 200.0, 'y': 150.0, 'type': 'CBTC'},
+    ];
+  }
+
+  // ============================================================================
+  // METRO RING LINE DATA
+  // ============================================================================
+
+  static Map<String, dynamic> _metroRingData() {
+    return {
+      'blocks': _createMetroRingBlocks(),
+      'signals': _createMetroRingSignals(),
+      'points': _createMetroRingPoints(),
+      'crossovers': _createMetroRingCrossovers(),
+      'platforms': _createMetroRingPlatforms(),
+      'trainStops': _createMetroRingTrainStops(),
+      'bufferStops': _createMetroRingBufferStops(),
+      'axleCounters': _createMetroRingAxleCounters(),
+      'transponders': _createMetroRingTransponders(),
+    };
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingBlocks() {
+    // Circular ring layout with 6 stations
+    return [
+      // Clockwise outer ring (y varies in circle pattern)
+      {'id': 'MR100', 'startX': 0.0, 'endX': 200.0, 'y': 100.0, 'name': 'Station 1 Approach', 'occupied': false},
+      {'id': 'MR101', 'startX': 200.0, 'endX': 400.0, 'y': 100.0, 'name': 'Station 1', 'occupied': false},
+      {'id': 'MR102', 'startX': 400.0, 'endX': 600.0, 'y': 100.0, 'name': 'Station 2 Approach', 'occupied': false},
+      {'id': 'MR103', 'startX': 600.0, 'endX': 800.0, 'y': 150.0, 'name': 'Station 2', 'occupied': false},
+      {'id': 'MR104', 'startX': 800.0, 'endX': 1000.0, 'y': 200.0, 'name': 'Station 3 Approach', 'occupied': false},
+      {'id': 'MR105', 'startX': 1000.0, 'endX': 1200.0, 'y': 250.0, 'name': 'Station 3', 'occupied': false},
+      {'id': 'MR106', 'startX': 1200.0, 'endX': 1000.0, 'y': 300.0, 'name': 'Station 4 Approach', 'occupied': false},
+      {'id': 'MR107', 'startX': 1000.0, 'endX': 800.0, 'y': 300.0, 'name': 'Station 4', 'occupied': false},
+      {'id': 'MR108', 'startX': 800.0, 'endX': 600.0, 'y': 300.0, 'name': 'Station 5 Approach', 'occupied': false},
+      {'id': 'MR109', 'startX': 600.0, 'endX': 400.0, 'y': 250.0, 'name': 'Station 5', 'occupied': false},
+      {'id': 'MR110', 'startX': 400.0, 'endX': 200.0, 'y': 200.0, 'name': 'Station 6 Approach', 'occupied': false},
+      {'id': 'MR111', 'startX': 200.0, 'endX': 0.0, 'y': 150.0, 'name': 'Station 6', 'occupied': false},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingSignals() {
+    return [
+      {'id': 'MR_S1', 'x': 100.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'MR_S2', 'x': 300.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'MR_S3', 'x': 500.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'MR_S4', 'x': 700.0, 'y': 130.0, 'aspect': 'green'},
+      {'id': 'MR_S5', 'x': 900.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'MR_S6', 'x': 1100.0, 'y': 230.0, 'aspect': 'green'},
+      {'id': 'MR_S7', 'x': 1100.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': 'MR_S8', 'x': 900.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': 'MR_S9', 'x': 700.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': 'MR_S10', 'x': 500.0, 'y': 270.0, 'aspect': 'green'},
+      {'id': 'MR_S11', 'x': 300.0, 'y': 220.0, 'aspect': 'green'},
+      {'id': 'MR_S12', 'x': 100.0, 'y': 170.0, 'aspect': 'green'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingPoints() {
+    return [
+      {'id': 'MR_P1', 'x': 150.0, 'y': 100.0, 'position': 'normal'},
+      {'id': 'MR_P2', 'x': 450.0, 'y': 100.0, 'position': 'normal'},
+      {'id': 'MR_P3', 'x': 750.0, 'y': 175.0, 'position': 'normal'},
+      {'id': 'MR_P4', 'x': 950.0, 'y': 250.0, 'position': 'normal'},
+      {'id': 'MR_P5', 'x': 950.0, 'y': 300.0, 'position': 'normal'},
+      {'id': 'MR_P6', 'x': 650.0, 'y': 275.0, 'position': 'normal'},
+      {'id': 'MR_P7', 'x': 350.0, 'y': 225.0, 'position': 'normal'},
+      {'id': 'MR_P8', 'x': 150.0, 'y': 175.0, 'position': 'normal'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingCrossovers() {
+    return [
+      {
+        'id': 'MR_XO1',
+        'name': 'Ring Crossover 1',
+        'pointIds': ['MR_P1', 'MR_P2'],
+        'blockId': 'MR101',
+        'type': 'righthand',
+      },
+      {
+        'id': 'MR_XO2',
+        'name': 'Ring Crossover 2',
+        'pointIds': ['MR_P5', 'MR_P6'],
+        'blockId': 'MR107',
+        'type': 'righthand',
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingPlatforms() {
+    return [
+      {'id': 'MR_PF1', 'name': 'Metro Station 1', 'startX': 250.0, 'endX': 350.0, 'y': 100.0},
+      {'id': 'MR_PF2', 'name': 'Metro Station 2', 'startX': 650.0, 'endX': 750.0, 'y': 150.0},
+      {'id': 'MR_PF3', 'name': 'Metro Station 3', 'startX': 1050.0, 'endX': 1150.0, 'y': 250.0},
+      {'id': 'MR_PF4', 'name': 'Metro Station 4', 'startX': 850.0, 'endX': 950.0, 'y': 300.0},
+      {'id': 'MR_PF5', 'name': 'Metro Station 5', 'startX': 450.0, 'endX': 550.0, 'y': 250.0},
+      {'id': 'MR_PF6', 'name': 'Metro Station 6', 'startX': 50.0, 'endX': 150.0, 'y': 150.0},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingTrainStops() {
+    return [
+      {'id': 'MR_TS1', 'x': 300.0, 'y': 100.0, 'active': true},
+      {'id': 'MR_TS2', 'x': 700.0, 'y': 150.0, 'active': true},
+      {'id': 'MR_TS3', 'x': 1100.0, 'y': 250.0, 'active': true},
+      {'id': 'MR_TS4', 'x': 900.0, 'y': 300.0, 'active': true},
+      {'id': 'MR_TS5', 'x': 500.0, 'y': 250.0, 'active': true},
+      {'id': 'MR_TS6', 'x': 100.0, 'y': 150.0, 'active': true},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingBufferStops() {
+    return []; // No buffer stops in a ring line
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingAxleCounters() {
+    return [
+      {'id': 'MR_AC1', 'x': 150.0, 'y': 100.0, 'blockId': 'MR100'},
+      {'id': 'MR_AC2', 'x': 500.0, 'y': 100.0, 'blockId': 'MR102'},
+      {'id': 'MR_AC3', 'x': 850.0, 'y': 175.0, 'blockId': 'MR104'},
+      {'id': 'MR_AC4', 'x': 1100.0, 'y': 275.0, 'blockId': 'MR106'},
+      {'id': 'MR_AC5', 'x': 750.0, 'y': 300.0, 'blockId': 'MR108'},
+      {'id': 'MR_AC6', 'x': 350.0, 'y': 225.0, 'blockId': 'MR110'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMetroRingTransponders() {
+    return [
+      {'id': 'MR_T1', 'x': 200.0, 'y': 100.0, 'type': 'CBTC'},
+      {'id': 'MR_T2', 'x': 600.0, 'y': 125.0, 'type': 'CBTC'},
+      {'id': 'MR_T3', 'x': 1000.0, 'y': 225.0, 'type': 'CBTC'},
+      {'id': 'MR_T4', 'x': 1000.0, 'y': 300.0, 'type': 'CBTC'},
+      {'id': 'MR_T5', 'x': 600.0, 'y': 275.0, 'type': 'CBTC'},
+      {'id': 'MR_T6', 'x': 200.0, 'y': 175.0, 'type': 'CBTC'},
+    ];
+  }
+
+  // ============================================================================
+  // MAINLINE JUNCTION WITH GOODS YARD DATA
+  // ============================================================================
+
+  static Map<String, dynamic> _mainlineJunctionData() {
+    return {
+      'blocks': _createMainlineJunctionBlocks(),
+      'signals': _createMainlineJunctionSignals(),
+      'points': _createMainlineJunctionPoints(),
+      'crossovers': _createMainlineJunctionCrossovers(),
+      'platforms': _createMainlineJunctionPlatforms(),
+      'trainStops': _createMainlineJunctionTrainStops(),
+      'bufferStops': _createMainlineJunctionBufferStops(),
+      'axleCounters': _createMainlineJunctionAxleCounters(),
+      'transponders': _createMainlineJunctionTransponders(),
+    };
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionBlocks() {
+    return [
+      // Main passenger line (y=100)
+      {'id': 'ML100', 'startX': -1000.0, 'endX': -600.0, 'y': 100.0, 'name': 'Main West Approach', 'occupied': false},
+      {'id': 'ML101', 'startX': -600.0, 'endX': -200.0, 'y': 100.0, 'name': 'Platform 1 Approach', 'occupied': false},
+      {'id': 'ML102', 'startX': -200.0, 'endX': 200.0, 'y': 100.0, 'name': 'Platform 1', 'occupied': false},
+      {'id': 'ML103', 'startX': 200.0, 'endX': 600.0, 'y': 100.0, 'name': 'Junction East', 'occupied': false},
+      {'id': 'ML104', 'startX': 600.0, 'endX': 1000.0, 'y': 100.0, 'name': 'Main East Departure', 'occupied': false},
+
+      // Secondary passenger line (y=200)
+      {'id': 'ML200', 'startX': -1000.0, 'endX': -600.0, 'y': 200.0, 'name': 'Secondary West Approach', 'occupied': false},
+      {'id': 'ML201', 'startX': -600.0, 'endX': -200.0, 'y': 200.0, 'name': 'Platform 2 Approach', 'occupied': false},
+      {'id': 'ML202', 'startX': -200.0, 'endX': 200.0, 'y': 200.0, 'name': 'Platform 2', 'occupied': false},
+      {'id': 'ML203', 'startX': 200.0, 'endX': 600.0, 'y': 200.0, 'name': 'Junction Central', 'occupied': false},
+
+      // Goods yard sidings (y=300-400)
+      {'id': 'GY300', 'startX': -400.0, 'endX': 0.0, 'y': 300.0, 'name': 'Goods Siding 1', 'occupied': false},
+      {'id': 'GY301', 'startX': -400.0, 'endX': 0.0, 'y': 350.0, 'name': 'Goods Siding 2', 'occupied': false},
+      {'id': 'GY302', 'startX': -400.0, 'endX': 0.0, 'y': 400.0, 'name': 'Goods Siding 3', 'occupied': false},
+      {'id': 'GY303', 'startX': 0.0, 'endX': 400.0, 'y': 350.0, 'name': 'Goods Main', 'occupied': false},
+
+      // Branch line (y=50)
+      {'id': 'BR100', 'startX': 600.0, 'endX': 1000.0, 'y': 50.0, 'name': 'Branch Line', 'occupied': false},
+      {'id': 'BR101', 'startX': 1000.0, 'endX': 1400.0, 'y': 50.0, 'name': 'Branch Platform', 'occupied': false},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionSignals() {
+    return [
+      // Main line signals
+      {'id': 'ML_S1', 'x': -900.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'ML_S2', 'x': -550.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'ML_S3', 'x': -150.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'ML_S4', 'x': 250.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'ML_S5', 'x': 650.0, 'y': 80.0, 'aspect': 'green'},
+
+      // Secondary line signals
+      {'id': 'ML_S6', 'x': -900.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'ML_S7', 'x': -550.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'ML_S8', 'x': -150.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'ML_S9', 'x': 250.0, 'y': 180.0, 'aspect': 'green'},
+
+      // Goods yard signals
+      {'id': 'GY_S1', 'x': -350.0, 'y': 280.0, 'aspect': 'red'},
+      {'id': 'GY_S2', 'x': -350.0, 'y': 330.0, 'aspect': 'red'},
+      {'id': 'GY_S3', 'x': -350.0, 'y': 380.0, 'aspect': 'red'},
+      {'id': 'GY_S4', 'x': 50.0, 'y': 330.0, 'aspect': 'red'},
+
+      // Branch line signals
+      {'id': 'BR_S1', 'x': 700.0, 'y': 30.0, 'aspect': 'green'},
+      {'id': 'BR_S2', 'x': 1100.0, 'y': 30.0, 'aspect': 'green'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionPoints() {
+    return [
+      {'id': 'ML_P1', 'x': -500.0, 'y': 100.0, 'position': 'normal'},
+      {'id': 'ML_P2', 'x': -300.0, 'y': 200.0, 'position': 'normal'},
+      {'id': 'ML_P3', 'x': 300.0, 'y': 100.0, 'position': 'normal'},
+      {'id': 'ML_P4', 'x': 450.0, 'y': 150.0, 'position': 'normal'},
+      {'id': 'ML_P5', 'x': 700.0, 'y': 75.0, 'position': 'normal'},
+      {'id': 'GY_P1', 'x': -350.0, 'y': 250.0, 'position': 'normal'},
+      {'id': 'GY_P2', 'x': -250.0, 'y': 300.0, 'position': 'normal'},
+      {'id': 'GY_P3', 'x': -150.0, 'y': 350.0, 'position': 'normal'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionCrossovers() {
+    return [
+      {
+        'id': 'ML_XO1',
+        'name': 'Main Crossover',
+        'pointIds': ['ML_P1', 'ML_P2'],
+        'blockId': 'ML101',
+        'type': 'doubleDiamond',
+      },
+      {
+        'id': 'ML_XO2',
+        'name': 'Junction Crossover',
+        'pointIds': ['ML_P3', 'ML_P4'],
+        'blockId': 'ML103',
+        'type': 'righthand',
+      },
+      {
+        'id': 'GY_XO1',
+        'name': 'Goods Yard Entry',
+        'pointIds': ['GY_P1', 'GY_P2', 'GY_P3'],
+        'blockId': 'GY303',
+        'type': 'singleSlip',
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionPlatforms() {
+    return [
+      {'id': 'ML_PF1', 'name': 'Main Platform 1', 'startX': -150.0, 'endX': 150.0, 'y': 100.0},
+      {'id': 'ML_PF2', 'name': 'Main Platform 2', 'startX': -150.0, 'endX': 150.0, 'y': 200.0},
+      {'id': 'BR_PF1', 'name': 'Branch Platform', 'startX': 1050.0, 'endX': 1350.0, 'y': 50.0},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionTrainStops() {
+    return [
+      {'id': 'ML_TS1', 'x': 0.0, 'y': 100.0, 'active': true},
+      {'id': 'ML_TS2', 'x': 0.0, 'y': 200.0, 'active': true},
+      {'id': 'BR_TS1', 'x': 1200.0, 'y': 50.0, 'active': true},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionBufferStops() {
+    return [
+      {'id': 'ML_BS1', 'x': -1000.0, 'y': 100.0},
+      {'id': 'ML_BS2', 'x': -1000.0, 'y': 200.0},
+      {'id': 'ML_BS3', 'x': 1000.0, 'y': 100.0},
+      {'id': 'BR_BS1', 'x': 1400.0, 'y': 50.0},
+      {'id': 'GY_BS1', 'x': -400.0, 'y': 300.0},
+      {'id': 'GY_BS2', 'x': -400.0, 'y': 350.0},
+      {'id': 'GY_BS3', 'x': -400.0, 'y': 400.0},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionAxleCounters() {
+    return [
+      {'id': 'ML_AC1', 'x': -800.0, 'y': 100.0, 'blockId': 'ML100'},
+      {'id': 'ML_AC2', 'x': -400.0, 'y': 100.0, 'blockId': 'ML101'},
+      {'id': 'ML_AC3', 'x': 0.0, 'y': 100.0, 'blockId': 'ML102'},
+      {'id': 'ML_AC4', 'x': 400.0, 'y': 100.0, 'blockId': 'ML103'},
+      {'id': 'ML_AC5', 'x': -800.0, 'y': 200.0, 'blockId': 'ML200'},
+      {'id': 'ML_AC6', 'x': -400.0, 'y': 200.0, 'blockId': 'ML201'},
+      {'id': 'ML_AC7', 'x': 0.0, 'y': 200.0, 'blockId': 'ML202'},
+      {'id': 'GY_AC1', 'x': -200.0, 'y': 350.0, 'blockId': 'GY303'},
+      {'id': 'BR_AC1', 'x': 800.0, 'y': 50.0, 'blockId': 'BR100'},
+    ];
+  }
+
+  static List<Map<String, dynamic>> _createMainlineJunctionTransponders() {
+    return [
+      {'id': 'ML_T1', 'x': -700.0, 'y': 100.0, 'type': 'CBTC'},
+      {'id': 'ML_T2', 'x': -300.0, 'y': 100.0, 'type': 'CBTC'},
+      {'id': 'ML_T3', 'x': -700.0, 'y': 200.0, 'type': 'CBTC'},
+      {'id': 'ML_T4', 'x': -300.0, 'y': 200.0, 'type': 'CBTC'},
+      {'id': 'BR_T1', 'x': 900.0, 'y': 50.0, 'type': 'CBTC'},
     ];
   }
 }

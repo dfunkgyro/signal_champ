@@ -7497,6 +7497,13 @@ class TerminalStationController extends ChangeNotifier {
           // Skip crossover blocks in this loop (already checked)
           if (block.name?.contains('crossover') ?? false) continue;
 
+          // CRITICAL FIX: Skip blocks 106/107 if train is on a crossover route
+          // Prevents teleportation when trains exit crossover detection zone (y>300)
+          // but are still geometrically within the crossover area (x=600-800)
+          if (train.isOnCrossover && (block.id == '106' || block.id == '107')) {
+            continue; // Skip these blocks - train is still on crossover
+          }
+
           if (block.containsPosition(train.x, train.y)) {
             assignedBlock = block;
             break; // Found regular block match

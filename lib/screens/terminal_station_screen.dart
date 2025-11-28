@@ -22,6 +22,7 @@ import '../widgets/mini_map_widget.dart';
 import '../services/widget_preferences_service.dart';
 import '../services/sound_service.dart';
 import '../widgets/crossover_route_table_terminal.dart';
+import '../widgets/layout_selector_dropdown.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -4255,6 +4256,38 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       }
     }
 
+    // Check crossovers (by checking their constituent points)
+    for (final crossover in controller.crossovers.values) {
+      // Get center position of crossover by averaging its points
+      final points = crossover.pointIds
+          .map((pid) => controller.points[pid])
+          .where((p) => p != null)
+          .cast<Point>()
+          .toList();
+
+      if (points.isNotEmpty) {
+        final centerX = points.map((p) => p.x).reduce((a, b) => a + b) / points.length;
+        final centerY = points.map((p) => p.y).reduce((a, b) => a + b) / points.length;
+        final distance = _calculateDistance(canvasX, canvasY, centerX, centerY);
+
+        // Use larger hit radius for crossovers (they're bigger structures)
+        if (distance < 60.0 && distance < minDistance) {
+          minDistance = distance;
+          closest = {
+            'type': 'Crossover',
+            'id': crossover.id,
+            'name': crossover.name,
+            'x': centerX,
+            'y': centerY,
+            'crossoverType': crossover.type.name,
+            'pointIds': crossover.pointIds,
+            'blockId': crossover.blockId,
+            'isActive': crossover.isActive,
+          };
+        }
+      }
+    }
+
     // Check points
     for (final point in controller.points.values) {
       final distance = _calculateDistance(canvasX, canvasY, point.x, point.y);
@@ -4263,9 +4296,11 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         closest = {
           'type': 'Point',
           'id': point.id,
+          'name': point.name,
           'x': point.x,
           'y': point.y,
           'position': point.position.name,
+          'crossoverId': point.crossoverId,
         };
       }
     }
@@ -5168,6 +5203,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                         'AB109 Occupied',
                         stats['ab109_occupied'] ? 'YES' : 'NO',
                         stats['ab109_occupied'] ? Colors.orange : Colors.green),
+                    const Divider(height: 32),
+
+                    // Layout Selector Dropdown
+                    const LayoutSelectorDropdown(),
                     const Divider(height: 32),
 
                     // Crossover Route Table

@@ -2414,9 +2414,38 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         }
         tooltipText += '\nRoutes Available: ${signal.routes.length}';
       }
+    } else if (type == 'Crossover') {
+      final crossover = controller.crossovers[id];
+      if (crossover != null) {
+        final name = hovered['name'] as String?;
+        if (name != null && name != id) {
+          tooltipText += '\nName: $name';
+        }
+        tooltipText += '\nType: ${crossover.type.name.toUpperCase()}';
+        tooltipText += '\nBlock: ${crossover.blockId}';
+        tooltipText += '\nPoints: ${crossover.pointIds.join(", ")}';
+        tooltipText += '\nActive: ${crossover.isActive ? "YES" : "NO"}';
+        tooltipText += '\nGap Angle: ${crossover.gapAngle.toStringAsFixed(1)}°';
+
+        // Show point positions
+        final pointPositions = <String>[];
+        for (final pointId in crossover.pointIds) {
+          final point = controller.points[pointId];
+          if (point != null) {
+            pointPositions.add('$pointId: ${point.position.name}');
+          }
+        }
+        if (pointPositions.isNotEmpty) {
+          tooltipText += '\n${pointPositions.join(" | ")}';
+        }
+      }
     } else if (type == 'Point') {
       final point = controller.points[id];
       if (point != null) {
+        final name = hovered['name'] as String?;
+        if (name != null && name != id) {
+          tooltipText += '\nName: $name';
+        }
         tooltipText += '\nPosition: ${point.position.name.toUpperCase()}';
         // Add WKR relay information
         final wkrStatus =
@@ -2425,6 +2454,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         tooltipText += '\nLocked: ${point.locked ? "YES" : "NO"}';
         if (point.lockedByAB) {
           tooltipText += '\nLocked by AB System';
+        }
+        // Show crossover relationship
+        if (point.crossoverId != null) {
+          tooltipText += '\nPart of Crossover: ${point.crossoverId}';
         }
       }
     } else if (type == 'Train') {

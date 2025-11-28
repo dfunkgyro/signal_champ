@@ -6038,6 +6038,215 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Load a pre-defined layout configuration
+  void loadLayoutConfiguration(dynamic layoutConfig) {
+    try {
+      // Import the configuration model if needed
+      // Stop simulation first
+      final wasRunning = isRunning;
+      if (wasRunning) {
+        pauseSimulation();
+      }
+
+      // Clear all existing data
+      trains.clear();
+      blocks.clear();
+      signals.clear();
+      points.clear();
+      platforms.clear();
+      trainStops.clear();
+      bufferStops.clear();
+      axleCounters.clear();
+      transponders.clear();
+      wifiAntennas.clear();
+      crossovers.clear();
+      commandHistory.clear();
+
+      // Get layout data
+      final data = layoutConfig.data as Map<String, dynamic>;
+
+      // Load blocks
+      final blocksData = data['blocks'] as List<Map<String, dynamic>>?;
+      if (blocksData != null) {
+        for (final blockData in blocksData) {
+          blocks[blockData['id']] = BlockSection(
+            id: blockData['id'] as String,
+            startX: (blockData['startX'] as num).toDouble(),
+            endX: (blockData['endX'] as num).toDouble(),
+            y: (blockData['y'] as num).toDouble(),
+            name: blockData['name'] as String?,
+            occupied: blockData['occupied'] as bool? ?? false,
+          );
+        }
+      }
+
+      // Load signals
+      final signalsData = data['signals'] as List<Map<String, dynamic>>?;
+      if (signalsData != null) {
+        for (final signalData in signalsData) {
+          final aspectStr = signalData['aspect'] as String? ?? 'red';
+          SignalAspect aspect = SignalAspect.red;
+          switch (aspectStr.toLowerCase()) {
+            case 'green':
+              aspect = SignalAspect.green;
+              break;
+            case 'yellow':
+              aspect = SignalAspect.yellow;
+              break;
+            case 'red':
+              aspect = SignalAspect.red;
+              break;
+          }
+
+          signals[signalData['id']] = Signal(
+            id: signalData['id'] as String,
+            x: (signalData['x'] as num).toDouble(),
+            y: (signalData['y'] as num).toDouble(),
+            aspect: aspect,
+            routeState: RouteState.clear,
+            routes: [], // Will be populated by route initialization if needed
+          );
+        }
+      }
+
+      // Load points
+      final pointsData = data['points'] as List<Map<String, dynamic>>?;
+      if (pointsData != null) {
+        for (final pointData in pointsData) {
+          final posStr = pointData['position'] as String? ?? 'normal';
+          PointPosition position = posStr.toLowerCase() == 'reversed'
+              ? PointPosition.reversed
+              : PointPosition.normal;
+
+          points[pointData['id']] = Point(
+            id: pointData['id'] as String,
+            x: (pointData['x'] as num).toDouble(),
+            y: (pointData['y'] as num).toDouble(),
+            position: position,
+          );
+        }
+      }
+
+      // Load crossovers
+      final crossoversData = data['crossovers'] as List<Map<String, dynamic>>?;
+      if (crossoversData != null) {
+        for (final crossoverData in crossoversData) {
+          final typeStr = crossoverData['type'] as String? ?? 'righthand';
+          CrossoverType type = CrossoverType.righthand;
+          switch (typeStr.toLowerCase()) {
+            case 'lefthand':
+              type = CrossoverType.lefthand;
+              break;
+            case 'righthand':
+              type = CrossoverType.righthand;
+              break;
+            case 'doublediamond':
+              type = CrossoverType.doubleDiamond;
+              break;
+            case 'singleslip':
+              type = CrossoverType.singleSlip;
+              break;
+            case 'doubleslip':
+              type = CrossoverType.doubleSlip;
+              break;
+          }
+
+          crossovers[crossoverData['id']] = Crossover(
+            id: crossoverData['id'] as String,
+            name: crossoverData['name'] as String,
+            pointIds: List<String>.from(crossoverData['pointIds'] as List),
+            blockId: crossoverData['blockId'] as String,
+            type: type,
+          );
+        }
+      }
+
+      // Load platforms
+      final platformsData = data['platforms'] as List<Map<String, dynamic>>?;
+      if (platformsData != null) {
+        for (final platformData in platformsData) {
+          platforms.add(Platform(
+            id: platformData['id'] as String,
+            name: platformData['name'] as String,
+            startX: (platformData['startX'] as num).toDouble(),
+            endX: (platformData['endX'] as num).toDouble(),
+            y: (platformData['y'] as num).toDouble(),
+          ));
+        }
+      }
+
+      // Load train stops
+      final trainStopsData = data['trainStops'] as List<Map<String, dynamic>>?;
+      if (trainStopsData != null) {
+        for (final stopData in trainStopsData) {
+          trainStops[stopData['id']] = TrainStop(
+            id: stopData['id'] as String,
+            x: (stopData['x'] as num).toDouble(),
+            y: (stopData['y'] as num).toDouble(),
+            active: stopData['active'] as bool? ?? true,
+          );
+        }
+      }
+
+      // Load buffer stops
+      final bufferStopsData = data['bufferStops'] as List<Map<String, dynamic>>?;
+      if (bufferStopsData != null) {
+        for (final bufferData in bufferStopsData) {
+          bufferStops[bufferData['id']] = BufferStop(
+            id: bufferData['id'] as String,
+            x: (bufferData['x'] as num).toDouble(),
+            y: (bufferData['y'] as num).toDouble(),
+          );
+        }
+      }
+
+      // Load axle counters
+      final axleCountersData = data['axleCounters'] as List<Map<String, dynamic>>?;
+      if (axleCountersData != null) {
+        for (final counterData in axleCountersData) {
+          axleCounters[counterData['id']] = AxleCounter(
+            id: counterData['id'] as String,
+            x: (counterData['x'] as num).toDouble(),
+            y: (counterData['y'] as num).toDouble(),
+            blockId: counterData['blockId'] as String,
+          );
+        }
+      }
+
+      // Load transponders
+      final transpondersData = data['transponders'] as List<Map<String, dynamic>>?;
+      if (transpondersData != null) {
+        for (final transponderData in transpondersData) {
+          transponders[transponderData['id']] = Transponder(
+            id: transponderData['id'] as String,
+            x: (transponderData['x'] as num).toDouble(),
+            y: (transponderData['y'] as num).toDouble(),
+            type: transponderData['type'] as String? ?? 'CBTC',
+            description: 'Transponder ${transponderData['id']}',
+          );
+        }
+      }
+
+      // Reset simulation state
+      resetSimulation();
+
+      _logEvent('✅ Layout loaded: ${layoutConfig.name}');
+      _logEvent('📊 Loaded ${blocks.length} blocks, ${signals.length} signals, ${points.length} points');
+
+      // Resume simulation if it was running
+      if (wasRunning) {
+        startSimulation();
+      }
+
+      notifyListeners();
+    } catch (e, stackTrace) {
+      _logEvent('❌ Failed to load layout: $e');
+      _logEvent('Stack trace: $stackTrace');
+      // Fall back to default layout on error
+      resetLayoutToDefault();
+    }
+  }
+
   void setSimulationSpeed(double speed) {
     simulationSpeed = speed;
     notifyListeners();

@@ -12,7 +12,7 @@ class LayoutSelectorDropdown extends StatefulWidget {
 }
 
 class _LayoutSelectorDropdownState extends State<LayoutSelectorDropdown> {
-  String _selectedLayoutId = 'classic_terminal';
+  String _selectedLayoutId = 'default_full_terminal';
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +276,14 @@ class _LayoutSelectorDropdownState extends State<LayoutSelectorDropdown> {
 
   void _loadLayout(TerminalStationController controller, String layoutId) {
     final layout = PredefinedLayouts.getAll().firstWhere((l) => l.id == layoutId);
-    controller.loadLayoutConfiguration(layout);
-    controller.logEvent('🎨 Loaded layout: ${layout.name}');
+
+    // Special handling for default full terminal layout
+    if (layoutId == 'default_full_terminal') {
+      controller.resetLayoutToDefault();
+      controller.logEvent('🎨 Reset to default full terminal layout');
+    } else {
+      controller.loadLayoutConfiguration(layout);
+      controller.logEvent('🎨 Loaded layout: ${layout.name}');
+    }
   }
 }

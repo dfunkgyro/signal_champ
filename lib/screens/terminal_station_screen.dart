@@ -5074,12 +5074,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
                             const SizedBox(height: 12),
 
-                            // AB Results
-                            const Text('AB Occupation Results:',
+                            // AB Results - ALL 10 COMPREHENSIVE ABs
+                            const Text('AB Occupation Results (All 10 ABs):',
                                 style: TextStyle(
                                     fontSize: 14, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
-                            ...['AB100', 'AB105', 'AB106', 'AB108', 'AB111']
+                            ...['AB100', 'AB101', 'AB104', 'AB105', 'AB106', 'AB107', 'AB108', 'AB109', 'AB111', 'AB112']
                                 .map((abId) {
                               final isOccupied =
                                   controller.ace.isABOccupied(abId);

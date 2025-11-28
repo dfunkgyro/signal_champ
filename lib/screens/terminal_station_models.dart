@@ -91,13 +91,15 @@ class BlockSection {
   bool containsPosition(double x, double y) {
     // Check X range first
     if (x < startX || x > endX) return false;
-    
-    // Crossover blocks (y=150 or y=250) need wider Y tolerance
+
+    // Crossover blocks (y=150 or y=200-250) need wider Y tolerance
     // because trains cross diagonally between y=100 and y=300
+    // CRITICAL FIX: Increased from 100 to 110 to prevent trains escaping
+    // at y=300 (edge case where |200-300| = 100, which was NOT < 100)
     if (name?.contains('crossover') ?? false) {
-      return (this.y - y).abs() < 100;
+      return (this.y - y).abs() <= 110;
     }
-    
+
     // Regular blocks use standard 50-unit tolerance
     return (this.y - y).abs() < 50;
   }

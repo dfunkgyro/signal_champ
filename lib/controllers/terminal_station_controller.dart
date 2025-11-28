@@ -3301,13 +3301,13 @@ class TerminalStationController extends ChangeNotifier {
         SignalRoute(
           id: 'C31_R2',
           name: 'Via Crossover (Diverging)',
-          requiredBlocksClear: ['crossover106', '109', '107'],
+          requiredBlocksClear: ['crossover106', 'crossover109', '109', '107'],
           requiredPointPositions: {
             '78A': PointPosition.reverse,
             '78B': PointPosition.reverse
           },
-          pathBlocks: ['104', 'crossover106', '109', '107'],
-          protectedBlocks: ['crossover106', '109', '107'],
+          pathBlocks: ['104', 'crossover106', 'crossover109', '109', '107'],
+          protectedBlocks: ['crossover106', 'crossover109', '109', '107'],
         ),
       ],
     );

@@ -2971,19 +2971,19 @@ class TerminalStationController extends ChangeNotifier {
       y: 200,
     );
 
-    // Middle Crossover (connects blocks 106 and 107)
-    // Both blocks span 600-800, points at 600 on both tracks
+    // Middle Crossover (connects blocks 104 and 109)
+    // Crossover spans from 78A (400,100) to 78B (800,300)
     blocks['crossover106'] = BlockSection(
       id: 'crossover106',
       name: 'Central Station Crossover Upper',
-      startX: 600,
+      startX: 400,
       endX: 800,
       y: 150,
     );
     blocks['crossover109'] = BlockSection(
       id: 'crossover109',
       name: 'Central Station Crossover Lower',
-      startX: 600,
+      startX: 400,
       endX: 800,
       y: 200,
     );
@@ -3016,9 +3016,9 @@ class TerminalStationController extends ChangeNotifier {
         id: '76B', x: -300, y: 300); // At start of block 213, lower track exit
 
     // Middle points (crossover106/109) - Standard crossover
-    // ALIGNED TO BLOCK STARTS: Block 106: 600-800, Block 107: 600-800
-    points['78A'] = Point(id: '78A', x: 600, y: 100); // At start of block 106
-    points['78B'] = Point(id: '78B', x: 600, y: 300); // At start of block 107 (was 800, causing teleportation)
+    // ALIGNED TO BLOCK STARTS: 78A at start of block 104, 78B at end of block 107
+    points['78A'] = Point(id: '78A', x: 400, y: 100); // At start of block 104 (previous block)
+    points['78B'] = Point(id: '78B', x: 800, y: 300); // At end of block 107/start of block 109
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
     // ALIGNED TO BLOCK STARTS: Block 302: 1800-2100, Block 304: 2100-2300
@@ -3292,7 +3292,7 @@ class TerminalStationController extends ChangeNotifier {
     // Upper track eastbound signals
     signals['C31'] = Signal(
       id: 'C31',
-      x: 390,
+      x: 290, // FIXED: 110 units before point 78A (at 400) for route signalling
       y: 80,
       routes: [
         SignalRoute(
@@ -3354,7 +3354,7 @@ class TerminalStationController extends ChangeNotifier {
     // Lower track westbound signals
     signals['C30'] = Signal(
       id: 'C30',
-      x: 1000,
+      x: 910, // FIXED: 110 units before point 78B (at 800) for route signalling westbound
       y: 320,
       direction: SignalDirection.west, // Westbound signal
       routes: [
@@ -3395,7 +3395,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C04'] = Signal(
       id: 'C04',
-      x: 290, // MOVED: 100 units left from 390 to avoid conflict with C31
+      x: 190, // MOVED: Further left to avoid conflict with C31 (now at 290)
       y: 80, // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
       routes: [
         SignalRoute(

@@ -953,25 +953,25 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _highlightCrossover(canvas, 'crossover_211_212', -450, 200);
 
     // ═══════════════════════════════════════════════════════════════
-    // 3. MIDDLE CROSSOVER (78A/78B both at x=600, aligned to block starts)
-    // Points: 78A (600,100), 78B (600,300)
-    // Crossover spans 600-800 with angled rendering for visual appeal
+    // 3. MIDDLE CROSSOVER (78A at x=400, 78B at x=800, aligned to block boundaries)
+    // Points: 78A (400,100), 78B (800,300)
+    // Crossover spans 400-800 with angled rendering for visual appeal
     // ═══════════════════════════════════════════════════════════════
     final midRailColor =
-        controller.isTractionOnAt(700) ? themeData.railColor : Colors.red;
+        controller.isTractionOnAt(600) ? themeData.railColor : Colors.red;
     final midOuterPaint = Paint()
       ..color = midRailColor
       ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
     final midInnerPaint = Paint()
       ..color = midRailColor
       ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
-    // Draw angled crossover from points at 600 to far end at 800
-    _drawSingleCrossover(canvas, 600, 100, 700, 200, midOuterPaint,
+    // Draw angled crossover from 78A at 400 to 78B at 800
+    _drawSingleCrossover(canvas, 400, 100, 600, 200, midOuterPaint,
         midInnerPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, 700, 200, 800, 300, midOuterPaint,
+    _drawSingleCrossover(canvas, 600, 200, 800, 300, midOuterPaint,
         midInnerPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover106', 700, 150);
-    _highlightCrossover(canvas, 'crossover109', 700, 250);
+    _highlightCrossover(canvas, 'crossover106', 600, 150);
+    _highlightCrossover(canvas, 'crossover109', 600, 250);
 
     // ═══════════════════════════════════════════════════════════════
     // 4. RIGHT SECTION - DOUBLE DIAMOND CROSSOVER (x=1800 to 2100, connects blocks 302/303 to 304/305)
@@ -1244,17 +1244,18 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  /// Draw gap for standard crossover (78A, 78B) - UPDATED: Both points now at x=600
-  /// 78A at (600,100), 78B at (600,300) - aligned to block starts
+  /// Draw gap for standard crossover (78A, 78B)
+  /// 78A at (400,100) - entry point on upper track
+  /// 78B at (800,300) - exit point on lower track (converging side)
   void _drawStandardCrossoverGap(Canvas canvas, Point point, Paint gapPaint) {
     if (point.id == '78A') {
-      // Point at start of block 106 (600,100)
+      // Point at start of block 104 (400,100)
       if (point.position == PointPosition.normal) {
-        // Normal: cover straight track continuing forward
+        // Normal: cover straight track continuing forward (centered on point)
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 25, point.y + 15, 50, 12), gapPaint);
       } else {
-        // Reverse: crossover active, train goes to lower track
+        // Reverse: crossover active, train goes to lower track (diverging)
         final path = Path()
           ..moveTo(point.x - 3, point.y - 22.5)
           ..lineTo(point.x + 50, point.y - 22.5)
@@ -1263,17 +1264,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '78B') {
-      // Point at start of block 107 (600,300) - moved from 800 to prevent teleportation
+      // Point at end of block 107/start of block 109 (800,300) - converging side
       if (point.position == PointPosition.normal) {
-        // Normal: cover straight track continuing forward
+        // Normal: cover straight track (centered on point)
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 25, point.y - 27.6, 50, 12), gapPaint);
       } else {
-        // Reverse: crossover active, train comes from upper track
+        // Reverse: crossover active, train comes from upper track (CONVERGING side like 76B)
         final path = Path()
-          ..moveTo(point.x + 3, point.y + 21)
-          ..lineTo(point.x + 50, point.y + 21)
-          ..lineTo(point.x + 50, point.y - 17.5)
+          ..moveTo(point.x - 3, point.y + 21)
+          ..lineTo(point.x - 50, point.y + 21)
+          ..lineTo(point.x - 50, point.y - 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }

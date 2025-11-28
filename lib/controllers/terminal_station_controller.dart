@@ -2884,8 +2884,9 @@ class TerminalStationController extends ChangeNotifier {
     blocks['204'] = BlockSection(id: '204', startX: -1200, endX: -1000, y: 100);
     blocks['206'] = BlockSection(id: '206', startX: -1000, endX: -800, y: 100);
     blocks['208'] = BlockSection(id: '208', startX: -800, endX: -600, y: 100);
-    blocks['210'] = BlockSection(id: '210', startX: -600, endX: -400, y: 100);
-    blocks['212'] = BlockSection(id: '212', startX: -400, endX: -200, y: 100);
+    blocks['210'] = BlockSection(id: '210', startX: -600, endX: -450, y: 100); // FIXED: Aligned with point 76A
+    blocks['210A'] = BlockSection(id: '210A', startX: -450, endX: -300, y: 100); // NEW: Straight through upper (overlaps crossover)
+    blocks['212'] = BlockSection(id: '212', startX: -300, endX: -200, y: 100); // FIXED: Aligned with point 77A
     blocks['214'] = BlockSection(id: '214', startX: -200, endX: 0, y: 100);
 
     // Lower track (y=300) - Westbound ←
@@ -2898,8 +2899,9 @@ class TerminalStationController extends ChangeNotifier {
     blocks['205'] = BlockSection(id: '205', startX: -1200, endX: -1000, y: 300);
     blocks['207'] = BlockSection(id: '207', startX: -1000, endX: -800, y: 300);
     blocks['209'] = BlockSection(id: '209', startX: -800, endX: -600, y: 300);
-    blocks['211'] = BlockSection(id: '211', startX: -600, endX: -400, y: 300);
-    blocks['213'] = BlockSection(id: '213', startX: -400, endX: -200, y: 300);
+    blocks['211'] = BlockSection(id: '211', startX: -600, endX: -450, y: 300); // FIXED: Aligned with point 77B
+    blocks['211A'] = BlockSection(id: '211A', startX: -450, endX: -300, y: 300); // NEW: Straight through lower (overlaps crossover)
+    blocks['213'] = BlockSection(id: '213', startX: -300, endX: -200, y: 300); // FIXED: Aligned with point 76B
     blocks['215'] = BlockSection(id: '215', startX: -200, endX: 0, y: 300);
 
     // ═══════════════════════════════════════════════════════════════════════

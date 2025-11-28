@@ -503,7 +503,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       'AB100': const Offset(300, 115),
       //'AB104': const Offset(600, 115),
       'AB108': const Offset(900, 115),
-      'AB106': const Offset(675, 200), // New AB106 position on crossover
+      'AB106': const Offset(500, 175), // AB106 position at crossover midpoint (400-600, y 150-200)
       'AB111': const Offset(1000, 315), // NEW: AB111 position
     };
 
@@ -630,7 +630,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
               reservation.trainId.contains('C31_R2')) {
             if (blockId == '112') continue;
             if (blockId == '106') continue;
-            if (blockId == '104' || blockId == '109' || blockId == '111') {
+            if (blockId == '102' || blockId == '107' || blockId == '109' || blockId == '111') {
               _drawBlockReservation(canvas, block, reservationColor);
             }
             if (blockId == 'crossover106' || blockId == 'crossover109') {

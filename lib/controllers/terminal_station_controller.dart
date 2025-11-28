@@ -2379,7 +2379,7 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac106'] = AxleCounter(
       id: 'ac106',
       blockId: 'crossover106',
-      x: 830,
+      x: 450,
       y: 150,
       isTwin: false,
       twinLabel: 'ac106',
@@ -2387,8 +2387,8 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac107'] = AxleCounter(
       id: 'ac107',
       blockId: 'crossover109',
-      x: 970,
-      y: 250,
+      x: 550,
+      y: 200,
       isTwin: false,
       twinLabel: 'ac107',
     );
@@ -3396,33 +3396,7 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
-    signals['C04'] = Signal(
-      id: 'C04',
-      x: 500, // FIXED: Positioned in block 104, near crossover point
-      y: 80, // FIXED: Upper track eastbound position
-      direction: SignalDirection.east, // Eastbound signal
-      routes: [
-        SignalRoute(
-          id: 'C04_R1',
-          name: 'Main Route (Straight)',
-          requiredBlocksClear: ['106', '108'],
-          requiredPointPositions: {'78A': PointPosition.normal},
-          pathBlocks: ['104', '106', '108'],
-          protectedBlocks: ['106', '108'],
-        ),
-        SignalRoute(
-          id: 'C04_R2',
-          name: 'Via Crossover (Diverging)',
-          requiredBlocksClear: ['crossover106', 'crossover109', '107'],
-          requiredPointPositions: {
-            '78A': PointPosition.reverse,
-            '78B': PointPosition.reverse
-          },
-          pathBlocks: ['104', 'crossover106', 'crossover109', '107'],
-          protectedBlocks: ['crossover106', 'crossover109', '107'],
-        ),
-      ],
-    );
+    // Signal C04 removed - no longer needed after crossover repositioning
 
     // RIGHT SECTION SIGNALS (300-315)
     // Upper track eastbound signals
@@ -3617,11 +3591,7 @@ class TerminalStationController extends ChangeNotifier {
     // REMOVED TC02 - was within 20 units of T30 (duplicate, C02 signal removed)
     trainStops['TC03'] =
         TrainStop(id: 'TC03', signalId: 'C03', x: 1190, y: 340);
-    trainStops['TC04'] = TrainStop(
-        id: 'TC04',
-        signalId: 'C04',
-        x: 220,
-        y: 340); // MOVED: Near start of block 103, matching C04 signal position
+    // trainStops['TC04'] removed - signal C04 no longer exists
 
     trainStops['TR01'] =
         TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);

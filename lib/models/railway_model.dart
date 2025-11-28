@@ -1117,10 +1117,93 @@ class RailwayModel extends ChangeNotifier {
     final isEastbound = direction == Direction.east;
     final block = blocks.firstWhere((b) => b.id == currentBlock);
 
-    // Handle crossover transitions - FIXED to follow railway physics
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CROSSOVER ROUTING LOGIC - All 3 crossover sections
     // Points only control routing at their location, not downstream
+    // ═══════════════════════════════════════════════════════════════════════════
 
-    // ✅ CORRECT: Block 104 eastbound approaching point 78A at X=600
+    // ───────────────────────────────────────────────────────────────────────────
+    // LEFT CROSSOVER (West Terminal) - Points 76A/76B/77A/77B
+    // ───────────────────────────────────────────────────────────────────────────
+
+    // Block 210 (upper) eastbound approaching point 76A at x=-450
+    if (currentBlock == '210' && isEastbound) {
+      final point76A = points.firstWhere((p) => p.id == '76A');
+      if (point76A.position == PointPosition.reverse) {
+        return 'crossover_211_212'; // Diverge to crossover (upper to lower)
+      }
+      return '210A'; // Straight through (76A normal)
+    }
+
+    // Block 211 (lower) eastbound approaching point 77B at x=-450
+    if (currentBlock == '211' && isEastbound) {
+      final point77B = points.firstWhere((p) => p.id == '77B');
+      if (point77B.position == PointPosition.reverse) {
+        return 'crossover_211_212'; // Diverge to crossover (lower to upper)
+      }
+      return '211A'; // Straight through (77B normal)
+    }
+
+    // Block 212 (upper) westbound approaching point 77A at x=-300
+    if (currentBlock == '212' && !isEastbound) {
+      final point77A = points.firstWhere((p) => p.id == '77A');
+      if (point77A.position == PointPosition.reverse) {
+        return 'crossover_211_212'; // Diverge to crossover (upper to lower)
+      }
+      return '210A'; // Straight through (77A normal)
+    }
+
+    // Block 213 (lower) westbound approaching point 76B at x=-300
+    if (currentBlock == '213' && !isEastbound) {
+      final point76B = points.firstWhere((p) => p.id == '76B');
+      if (point76B.position == PointPosition.reverse) {
+        return 'crossover_211_212'; // Diverge to crossover (lower to upper)
+      }
+      return '211A'; // Straight through (76B normal)
+    }
+
+    // Block 210A (upper straight) - continues straight path
+    if (currentBlock == '210A' && isEastbound) return '212';
+    if (currentBlock == '210A' && !isEastbound) return '210';
+
+    // Block 211A (lower straight) - continues straight path
+    if (currentBlock == '211A' && isEastbound) return '213';
+    if (currentBlock == '211A' && !isEastbound) return '211';
+
+    // Left crossover traversal - determine exit based on entry point
+    // When on crossover_211_212, check previous position to determine route
+    if (currentBlock == 'crossover_211_212' && isEastbound) {
+      // From 210 (upper) → 213 (lower), or from 211 (lower) → 212 (upper)
+      // Need to check which point triggered entry - use point positions
+      final point76A = points.firstWhere((p) => p.id == '76A');
+      final point77B = points.firstWhere((p) => p.id == '77B');
+      if (point76A.position == PointPosition.reverse) {
+        return '213'; // Upper to lower crossover
+      }
+      if (point77B.position == PointPosition.reverse) {
+        return '212'; // Lower to upper crossover
+      }
+      return '212'; // Default to upper exit
+    }
+
+    if (currentBlock == 'crossover_211_212' && !isEastbound) {
+      // From 212 (upper) → 211 (lower), or from 213 (lower) → 210 (upper)
+      final point77A = points.firstWhere((p) => p.id == '77A');
+      final point76B = points.firstWhere((p) => p.id == '76B');
+      if (point77A.position == PointPosition.reverse) {
+        return '211'; // Upper to lower crossover
+      }
+      if (point76B.position == PointPosition.reverse) {
+        return '210'; // Lower to upper crossover
+      }
+      return '210'; // Default to upper exit
+    }
+
+    // ───────────────────────────────────────────────────────────────────────────
+    // MIDDLE CROSSOVER (Central Station) - Points 78A/78B
+    // ───────────────────────────────────────────────────────────────────────────
+
+    // Block 104 (upper) eastbound approaching point 78A at x=600
     if (currentBlock == '104' && isEastbound) {
       final point78A = points.firstWhere((p) => p.id == '78A');
       if (point78A.position == PointPosition.reverse) {
@@ -1129,7 +1212,7 @@ class RailwayModel extends ChangeNotifier {
       return '106'; // Straight through (78A normal)
     }
 
-    // ✅ CORRECT: Block 109 westbound approaching point 78B at X=800
+    // Block 109 (lower) westbound approaching point 78B at x=800
     if (currentBlock == '109' && !isEastbound) {
       final point78B = points.firstWhere((p) => p.id == '78B');
       if (point78B.position == PointPosition.reverse) {
@@ -1138,7 +1221,7 @@ class RailwayModel extends ChangeNotifier {
       return '107'; // Straight through (78B normal)
     }
 
-    // Crossover traversal (committed path, no point checks needed)
+    // Middle crossover traversal (committed path)
     if (currentBlock == 'crossover106' && isEastbound) {
       return 'crossover109';
     }
@@ -1153,6 +1236,71 @@ class RailwayModel extends ChangeNotifier {
 
     if (currentBlock == 'crossover106' && !isEastbound) {
       return '104';
+    }
+
+    // ───────────────────────────────────────────────────────────────────────────
+    // RIGHT CROSSOVER (East Terminal) - Points 79A/79B/80A/80B
+    // ───────────────────────────────────────────────────────────────────────────
+
+    // Block 302 (upper) eastbound approaching point 79A at x=1900
+    if (currentBlock == '302' && isEastbound) {
+      final point79A = points.firstWhere((p) => p.id == '79A');
+      if (point79A.position == PointPosition.reverse) {
+        return 'crossover_303_304'; // Diverge to crossover (upper to lower)
+      }
+      return '304'; // Straight through (79A normal)
+    }
+
+    // Block 303 (lower) eastbound approaching point 80B at x=1900
+    if (currentBlock == '303' && isEastbound) {
+      final point80B = points.firstWhere((p) => p.id == '80B');
+      if (point80B.position == PointPosition.reverse) {
+        return 'crossover_303_304'; // Diverge to crossover (lower to upper)
+      }
+      return '305'; // Straight through (80B normal)
+    }
+
+    // Block 304 (upper) westbound approaching point 80A at x=2050
+    if (currentBlock == '304' && !isEastbound) {
+      final point80A = points.firstWhere((p) => p.id == '80A');
+      if (point80A.position == PointPosition.reverse) {
+        return 'crossover_303_304'; // Diverge to crossover (upper to lower)
+      }
+      return '302'; // Straight through (80A normal)
+    }
+
+    // Block 305 (lower) westbound approaching point 79B at x=2050
+    if (currentBlock == '305' && !isEastbound) {
+      final point79B = points.firstWhere((p) => p.id == '79B');
+      if (point79B.position == PointPosition.reverse) {
+        return 'crossover_303_304'; // Diverge to crossover (lower to upper)
+      }
+      return '303'; // Straight through (79B normal)
+    }
+
+    // Right crossover traversal - determine exit based on entry point
+    if (currentBlock == 'crossover_303_304' && isEastbound) {
+      final point79A = points.firstWhere((p) => p.id == '79A');
+      final point80B = points.firstWhere((p) => p.id == '80B');
+      if (point79A.position == PointPosition.reverse) {
+        return '305'; // Upper to lower crossover
+      }
+      if (point80B.position == PointPosition.reverse) {
+        return '304'; // Lower to upper crossover
+      }
+      return '304'; // Default to upper exit
+    }
+
+    if (currentBlock == 'crossover_303_304' && !isEastbound) {
+      final point80A = points.firstWhere((p) => p.id == '80A');
+      final point79B = points.firstWhere((p) => p.id == '79B');
+      if (point80A.position == PointPosition.reverse) {
+        return '303'; // Upper to lower crossover
+      }
+      if (point79B.position == PointPosition.reverse) {
+        return '302'; // Lower to upper crossover
+      }
+      return '302'; // Default to upper exit
     }
 
     // Default: use block topology for all other cases

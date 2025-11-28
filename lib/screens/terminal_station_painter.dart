@@ -1315,9 +1315,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
       } else {
         final path = Path()
-          ..moveTo(point.x - 80, point.y - 21)
-          ..lineTo(point.x - 43, point.y + 17.5)
-          ..lineTo(point.x - 80, point.y + 17.5)
+          ..moveTo(point.x - 40, point.y - 21)
+          ..lineTo(point.x - 3, point.y + 17.5)
+          ..lineTo(point.x - 40, point.y + 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }
@@ -1343,9 +1343,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       } else {
         // Reverse: Mirror of 79A (template from 80B)
         final path = Path()
-          ..moveTo(point.x + 20, point.y - 21)
-          ..lineTo(point.x - 17, point.y + 17.5)
-          ..lineTo(point.x + 20, point.y + 17.5)
+          ..moveTo(point.x + 40, point.y - 21)
+          ..lineTo(point.x + 3, point.y + 17.5)
+          ..lineTo(point.x + 40, point.y + 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }

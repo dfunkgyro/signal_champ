@@ -2440,7 +2440,7 @@ class TerminalStationController extends ChangeNotifier {
 
     // Right section crossover - UPDATED to match renamed crossover
     axleCounters['ac_cx303_304'] = AxleCounter(
-        id: 'ac_cx303_304', blockId: 'crossover_303_304', x: 1975, y: 200);
+        id: 'ac_cx303_304', blockId: 'crossover_303_304', x: 2075, y: 200);
 
     _logEvent(
         '🔢 Initialized ${axleCounters.length} axle counters across all sections');
@@ -2932,31 +2932,31 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
     // Upper track (y=100) - Eastbound →
     blocks['300'] = BlockSection(id: '300', startX: 1600, endX: 1800, y: 100);
-    blocks['302'] = BlockSection(id: '302', startX: 1800, endX: 2000, y: 100);
-    blocks['304'] = BlockSection(id: '304', startX: 2000, endX: 2200, y: 100);
-    blocks['306'] = BlockSection(id: '306', startX: 2200, endX: 2400, y: 100);
-    blocks['308'] = BlockSection(id: '308', startX: 2400, endX: 2600, y: 100);
-    blocks['310'] = BlockSection(id: '310', startX: 2600, endX: 2800, y: 100);
-    blocks['312'] = BlockSection(id: '312', startX: 2800, endX: 3000, y: 100);
-    blocks['314'] = BlockSection(id: '314', startX: 3000, endX: 3200, y: 100);
+    blocks['302'] = BlockSection(id: '302', startX: 1800, endX: 2100, y: 100);
+    blocks['304'] = BlockSection(id: '304', startX: 2100, endX: 2300, y: 100);
+    blocks['306'] = BlockSection(id: '306', startX: 2300, endX: 2500, y: 100);
+    blocks['308'] = BlockSection(id: '308', startX: 2500, endX: 2700, y: 100);
+    blocks['310'] = BlockSection(id: '310', startX: 2700, endX: 2900, y: 100);
+    blocks['312'] = BlockSection(id: '312', startX: 2900, endX: 3100, y: 100);
+    blocks['314'] = BlockSection(id: '314', startX: 3100, endX: 3300, y: 100);
     blocks['316'] = BlockSection(
-        id: '316', startX: 3200, endX: 3300, y: 100); // NEW: Buffer approach
+        id: '316', startX: 3300, endX: 3400, y: 100); // NEW: Buffer approach
     blocks['318'] = BlockSection(
-        id: '318', startX: 3300, endX: 3400, y: 100); // NEW: Buffer stop
+        id: '318', startX: 3400, endX: 3500, y: 100); // NEW: Buffer stop
 
     // Lower track (y=300) - Westbound ←
     blocks['301'] = BlockSection(id: '301', startX: 1600, endX: 1800, y: 300);
-    blocks['303'] = BlockSection(id: '303', startX: 1800, endX: 2000, y: 300);
-    blocks['305'] = BlockSection(id: '305', startX: 2000, endX: 2200, y: 300);
-    blocks['307'] = BlockSection(id: '307', startX: 2200, endX: 2400, y: 300);
-    blocks['309'] = BlockSection(id: '309', startX: 2400, endX: 2600, y: 300);
-    blocks['311'] = BlockSection(id: '311', startX: 2600, endX: 2800, y: 300);
-    blocks['313'] = BlockSection(id: '313', startX: 2800, endX: 3000, y: 300);
-    blocks['315'] = BlockSection(id: '315', startX: 3000, endX: 3200, y: 300);
+    blocks['303'] = BlockSection(id: '303', startX: 1800, endX: 2100, y: 300);
+    blocks['305'] = BlockSection(id: '305', startX: 2100, endX: 2300, y: 300);
+    blocks['307'] = BlockSection(id: '307', startX: 2300, endX: 2500, y: 300);
+    blocks['309'] = BlockSection(id: '309', startX: 2500, endX: 2700, y: 300);
+    blocks['311'] = BlockSection(id: '311', startX: 2700, endX: 2900, y: 300);
+    blocks['313'] = BlockSection(id: '313', startX: 2900, endX: 3100, y: 300);
+    blocks['315'] = BlockSection(id: '315', startX: 3100, endX: 3300, y: 300);
     blocks['317'] = BlockSection(
-        id: '317', startX: 3200, endX: 3300, y: 300); // NEW: Buffer approach
+        id: '317', startX: 3300, endX: 3400, y: 300); // NEW: Buffer approach
     blocks['319'] = BlockSection(
-        id: '319', startX: 3300, endX: 3400, y: 300); // NEW: Buffer stop
+        id: '319', startX: 3400, endX: 3500, y: 300); // NEW: Buffer stop
 
     // ═══════════════════════════════════════════════════════════════════════
     // CROSSOVERS - 4 total for flexible routing
@@ -2992,8 +2992,8 @@ class TerminalStationController extends ChangeNotifier {
     blocks['crossover_303_304'] = BlockSection(
       id: 'crossover_303_304',
       name: 'East Terminal Double Diamond',
-      startX: 2000,
-      endX: 2150,
+      startX: 2100,
+      endX: 2250,
       y: 200,
     );
 
@@ -3018,16 +3018,16 @@ class TerminalStationController extends ChangeNotifier {
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // CRITICAL FIX: Aligned with crossover_303_304 block coordinates (x: 2000 to 2150)
+    // CRITICAL FIX: Aligned with crossover_303_304 block coordinates (x: 2100 to 2250)
     // Creates proper 45-degree double diamond crossover geometry
     points['79A'] = Point(
-        id: '79A', x: 2000, y: 100); // FIXED: Crossover START, upper track entry
+        id: '79A', x: 2100, y: 100); // FIXED: Crossover START, upper track entry
     points['79B'] = Point(
-        id: '79B', x: 2150, y: 300); // FIXED: Crossover END, lower track exit
+        id: '79B', x: 2250, y: 300); // FIXED: Crossover END, lower track exit
     points['80A'] = Point(
-        id: '80A', x: 2150, y: 100); // FIXED: Crossover END, upper track exit
+        id: '80A', x: 2250, y: 100); // FIXED: Crossover END, upper track exit
     points['80B'] = Point(
-        id: '80B', x: 2000, y: 300); // FIXED: Crossover START, lower track entry
+        id: '80B', x: 2100, y: 300); // FIXED: Crossover START, lower track entry
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)

@@ -936,9 +936,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     const railSpacing = 12.0;
 
     // ═══════════════════════════════════════════════════════════════
-    // 2. LEFT SECTION - DOUBLE DIAMOND CROSSOVER (x=-550 to -350, connects blocks 211↔212)
-    // Two crossovers: 45° creating a proper diamond pattern (200 units for 45° angle)
-    // Points: 76A, 76B, 77A, 77B
+    // 2. LEFT SECTION - DOUBLE DIAMOND CROSSOVER (x=-600 to -300, connects blocks 210/211 to 212/213)
+    // Aligned to block starts: Points at -600 and -300 on both tracks
+    // Points: 76A (-600,100), 77B (-600,300), 77A (-300,100), 76B (-300,300)
     // ═══════════════════════════════════════════════════════════════
     final leftRailColor =
         controller.isTractionOnAt(-450) ? themeData.railColor : Colors.red;
@@ -948,12 +948,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     final leftInnerPaint = Paint()
       ..color = leftRailColor
       ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
-    _drawDoubleDiamondCrossover(canvas, -550, -350, leftOuterPaint,
+    _drawDoubleDiamondCrossover(canvas, -600, -300, leftOuterPaint,
         leftInnerPaint, sleeperPaint, railSpacing);
     _highlightCrossover(canvas, 'crossover_211_212', -450, 200);
 
     // ═══════════════════════════════════════════════════════════════
-    // 3. MIDDLE CROSSOVER (original 78A/78B at x=600-800)
+    // 3. MIDDLE CROSSOVER (78A/78B both at x=600, aligned to block starts)
+    // Points: 78A (600,100), 78B (600,300)
+    // Crossover spans 600-800 with angled rendering for visual appeal
     // ═══════════════════════════════════════════════════════════════
     final midRailColor =
         controller.isTractionOnAt(700) ? themeData.railColor : Colors.red;
@@ -963,29 +965,30 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     final midInnerPaint = Paint()
       ..color = midRailColor
       ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
+    // Draw angled crossover from points at 600 to far end at 800
     _drawSingleCrossover(canvas, 600, 100, 700, 200, midOuterPaint,
         midInnerPaint, sleeperPaint, railSpacing);
     _drawSingleCrossover(canvas, 700, 200, 800, 300, midOuterPaint,
         midInnerPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover106', 650, 150);
-    _highlightCrossover(canvas, 'crossover109', 750, 250);
+    _highlightCrossover(canvas, 'crossover106', 700, 150);
+    _highlightCrossover(canvas, 'crossover109', 700, 250);
 
     // ═══════════════════════════════════════════════════════════════
-    // 4. RIGHT SECTION - DOUBLE DIAMOND CROSSOVER (x=1900 to 2100, connects blocks 302↔305)
-    // Two crossovers: 45° creating a proper diamond pattern (200 units for 45° angle)
-    // Points: 79A, 79B, 80A, 80B
+    // 4. RIGHT SECTION - DOUBLE DIAMOND CROSSOVER (x=1800 to 2100, connects blocks 302/303 to 304/305)
+    // Aligned to block starts: Points at 1800 and 2100 on both tracks
+    // Points: 79A (1800,100), 80B (1800,300), 80A (2100,100), 79B (2100,300)
     // ═══════════════════════════════════════════════════════════════
     final rightRailColor =
-        controller.isTractionOnAt(2000) ? themeData.railColor : Colors.red;
+        controller.isTractionOnAt(1950) ? themeData.railColor : Colors.red;
     final rightOuterPaint = Paint()
       ..color = rightRailColor
       ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
     final rightInnerPaint = Paint()
       ..color = rightRailColor
       ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
-    _drawDoubleDiamondCrossover(canvas, 1900, 2100, rightOuterPaint,
+    _drawDoubleDiamondCrossover(canvas, 1800, 2100, rightOuterPaint,
         rightInnerPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover_303_304', 2000, 200);
+    _highlightCrossover(canvas, 'crossover_303_304', 1950, 200);
   }
 
   // Helper method to draw a single crossover segment with proper geometry
@@ -1241,15 +1244,17 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  /// Draw gap for standard crossover (78A, 78B) - uses simple horizontal rectangles in normal position
+  /// Draw gap for standard crossover (78A, 78B) - UPDATED: Both points now at x=600
+  /// 78A at (600,100), 78B at (600,300) - aligned to block starts
   void _drawStandardCrossoverGap(Canvas canvas, Point point, Paint gapPaint) {
     if (point.id == '78A') {
+      // Point at start of block 106 (600,100)
       if (point.position == PointPosition.normal) {
-        // Normal position: simple horizontal rectangle visual illusion
+        // Normal: cover straight track continuing forward
         canvas.drawRect(
             Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
       } else {
-        // Reverse position: crossover active, cover straight route
+        // Reverse: crossover active, train goes to lower track
         final path = Path()
           ..moveTo(point.x - 3, point.y - 22.5)
           ..lineTo(point.x + 50, point.y - 22.5)
@@ -1258,32 +1263,94 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '78B') {
+      // Point at start of block 107 (600,300) - moved from 800 to prevent teleportation
       if (point.position == PointPosition.normal) {
-        // Normal position: B-end template (-45, -27.6)
+        // Normal: cover straight track continuing forward
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
       } else {
-        // Reverse position: crossover active, cover straight route
+        // Reverse: crossover active, train comes from upper track
         final path = Path()
-          ..moveTo(point.x - 40, point.y - 21)
-          ..lineTo(point.x - 3, point.y + 17.5)
-          ..lineTo(point.x - 40, point.y + 17.5)
+          ..moveTo(point.x + 3, point.y + 21)
+          ..lineTo(point.x + 50, point.y + 21)
+          ..lineTo(point.x + 50, point.y - 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }
     }
   }
 
-  /// Draw gap for double diamond crossover points - simple horizontal rectangles for normal position
-  /// Using correct points (76A, 79A, 79B) as reference for others
+  /// Draw gap for double diamond crossover points - aligned to block starts
+  /// UPDATED: All points now at block boundaries to prevent teleportation
+  /// Normal gaps cover converging track, reverse gaps cover straight track
   void _drawDoubleDiamondGap(Canvas canvas, Point point, Paint gapPaint) {
     bool isNormal = point.position == PointPosition.normal;
 
-    // All normal positions use simple horizontal rectangles (visual illusion)
-    // Only reverse positions have complex shapes
-
-    if (point.id == '76A' || point.id == '79A') {
-      // CORRECT - These points work properly
+    // Left section double diamond (points at x=-600 and x=-300)
+    if (point.id == '76A') {
+      // Upper entry point at -600
+      if (isNormal) {
+        // Normal: cover straight track continuing forward
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
+      } else {
+        // Reverse: train takes crossover to lower track
+        final path = Path()
+          ..moveTo(point.x - 3, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y - 22.5)
+          ..lineTo(point.x + 50, point.y + 23)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '77A') {
+      // Upper exit point at -300
+      if (isNormal) {
+        // Normal: straight track from left
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 57.5, point.y + 15, 50, 12), gapPaint);
+      } else {
+        // Reverse: from crossover coming from lower track
+        final path = Path()
+          ..moveTo(point.x + 3, point.y - 22.5)
+          ..lineTo(point.x - 50, point.y - 22.5)
+          ..lineTo(point.x - 50, point.y + 23)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '77B') {
+      // Lower entry point at -600
+      if (isNormal) {
+        // Normal: straight track continuing forward
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
+      } else {
+        // Reverse: train takes crossover to upper track
+        final path = Path()
+          ..moveTo(point.x + 3, point.y + 21)
+          ..lineTo(point.x + 50, point.y + 21)
+          ..lineTo(point.x + 50, point.y - 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '76B') {
+      // Lower exit point at -300
+      if (isNormal) {
+        // Normal: straight track from left
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 57.5, point.y - 27.6, 50, 12), gapPaint);
+      } else {
+        // Reverse: from crossover coming from upper track
+        final path = Path()
+          ..moveTo(point.x - 3, point.y + 21)
+          ..lineTo(point.x - 50, point.y + 21)
+          ..lineTo(point.x - 50, point.y - 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    }
+    // Right section double diamond (points at x=1800 and x=2100)
+    else if (point.id == '79A') {
+      // Upper entry point at 1800
       if (isNormal) {
         canvas.drawRect(
             Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
@@ -1295,67 +1362,12 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ..close();
         canvas.drawPath(path, gapPaint);
       }
-    } else if (point.id == '79B') {
-      // B-end template (-45, -27.6)
-      if (isNormal) {
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
-      } else {
-        final path = Path()
-          ..moveTo(point.x - 40, point.y - 21)
-          ..lineTo(point.x - 3, point.y + 17.5)
-          ..lineTo(point.x - 40, point.y + 17.5)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (point.id == '76B') {
-      // B-end template (-45, -27.6)
-      if (isNormal) {
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
-      } else {
-        final path = Path()
-          ..moveTo(point.x - 40, point.y - 21)
-          ..lineTo(point.x - 3, point.y + 17.5)
-          ..lineTo(point.x - 40, point.y + 17.5)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (point.id == '77A') {
-      // A-end template (-7.5, +15)
-      if (isNormal) {
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
-      } else {
-        // Reverse: Mirror of 79B (template from 80A)
-        final path = Path()
-          ..moveTo(point.x + 3, point.y - 22.5)
-          ..lineTo(point.x - 50, point.y - 22.5)
-          ..lineTo(point.x - 50, point.y + 23)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
-    } else if (point.id == '77B') {
-      // B-end template (-45, -27.6)
-      if (isNormal) {
-        canvas.drawRect(
-            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
-      } else {
-        // Reverse: Mirror of 79A (template from 80B)
-        final path = Path()
-          ..moveTo(point.x + 40, point.y - 21)
-          ..lineTo(point.x + 3, point.y + 17.5)
-          ..lineTo(point.x + 40, point.y + 17.5)
-          ..close();
-        canvas.drawPath(path, gapPaint);
-      }
     } else if (point.id == '80A') {
-      // A-end template (-7.5, +15)
+      // Upper exit point at 2100
       if (isNormal) {
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 7.5, point.y + 15, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 57.5, point.y + 15, 50, 12), gapPaint);
       } else {
-        // Reverse: Mirror of 79B (flipped horizontally)
         final path = Path()
           ..moveTo(point.x + 3, point.y - 22.5)
           ..lineTo(point.x - 50, point.y - 22.5)
@@ -1364,16 +1376,28 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '80B') {
-      // B-end template (-45, -27.6)
+      // Lower entry point at 1800
       if (isNormal) {
         canvas.drawRect(
-            Rect.fromLTWH(point.x - 45, point.y - 27.6, 50, 12), gapPaint);
+            Rect.fromLTWH(point.x - 7.5, point.y - 27.6, 50, 12), gapPaint);
       } else {
-        // Reverse: Mirror of 79A (flipped horizontally)
         final path = Path()
-          ..moveTo(point.x + 40, point.y - 21)
-          ..lineTo(point.x + 3, point.y + 17.5)
-          ..lineTo(point.x + 40, point.y + 17.5)
+          ..moveTo(point.x + 3, point.y + 21)
+          ..lineTo(point.x + 50, point.y + 21)
+          ..lineTo(point.x + 50, point.y - 17.5)
+          ..close();
+        canvas.drawPath(path, gapPaint);
+      }
+    } else if (point.id == '79B') {
+      // Lower exit point at 2100
+      if (isNormal) {
+        canvas.drawRect(
+            Rect.fromLTWH(point.x - 57.5, point.y - 27.6, 50, 12), gapPaint);
+      } else {
+        final path = Path()
+          ..moveTo(point.x - 3, point.y + 21)
+          ..lineTo(point.x - 50, point.y + 21)
+          ..lineTo(point.x - 50, point.y - 17.5)
           ..close();
         canvas.drawPath(path, gapPaint);
       }

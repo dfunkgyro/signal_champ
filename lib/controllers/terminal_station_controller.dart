@@ -2959,41 +2959,42 @@ class TerminalStationController extends ChangeNotifier {
         id: '319', startX: 3400, endX: 3500, y: 300); // NEW: Buffer stop
 
     // ═══════════════════════════════════════════════════════════════════════
-    // CROSSOVERS - 4 total for flexible routing
+    // CROSSOVERS - 3 sections aligned to block starts to prevent teleportation
     // ═══════════════════════════════════════════════════════════════════════
-    // Left Section Crossover (connects blocks 211↔212) - MOVED from 206-207 area
-    // Allows train from block 209→211 (lower track) to cross to block 212 (upper track)
+    // Left Section Crossover (connects blocks 210/211 to 212/213)
+    // Spans from -600 to -300, aligned with point positions
     blocks['crossover_211_212'] = BlockSection(
       id: 'crossover_211_212',
       name: 'West Terminal Double Diamond',
-      startX: -550,
-      endX: -400,
+      startX: -600,
+      endX: -300,
       y: 200,
     );
 
-    // Middle Crossover (original 78A/78B)
+    // Middle Crossover (connects blocks 106 and 107)
+    // Both blocks span 600-800, points at 600 on both tracks
     blocks['crossover106'] = BlockSection(
       id: 'crossover106',
       name: 'Central Station Crossover Upper',
       startX: 600,
-      endX: 700,
+      endX: 800,
       y: 150,
     );
     blocks['crossover109'] = BlockSection(
       id: 'crossover109',
       name: 'Central Station Crossover Lower',
-      startX: 700,
+      startX: 600,
       endX: 800,
-      y: 200, // Changed from 250 to 200 to eliminate overlap with block 107
+      y: 200,
     );
 
-    // Right Section Crossover (connects blocks 303↔304) - MOVED from 314 area
-    // Allows train from block 301→303 (lower track) to cross to block 304 (upper track)
+    // Right Section Crossover (connects blocks 302/303 to 304/305)
+    // Spans from 1800 to 2100, aligned with point positions
     blocks['crossover_303_304'] = BlockSection(
       id: 'crossover_303_304',
       name: 'East Terminal Double Diamond',
-      startX: 2200,
-      endX: 2350,
+      startX: 1800,
+      endX: 2100,
       y: 200,
     );
 
@@ -3002,32 +3003,34 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Left section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // CRITICAL FIX: Aligned with crossover_211_212 block coordinates (x: -550 to -400)
-    // Creates proper 45-degree double diamond crossover geometry
+    // ALIGNED TO BLOCK STARTS: Points at block boundaries to prevent teleportation
+    // Block 210: -600 to -450, Block 212: -300 to -200
+    // Block 211: -600 to -450, Block 213: -300 to -200
     points['76A'] = Point(
-        id: '76A', x: -550, y: 100); // FIXED: Crossover START, upper track entry
-    points['76B'] = Point(
-        id: '76B', x: -400, y: 300); // FIXED: Crossover END, lower track exit
+        id: '76A', x: -600, y: 100); // At start of block 210, upper track entry
     points['77A'] = Point(
-        id: '77A', x: -400, y: 100); // FIXED: Crossover END, upper track exit
+        id: '77A', x: -300, y: 100); // At start of block 212, upper track exit
     points['77B'] = Point(
-        id: '77B', x: -550, y: 300); // FIXED: Crossover START, lower track entry
+        id: '77B', x: -600, y: 300); // At start of block 211, lower track entry
+    points['76B'] = Point(
+        id: '76B', x: -300, y: 300); // At start of block 213, lower track exit
 
     // Middle points (crossover106/109) - Standard crossover
-    points['78A'] = Point(id: '78A', x: 600, y: 100);
-    points['78B'] = Point(id: '78B', x: 800, y: 300);
+    // ALIGNED TO BLOCK STARTS: Block 106: 600-800, Block 107: 600-800
+    points['78A'] = Point(id: '78A', x: 600, y: 100); // At start of block 106
+    points['78B'] = Point(id: '78B', x: 600, y: 300); // At start of block 107 (was 800, causing teleportation)
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // CRITICAL FIX: Aligned with crossover_303_304 block coordinates (x: 2200 to 2350)
-    // Creates proper 45-degree double diamond crossover geometry
+    // ALIGNED TO BLOCK STARTS: Block 302: 1800-2100, Block 304: 2100-2300
+    // Block 303: 1800-2100, Block 305: 2100-2300
     points['79A'] = Point(
-        id: '79A', x: 2000, y: 100); // FIXED: Crossover START, upper track entry
-    points['79B'] = Point(
-        id: '79B', x: 2150, y: 300); // FIXED: Crossover END, lower track exit
+        id: '79A', x: 1800, y: 100); // At start of block 302, upper track entry
     points['80A'] = Point(
-        id: '80A', x: 2150, y: 100); // FIXED: Crossover END, upper track exit
+        id: '80A', x: 2100, y: 100); // At start of block 304, upper track exit
     points['80B'] = Point(
-        id: '80B', x: 2000, y: 300); // FIXED: Crossover START, lower track entry
+        id: '80B', x: 1800, y: 300); // At start of block 303, lower track entry
+    points['79B'] = Point(
+        id: '79B', x: 2100, y: 300); // At start of block 305, lower track exit
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)

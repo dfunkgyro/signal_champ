@@ -714,6 +714,13 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void updateTrainAxleCounters(Train train) {
+    // CRITICAL FIX: EXCLUSION ZONE - Don't detect trains on crossovers
+    // Prevents false axle counter detections when trains traverse crossover blocks
+    if (train.isOnCrossover) {
+      print('🚫 EXCLUSION ZONE: Train ${train.id} on crossover - skipping axle counter detection');
+      return;
+    }
+
     final nearestCounter = ace.findNearestAxleCounter(train.x, train.y);
 
     if (nearestCounter != null) {
@@ -2993,30 +3000,32 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Left section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // 45-degree crossovers with proper 200-unit span for correct geometry
-    points['76A'] =
-        Point(id: '76A', x: -550, y: 100); // Start of double diamond
+    // CRITICAL FIX: Aligned with crossover_211_212 block coordinates (x: -450 to -300)
+    // Creates proper 45-degree double diamond crossover geometry
+    points['76A'] = Point(
+        id: '76A', x: -450, y: 100); // FIXED: Crossover START, upper track entry
     points['76B'] = Point(
-        id: '76B', x: -300, y: 300); // FIXED: Moved to block 213 (was at -550)
+        id: '76B', x: -300, y: 300); // FIXED: Crossover END, lower track exit
     points['77A'] = Point(
-        id: '77A', x: -350, y: 100); // End of double diamond (200 units span)
+        id: '77A', x: -300, y: 100); // FIXED: Crossover END, upper track exit
     points['77B'] = Point(
-        id: '77B', x: -500, y: 300); // FIXED: Moved to block 211 (was at -350)
+        id: '77B', x: -450, y: 300); // FIXED: Crossover START, lower track entry
 
     // Middle points (crossover106/109) - Standard crossover
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // 45-degree crossovers with proper 200-unit span for correct geometry
-    points['79A'] =
-        Point(id: '79A', x: 1900, y: 100); // Start of double diamond
+    // CRITICAL FIX: Aligned with crossover_303_304 block coordinates (x: 1900 to 2050)
+    // Creates proper 45-degree double diamond crossover geometry
+    points['79A'] = Point(
+        id: '79A', x: 1900, y: 100); // FIXED: Crossover START, upper track entry
     points['79B'] = Point(
-        id: '79B', x: 2100, y: 300); // FIXED: Moved to block 305 (was at 1900)
+        id: '79B', x: 2050, y: 300); // FIXED: Crossover END, lower track exit
     points['80A'] = Point(
-        id: '80A', x: 2100, y: 100); // End of double diamond (200 units span)
+        id: '80A', x: 2050, y: 100); // FIXED: Crossover END, upper track exit
     points['80B'] = Point(
-        id: '80B', x: 1900, y: 300); // FIXED: Moved to block 303 (was at 2100)
+        id: '80B', x: 1900, y: 300); // FIXED: Crossover START, lower track entry
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)
@@ -7239,23 +7248,32 @@ class TerminalStationController extends ChangeNotifier {
     });
 
     for (var train in trains) {
-      // FIXED: Prioritize crossover blocks over regular blocks
-      // Check crossover blocks first
+      // CRITICAL FIX: Check CROSSOVER blocks FIRST in separate loop - guarantees priority
       BlockSection? assignedBlock;
-      
+
+      // LOOP 1: Check ONLY crossover blocks first (absolute priority)
       for (var block in blocks.values) {
-        if (block.containsPosition(train.x, train.y)) {
-          // Prioritize crossover blocks (they have 'crossover' in their name)
-          if (block.name?.contains('crossover') ?? false) {
+        if (block.name?.contains('crossover') ?? false) {
+          if (block.containsPosition(train.x, train.y)) {
             assignedBlock = block;
-            break; // Stop searching, crossover takes priority
-          } else if (assignedBlock == null) {
-            // Only assign to regular block if no crossover found yet
-            assignedBlock = block;
+            break; // Found crossover match - stop immediately
           }
         }
       }
-      
+
+      // LOOP 2: Only check regular blocks if NO crossover was found
+      if (assignedBlock == null) {
+        for (var block in blocks.values) {
+          // Skip crossover blocks in this loop (already checked)
+          if (block.name?.contains('crossover') ?? false) continue;
+
+          if (block.containsPosition(train.x, train.y)) {
+            assignedBlock = block;
+            break; // Found regular block match
+          }
+        }
+      }
+
       // Assign train to the selected block
       if (assignedBlock != null) {
         assignedBlock.occupied = true;
@@ -7271,32 +7289,146 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
-  /// Update crossover tracking for UI visualization
+  /// Update crossover tracking for UI visualization - ALL CROSSOVERS, ALL DIRECTIONS
   void _updateCrossoverTracking(Train train, String? fromBlock, String toBlock) {
     if (fromBlock == null) return;
 
     final isEastbound = train.direction > 0;
 
-    // Entering crossover from block 104 eastbound
-    if (fromBlock == '104' && toBlock == 'crossover106' && isEastbound) {
-      train.currentCrossoverRoute = '104→crossover106→crossover109→109';
+    // ═══════════════════════════════════════════════════════════════════════
+    // LEFT CROSSOVER (crossover_211_212) - West Terminal Double Diamond
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // EASTBOUND - Entering from upper track (210)
+    if (fromBlock == '210' && toBlock == 'crossover_211_212' && isEastbound) {
+      train.currentCrossoverRoute = '210→crossover_211_212→212';
       train.isOnCrossover = true;
     }
-
-    // Entering crossover from block 109 westbound
-    if (fromBlock == '109' && toBlock == 'crossover109' && !isEastbound) {
-      train.currentCrossoverRoute = '109→crossover109→crossover106→104';
+    // EASTBOUND - Entering from lower track (211)
+    if (fromBlock == '211' && toBlock == 'crossover_211_212' && isEastbound) {
+      train.currentCrossoverRoute = '211→crossover_211_212→213';
       train.isOnCrossover = true;
     }
-
-    // Exiting crossover to block 109 (eastbound complete)
-    if (fromBlock == 'crossover109' && toBlock == '109' && isEastbound) {
+    // EASTBOUND - Exiting to upper track (212)
+    if (fromBlock == 'crossover_211_212' && toBlock == '212' && isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+    // EASTBOUND - Exiting to lower track (213)
+    if (fromBlock == 'crossover_211_212' && toBlock == '213' && isEastbound) {
       train.isOnCrossover = false;
       train.currentCrossoverRoute = null;
     }
 
-    // Exiting crossover to block 104 (westbound complete)
+    // WESTBOUND - Entering from upper track (212)
+    if (fromBlock == '212' && toBlock == 'crossover_211_212' && !isEastbound) {
+      train.currentCrossoverRoute = '212→crossover_211_212→210';
+      train.isOnCrossover = true;
+    }
+    // WESTBOUND - Entering from lower track (213)
+    if (fromBlock == '213' && toBlock == 'crossover_211_212' && !isEastbound) {
+      train.currentCrossoverRoute = '213→crossover_211_212→211';
+      train.isOnCrossover = true;
+    }
+    // WESTBOUND - Exiting to upper track (210)
+    if (fromBlock == 'crossover_211_212' && toBlock == '210' && !isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+    // WESTBOUND - Exiting to lower track (211)
+    if (fromBlock == 'crossover_211_212' && toBlock == '211' && !isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // CENTER CROSSOVER (crossover106/crossover109) - Central Station
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // EASTBOUND - Entering from upper track (104)
+    if (fromBlock == '104' && toBlock == 'crossover106' && isEastbound) {
+      train.currentCrossoverRoute = '104→crossover106→crossover109→109';
+      train.isOnCrossover = true;
+    }
+    // EASTBOUND - Entering from lower track (109)
+    if (fromBlock == '109' && toBlock == 'crossover109' && isEastbound) {
+      train.currentCrossoverRoute = '109→crossover109→crossover106→108';
+      train.isOnCrossover = true;
+    }
+    // EASTBOUND - Exiting to lower track (109)
+    if (fromBlock == 'crossover109' && toBlock == '109' && isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+    // EASTBOUND - Exiting to upper track (108)
+    if (fromBlock == 'crossover106' && toBlock == '108' && isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+
+    // WESTBOUND - Entering from lower track (109)
+    if (fromBlock == '109' && toBlock == 'crossover109' && !isEastbound) {
+      train.currentCrossoverRoute = '109→crossover109→crossover106→104';
+      train.isOnCrossover = true;
+    }
+    // WESTBOUND - Entering from upper track (106)
+    if (fromBlock == '106' && toBlock == 'crossover106' && !isEastbound) {
+      train.currentCrossoverRoute = '106→crossover106→crossover109→107';
+      train.isOnCrossover = true;
+    }
+    // WESTBOUND - Exiting to upper track (104)
     if (fromBlock == 'crossover106' && toBlock == '104' && !isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+    // WESTBOUND - Exiting to lower track (107)
+    if (fromBlock == 'crossover109' && toBlock == '107' && !isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // RIGHT CROSSOVER (crossover_303_304) - East Terminal Double Diamond
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // EASTBOUND - Entering from upper track (302)
+    if (fromBlock == '302' && toBlock == 'crossover_303_304' && isEastbound) {
+      train.currentCrossoverRoute = '302→crossover_303_304→304';
+      train.isOnCrossover = true;
+    }
+    // EASTBOUND - Entering from lower track (303)
+    if (fromBlock == '303' && toBlock == 'crossover_303_304' && isEastbound) {
+      train.currentCrossoverRoute = '303→crossover_303_304→305';
+      train.isOnCrossover = true;
+    }
+    // EASTBOUND - Exiting to upper track (304)
+    if (fromBlock == 'crossover_303_304' && toBlock == '304' && isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+    // EASTBOUND - Exiting to lower track (305)
+    if (fromBlock == 'crossover_303_304' && toBlock == '305' && isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+
+    // WESTBOUND - Entering from upper track (304)
+    if (fromBlock == '304' && toBlock == 'crossover_303_304' && !isEastbound) {
+      train.currentCrossoverRoute = '304→crossover_303_304→302';
+      train.isOnCrossover = true;
+    }
+    // WESTBOUND - Entering from lower track (305)
+    if (fromBlock == '305' && toBlock == 'crossover_303_304' && !isEastbound) {
+      train.currentCrossoverRoute = '305→crossover_303_304→303';
+      train.isOnCrossover = true;
+    }
+    // WESTBOUND - Exiting to upper track (302)
+    if (fromBlock == 'crossover_303_304' && toBlock == '302' && !isEastbound) {
+      train.isOnCrossover = false;
+      train.currentCrossoverRoute = null;
+    }
+    // WESTBOUND - Exiting to lower track (303)
+    if (fromBlock == 'crossover_303_304' && toBlock == '303' && !isEastbound) {
       train.isOnCrossover = false;
       train.currentCrossoverRoute = null;
     }

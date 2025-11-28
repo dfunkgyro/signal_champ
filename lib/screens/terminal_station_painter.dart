@@ -752,9 +752,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             math.min((currentDistance + dashLength) / totalDistance, 1.0);
 
         if (drawDash) {
-          final x1 = 600 + (100 * t1) + offsetX;
+          final x1 = 400 + (100 * t1) + offsetX;
           final y1 = 100 + (100 * t1) + offsetY;
-          final x2 = 600 + (100 * t2) + offsetX;
+          final x2 = 400 + (100 * t2) + offsetX;
           final y2 = 100 + (100 * t2) + offsetY;
 
           // Draw glow, main line, and pulse
@@ -782,9 +782,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
             math.min((currentDistance + dashLength) / totalDistance, 1.0);
 
         if (drawDash) {
-          final x1 = 700 + (100 * t1) + offsetX;
+          final x1 = 500 + (100 * t1) + offsetX;
           final y1 = 200 + (100 * t1) + offsetY;
-          final x2 = 700 + (100 * t2) + offsetX;
+          final x2 = 500 + (100 * t2) + offsetX;
           final y2 = 200 + (100 * t2) + offsetY;
 
           // Draw glow, main line, and pulse
@@ -953,25 +953,25 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _highlightCrossover(canvas, 'crossover_211_212', -450, 200);
 
     // ═══════════════════════════════════════════════════════════════
-    // 3. MIDDLE CROSSOVER (78A at x=600, 78B at x=1000, aligned to block boundaries)
-    // Points: 78A (600,100), 78B (1000,300)
-    // Crossover spans 600-1000 with angled rendering for visual appeal
+    // 3. MIDDLE CROSSOVER (78A at x=400, 78B at x=600, aligned to block boundaries)
+    // Points: 78A (400,100), 78B (600,300)
+    // Crossover spans 400-600 with angled rendering for visual appeal
     // ═══════════════════════════════════════════════════════════════
     final midRailColor =
-        controller.isTractionOnAt(800) ? themeData.railColor : Colors.red;
+        controller.isTractionOnAt(500) ? themeData.railColor : Colors.red;
     final midOuterPaint = Paint()
       ..color = midRailColor
       ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
     final midInnerPaint = Paint()
       ..color = midRailColor
       ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
-    // Draw angled crossover from 78A at 600 to 78B at 1000
-    _drawSingleCrossover(canvas, 600, 100, 800, 200, midOuterPaint,
+    // Draw angled crossover from 78A at 400 to 78B at 600
+    _drawSingleCrossover(canvas, 400, 100, 500, 200, midOuterPaint,
         midInnerPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, 800, 200, 1000, 300, midOuterPaint,
+    _drawSingleCrossover(canvas, 500, 200, 600, 300, midOuterPaint,
         midInnerPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover106', 800, 150);
-    _highlightCrossover(canvas, 'crossover109', 800, 250);
+    _highlightCrossover(canvas, 'crossover106', 500, 150);
+    _highlightCrossover(canvas, 'crossover109', 500, 250);
 
     // ═══════════════════════════════════════════════════════════════
     // 4. RIGHT SECTION - DOUBLE DIAMOND CROSSOVER (x=1800 to 2100, connects blocks 302/303 to 304/305)

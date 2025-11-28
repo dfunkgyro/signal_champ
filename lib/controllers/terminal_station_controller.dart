@@ -2369,7 +2369,7 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac101'] =
         AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
     axleCounters['ac105'] =
-        AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 350); // Moved from y=320 to y=350 to avoid crossover false detections
+        AxleCounter(id: 'ac105', blockId: '105', x: 500, y: 350); // MOVED: Updated x to 500 (middle of block 105) due to crossover repositioning
     axleCounters['ac109'] =
         AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
     axleCounters['ac111'] =
@@ -3395,16 +3395,16 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C04'] = Signal(
       id: 'C04',
-      x: 190, // MOVED: Further left to avoid conflict with C31 (now at 290)
-      y: 80, // FIXED: Changed to 80 to face correct direction (eastbound on upper track)
+      x: 410, // MOVED: Between blocks 103 and 105 on lower track
+      y: 280, // MOVED: Lower track eastbound position
       routes: [
         SignalRoute(
           id: 'C04_R1',
-          name: 'To West',
-          requiredBlocksClear: ['101', '215'],
+          name: 'To East',
+          requiredBlocksClear: ['105', '107'],
           requiredPointPositions: {},
-          pathBlocks: ['101', '215'],
-          protectedBlocks: ['101', '215'],
+          pathBlocks: ['105', '107'],
+          protectedBlocks: ['105', '107'],
         ),
       ],
     );
@@ -3605,8 +3605,8 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['TC04'] = TrainStop(
         id: 'TC04',
         signalId: 'C04',
-        x: 290,
-        y: 120); // MOVED: Match C04 signal position
+        x: 510,
+        y: 320); // MOVED: Match C04 signal position on lower track
 
     trainStops['TR01'] =
         TrainStop(id: 'TR01', signalId: 'R01', x: 1790, y: 120);
@@ -3661,7 +3661,7 @@ class TerminalStationController extends ChangeNotifier {
     wifiAntennas['W_C2'] =
         WifiAntenna(id: 'W_C2', x: 400, y: 200, isActive: true);
     wifiAntennas['W_C3'] =
-        WifiAntenna(id: 'W_C3', x: 800, y: 200, isActive: true);
+        WifiAntenna(id: 'W_C3', x: 600, y: 200, isActive: true); // MOVED: Repositioned to cover new crossover location
     wifiAntennas['W_C4'] =
         WifiAntenna(id: 'W_C4', x: 1000, y: 200, isActive: true);
     wifiAntennas['W_C5'] =
@@ -3779,31 +3779,31 @@ class TerminalStationController extends ChangeNotifier {
         y: 300,
         description: 'T1 - West Crossover Tag');
 
-    // Middle crossover (600 to 800)
+    // Middle crossover (400 to 600)
     transponders['T1_XO_MID_1'] = Transponder(
         id: 'T1_XO_MID_1',
         type: TransponderType.t1,
-        x: 600,
+        x: 400,
         y: 100,
-        description: 'T1 - Middle Crossover Tag');
+        description: 'T1 - Middle Crossover Tag (Entry Upper)');
     transponders['T1_XO_MID_2'] = Transponder(
         id: 'T1_XO_MID_2',
         type: TransponderType.t1,
-        x: 600,
-        y: 300,
-        description: 'T1 - Middle Crossover Tag');
+        x: 500,
+        y: 200,
+        description: 'T1 - Middle Crossover Tag (Midpoint)');
     transponders['T1_XO_MID_3'] = Transponder(
         id: 'T1_XO_MID_3',
         type: TransponderType.t1,
-        x: 800,
-        y: 100,
-        description: 'T1 - Middle Crossover Tag');
+        x: 500,
+        y: 200,
+        description: 'T1 - Middle Crossover Tag (Midpoint)');
     transponders['T1_XO_MID_4'] = Transponder(
         id: 'T1_XO_MID_4',
         type: TransponderType.t1,
-        x: 800,
+        x: 600,
         y: 300,
-        description: 'T1 - Middle Crossover Tag');
+        description: 'T1 - Middle Crossover Tag (Exit Lower)');
 
     // East crossover (1900 to 2000)
     transponders['T1_XO_EAST_1'] = Transponder(
@@ -7504,7 +7504,7 @@ class TerminalStationController extends ChangeNotifier {
 
           // CRITICAL FIX: Skip blocks 106/107 if train is on a crossover route
           // Prevents teleportation when trains exit crossover detection zone (y>300)
-          // but are still geometrically within the crossover area (x=600-800)
+          // but are still geometrically within the crossover area (x=400-600)
           if (train.isOnCrossover && (block.id == '106' || block.id == '107')) {
             continue; // Skip these blocks - train is still on crossover
           }

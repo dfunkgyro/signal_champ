@@ -143,7 +143,9 @@ class _CrossoverRouteTableState extends State<CrossoverRouteTable> {
   String _formatRoute(String route) {
     // Replace block IDs with "Track" labels
     return route
+        .replaceAll('102', 'Track 102 (Block 102)')
         .replaceAll('104', 'Track 104')
+        .replaceAll('107', 'Track 107 (Block 107)')
         .replaceAll('109', 'Track 109')
         .replaceAll('208', 'Track 208')
         .replaceAll('210', 'Track 210')
@@ -182,30 +184,30 @@ class _CrossoverRouteTableState extends State<CrossoverRouteTable> {
 
       // Middle section crossovers (78A/78B)
       {
-        'route': '104→crossover106→crossover109→109',
-        'description': 'Eastbound (Upper Track → Lower Track via 78A/78B reversed)',
+        'route': '102→crossover106→crossover109→107',
+        'description': 'Eastbound (Upper Track to Lower Track via 78A/78B reverse)',
       },
       {
-        'route': '109→crossover109→crossover106→104',
-        'description': 'Westbound (Lower Track → Upper Track via 78B/78A reversed)',
+        'route': '107→crossover109→crossover106→102',
+        'description': 'Westbound (Lower Track to Upper Track via 78A/78B reverse)',
       },
 
-      // Right section crossovers (79A/79B, 80A/80B)
+      // Right section crossovers - DOUBLE DIAMOND CROSSOVER (79A/79B, 80A/80B)
       {
         'route': '300→crossover_303_304→301',
-        'description': 'Eastbound (Upper Track → Lower Track via 79A/79B reversed)',
+        'description': 'Diamond Eastbound Route 1 (Upper → Lower via 79A/79B)',
       },
       {
         'route': '302→crossover_303_304→303',
-        'description': 'Eastbound (Upper Track → Lower Track via 80A/80B reversed)',
+        'description': 'Diamond Eastbound Route 2 (Upper → Lower via 80A/80B)',
       },
       {
         'route': '301→crossover_303_304→300',
-        'description': 'Westbound (Lower Track → Upper Track via 79B/79A reversed)',
+        'description': 'Diamond Westbound Route 1 (Lower → Upper via 79B/79A)',
       },
       {
         'route': '303→crossover_303_304→302',
-        'description': 'Westbound (Lower Track → Upper Track via 80B/80A reversed)',
+        'description': 'Diamond Westbound Route 2 (Lower → Upper via 80B/80A)',
       },
     ];
   }

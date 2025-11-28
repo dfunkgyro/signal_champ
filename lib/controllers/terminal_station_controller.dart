@@ -156,22 +156,46 @@ class AxleCounterEvaluator {
     final ac109 = axleCounters['ac109']?.count ?? 0;
     final ac111 = axleCounters['ac111']?.count ?? 0;
 
-    // Update AB sections with bidirectional handling
-    abResults['AB100'] = _calculateBidirectionalSection('AB100', ac100, ac104);
-    abResults['AB100'] = _calculateBidirectionalSection('AB100', ac104, ac100);
-    abResults['AB105'] = _calculateBidirectionalSection('AB105', ac105, ac101);
-    abResults['AB105'] = _calculateBidirectionalSection('AB105', ac101, ac105);
+    // Update AB sections with bidirectional handling - COMPREHENSIVE MAPPING
+    // AB100: Upper track start to crossover106 (ac100 ↔ ac106)
+    abResults['AB100'] = _calculateBidirectionalSection('AB100', ac100, ac106);
+    abResults['AB100'] = _calculateBidirectionalSection('AB100', ac106, ac100);
+
+    // AB101: Lower track start to middle (ac101 ↔ ac105)
+    abResults['AB101'] = _calculateBidirectionalSection('AB101', ac101, ac105);
+    abResults['AB101'] = _calculateBidirectionalSection('AB101', ac105, ac101);
+
+    // AB104: Crossover106 to track 104 (ac106 ↔ ac104)
+    abResults['AB104'] = _calculateBidirectionalSection('AB104', ac106, ac104);
+    abResults['AB104'] = _calculateBidirectionalSection('AB104', ac104, ac106);
+
+    // AB105: Track 105 to crossover106 (ac105 ↔ ac106)
+    abResults['AB105'] = _calculateBidirectionalSection('AB105', ac105, ac106);
+    abResults['AB105'] = _calculateBidirectionalSection('AB105', ac106, ac105);
+
+    // AB106: Crossover path (crossover106 ↔ crossover109)
     abResults['AB106'] = _calculateBidirectionalSection('AB106', ac106, ac107);
     abResults['AB106'] = _calculateBidirectionalSection('AB106', ac107, ac106);
-    abResults['AB108'] = _calculateBidirectionalSection('AB108', ac108, ac112);
-    abResults['AB108'] = _calculateBidirectionalSection('AB108', ac112, ac108);
 
-    // FIXED: AB111 uses BOTH ac109 and ac111 counters for proper occupancy detection
+    // AB107: Track 104 to crossover109 (ac104 ↔ ac107)
+    abResults['AB107'] = _calculateBidirectionalSection('AB107', ac104, ac107);
+    abResults['AB107'] = _calculateBidirectionalSection('AB107', ac107, ac104);
+
+    // AB108: Crossover109 exit to track 108 (ac107 ↔ ac108)
+    abResults['AB108'] = _calculateBidirectionalSection('AB108', ac107, ac108);
+    abResults['AB108'] = _calculateBidirectionalSection('AB108', ac108, ac107);
+
+    // AB109: Crossover109 to track 109 (ac107 ↔ ac109)
+    abResults['AB109'] = _calculateBidirectionalSection('AB109', ac107, ac109);
+    abResults['AB109'] = _calculateBidirectionalSection('AB109', ac109, ac107);
+
+    // AB111: Track 109 to track 111 (ac109 ↔ ac111)
     abResults['AB111'] = _calculateBidirectionalSection('AB111', ac109, ac111);
+    abResults['AB111'] = _calculateBidirectionalSection('AB111', ac111, ac109);
 
-    // Remove AB104 and AB109 from results
-    abResults.remove('AB104');
-    abResults.remove('AB109');
+    // AB112: Track 108 to eastern boundary (ac108 ↔ ac112)
+    abResults['AB112'] = _calculateBidirectionalSection('AB112', ac108, ac112);
+    abResults['AB112'] = _calculateBidirectionalSection('AB112', ac112, ac108);
 
     print(
         '🔢 ACE Results: ${abResults.entries.map((e) => '${e.key}=${e.value}').join(', ')}');
@@ -282,28 +306,48 @@ class AxleCounterEvaluator {
     return nearestCounter;
   }
 
-  // Reset counters when imbalance exceeds maximum
+  // Reset counters when imbalance exceeds maximum - ALL 10 ABs
   void _resetCountersForSection(String sectionId) {
     switch (sectionId) {
       case 'AB100':
         axleCounters['ac100']?.count = 0;
+        axleCounters['ac106']?.count = 0;
+        break;
+      case 'AB101':
+        axleCounters['ac101']?.count = 0;
+        axleCounters['ac105']?.count = 0;
+        break;
+      case 'AB104':
+        axleCounters['ac106']?.count = 0;
         axleCounters['ac104']?.count = 0;
         break;
       case 'AB105':
-        axleCounters['ac101']?.count = 0;
         axleCounters['ac105']?.count = 0;
+        axleCounters['ac106']?.count = 0;
         break;
       case 'AB106':
         axleCounters['ac106']?.count = 0;
         axleCounters['ac107']?.count = 0;
         break;
+      case 'AB107':
+        axleCounters['ac104']?.count = 0;
+        axleCounters['ac107']?.count = 0;
+        break;
       case 'AB108':
+        axleCounters['ac107']?.count = 0;
         axleCounters['ac108']?.count = 0;
-        axleCounters['ac112']?.count = 0;
+        break;
+      case 'AB109':
+        axleCounters['ac107']?.count = 0;
+        axleCounters['ac109']?.count = 0;
         break;
       case 'AB111':
         axleCounters['ac109']?.count = 0;
         axleCounters['ac111']?.count = 0;
+        break;
+      case 'AB112':
+        axleCounters['ac108']?.count = 0;
+        axleCounters['ac112']?.count = 0;
         break;
     }
   }
@@ -2376,18 +2420,20 @@ class TerminalStationController extends ChangeNotifier {
         AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
 
     // Middle section crossovers
+    // UPDATED: ac106 positioned halfway along crossover106 (y=150), 3 units left of running rails (x=447)
     axleCounters['ac106'] = AxleCounter(
       id: 'ac106',
       blockId: 'crossover106',
-      x: 450,
+      x: 447,
       y: 150,
       isTwin: false,
       twinLabel: 'ac106',
     );
+    // UPDATED: ac107 positioned halfway along crossover109 (y=200), 3 units right of running rails (x=553)
     axleCounters['ac107'] = AxleCounter(
       id: 'ac107',
       blockId: 'crossover109',
-      x: 550,
+      x: 553,
       y: 200,
       isTwin: false,
       twinLabel: 'ac107',

@@ -2379,7 +2379,7 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac106'] = AxleCounter(
       id: 'ac106',
       blockId: 'crossover106',
-      x: 630,
+      x: 830,
       y: 150,
       isTwin: false,
       twinLabel: 'ac106',
@@ -2387,7 +2387,7 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac107'] = AxleCounter(
       id: 'ac107',
       blockId: 'crossover109',
-      x: 770,
+      x: 970,
       y: 250,
       isTwin: false,
       twinLabel: 'ac107',
@@ -2971,20 +2971,20 @@ class TerminalStationController extends ChangeNotifier {
       y: 200,
     );
 
-    // Middle Crossover (connects blocks 104 and 109)
-    // Crossover spans from 78A (400,100) to 78B (800,300)
+    // Middle Crossover (connects blocks 106 and 109)
+    // Crossover spans from 78A (600,100) to 78B (1000,300)
     blocks['crossover106'] = BlockSection(
       id: 'crossover106',
       name: 'Central Station Crossover Upper',
-      startX: 400,
-      endX: 800,
+      startX: 600,
+      endX: 1000,
       y: 150,
     );
     blocks['crossover109'] = BlockSection(
       id: 'crossover109',
       name: 'Central Station Crossover Lower',
-      startX: 400,
-      endX: 800,
+      startX: 600,
+      endX: 1000,
       y: 200,
     );
 
@@ -3016,9 +3016,9 @@ class TerminalStationController extends ChangeNotifier {
         id: '76B', x: -300, y: 300); // At start of block 213, lower track exit
 
     // Middle points (crossover106/109) - Standard crossover
-    // ALIGNED TO BLOCK STARTS: 78A at start of block 104, 78B at end of block 107
-    points['78A'] = Point(id: '78A', x: 400, y: 100); // At start of block 104 (previous block)
-    points['78B'] = Point(id: '78B', x: 800, y: 300); // At end of block 107/start of block 109
+    // ALIGNED TO BLOCK STARTS: 78A at start of block 106, 78B at end of block 108
+    points['78A'] = Point(id: '78A', x: 600, y: 100); // At start of block 106
+    points['78B'] = Point(id: '78B', x: 1000, y: 300); // At end of block 108/start of block 109
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
     // ALIGNED TO BLOCK STARTS: Block 302: 1800-2100, Block 304: 2100-2300

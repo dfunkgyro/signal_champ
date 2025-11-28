@@ -615,13 +615,8 @@ class PredefinedLayouts {
   }
 
   static List<Map<String, dynamic>> _createShuttlePoints() {
-    // ALIGNED TO BLOCK STARTS: Points positioned at block boundaries to prevent teleportation
-    // Blocks: SH100 (-800 to -400), SH101 (-400 to 0), SH102 (0 to 400), SH103 (400 to 800), SH104 (800 to 1200)
-    return [
-      {'id': 'SH_P1', 'x': -400.0, 'y': 150.0, 'position': 'normal'}, // At start of SH101
-      {'id': 'SH_P2', 'x': 0.0, 'y': 150.0, 'position': 'normal'}, // At start of SH102
-      {'id': 'SH_P3', 'x': 400.0, 'y': 150.0, 'position': 'normal'}, // At start of SH103
-    ];
+    // No points in shuttle layout - simple straight track only
+    return [];
   }
 
   static List<Map<String, dynamic>> _createShuttleCrossovers() {
@@ -683,92 +678,135 @@ class PredefinedLayouts {
   }
 
   static List<Map<String, dynamic>> _createMetroRingBlocks() {
-    // Circular ring layout with 6 stations
+    // Octagonal ring layout using straight blocks at 45-degree angles
+    // Forms a complete closed loop with 4 angled blocks, straight sections, platforms, and 4 more angled blocks
     return [
-      // Clockwise outer ring (y varies in circle pattern)
-      {'id': 'MR100', 'startX': 0.0, 'endX': 200.0, 'y': 100.0, 'name': 'Station 1 Approach', 'occupied': false},
-      {'id': 'MR101', 'startX': 200.0, 'endX': 400.0, 'y': 100.0, 'name': 'Station 1', 'occupied': false},
-      {'id': 'MR102', 'startX': 400.0, 'endX': 600.0, 'y': 100.0, 'name': 'Station 2 Approach', 'occupied': false},
-      {'id': 'MR103', 'startX': 600.0, 'endX': 800.0, 'y': 150.0, 'name': 'Station 2', 'occupied': false},
-      {'id': 'MR104', 'startX': 800.0, 'endX': 1000.0, 'y': 200.0, 'name': 'Station 3 Approach', 'occupied': false},
-      {'id': 'MR105', 'startX': 1000.0, 'endX': 1200.0, 'y': 250.0, 'name': 'Station 3', 'occupied': false},
-      {'id': 'MR106', 'startX': 1200.0, 'endX': 1000.0, 'y': 300.0, 'name': 'Station 4 Approach', 'occupied': false},
-      {'id': 'MR107', 'startX': 1000.0, 'endX': 800.0, 'y': 300.0, 'name': 'Station 4', 'occupied': false},
-      {'id': 'MR108', 'startX': 800.0, 'endX': 600.0, 'y': 300.0, 'name': 'Station 5 Approach', 'occupied': false},
-      {'id': 'MR109', 'startX': 600.0, 'endX': 400.0, 'y': 250.0, 'name': 'Station 5', 'occupied': false},
-      {'id': 'MR110', 'startX': 400.0, 'endX': 200.0, 'y': 200.0, 'name': 'Station 6 Approach', 'occupied': false},
-      {'id': 'MR111', 'startX': 200.0, 'endX': 0.0, 'y': 150.0, 'name': 'Station 6', 'occupied': false},
+      // Starting section - straight blocks (bottom)
+      {'id': 'MR100', 'startX': 0.0, 'endX': 200.0, 'y': 300.0, 'name': 'South Entry', 'occupied': false},
+      {'id': 'MR101', 'startX': 200.0, 'endX': 400.0, 'y': 300.0, 'name': 'South Platform', 'occupied': false},
+      {'id': 'MR102', 'startX': 400.0, 'endX': 600.0, 'y': 300.0, 'name': 'South Exit', 'occupied': false},
+
+      // First 4 angled blocks at 45° (SE curve going up-right)
+      {'id': 'MR103', 'startX': 600.0, 'endX': 700.0, 'y': 300.0, 'name': 'SE Curve 1', 'occupied': false},
+      {'id': 'MR104', 'startX': 700.0, 'endX': 800.0, 'y': 200.0, 'name': 'SE Curve 2', 'occupied': false},
+      {'id': 'MR105', 'startX': 800.0, 'endX': 900.0, 'y': 100.0, 'name': 'SE Curve 3', 'occupied': false},
+      {'id': 'MR106', 'startX': 900.0, 'endX': 1000.0, 'y': 0.0, 'name': 'SE Curve 4', 'occupied': false},
+
+      // Straight section (top horizontal with platforms)
+      {'id': 'MR107', 'startX': 1000.0, 'endX': 1200.0, 'y': 0.0, 'name': 'North Entry', 'occupied': false},
+      {'id': 'MR108', 'startX': 1200.0, 'endX': 1400.0, 'y': 0.0, 'name': 'North Platform 1', 'occupied': false},
+      {'id': 'MR109', 'startX': 1400.0, 'endX': 1600.0, 'y': 0.0, 'name': 'North Section', 'occupied': false},
+      {'id': 'MR110', 'startX': 1600.0, 'endX': 1800.0, 'y': 0.0, 'name': 'North Platform 2', 'occupied': false},
+      {'id': 'MR111', 'startX': 1800.0, 'endX': 2000.0, 'y': 0.0, 'name': 'North Exit', 'occupied': false},
+
+      // Second 4 angled blocks at 45° (NW curve going down-left)
+      {'id': 'MR112', 'startX': 2000.0, 'endX': 2100.0, 'y': 0.0, 'name': 'NW Curve 1', 'occupied': false},
+      {'id': 'MR113', 'startX': 2100.0, 'endX': 2200.0, 'y': 100.0, 'name': 'NW Curve 2', 'occupied': false},
+      {'id': 'MR114', 'startX': 2200.0, 'endX': 2300.0, 'y': 200.0, 'name': 'NW Curve 3', 'occupied': false},
+      {'id': 'MR115', 'startX': 2300.0, 'endX': 2400.0, 'y': 300.0, 'name': 'NW Curve 4', 'occupied': false},
+
+      // Return straight section (bottom return with platforms)
+      {'id': 'MR116', 'startX': 2400.0, 'endX': 2200.0, 'y': 300.0, 'name': 'West Entry', 'occupied': false},
+      {'id': 'MR117', 'startX': 2200.0, 'endX': 2000.0, 'y': 300.0, 'name': 'West Platform 1', 'occupied': false},
+      {'id': 'MR118', 'startX': 2000.0, 'endX': 1800.0, 'y': 300.0, 'name': 'West Section', 'occupied': false},
+      {'id': 'MR119', 'startX': 1800.0, 'endX': 1600.0, 'y': 300.0, 'name': 'West Platform 2', 'occupied': false},
+
+      // Third 4 angled blocks at 45° (SW curve going down-left back to start)
+      {'id': 'MR120', 'startX': 1600.0, 'endX': 1500.0, 'y': 300.0, 'name': 'SW Curve 1', 'occupied': false},
+      {'id': 'MR121', 'startX': 1500.0, 'endX': 1400.0, 'y': 200.0, 'name': 'SW Curve 2', 'occupied': false},
+      {'id': 'MR122', 'startX': 1400.0, 'endX': 1300.0, 'y': 100.0, 'name': 'SW Curve 3', 'occupied': false},
+      {'id': 'MR123', 'startX': 1300.0, 'endX': 1200.0, 'y': 0.0, 'name': 'SW Curve 4', 'occupied': false},
+
+      // Fourth 4 angled blocks at 45° (connecting back to start)
+      {'id': 'MR124', 'startX': 1200.0, 'endX': 1100.0, 'y': 0.0, 'name': 'Connector 1', 'occupied': false},
+      {'id': 'MR125', 'startX': 1100.0, 'endX': 1000.0, 'y': 100.0, 'name': 'Connector 2', 'occupied': false},
+      {'id': 'MR126', 'startX': 1000.0, 'endX': 900.0, 'y': 200.0, 'name': 'Connector 3', 'occupied': false},
+      {'id': 'MR127', 'startX': 900.0, 'endX': 800.0, 'y': 300.0, 'name': 'Connector 4', 'occupied': false},
+
+      // Final straight blocks connecting back to MR100
+      {'id': 'MR128', 'startX': 800.0, 'endX': 600.0, 'y': 300.0, 'name': 'Return Section', 'occupied': false},
     ];
   }
 
   static List<Map<String, dynamic>> _createMetroRingSignals() {
+    // Signals placed throughout the octagonal ring layout
     return [
-      {'id': 'MR_S1', 'x': 100.0, 'y': 80.0, 'aspect': 'green'},
-      {'id': 'MR_S2', 'x': 300.0, 'y': 80.0, 'aspect': 'green'},
-      {'id': 'MR_S3', 'x': 500.0, 'y': 80.0, 'aspect': 'green'},
-      {'id': 'MR_S4', 'x': 700.0, 'y': 130.0, 'aspect': 'green'},
-      {'id': 'MR_S5', 'x': 900.0, 'y': 180.0, 'aspect': 'green'},
-      {'id': 'MR_S6', 'x': 1100.0, 'y': 230.0, 'aspect': 'green'},
-      {'id': 'MR_S7', 'x': 1100.0, 'y': 320.0, 'aspect': 'green'},
-      {'id': 'MR_S8', 'x': 900.0, 'y': 320.0, 'aspect': 'green'},
-      {'id': 'MR_S9', 'x': 700.0, 'y': 320.0, 'aspect': 'green'},
-      {'id': 'MR_S10', 'x': 500.0, 'y': 270.0, 'aspect': 'green'},
-      {'id': 'MR_S11', 'x': 300.0, 'y': 220.0, 'aspect': 'green'},
-      {'id': 'MR_S12', 'x': 100.0, 'y': 170.0, 'aspect': 'green'},
+      // South section signals
+      {'id': 'MR_S1', 'x': 100.0, 'y': 280.0, 'aspect': 'green'},
+      {'id': 'MR_S2', 'x': 300.0, 'y': 280.0, 'aspect': 'green'},
+      {'id': 'MR_S3', 'x': 500.0, 'y': 280.0, 'aspect': 'green'},
+
+      // SE curve signals
+      {'id': 'MR_S4', 'x': 650.0, 'y': 280.0, 'aspect': 'green'},
+      {'id': 'MR_S5', 'x': 750.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'MR_S6', 'x': 850.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'MR_S7', 'x': 950.0, 'y': -20.0, 'aspect': 'green'},
+
+      // North section signals
+      {'id': 'MR_S8', 'x': 1100.0, 'y': -20.0, 'aspect': 'green'},
+      {'id': 'MR_S9', 'x': 1300.0, 'y': -20.0, 'aspect': 'green'},
+      {'id': 'MR_S10', 'x': 1500.0, 'y': -20.0, 'aspect': 'green'},
+      {'id': 'MR_S11', 'x': 1700.0, 'y': -20.0, 'aspect': 'green'},
+      {'id': 'MR_S12', 'x': 1900.0, 'y': -20.0, 'aspect': 'green'},
+
+      // NW curve signals
+      {'id': 'MR_S13', 'x': 2050.0, 'y': -20.0, 'aspect': 'green'},
+      {'id': 'MR_S14', 'x': 2150.0, 'y': 80.0, 'aspect': 'green'},
+      {'id': 'MR_S15', 'x': 2250.0, 'y': 180.0, 'aspect': 'green'},
+      {'id': 'MR_S16', 'x': 2350.0, 'y': 280.0, 'aspect': 'green'},
+
+      // West section signals
+      {'id': 'MR_S17', 'x': 2300.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': 'MR_S18', 'x': 2100.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': 'MR_S19', 'x': 1900.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': 'MR_S20', 'x': 1700.0, 'y': 320.0, 'aspect': 'green'},
+
+      // SW curve signals
+      {'id': 'MR_S21', 'x': 1550.0, 'y': 320.0, 'aspect': 'green'},
+      {'id': 'MR_S22', 'x': 1450.0, 'y': 220.0, 'aspect': 'green'},
+      {'id': 'MR_S23', 'x': 1350.0, 'y': 120.0, 'aspect': 'green'},
+      {'id': 'MR_S24', 'x': 1250.0, 'y': 20.0, 'aspect': 'green'},
+
+      // Connector curve signals
+      {'id': 'MR_S25', 'x': 1150.0, 'y': 20.0, 'aspect': 'green'},
+      {'id': 'MR_S26', 'x': 1050.0, 'y': 120.0, 'aspect': 'green'},
+      {'id': 'MR_S27', 'x': 950.0, 'y': 220.0, 'aspect': 'green'},
+      {'id': 'MR_S28', 'x': 850.0, 'y': 320.0, 'aspect': 'green'},
+
+      // Return section signal
+      {'id': 'MR_S29', 'x': 700.0, 'y': 320.0, 'aspect': 'green'},
     ];
   }
 
   static List<Map<String, dynamic>> _createMetroRingPoints() {
-    return [
-      {'id': 'MR_P1', 'x': 150.0, 'y': 100.0, 'position': 'normal'},
-      {'id': 'MR_P2', 'x': 450.0, 'y': 100.0, 'position': 'normal'},
-      {'id': 'MR_P3', 'x': 750.0, 'y': 175.0, 'position': 'normal'},
-      {'id': 'MR_P4', 'x': 950.0, 'y': 250.0, 'position': 'normal'},
-      {'id': 'MR_P5', 'x': 950.0, 'y': 300.0, 'position': 'normal'},
-      {'id': 'MR_P6', 'x': 650.0, 'y': 275.0, 'position': 'normal'},
-      {'id': 'MR_P7', 'x': 350.0, 'y': 225.0, 'position': 'normal'},
-      {'id': 'MR_P8', 'x': 150.0, 'y': 175.0, 'position': 'normal'},
-    ];
+    // No points in metro ring - simple loop without switches
+    return [];
   }
 
   static List<Map<String, dynamic>> _createMetroRingCrossovers() {
-    return [
-      {
-        'id': 'MR_XO1',
-        'name': 'Ring Crossover 1',
-        'pointIds': ['MR_P1', 'MR_P2'],
-        'blockId': 'MR101',
-        'type': 'righthand',
-      },
-      {
-        'id': 'MR_XO2',
-        'name': 'Ring Crossover 2',
-        'pointIds': ['MR_P5', 'MR_P6'],
-        'blockId': 'MR107',
-        'type': 'righthand',
-      },
-    ];
+    // No crossovers in metro ring - simple loop
+    return [];
   }
 
   static List<Map<String, dynamic>> _createMetroRingPlatforms() {
+    // Platforms placed at key locations around the ring
     return [
-      {'id': 'MR_PF1', 'name': 'Metro Station 1', 'startX': 250.0, 'endX': 350.0, 'y': 100.0},
-      {'id': 'MR_PF2', 'name': 'Metro Station 2', 'startX': 650.0, 'endX': 750.0, 'y': 150.0},
-      {'id': 'MR_PF3', 'name': 'Metro Station 3', 'startX': 1050.0, 'endX': 1150.0, 'y': 250.0},
-      {'id': 'MR_PF4', 'name': 'Metro Station 4', 'startX': 850.0, 'endX': 950.0, 'y': 300.0},
-      {'id': 'MR_PF5', 'name': 'Metro Station 5', 'startX': 450.0, 'endX': 550.0, 'y': 250.0},
-      {'id': 'MR_PF6', 'name': 'Metro Station 6', 'startX': 50.0, 'endX': 150.0, 'y': 150.0},
+      {'id': 'MR_PF1', 'name': 'South Station', 'startX': 220.0, 'endX': 380.0, 'y': 300.0},
+      {'id': 'MR_PF2', 'name': 'North Station 1', 'startX': 1220.0, 'endX': 1380.0, 'y': 0.0},
+      {'id': 'MR_PF3', 'name': 'North Station 2', 'startX': 1620.0, 'endX': 1780.0, 'y': 0.0},
+      {'id': 'MR_PF4', 'name': 'West Station 1', 'startX': 2220.0, 'endX': 2180.0, 'y': 300.0},
+      {'id': 'MR_PF5', 'name': 'West Station 2', 'startX': 1820.0, 'endX': 1780.0, 'y': 300.0},
     ];
   }
 
   static List<Map<String, dynamic>> _createMetroRingTrainStops() {
+    // Train stops at platform centers
     return [
-      {'id': 'MR_TS1', 'x': 300.0, 'y': 100.0, 'active': true},
-      {'id': 'MR_TS2', 'x': 700.0, 'y': 150.0, 'active': true},
-      {'id': 'MR_TS3', 'x': 1100.0, 'y': 250.0, 'active': true},
-      {'id': 'MR_TS4', 'x': 900.0, 'y': 300.0, 'active': true},
-      {'id': 'MR_TS5', 'x': 500.0, 'y': 250.0, 'active': true},
-      {'id': 'MR_TS6', 'x': 100.0, 'y': 150.0, 'active': true},
+      {'id': 'MR_TS1', 'x': 300.0, 'y': 300.0, 'active': true},
+      {'id': 'MR_TS2', 'x': 1300.0, 'y': 0.0, 'active': true},
+      {'id': 'MR_TS3', 'x': 1700.0, 'y': 0.0, 'active': true},
+      {'id': 'MR_TS4', 'x': 2100.0, 'y': 300.0, 'active': true},
+      {'id': 'MR_TS5', 'x': 1800.0, 'y': 300.0, 'active': true},
     ];
   }
 
@@ -777,24 +815,38 @@ class PredefinedLayouts {
   }
 
   static List<Map<String, dynamic>> _createMetroRingAxleCounters() {
+    // Axle counters placed at regular intervals around the ring
     return [
-      {'id': 'MR_AC1', 'x': 150.0, 'y': 100.0, 'blockId': 'MR100'},
-      {'id': 'MR_AC2', 'x': 500.0, 'y': 100.0, 'blockId': 'MR102'},
-      {'id': 'MR_AC3', 'x': 850.0, 'y': 175.0, 'blockId': 'MR104'},
-      {'id': 'MR_AC4', 'x': 1100.0, 'y': 275.0, 'blockId': 'MR106'},
-      {'id': 'MR_AC5', 'x': 750.0, 'y': 300.0, 'blockId': 'MR108'},
-      {'id': 'MR_AC6', 'x': 350.0, 'y': 225.0, 'blockId': 'MR110'},
+      {'id': 'MR_AC1', 'x': 150.0, 'y': 300.0, 'blockId': 'MR100'},
+      {'id': 'MR_AC2', 'x': 450.0, 'y': 300.0, 'blockId': 'MR102'},
+      {'id': 'MR_AC3', 'x': 750.0, 'y': 200.0, 'blockId': 'MR104'},
+      {'id': 'MR_AC4', 'x': 950.0, 'y': 0.0, 'blockId': 'MR106'},
+      {'id': 'MR_AC5', 'x': 1300.0, 'y': 0.0, 'blockId': 'MR108'},
+      {'id': 'MR_AC6', 'x': 1700.0, 'y': 0.0, 'blockId': 'MR110'},
+      {'id': 'MR_AC7', 'x': 2150.0, 'y': 100.0, 'blockId': 'MR113'},
+      {'id': 'MR_AC8', 'x': 2300.0, 'y': 300.0, 'blockId': 'MR116'},
+      {'id': 'MR_AC9', 'x': 1900.0, 'y': 300.0, 'blockId': 'MR118'},
+      {'id': 'MR_AC10', 'x': 1450.0, 'y': 200.0, 'blockId': 'MR121'},
+      {'id': 'MR_AC11', 'x': 1050.0, 'y': 100.0, 'blockId': 'MR125'},
+      {'id': 'MR_AC12', 'x': 700.0, 'y': 300.0, 'blockId': 'MR128'},
     ];
   }
 
   static List<Map<String, dynamic>> _createMetroRingTransponders() {
+    // CBTC transponders for automatic train control
     return [
-      {'id': 'MR_T1', 'x': 200.0, 'y': 100.0, 'type': 'CBTC'},
-      {'id': 'MR_T2', 'x': 600.0, 'y': 125.0, 'type': 'CBTC'},
-      {'id': 'MR_T3', 'x': 1000.0, 'y': 225.0, 'type': 'CBTC'},
-      {'id': 'MR_T4', 'x': 1000.0, 'y': 300.0, 'type': 'CBTC'},
-      {'id': 'MR_T5', 'x': 600.0, 'y': 275.0, 'type': 'CBTC'},
-      {'id': 'MR_T6', 'x': 200.0, 'y': 175.0, 'type': 'CBTC'},
+      {'id': 'MR_T1', 'x': 250.0, 'y': 300.0, 'type': 'CBTC'},
+      {'id': 'MR_T2', 'x': 650.0, 'y': 280.0, 'type': 'CBTC'},
+      {'id': 'MR_T3', 'x': 850.0, 'y': 100.0, 'type': 'CBTC'},
+      {'id': 'MR_T4', 'x': 1200.0, 'y': 0.0, 'type': 'CBTC'},
+      {'id': 'MR_T5', 'x': 1600.0, 'y': 0.0, 'type': 'CBTC'},
+      {'id': 'MR_T6', 'x': 2000.0, 'y': 0.0, 'type': 'CBTC'},
+      {'id': 'MR_T7', 'x': 2250.0, 'y': 200.0, 'type': 'CBTC'},
+      {'id': 'MR_T8', 'x': 2200.0, 'y': 300.0, 'type': 'CBTC'},
+      {'id': 'MR_T9', 'x': 1700.0, 'y': 300.0, 'type': 'CBTC'},
+      {'id': 'MR_T10', 'x': 1350.0, 'y': 120.0, 'type': 'CBTC'},
+      {'id': 'MR_T11', 'x': 1000.0, 'y': 100.0, 'type': 'CBTC'},
+      {'id': 'MR_T12', 'x': 800.0, 'y': 300.0, 'type': 'CBTC'},
     ];
   }
 

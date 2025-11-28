@@ -2966,8 +2966,8 @@ class TerminalStationController extends ChangeNotifier {
     blocks['crossover_211_212'] = BlockSection(
       id: 'crossover_211_212',
       name: 'West Terminal Double Diamond',
-      startX: -450,
-      endX: -300,
+      startX: -550,
+      endX: -400,
       y: 200,
     );
 
@@ -2992,8 +2992,8 @@ class TerminalStationController extends ChangeNotifier {
     blocks['crossover_303_304'] = BlockSection(
       id: 'crossover_303_304',
       name: 'East Terminal Double Diamond',
-      startX: 1900,
-      endX: 2050,
+      startX: 2000,
+      endX: 2150,
       y: 200,
     );
 
@@ -3002,32 +3002,32 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Left section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // CRITICAL FIX: Aligned with crossover_211_212 block coordinates (x: -450 to -300)
+    // CRITICAL FIX: Aligned with crossover_211_212 block coordinates (x: -550 to -400)
     // Creates proper 45-degree double diamond crossover geometry
     points['76A'] = Point(
-        id: '76A', x: -450, y: 100); // FIXED: Crossover START, upper track entry
+        id: '76A', x: -550, y: 100); // FIXED: Crossover START, upper track entry
     points['76B'] = Point(
-        id: '76B', x: -300, y: 300); // FIXED: Crossover END, lower track exit
+        id: '76B', x: -400, y: 300); // FIXED: Crossover END, lower track exit
     points['77A'] = Point(
-        id: '77A', x: -300, y: 100); // FIXED: Crossover END, upper track exit
+        id: '77A', x: -400, y: 100); // FIXED: Crossover END, upper track exit
     points['77B'] = Point(
-        id: '77B', x: -450, y: 300); // FIXED: Crossover START, lower track entry
+        id: '77B', x: -550, y: 300); // FIXED: Crossover START, lower track entry
 
     // Middle points (crossover106/109) - Standard crossover
     points['78A'] = Point(id: '78A', x: 600, y: 100);
     points['78B'] = Point(id: '78B', x: 800, y: 300);
 
     // Right section points - DOUBLE DIAMOND CROSSOVER (4 points)
-    // CRITICAL FIX: Aligned with crossover_303_304 block coordinates (x: 1900 to 2050)
+    // CRITICAL FIX: Aligned with crossover_303_304 block coordinates (x: 2000 to 2150)
     // Creates proper 45-degree double diamond crossover geometry
     points['79A'] = Point(
-        id: '79A', x: 1900, y: 100); // FIXED: Crossover START, upper track entry
+        id: '79A', x: 2000, y: 100); // FIXED: Crossover START, upper track entry
     points['79B'] = Point(
-        id: '79B', x: 2050, y: 300); // FIXED: Crossover END, lower track exit
+        id: '79B', x: 2150, y: 300); // FIXED: Crossover END, lower track exit
     points['80A'] = Point(
-        id: '80A', x: 2050, y: 100); // FIXED: Crossover END, upper track exit
+        id: '80A', x: 2150, y: 100); // FIXED: Crossover END, upper track exit
     points['80B'] = Point(
-        id: '80B', x: 1900, y: 300); // FIXED: Crossover START, lower track entry
+        id: '80B', x: 2000, y: 300); // FIXED: Crossover START, lower track entry
 
     // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)

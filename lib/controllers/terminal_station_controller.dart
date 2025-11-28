@@ -6090,8 +6090,8 @@ class TerminalStationController extends ChangeNotifier {
             case 'green':
               aspect = SignalAspect.green;
               break;
-            case 'yellow':
-              aspect = SignalAspect.yellow;
+            case 'blue':
+              aspect = SignalAspect.blue;
               break;
             case 'red':
               aspect = SignalAspect.red;
@@ -6103,7 +6103,7 @@ class TerminalStationController extends ChangeNotifier {
             x: (signalData['x'] as num).toDouble(),
             y: (signalData['y'] as num).toDouble(),
             aspect: aspect,
-            routeState: RouteState.clear,
+            routeState: RouteState.unset,
             routes: [], // Will be populated by route initialization if needed
           );
         }
@@ -6114,8 +6114,8 @@ class TerminalStationController extends ChangeNotifier {
       if (pointsData != null) {
         for (final pointData in pointsData) {
           final posStr = pointData['position'] as String? ?? 'normal';
-          PointPosition position = posStr.toLowerCase() == 'reversed'
-              ? PointPosition.reversed
+          PointPosition position = posStr.toLowerCase() == 'reverse' || posStr.toLowerCase() == 'reversed'
+              ? PointPosition.reverse
               : PointPosition.normal;
 
           points[pointData['id']] = Point(
@@ -6181,6 +6181,7 @@ class TerminalStationController extends ChangeNotifier {
         for (final stopData in trainStopsData) {
           trainStops[stopData['id']] = TrainStop(
             id: stopData['id'] as String,
+            signalId: stopData['signalId'] as String? ?? '',
             x: (stopData['x'] as num).toDouble(),
             y: (stopData['y'] as num).toDouble(),
             active: stopData['active'] as bool? ?? true,
@@ -6217,11 +6218,31 @@ class TerminalStationController extends ChangeNotifier {
       final transpondersData = data['transponders'] as List<Map<String, dynamic>>?;
       if (transpondersData != null) {
         for (final transponderData in transpondersData) {
+          // Parse transponder type from string
+          final typeStr = transponderData['type'] as String? ?? 't1';
+          TransponderType type = TransponderType.t1;
+          switch (typeStr.toLowerCase()) {
+            case 't1':
+              type = TransponderType.t1;
+              break;
+            case 't2':
+              type = TransponderType.t2;
+              break;
+            case 't3':
+              type = TransponderType.t3;
+              break;
+            case 't6':
+              type = TransponderType.t6;
+              break;
+            default:
+              type = TransponderType.t1; // Default fallback
+          }
+
           transponders[transponderData['id']] = Transponder(
             id: transponderData['id'] as String,
             x: (transponderData['x'] as num).toDouble(),
             y: (transponderData['y'] as num).toDouble(),
-            type: transponderData['type'] as String? ?? 'CBTC',
+            type: type,
             description: 'Transponder ${transponderData['id']}',
           );
         }

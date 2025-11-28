@@ -537,16 +537,16 @@ class RailwayModel extends ChangeNotifier {
         isReversingArea: true),
     BlockSection(
         id: 'crossover106',
-        startX: 600,
-        endX: 700,
+        startX: 400,
+        endX: 500,
         y: 100,
         nextBlock: 'crossover109',
         prevBlock: '104',
         isCrossover: true),
     BlockSection(
         id: 'crossover109',
-        startX: 700,
-        endX: 800,
+        startX: 500,
+        endX: 600,
         y: 300,
         nextBlock: '109',
         prevBlock: 'crossover106',
@@ -577,8 +577,8 @@ class RailwayModel extends ChangeNotifier {
   ];
 
   List<Point> points = [
-    Point(id: '78A', x: 600, y: 100),
-    Point(id: '78B', x: 1000, y: 300),
+    Point(id: '78A', x: 400, y: 100),  // MOVED: End of block 102/start of block 104
+    Point(id: '78B', x: 600, y: 300),  // MOVED: End of block 105/start of block 107
   ];
 
   List<Train> trains = [];
@@ -1203,7 +1203,7 @@ class RailwayModel extends ChangeNotifier {
     // MIDDLE CROSSOVER (Central Station) - Points 78A/78B
     // ───────────────────────────────────────────────────────────────────────────
 
-    // Block 104 (upper) eastbound approaching point 78A at x=600
+    // Block 104 (upper) eastbound approaching point 78A at x=400
     if (currentBlock == '104' && isEastbound) {
       final point78A = points.firstWhere((p) => p.id == '78A');
       if (point78A.position == PointPosition.reverse) {
@@ -1212,7 +1212,7 @@ class RailwayModel extends ChangeNotifier {
       return '106'; // Straight through (78A normal)
     }
 
-    // Block 109 (lower) westbound approaching point 78B at x=800
+    // Block 109 (lower) westbound approaching point 78B at x=600
     if (currentBlock == '109' && !isEastbound) {
       final point78B = points.firstWhere((p) => p.id == '78B');
       if (point78B.position == PointPosition.reverse) {

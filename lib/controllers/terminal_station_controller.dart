@@ -2369,7 +2369,7 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac101'] =
         AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
     axleCounters['ac105'] =
-        AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 320);
+        AxleCounter(id: 'ac105', blockId: '105', x: 700, y: 350); // Moved from y=320 to y=350 to avoid crossover false detections
     axleCounters['ac109'] =
         AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
     axleCounters['ac111'] =
@@ -2982,7 +2982,7 @@ class TerminalStationController extends ChangeNotifier {
       name: 'Central Station Crossover Lower',
       startX: 700,
       endX: 800,
-      y: 250,
+      y: 200, // Changed from 250 to 200 to eliminate overlap with block 107
     );
 
     // Right Section Crossover (connects blocks 303↔304) - MOVED from 314 area

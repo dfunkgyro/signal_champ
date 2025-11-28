@@ -1245,11 +1245,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   /// Draw gap for standard crossover (78A, 78B)
-  /// 78A at (600,100) - entry point on upper track
-  /// 78B at (1000,300) - exit point on lower track (converging side)
+  /// 78A at (400,100) - entry point on upper track
+  /// 78B at (600,300) - exit point on lower track (converging side)
   void _drawStandardCrossoverGap(Canvas canvas, Point point, Paint gapPaint) {
     if (point.id == '78A') {
-      // Point at start of block 106 (600,100)
+      // Point at end of block 102/start of block 104 (400,100)
       if (point.position == PointPosition.normal) {
         // Normal: cover straight track continuing forward (centered on point)
         canvas.drawRect(
@@ -1264,7 +1264,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '78B') {
-      // Point at end of block 108/start of block 109 (1000,300) - converging side
+      // Point at end of block 105/start of block 107 (600,300) - converging side
       if (point.position == PointPosition.normal) {
         // Normal: cover straight track (centered on point)
         canvas.drawRect(

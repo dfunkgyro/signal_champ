@@ -225,28 +225,32 @@ class PredefinedLayouts {
   }
 
   static List<Map<String, dynamic>> _createClassicPoints() {
+    // ALIGNED TO BLOCK STARTS: Points positioned at block boundaries to prevent teleportation
+    // Block 104 ends at 800, Block 106 starts at 1200
+    // Block 204 ends at 800, Block 206 starts at 1200
     return [
-      {'id': '76A', 'x': 900.0, 'y': 100.0, 'position': 'normal'},
-      {'id': '76B', 'x': 1100.0, 'y': 300.0, 'position': 'normal'},
-      {'id': '77A', 'x': 1700.0, 'y': 100.0, 'position': 'normal'},
-      {'id': '77B', 'x': 1900.0, 'y': 300.0, 'position': 'normal'},
+      {'id': '76A', 'x': 800.0, 'y': 100.0, 'position': 'normal'}, // At end of block 104/start of crossover
+      {'id': '76B', 'x': 1200.0, 'y': 300.0, 'position': 'normal'}, // At start of block 206
+      {'id': '77A', 'x': 1600.0, 'y': 100.0, 'position': 'normal'}, // At start of block 106
+      {'id': '77B', 'x': 2000.0, 'y': 300.0, 'position': 'normal'}, // At end of block 206/start of block 207
     ];
   }
 
   static List<Map<String, dynamic>> _createClassicCrossovers() {
+    // ALIGNED TO BLOCK STARTS: Crossovers positioned to connect at block boundaries
     return [
       {
         'id': 'crossover_west',
         'name': 'West Crossover',
         'pointIds': ['76A', '76B'],
-        'blockId': '104',
+        'blockId': '104', // Connects block 104 (upper) to block 204 (lower)
         'type': 'righthand',
       },
       {
         'id': 'crossover_central',
         'name': 'Central Crossover',
         'pointIds': ['77A', '77B'],
-        'blockId': '106',
+        'blockId': '106', // Connects block 106 (upper) to block 206 (lower)
         'type': 'righthand',
       },
     ];
@@ -351,13 +355,17 @@ class PredefinedLayouts {
   }
 
   static List<Map<String, dynamic>> _createExpressPoints() {
+    // ALIGNED TO BLOCK STARTS: Points positioned at block boundaries to prevent teleportation
+    // Express blocks: E100 (-1000 to -500), E101 (-500 to 500), E102 (500 to 1500)
+    // Local blocks: L100 (-1000 to -500), L101 (-500 to 500), L102 (500 to 1500)
+    // Return blocks: R100 (-1000 to -500), R101 (-500 to 500), R102 (500 to 1500)
     return [
-      {'id': 'P100', 'x': -600.0, 'y': 50.0, 'position': 'normal'},
-      {'id': 'P101', 'x': -400.0, 'y': 150.0, 'position': 'normal'},
-      {'id': 'P102', 'x': 400.0, 'y': 50.0, 'position': 'normal'},
-      {'id': 'P103', 'x': 600.0, 'y': 150.0, 'position': 'normal'},
-      {'id': 'P104', 'x': 1400.0, 'y': 150.0, 'position': 'normal'},
-      {'id': 'P105', 'x': 1600.0, 'y': 250.0, 'position': 'normal'},
+      {'id': 'P100', 'x': -500.0, 'y': 50.0, 'position': 'normal'}, // At start of E101
+      {'id': 'P101', 'x': -500.0, 'y': 150.0, 'position': 'normal'}, // At start of L101
+      {'id': 'P102', 'x': 500.0, 'y': 50.0, 'position': 'normal'}, // At start of E102
+      {'id': 'P103', 'x': 500.0, 'y': 150.0, 'position': 'normal'}, // At start of L102
+      {'id': 'P104', 'x': 1500.0, 'y': 150.0, 'position': 'normal'}, // At start of L103
+      {'id': 'P105', 'x': 1500.0, 'y': 250.0, 'position': 'normal'}, // At start of R103
     ];
   }
 
@@ -479,19 +487,24 @@ class PredefinedLayouts {
   }
 
   static List<Map<String, dynamic>> _createJunctionPoints() {
+    // ALIGNED TO BLOCK STARTS: Points positioned at block boundaries to prevent teleportation
+    // North: N100 (-800 to -200), N101 (-200 to 400), N102 (400 to 1000)
+    // South: S100 (-800 to -200), S101 (-200 to 400), S102 (400 to 1000)
+    // West: W100 (-800 to -200), W101 (-200 to 100)
+    // East: E200 (300 to 1000), E201 (1000 to 1600)
     return [
-      // Diamond crossing points
-      {'id': 'D1', 'x': 0.0, 'y': 50.0, 'position': 'normal'},
-      {'id': 'D2', 'x': 200.0, 'y': 50.0, 'position': 'normal'},
-      {'id': 'D3', 'x': 0.0, 'y': 200.0, 'position': 'normal'},
-      {'id': 'D4', 'x': 200.0, 'y': 200.0, 'position': 'normal'},
-      {'id': 'D5', 'x': 0.0, 'y': 350.0, 'position': 'normal'},
-      {'id': 'D6', 'x': 200.0, 'y': 350.0, 'position': 'normal'},
+      // Diamond crossing points aligned to block boundaries
+      {'id': 'D1', 'x': -200.0, 'y': 50.0, 'position': 'normal'}, // At start of N101
+      {'id': 'D2', 'x': 400.0, 'y': 50.0, 'position': 'normal'}, // At start of N102
+      {'id': 'D3', 'x': -200.0, 'y': 200.0, 'position': 'normal'}, // At start of W101
+      {'id': 'D4', 'x': 300.0, 'y': 200.0, 'position': 'normal'}, // Near start of E200
+      {'id': 'D5', 'x': -200.0, 'y': 350.0, 'position': 'normal'}, // At start of S101
+      {'id': 'D6', 'x': 400.0, 'y': 350.0, 'position': 'normal'}, // At start of S102
 
-      // Scissor crossover
-      {'id': 'SC1', 'x': 500.0, 'y': 50.0, 'position': 'normal'},
-      {'id': 'SC2', 'x': 700.0, 'y': 200.0, 'position': 'normal'},
-      {'id': 'SC3', 'x': 500.0, 'y': 350.0, 'position': 'normal'},
+      // Scissor crossover points aligned to block boundaries
+      {'id': 'SC1', 'x': 400.0, 'y': 50.0, 'position': 'normal'}, // At start of N102
+      {'id': 'SC2', 'x': 400.0, 'y': 200.0, 'position': 'normal'}, // Centered for scissor
+      {'id': 'SC3', 'x': 400.0, 'y': 350.0, 'position': 'normal'}, // At start of S102
     ];
   }
 
@@ -602,10 +615,12 @@ class PredefinedLayouts {
   }
 
   static List<Map<String, dynamic>> _createShuttlePoints() {
+    // ALIGNED TO BLOCK STARTS: Points positioned at block boundaries to prevent teleportation
+    // Blocks: SH100 (-800 to -400), SH101 (-400 to 0), SH102 (0 to 400), SH103 (400 to 800), SH104 (800 to 1200)
     return [
-      {'id': 'SH_P1', 'x': -600.0, 'y': 150.0, 'position': 'normal'},
-      {'id': 'SH_P2', 'x': 200.0, 'y': 150.0, 'position': 'normal'},
-      {'id': 'SH_P3', 'x': 600.0, 'y': 150.0, 'position': 'normal'},
+      {'id': 'SH_P1', 'x': -400.0, 'y': 150.0, 'position': 'normal'}, // At start of SH101
+      {'id': 'SH_P2', 'x': 0.0, 'y': 150.0, 'position': 'normal'}, // At start of SH102
+      {'id': 'SH_P3', 'x': 400.0, 'y': 150.0, 'position': 'normal'}, // At start of SH103
     ];
   }
 
@@ -856,15 +871,19 @@ class PredefinedLayouts {
   }
 
   static List<Map<String, dynamic>> _createMainlineJunctionPoints() {
+    // ALIGNED TO BLOCK STARTS: Points positioned at block boundaries to prevent teleportation
+    // Main line: ML100 (-1000 to -600), ML101 (-600 to -200), ML102 (-200 to 200), ML103 (200 to 600), ML104 (600 to 1000)
+    // Secondary: ML200 (-1000 to -600), ML201 (-600 to -200), ML202 (-200 to 200), ML203 (200 to 600)
+    // Branch: BR100 (600 to 1000), BR101 (1000 to 1400)
     return [
-      {'id': 'ML_P1', 'x': -500.0, 'y': 100.0, 'position': 'normal'},
-      {'id': 'ML_P2', 'x': -300.0, 'y': 200.0, 'position': 'normal'},
-      {'id': 'ML_P3', 'x': 300.0, 'y': 100.0, 'position': 'normal'},
-      {'id': 'ML_P4', 'x': 450.0, 'y': 150.0, 'position': 'normal'},
-      {'id': 'ML_P5', 'x': 700.0, 'y': 75.0, 'position': 'normal'},
-      {'id': 'GY_P1', 'x': -350.0, 'y': 250.0, 'position': 'normal'},
-      {'id': 'GY_P2', 'x': -250.0, 'y': 300.0, 'position': 'normal'},
-      {'id': 'GY_P3', 'x': -150.0, 'y': 350.0, 'position': 'normal'},
+      {'id': 'ML_P1', 'x': -600.0, 'y': 100.0, 'position': 'normal'}, // At start of ML101
+      {'id': 'ML_P2', 'x': -600.0, 'y': 200.0, 'position': 'normal'}, // At start of ML201
+      {'id': 'ML_P3', 'x': 200.0, 'y': 100.0, 'position': 'normal'}, // At start of ML103
+      {'id': 'ML_P4', 'x': 200.0, 'y': 200.0, 'position': 'normal'}, // At start of ML203
+      {'id': 'ML_P5', 'x': 600.0, 'y': 100.0, 'position': 'normal'}, // At start of ML104/BR100
+      {'id': 'GY_P1', 'x': -400.0, 'y': 300.0, 'position': 'normal'}, // At start of GY300
+      {'id': 'GY_P2', 'x': -400.0, 'y': 350.0, 'position': 'normal'}, // At start of GY301
+      {'id': 'GY_P3', 'x': -400.0, 'y': 400.0, 'position': 'normal'}, // At start of GY302
     ];
   }
 

@@ -3306,13 +3306,13 @@ class TerminalStationController extends ChangeNotifier {
         SignalRoute(
           id: 'C31_R2',
           name: 'Via Crossover (Diverging)',
-          requiredBlocksClear: ['crossover106', 'crossover109', '109', '107'],
+          requiredBlocksClear: ['crossover106', 'crossover109', '107', '109', '111'],
           requiredPointPositions: {
             '78A': PointPosition.reverse,
             '78B': PointPosition.reverse
           },
-          pathBlocks: ['104', 'crossover106', 'crossover109', '109', '107'],
-          protectedBlocks: ['crossover106', 'crossover109', '109', '107'],
+          pathBlocks: ['102', 'crossover106', 'crossover109', '107', '109', '111'],
+          protectedBlocks: ['crossover106', 'crossover109', '107', '109', '111'],
         ),
       ],
     );
@@ -3368,11 +3368,14 @@ class TerminalStationController extends ChangeNotifier {
         ),
         SignalRoute(
           id: 'C30_R2',
-          name: 'To East via Crossover',
-          requiredBlocksClear: ['114', '300'],
-          requiredPointPositions: {'78B': PointPosition.reverse},
-          pathBlocks: ['114', '300'],
-          protectedBlocks: ['114', '300'],
+          name: 'To West via Crossover',
+          requiredBlocksClear: ['111', '109', '107', 'crossover109', 'crossover106', '102'],
+          requiredPointPositions: {
+            '78A': PointPosition.reverse,
+            '78B': PointPosition.reverse
+          },
+          pathBlocks: ['111', '109', '107', 'crossover109', 'crossover106', '102'],
+          protectedBlocks: ['111', '109', '107', 'crossover109', 'crossover106', '102'],
         ),
       ],
     );
@@ -3395,16 +3398,28 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C04'] = Signal(
       id: 'C04',
-      x: 220, // MOVED: Near start of block 103 on lower track
-      y: 320, // MOVED: Lower track westbound position
+      x: 500, // FIXED: Positioned in block 104, near crossover point
+      y: 80, // FIXED: Upper track eastbound position
+      direction: SignalDirection.east, // Eastbound signal
       routes: [
         SignalRoute(
           id: 'C04_R1',
-          name: 'To West',
-          requiredBlocksClear: ['103', '101'],
-          requiredPointPositions: {},
-          pathBlocks: ['103', '101'],
-          protectedBlocks: ['103', '101'],
+          name: 'Main Route (Straight)',
+          requiredBlocksClear: ['106', '108'],
+          requiredPointPositions: {'78A': PointPosition.normal},
+          pathBlocks: ['104', '106', '108'],
+          protectedBlocks: ['106', '108'],
+        ),
+        SignalRoute(
+          id: 'C04_R2',
+          name: 'Via Crossover (Diverging)',
+          requiredBlocksClear: ['crossover106', 'crossover109', '107'],
+          requiredPointPositions: {
+            '78A': PointPosition.reverse,
+            '78B': PointPosition.reverse
+          },
+          pathBlocks: ['104', 'crossover106', 'crossover109', '107'],
+          protectedBlocks: ['crossover106', 'crossover109', '107'],
         ),
       ],
     );

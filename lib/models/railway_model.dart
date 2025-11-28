@@ -577,8 +577,8 @@ class RailwayModel extends ChangeNotifier {
   ];
 
   List<Point> points = [
-    Point(id: '78A', x: 400, y: 100),
-    Point(id: '78B', x: 800, y: 300),
+    Point(id: '78A', x: 600, y: 100),
+    Point(id: '78B', x: 1000, y: 300),
   ];
 
   List<Train> trains = [];

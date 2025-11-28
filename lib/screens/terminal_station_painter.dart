@@ -953,25 +953,25 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     _highlightCrossover(canvas, 'crossover_211_212', -450, 200);
 
     // ═══════════════════════════════════════════════════════════════
-    // 3. MIDDLE CROSSOVER (78A at x=400, 78B at x=800, aligned to block boundaries)
-    // Points: 78A (400,100), 78B (800,300)
-    // Crossover spans 400-800 with angled rendering for visual appeal
+    // 3. MIDDLE CROSSOVER (78A at x=600, 78B at x=1000, aligned to block boundaries)
+    // Points: 78A (600,100), 78B (1000,300)
+    // Crossover spans 600-1000 with angled rendering for visual appeal
     // ═══════════════════════════════════════════════════════════════
     final midRailColor =
-        controller.isTractionOnAt(600) ? themeData.railColor : Colors.red;
+        controller.isTractionOnAt(800) ? themeData.railColor : Colors.red;
     final midOuterPaint = Paint()
       ..color = midRailColor
       ..strokeWidth = 3 * themeData.strokeWidthMultiplier;
     final midInnerPaint = Paint()
       ..color = midRailColor
       ..strokeWidth = 2 * themeData.strokeWidthMultiplier;
-    // Draw angled crossover from 78A at 400 to 78B at 800
-    _drawSingleCrossover(canvas, 400, 100, 600, 200, midOuterPaint,
+    // Draw angled crossover from 78A at 600 to 78B at 1000
+    _drawSingleCrossover(canvas, 600, 100, 800, 200, midOuterPaint,
         midInnerPaint, sleeperPaint, railSpacing);
-    _drawSingleCrossover(canvas, 600, 200, 800, 300, midOuterPaint,
+    _drawSingleCrossover(canvas, 800, 200, 1000, 300, midOuterPaint,
         midInnerPaint, sleeperPaint, railSpacing);
-    _highlightCrossover(canvas, 'crossover106', 600, 150);
-    _highlightCrossover(canvas, 'crossover109', 600, 250);
+    _highlightCrossover(canvas, 'crossover106', 800, 150);
+    _highlightCrossover(canvas, 'crossover109', 800, 250);
 
     // ═══════════════════════════════════════════════════════════════
     // 4. RIGHT SECTION - DOUBLE DIAMOND CROSSOVER (x=1800 to 2100, connects blocks 302/303 to 304/305)
@@ -1245,11 +1245,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   /// Draw gap for standard crossover (78A, 78B)
-  /// 78A at (400,100) - entry point on upper track
-  /// 78B at (800,300) - exit point on lower track (converging side)
+  /// 78A at (600,100) - entry point on upper track
+  /// 78B at (1000,300) - exit point on lower track (converging side)
   void _drawStandardCrossoverGap(Canvas canvas, Point point, Paint gapPaint) {
     if (point.id == '78A') {
-      // Point at start of block 104 (400,100)
+      // Point at start of block 106 (600,100)
       if (point.position == PointPosition.normal) {
         // Normal: cover straight track continuing forward (centered on point)
         canvas.drawRect(
@@ -1264,7 +1264,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         canvas.drawPath(path, gapPaint);
       }
     } else if (point.id == '78B') {
-      // Point at end of block 107/start of block 109 (800,300) - converging side
+      // Point at end of block 108/start of block 109 (1000,300) - converging side
       if (point.position == PointPosition.normal) {
         // Normal: cover straight track (centered on point)
         canvas.drawRect(

@@ -2949,6 +2949,26 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac_cx303_304'] = AxleCounter(
         id: 'ac_cx303_304', blockId: 'crossover_303_304', x: 2175, y: 200);
 
+    // ADDITIONAL AXLE COUNTERS - Added across railway network for enhanced tracking
+    axleCounters['ac102'] =
+        AxleCounter(id: 'ac102', blockId: '102', x: 300, y: 120);
+    axleCounters['ac103'] =
+        AxleCounter(id: 'ac103', blockId: '103', x: 300, y: 320);
+    axleCounters['ac106'] =
+        AxleCounter(id: 'ac106_upper', blockId: '106', x: 700, y: 120);
+    axleCounters['ac110'] =
+        AxleCounter(id: 'ac110', blockId: '110', x: 1100, y: 120);
+    axleCounters['ac113'] =
+        AxleCounter(id: 'ac113', blockId: '113', x: 1300, y: 320);
+    axleCounters['ac114'] =
+        AxleCounter(id: 'ac114', blockId: '114', x: 1500, y: 120);
+    axleCounters['ac115'] =
+        AxleCounter(id: 'ac115', blockId: '115', x: 1500, y: 320);
+    axleCounters['ac210'] =
+        AxleCounter(id: 'ac210', blockId: '210', x: -700, y: 120);
+    axleCounters['ac212'] =
+        AxleCounter(id: 'ac212', blockId: '212', x: -400, y: 120);
+
     _logEvent(
         '🔢 Initialized ${axleCounters.length} axle counters across all sections');
   }
@@ -3605,9 +3625,9 @@ class TerminalStationController extends ChangeNotifier {
     platforms.add(Platform(
         id: 'P4',
         name: 'Central Terminal Platform 2',
-        startX: 1000,
+        startX: 800,
         endX: 1200,
-        y: 300)); // FIXED: Moved to x: 1000
+        y: 300)); // FIXED: Extended to match Platform 1 length (800-1200)
 
     // Right End Station
     platforms.add(Platform(
@@ -3900,7 +3920,7 @@ class TerminalStationController extends ChangeNotifier {
     // Lower track westbound signals
     signals['C30'] = Signal(
       id: 'C30',
-      x: 910, // FIXED: 110 units before point 78B (at 800) for route signalling westbound
+      x: 965, // MOVED: 55 units east from previous position (910 + 55 = 965)
       y: 320,
       direction: SignalDirection.west, // Westbound signal
       routes: [
@@ -3915,29 +3935,30 @@ class TerminalStationController extends ChangeNotifier {
         SignalRoute(
           id: 'C30_R2',
           name: 'To West via Crossover',
-          requiredBlocksClear: ['111', '109', '107', 'crossover109', 'crossover106', '102'],
+          requiredBlocksClear: ['109', '107', 'crossover109', 'crossover106', '102'],
           requiredPointPositions: {
             '78A': PointPosition.reverse,
             '78B': PointPosition.reverse
           },
-          pathBlocks: ['111', '109', '107', 'crossover109', 'crossover106', '102'],
-          protectedBlocks: ['111', '109', '107', 'crossover109', 'crossover106', '102'],
+          pathBlocks: ['109', '107', 'crossover109', 'crossover106', '102'],
+          protectedBlocks: ['109', '107', 'crossover109', 'crossover106', '102'],
         ),
       ],
     );
 
     signals['C03'] = Signal(
       id: 'C03',
-      x: 1190, // FIXED: 10 units from end of block 111 (before block 113)
+      x: 810, // MOVED: 10 units from start of platform 2 (at opposite end from C30)
       y: 320,
+      direction: SignalDirection.east, // Eastbound signal for departures to blocks 113/115
       routes: [
         SignalRoute(
           id: 'C03_R1',
-          name: 'From East',
-          requiredBlocksClear: ['115', '113'],
+          name: 'Platform 2 Departure to East',
+          requiredBlocksClear: ['111', '113', '115'],
           requiredPointPositions: {},
-          pathBlocks: ['115', '113'],
-          protectedBlocks: ['115', '113'],
+          pathBlocks: ['111', '113', '115'],
+          protectedBlocks: ['111', '113', '115'],
         ),
       ],
     );
@@ -4061,28 +4082,28 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R07'] = Signal(
       id: 'R07',
-      x: 1790, // FIXED: End of block 115/301 (1800) minus 10 units
-      y: 340, // Lower track westbound signal position
-      direction: SignalDirection.west,
+      x: 1600, // MOVED: At boundary of blocks 115 and 301
+      y: 340, // Lower track signal position
+      direction: SignalDirection.east, // CHANGED: Eastbound facing toward 80B points
       routes: [
         SignalRoute(
           id: 'R07_R1',
-          name: 'To Central (Straight)',
-          requiredBlocksClear: ['301', '115'],
-          requiredPointPositions: {},
-          pathBlocks: ['301', '115'],
-          protectedBlocks: ['301', '115'],
+          name: 'To East (Straight)',
+          requiredBlocksClear: ['301'],
+          requiredPointPositions: {'80B': PointPosition.normal},
+          pathBlocks: ['301'],
+          protectedBlocks: ['301'],
         ),
         SignalRoute(
           id: 'R07_R2',
-          name: 'To Central via Crossover (Diverging)',
-          requiredBlocksClear: ['crossover_303_304', '304', '302'],
+          name: 'To East via Crossover (Diverging)',
+          requiredBlocksClear: ['301', 'crossover_303_304', '304'],
           requiredPointPositions: {
             '80A': PointPosition.reverse,
             '80B': PointPosition.reverse
           },
-          pathBlocks: ['crossover_303_304', '304', '302'],
-          protectedBlocks: ['crossover_303_304', '304', '302'],
+          pathBlocks: ['301', 'crossover_303_304', '304'],
+          protectedBlocks: ['301', 'crossover_303_304', '304'],
         ),
       ],
     );
@@ -4133,12 +4154,12 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['T30'] = TrainStop(
         id: 'T30',
         signalId: 'C30',
-        x: 900,
-        y: 340); // Signal at 910, westbound -10
+        x: 955,
+        y: 340); // Signal at 965, westbound -10
     trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 60, y: 120); // Signal at 50, eastbound +10
     // REMOVED TC02 - was within 20 units of T30 (duplicate, C02 signal removed)
     trainStops['TC03'] =
-        TrainStop(id: 'TC03', signalId: 'C03', x: 1180, y: 340); // Signal at 1190, westbound -10
+        TrainStop(id: 'TC03', signalId: 'C03', x: 820, y: 340); // Signal at 810, eastbound +10
     // trainStops['TC04'] removed - signal C04 no longer exists
 
     // RIGHT SECTION: Signals and trainstops
@@ -4166,8 +4187,8 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['TR07'] = TrainStop(
         id: 'TR07',
         signalId: 'R07',
-        x: 1780,
-        y: 340); // Signal at 1790, westbound -10
+        x: 1610,
+        y: 340); // Signal at 1600, eastbound +10
     trainStops['TR08'] = TrainStop(
         id: 'TR08',
         signalId: 'R08',
@@ -6077,6 +6098,10 @@ class TerminalStationController extends ChangeNotifier {
         return (train.currentBlockId == '109' ||
                 train.currentBlockId == '111') &&
             train.direction > 0;
+      case 'C03':
+        return (train.currentBlockId == '109' ||
+                train.currentBlockId == '111') &&
+            train.direction > 0;
       case 'C31':
         return train.currentBlockId == '104' && train.direction > 0;
       case 'C33':
@@ -6253,10 +6278,36 @@ class TerminalStationController extends ChangeNotifier {
       }
 
       if (signal.id == 'C30') {
-        // C30 cannot show green if block 109 has a train
-        if (blocks['109']?.occupied == true) {
-          allClear = false;
-          _logEvent('🛑 C30: Block 109 occupied - forcing RED aspect');
+        // C30 only shows green when train is in platform on block 109 or 111
+        bool trainInPlatform = false;
+        for (var train in trains) {
+          if ((train.currentBlockId == '109' || train.currentBlockId == '111') &&
+              train.direction > 0) {
+            trainInPlatform = true;
+            break;
+          }
+        }
+
+        if (!trainInPlatform) {
+          signal.aspect = SignalAspect.red;
+          continue;
+        }
+      }
+
+      if (signal.id == 'C03') {
+        // C03 only shows green when train is in platform on block 109 or 111
+        bool trainInPlatform = false;
+        for (var train in trains) {
+          if ((train.currentBlockId == '109' || train.currentBlockId == '111') &&
+              train.direction > 0) {
+            trainInPlatform = true;
+            break;
+          }
+        }
+
+        if (!trainInPlatform) {
+          signal.aspect = SignalAspect.red;
+          continue;
         }
       }
 

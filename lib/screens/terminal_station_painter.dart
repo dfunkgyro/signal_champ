@@ -2692,6 +2692,26 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       }
     }
 
+    // Draw point/switch labels
+    for (var point in controller.points.values) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: point.id,
+          style: TextStyle(
+            color: point.position == PointPosition.normal
+                ? Colors.green[700]
+                : Colors.red[700],
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+          canvas, Offset(point.x - textPainter.width / 2, point.y - 50));
+    }
+
     for (var platform in controller.platforms) {
       final yOffset = platform.y == 100 ? 60 : -60;
       final textPainter = TextPainter(

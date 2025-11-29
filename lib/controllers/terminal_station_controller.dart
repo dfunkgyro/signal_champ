@@ -3540,6 +3540,45 @@ class TerminalStationController extends ChangeNotifier {
         id: '79B', x: 2100, y: 300); // At start of block 305, lower track exit
 
     // ═══════════════════════════════════════════════════════════════════════
+    // CROSSOVER OBJECTS - Map crossover blocks to Crossover objects for rendering
+    // ═══════════════════════════════════════════════════════════════════════
+    crossovers['crossover_211_212'] = Crossover(
+      id: 'crossover_211_212',
+      name: 'West Terminal Double Diamond',
+      pointIds: ['76A', '77A', '77B', '76B'],
+      blockId: 'crossover_211_212',
+      type: CrossoverType.doubleDiamond,
+      isActive: false,
+    );
+
+    crossovers['crossover106'] = Crossover(
+      id: 'crossover106',
+      name: 'Central Station Crossover Upper',
+      pointIds: ['78A', '78B'],
+      blockId: 'crossover106',
+      type: CrossoverType.righthand,
+      isActive: false,
+    );
+
+    crossovers['crossover109'] = Crossover(
+      id: 'crossover109',
+      name: 'Central Station Crossover Lower',
+      pointIds: ['78A', '78B'],
+      blockId: 'crossover109',
+      type: CrossoverType.righthand,
+      isActive: false,
+    );
+
+    crossovers['crossover_303_304'] = Crossover(
+      id: 'crossover_303_304',
+      name: 'East Terminal Double Diamond',
+      pointIds: ['79A', '80A', '80B', '79B'],
+      blockId: 'crossover_303_304',
+      type: CrossoverType.doubleDiamond,
+      isActive: false,
+    );
+
+    // ═══════════════════════════════════════════════════════════════════════
     // PLATFORMS - 6 total (2 at each location)
     // ═══════════════════════════════════════════════════════════════════════
     // Left End Station

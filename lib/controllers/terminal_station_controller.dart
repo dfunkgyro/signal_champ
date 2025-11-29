@@ -3920,7 +3920,7 @@ class TerminalStationController extends ChangeNotifier {
     // Lower track westbound signals
     signals['C30'] = Signal(
       id: 'C30',
-      x: 865, // MOVED: 100 units west from previous position (965 - 100 = 865)
+      x: 765, // MOVED: 200 units west from original position (965 - 200 = 765)
       y: 320,
       direction: SignalDirection.west, // Westbound signal
       routes: [
@@ -3948,7 +3948,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C03'] = Signal(
       id: 'C03',
-      x: 1200, // MOVED: At start of block 113 for proper route protection
+      x: 1230, // MOVED: 30 units east from block 113 start for proper clearance
       y: 320,
       direction: SignalDirection.east, // Eastbound signal for departures to blocks 113/115
       routes: [
@@ -4154,12 +4154,12 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['T30'] = TrainStop(
         id: 'T30',
         signalId: 'C30',
-        x: 855,
-        y: 340); // Signal at 865, westbound -10
+        x: 755,
+        y: 340); // Signal at 765, westbound -10
     trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 60, y: 120); // Signal at 50, eastbound +10
     // REMOVED TC02 - was within 20 units of T30 (duplicate, C02 signal removed)
     trainStops['TC03'] =
-        TrainStop(id: 'TC03', signalId: 'C03', x: 1210, y: 340); // Signal at 1200, eastbound +10
+        TrainStop(id: 'TC03', signalId: 'C03', x: 1240, y: 340); // Signal at 1230, eastbound +10
     // trainStops['TC04'] removed - signal C04 no longer exists
 
     // RIGHT SECTION: Signals and trainstops
@@ -6306,22 +6306,8 @@ class TerminalStationController extends ChangeNotifier {
         }
       }
 
-      if (signal.id == 'C03') {
-        // C03 only shows green when train is in platform on block 109 or 111
-        bool trainInPlatform = false;
-        for (var train in trains) {
-          if ((train.currentBlockId == '109' || train.currentBlockId == '111') &&
-              train.direction > 0) {
-            trainInPlatform = true;
-            break;
-          }
-        }
-
-        if (!trainInPlatform) {
-          signal.aspect = SignalAspect.red;
-          continue;
-        }
-      }
+      // REMOVED restrictive C03 logic - now uses standard route-based interlocking
+      // Signal C03 will show green when route is clear and properly reserved
 
       // Special approach control logic for C28
       if (signal.id == 'C28') {
@@ -7517,16 +7503,16 @@ class TerminalStationController extends ChangeNotifier {
           }
         }
 
-        // Buffer stop check - FIXED: Should trigger AFTER block 111 ends (at x >= 1400, end of block 113)
-        if (train.direction > 0 && train.y > 250 && train.x >= 1400) {
+        // Buffer stop check - FIXED: Trigger at actual bufferstop BS4 location (x >= 3500, end of block 319)
+        if (train.direction > 0 && train.y > 250 && train.x >= 3500) {
           if (train.controlMode == TrainControlMode.manual) {
             _handleBufferCollision(train.id);
           } else {
-            train.x = 1400;
+            train.x = 3500;
             train.speed = 0;
             train.targetSpeed = 0;
             train.emergencyBrake = true;
-            _logEvent('🛑 ${train.name} reached buffer stop (safety)');
+            _logEvent('🛑 ${train.name} reached buffer stop BS4 at block 319 end');
           }
         }
 

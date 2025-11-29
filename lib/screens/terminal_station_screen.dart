@@ -1153,34 +1153,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             ],
           ),
         ),
-        
-        // AB106 status indicator
-        if (ab106Occupied) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.deepOrange.withOpacity(0.1),
-              border: Border.all(color: Colors.deepOrange),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.warning, size: 12, color: Colors.deepOrange),
-                const SizedBox(width: 4),
-                const Text(
-                  'Crossover Occupied - Both Points Locked',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.deepOrange,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }

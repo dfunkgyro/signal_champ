@@ -345,7 +345,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         layerPoints.add(componentId);
       } else if (controller.platforms.any((p) => p.id == componentId)) {
         layerPlatforms.add(componentId);
-      } else if (controller.trainStops.any((s) => s.id == componentId)) {
+      } else if (controller.trainStops.values.any((s) => s.id == componentId)) {
         layerStops.add(componentId);
       } else if (controller.axleCounters.containsKey(componentId)) {
         layerAxleCounters.add(componentId);
@@ -439,7 +439,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   /// Draw only buffer/train stops with IDs in the provided list
   void _drawBufferStopFiltered(Canvas canvas, List<String> stopIds) {
     for (final stopId in stopIds) {
-      final stop = controller.trainStops.where((s) => s.id == stopId).firstOrNull;
+      final stop = controller.trainStops.values.where((s) => s.id == stopId).firstOrNull;
       if (stop != null) {
         _drawStopMarker(canvas, stop);
       }

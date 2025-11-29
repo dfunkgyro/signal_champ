@@ -9192,73 +9192,6 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Initialize the 5 default layers when first entering edit mode
-  void _initializeDefaultLayers() {
-    // Create default layers from bottom to top
-    final defaultLayers = [
-      RailwayLayer(name: 'Background', type: LayerType.background),
-      RailwayLayer(name: 'Tracks', type: LayerType.tracks),
-      RailwayLayer(name: 'Signals & Points', type: LayerType.signals),
-      RailwayLayer(name: 'Platforms', type: LayerType.platforms),
-      RailwayLayer(name: 'CBTC', type: LayerType.cbtc),
-    ];
-
-    layers.addAll(defaultLayers);
-    activeLayer = layers[1]; // Set Tracks as initial active layer (skip Background)
-
-    // Assign existing components to appropriate layers
-    _assignExistingComponentsToLayers();
-
-    _logEvent('📁 Initialized ${layers.length} default layers');
-  }
-
-  /// Assign all existing components to their appropriate layers
-  void _assignExistingComponentsToLayers() {
-    final tracksLayer = layers.firstWhereOrNull((l) => l.type == LayerType.tracks);
-    final signalsLayer = layers.firstWhereOrNull((l) => l.type == LayerType.signals);
-    final platformsLayer = layers.firstWhereOrNull((l) => l.type == LayerType.platforms);
-    final cbtcLayer = layers.firstWhereOrNull((l) => l.type == LayerType.cbtc);
-
-    // Assign blocks to tracks layer
-    if (tracksLayer != null) {
-      for (final blockId in blocks.keys) {
-        tracksLayer.addComponent(blockId);
-      }
-    }
-
-    // Assign signals and points to signals layer
-    if (signalsLayer != null) {
-      for (final signalId in signals.keys) {
-        signalsLayer.addComponent(signalId);
-      }
-      for (final pointId in points.keys) {
-        signalsLayer.addComponent(pointId);
-      }
-    }
-
-    // Assign platforms and stops to platforms layer
-    if (platformsLayer != null) {
-      for (final platform in platforms) {
-        platformsLayer.addComponent(platform.id);
-      }
-      for (final stop in trainStops) {
-        platformsLayer.addComponent(stop.id);
-      }
-    }
-
-    // Assign CBTC devices to CBTC layer
-    if (cbtcLayer != null) {
-      for (final counterId in axleCounters.keys) {
-        cbtcLayer.addComponent(counterId);
-      }
-      for (final transponderId in transponders.keys) {
-        cbtcLayer.addComponent(transponderId);
-      }
-      for (final antennaId in wifiAntennas.keys) {
-        cbtcLayer.addComponent(antennaId);
-      }
-    }
-  }
 
   /// Change selection mode (pointer, quickSelect, marquee, lasso)
   void setSelectionMode(SelectionMode mode) {
@@ -11373,17 +11306,15 @@ class TerminalStationController extends ChangeNotifier {
     data['signals'] = signals.values.map((signal) {
       return {
         'id': signal.id,
-        'name': signal.name,
         'x': signal.x,
         'y': signal.y,
         'direction': signal.direction.toString(),
         'aspect': signal.aspect.toString(),
-        'locked': signal.locked,
         'routes': signal.routes.map((r) => {
           'id': r.id,
-          'description': r.description,
-          'blockIds': r.blockIds,
-          'pointStates': r.pointStates,
+          'name': r.name,
+          'pathBlocks': r.pathBlocks,
+          'requiredPointPositions': r.requiredPointPositions.map((k, v) => MapEntry(k, v.toString())),
         }).toList(),
       };
     }).toList();
@@ -11446,7 +11377,6 @@ class TerminalStationController extends ChangeNotifier {
         'y': t.y,
         'type': t.type.toString(),
         'description': t.description,
-        'baliseGroupId': t.baliseGroupId,
       };
     }).toList();
 
@@ -11459,7 +11389,7 @@ class TerminalStationController extends ChangeNotifier {
       };
     }).toList();
 
-    data['crossovers'] = crossovers.map((xo) {
+    data['crossovers'] = crossovers.values.map((xo) {
       return {
         'id': xo.id,
         'name': xo.name,
@@ -11542,10 +11472,12 @@ class TerminalStationController extends ChangeNotifier {
             final routeMap = r as Map<String, dynamic>;
             return SignalRoute(
               id: routeMap['id'] as String,
-              description: routeMap['description'] as String,
-              blockIds: List<String>.from(routeMap['blockIds'] as List),
-              pointStates: Map<String, PointPosition>.from(
-                (routeMap['pointStates'] as Map).map((k, v) =>
+              name: routeMap['name'] as String,
+              requiredBlocksClear: [],
+              pathBlocks: List<String>.from(routeMap['pathBlocks'] as List? ?? []),
+              protectedBlocks: [],
+              requiredPointPositions: Map<String, PointPosition>.from(
+                (routeMap['requiredPointPositions'] as Map? ?? {}).map((k, v) =>
                   MapEntry(k as String, PointPosition.values.firstWhere(
                     (pos) => pos.toString() == v,
                     orElse: () => PointPosition.normal,
@@ -11557,12 +11489,11 @@ class TerminalStationController extends ChangeNotifier {
 
           signals[sig['id'] as String] = Signal(
             id: sig['id'] as String,
-            name: sig['name'] as String,
             x: (sig['x'] as num).toDouble(),
             y: (sig['y'] as num).toDouble(),
             direction: SignalDirection.values.firstWhere(
               (d) => d.toString() == sig['direction'],
-              orElse: () => SignalDirection.right,
+              orElse: () => SignalDirection.east,
             ),
             routes: routes,
             aspect: SignalAspect.values.firstWhere(
@@ -11669,10 +11600,9 @@ class TerminalStationController extends ChangeNotifier {
             y: (trans['y'] as num).toDouble(),
             type: TransponderType.values.firstWhere(
               (t) => t.toString() == trans['type'],
-              orElse: () => TransponderType.cbtc,
+              orElse: () => TransponderType.t1,
             ),
             description: trans['description'] as String? ?? '',
-            baliseGroupId: trans['baliseGroupId'] as int?,
           );
         }
         _logEvent('✅ Loaded ${transponders.length} transponders');
@@ -11698,8 +11628,9 @@ class TerminalStationController extends ChangeNotifier {
       if (crossoversData != null) {
         for (final xoJson in crossoversData) {
           final xo = xoJson as Map<String, dynamic>;
-          crossovers.add(Crossover(
-            id: xo['id'] as String,
+          final id = xo['id'] as String;
+          crossovers[id] = Crossover(
+            id: id,
             name: xo['name'] as String,
             blockId: xo['blockId'] as String,
             pointIds: List<String>.from(xo['pointIds'] as List),
@@ -11708,7 +11639,7 @@ class TerminalStationController extends ChangeNotifier {
               orElse: () => CrossoverType.righthand,
             ),
             gapAngle: (xo['gapAngle'] as num?)?.toDouble() ?? 15.0,
-          ));
+          );
         }
         _logEvent('✅ Loaded ${crossovers.length} crossovers');
       }

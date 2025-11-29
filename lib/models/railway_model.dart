@@ -541,14 +541,14 @@ class RailwayModel extends ChangeNotifier {
         endX: 500,
         y: 100,
         nextBlock: 'crossover109',
-        prevBlock: '104',
+        prevBlock: '102',
         isCrossover: true),
     BlockSection(
         id: 'crossover109',
         startX: 500,
         endX: 600,
         y: 300,
-        nextBlock: '109',
+        nextBlock: '107',
         prevBlock: 'crossover106',
         isCrossover: true),
   ];
@@ -577,8 +577,8 @@ class RailwayModel extends ChangeNotifier {
   ];
 
   List<Point> points = [
-    Point(id: '78A', x: 400, y: 100),  // MOVED: End of block 102/start of block 104
-    Point(id: '78B', x: 600, y: 300),  // MOVED: End of block 105/start of block 107
+    Point(id: '78A', x: 400, y: 100),  // End of block 102 - controls crossover entry from upper track
+    Point(id: '78B', x: 600, y: 300),  // Start of block 107 - controls crossover entry from lower track
   ];
 
   List<Train> trains = [];
@@ -990,26 +990,26 @@ class RailwayModel extends ChangeNotifier {
     final isEastbound = train.direction == Direction.east;
     final currentBlock = train.currentBlock;
 
-    // Entering crossover from block 104 eastbound
-    if (currentBlock == '104' && nextBlockId == 'crossover106' && isEastbound) {
-      train.currentCrossoverRoute = '104→crossover106→crossover109→109';
+    // Entering crossover from block 102 eastbound
+    if (currentBlock == '102' && nextBlockId == 'crossover106' && isEastbound) {
+      train.currentCrossoverRoute = '102→crossover106→crossover109→107';
       train.isOnCrossover = true;
     }
 
-    // Entering crossover from block 109 westbound
-    if (currentBlock == '109' && nextBlockId == 'crossover109' && !isEastbound) {
-      train.currentCrossoverRoute = '109→crossover109→crossover106→104';
+    // Entering crossover from block 107 westbound
+    if (currentBlock == '107' && nextBlockId == 'crossover109' && !isEastbound) {
+      train.currentCrossoverRoute = '107→crossover109→crossover106→102';
       train.isOnCrossover = true;
     }
 
-    // Exiting crossover to block 109 (eastbound complete)
-    if (currentBlock == 'crossover109' && nextBlockId == '109' && isEastbound) {
+    // Exiting crossover to block 107 (eastbound complete)
+    if (currentBlock == 'crossover109' && nextBlockId == '107' && isEastbound) {
       train.isOnCrossover = false;
       train.currentCrossoverRoute = null;
     }
 
-    // Exiting crossover to block 104 (westbound complete)
-    if (currentBlock == 'crossover106' && nextBlockId == '104' && !isEastbound) {
+    // Exiting crossover to block 102 (westbound complete)
+    if (currentBlock == 'crossover106' && nextBlockId == '102' && !isEastbound) {
       train.isOnCrossover = false;
       train.currentCrossoverRoute = null;
     }
@@ -1203,22 +1203,22 @@ class RailwayModel extends ChangeNotifier {
     // MIDDLE CROSSOVER (Central Station) - Points 78A/78B
     // ───────────────────────────────────────────────────────────────────────────
 
-    // Block 104 (upper) eastbound approaching point 78A at x=400
-    if (currentBlock == '104' && isEastbound) {
+    // Block 102 (upper) eastbound approaching point 78A at x=400
+    if (currentBlock == '102' && isEastbound) {
       final point78A = points.firstWhere((p) => p.id == '78A');
       if (point78A.position == PointPosition.reverse) {
-        return 'crossover106'; // Diverge to crossover
+        return 'crossover106'; // Diverge to crossover (upper to lower)
       }
-      return '106'; // Straight through (78A normal)
+      return '104'; // Straight through (78A normal)
     }
 
-    // Block 109 (lower) westbound approaching point 78B at x=600
-    if (currentBlock == '109' && !isEastbound) {
+    // Block 107 (lower) westbound approaching point 78B at x=600
+    if (currentBlock == '107' && !isEastbound) {
       final point78B = points.firstWhere((p) => p.id == '78B');
       if (point78B.position == PointPosition.reverse) {
-        return 'crossover109'; // Diverge to crossover
+        return 'crossover109'; // Diverge to crossover (lower to upper)
       }
-      return '107'; // Straight through (78B normal)
+      return '105'; // Straight through (78B normal)
     }
 
     // Middle crossover traversal (committed path)
@@ -1227,7 +1227,7 @@ class RailwayModel extends ChangeNotifier {
     }
 
     if (currentBlock == 'crossover109' && isEastbound) {
-      return '109';
+      return '107';
     }
 
     if (currentBlock == 'crossover109' && !isEastbound) {
@@ -1235,7 +1235,7 @@ class RailwayModel extends ChangeNotifier {
     }
 
     if (currentBlock == 'crossover106' && !isEastbound) {
-      return '104';
+      return '102';
     }
 
     // ───────────────────────────────────────────────────────────────────────────

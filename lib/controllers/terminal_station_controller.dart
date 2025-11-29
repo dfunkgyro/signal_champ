@@ -4651,7 +4651,17 @@ class TerminalStationController extends ChangeNotifier {
     for (final stopId in trainStops.keys) {
       platformsLayer.addComponent(stopId);
     }
-    
+
+    // Assign buffer stops to platforms layer
+    for (final bufferStopId in bufferStops.keys) {
+      platformsLayer.addComponent(bufferStopId);
+    }
+
+    // Assign crossovers to tracks layer
+    for (final crossoverId in crossovers.keys) {
+      tracksLayer.addComponent(crossoverId);
+    }
+
     // Assign CBTC infrastructure to CBTC layer
     for (final counterId in axleCounters.keys) {
       cbtcLayer.addComponent(counterId);
@@ -4662,7 +4672,7 @@ class TerminalStationController extends ChangeNotifier {
     for (final transponderId in transponders.keys) {
       cbtcLayer.addComponent(transponderId);
     }
-    
+
     _logEvent('📁 Initialized ${layers.length} default layers with ${_getTotalComponentCount()} components');
   }
   
@@ -9176,9 +9186,16 @@ class TerminalStationController extends ChangeNotifier {
         pauseSimulation();
       }
 
-      // Initialize default layers if none exist
-      if (layers.isEmpty) {
+      // Initialize default layers if none exist OR if layers have no components assigned
+      // (this handles the case where layers were created but components weren't migrated)
+      final totalComponentsInLayers = _getTotalComponentCount();
+      final totalComponentsInController = blocks.length + signals.length + points.length +
+          platforms.length + trainStops.length + bufferStops.length + crossovers.length +
+          axleCounters.length + wifiAntennas.length + transponders.length;
+
+      if (layers.isEmpty || totalComponentsInLayers < totalComponentsInController) {
         _initializeDefaultLayers();
+        _logEvent('📁 Re-assigned $totalComponentsInController components to layers');
       }
 
       _logEvent('🔧 Edit Mode ENABLED - Simulation paused');

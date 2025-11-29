@@ -3662,14 +3662,14 @@ class TerminalStationController extends ChangeNotifier {
     );
     bufferStops['BS3'] = BufferStop(
       id: 'BS3',
-      x: 3400, // Right end, upper track (original hardcoded position)
+      x: 3500, // Right end, upper track - at end of block 318
       y: 100,
       width: 30,
       height: 20,
     );
     bufferStops['BS4'] = BufferStop(
       id: 'BS4',
-      x: 3400, // Right end, lower track
+      x: 3500, // Right end, lower track - at end of block 319
       y: 300,
       width: 30,
       height: 20,
@@ -3920,7 +3920,7 @@ class TerminalStationController extends ChangeNotifier {
     // Lower track westbound signals
     signals['C30'] = Signal(
       id: 'C30',
-      x: 965, // MOVED: 55 units east from previous position (910 + 55 = 965)
+      x: 865, // MOVED: 100 units west from previous position (965 - 100 = 865)
       y: 320,
       direction: SignalDirection.west, // Westbound signal
       routes: [
@@ -3948,7 +3948,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['C03'] = Signal(
       id: 'C03',
-      x: 810, // MOVED: 10 units from start of platform 2 (at opposite end from C30)
+      x: 1200, // MOVED: At start of block 113 for proper route protection
       y: 320,
       direction: SignalDirection.east, // Eastbound signal for departures to blocks 113/115
       routes: [
@@ -4154,12 +4154,12 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['T30'] = TrainStop(
         id: 'T30',
         signalId: 'C30',
-        x: 955,
-        y: 340); // Signal at 965, westbound -10
+        x: 855,
+        y: 340); // Signal at 865, westbound -10
     trainStops['TC01'] = TrainStop(id: 'TC01', signalId: 'C01', x: 60, y: 120); // Signal at 50, eastbound +10
     // REMOVED TC02 - was within 20 units of T30 (duplicate, C02 signal removed)
     trainStops['TC03'] =
-        TrainStop(id: 'TC03', signalId: 'C03', x: 820, y: 340); // Signal at 810, eastbound +10
+        TrainStop(id: 'TC03', signalId: 'C03', x: 1210, y: 340); // Signal at 1200, eastbound +10
     // trainStops['TC04'] removed - signal C04 no longer exists
 
     // RIGHT SECTION: Signals and trainstops
@@ -6292,6 +6292,18 @@ class TerminalStationController extends ChangeNotifier {
           signal.aspect = SignalAspect.red;
           continue;
         }
+
+        // C30 Route 2: Show yellow (blue) when using crossover (78A and 78B reverse)
+        if (signal.activeRouteId == 'C30_R2') {
+          final point78A = points['78A'];
+          final point78B = points['78B'];
+          if (point78A?.position == PointPosition.reverse &&
+              point78B?.position == PointPosition.reverse) {
+            // Show yellow aspect when diverging via crossover
+            signal.aspect = allClear ? SignalAspect.blue : SignalAspect.red;
+            continue;
+          }
+        }
       }
 
       if (signal.id == 'C03') {
@@ -8099,37 +8111,42 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
     // CENTER SECTION DOUBLE CROSSOVER (x=400 to 600, points 78A, 78B)
-    // CRITICAL FIX: Corrected x-range to match actual crossover blocks
-    // crossover106: startX=400, endX=500, y=150
-    // crossover109: startX=500, endX=600, y=300
-    // FIXED: Check both current track AND direction to determine crossover routing
-    else if (x >= 400 && x < 600) {
+    // RECALCULATED: Proper 45-degree crossover movement for both directions
+    // crossover106: startX=400, endX=500, y=150 (upper crossover section)
+    // crossover109: startX=500, endX=600, y=250 (lower crossover section)
+    // Point 78A at x=400, y=100 | Point 78B at x=600, y=300
+    else if (x >= 400 && x <= 600) {
       if (point78A?.position == PointPosition.reverse &&
           point78B?.position == PointPosition.reverse) {
-        // Calculate progress across the ENTIRE crossover (0.0 to 1.0)
-        double progress = (x - 400) / 200; // 200 units total (400 to 600)
 
         if (currentY < 200) {
           // Train on UPPER track (y=100)
           if (direction > 0) {
-            // Eastbound: cross DOWN to lower track
-            y = 100 + (200 * progress); // Smooth interpolation down
-            rotation = 0.785398; // 45 degrees (down-right)
+            // EASTBOUND: Cross DOWN from upper (y=100) to lower (y=300)
+            // Calculate progress from 0.0 (at x=400) to 1.0 (at x=600)
+            double progress = (x - 400) / 200;
+            // Interpolate along 45-degree diagonal
+            y = 100 + (200 * progress);
+            rotation = 0.785398; // 45 degrees (down-right diagonal)
           } else {
-            // Westbound: stay on upper track (no crossover)
+            // WESTBOUND on upper track: stay straight (not using crossover)
             y = 100;
             rotation = 0.0;
           }
         } else {
           // Train on LOWER track (y=300)
           if (direction > 0) {
-            // Eastbound: stay on lower track (no crossover)
+            // EASTBOUND on lower track: stay straight (not using crossover)
             y = 300;
             rotation = 0.0;
           } else {
-            // Westbound: cross UP to upper track
-            y = 300 - (200 * progress); // Smooth interpolation up
-            rotation = 2.356194; // 135 degrees (up-left)
+            // WESTBOUND: Cross UP from lower (y=300) to upper (y=100)
+            // Calculate progress from 0.0 (at x=600) to 1.0 (at x=400)
+            // For westbound, x decreases, so invert the progress calculation
+            double progress = (600 - x) / 200;
+            // Interpolate along 45-degree diagonal
+            y = 300 - (200 * progress);
+            rotation = 2.356194; // 135 degrees (up-left diagonal)
           }
         }
       } else {

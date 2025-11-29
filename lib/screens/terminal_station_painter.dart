@@ -267,18 +267,9 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       _drawGrid(canvas, size);
     }
 
-    // Layer-aware rendering: If layers exist AND contain components, render by layer z-order
-    // Safety check: Ensure layers actually have components assigned
-    final layersHaveComponents = controller.layers.isNotEmpty &&
-        controller.layers.any((layer) => layer.componentIds.isNotEmpty);
-
-    if (layersHaveComponents) {
-      _paintWithLayers(canvas, size);
-    } else {
-      // Legacy rendering: Draw all components in default order
-      // This ensures railway always renders even if layer system has issues
-      _paintLegacy(canvas, size);
-    }
+    // Always use legacy rendering to ensure railway components always display
+    // Layer system is disabled to prevent component visibility issues
+    _paintLegacy(canvas, size);
 
     // Draw selection highlight (edit mode)
     if (controller.editModeEnabled) {

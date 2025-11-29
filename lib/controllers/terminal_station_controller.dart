@@ -7610,7 +7610,7 @@ class TerminalStationController extends ChangeNotifier {
         case 'crossover106':
           return 'crossover109';
         case 'crossover109':
-          return '109';
+          return '107'; // FIXED: Crossover exits to block 107 (x=600), not 109 (x=800)
       }
 
       // RIGHT SECTION (300-314)
@@ -8280,45 +8280,39 @@ class TerminalStationController extends ChangeNotifier {
     // ═══════════════════════════════════════════════════════════════════════
     // CENTER CROSSOVER (crossover106/crossover109) - Central Station
     // ═══════════════════════════════════════════════════════════════════════
+    //
+    // ROUTING REFERENCE (from _getNextBlockForTrain):
+    // Eastbound: Block 102 (78A reverse) -> crossover106 -> crossover109 -> Block 107
+    // Westbound: Block 109 (78B reverse) -> crossover109 -> crossover106 -> Block 104
 
-    // EASTBOUND - Entering from upper track (104)
-    if (fromBlock == '104' && toBlock == 'crossover106' && isEastbound) {
-      train.currentCrossoverRoute = '104→crossover106→crossover109→109';
+    // EASTBOUND - Entering from upper track (102) when point 78A is reverse
+    if (fromBlock == '102' && toBlock == 'crossover106' && isEastbound) {
+      train.currentCrossoverRoute = '102→crossover106→crossover109→107';
       train.isOnCrossover = true;
     }
-    // EASTBOUND - Entering from lower track (109)
-    if (fromBlock == '109' && toBlock == 'crossover109' && isEastbound) {
-      train.currentCrossoverRoute = '109→crossover109→crossover106→108';
+    // EASTBOUND - Middle transition (crossover106 to crossover109)
+    if (fromBlock == 'crossover106' && toBlock == 'crossover109' && isEastbound) {
+      train.currentCrossoverRoute = '102→crossover106→crossover109→107';
       train.isOnCrossover = true;
     }
-    // EASTBOUND - Exiting to lower track (109)
-    if (fromBlock == 'crossover109' && toBlock == '109' && isEastbound) {
+    // EASTBOUND - Exiting to lower track (107) - FIXED: was 109
+    if (fromBlock == 'crossover109' && toBlock == '107' && isEastbound) {
       train.isOnCrossover = false;
       train.currentCrossoverRoute = null;
     }
-    // EASTBOUND - Exiting to upper track (108)
-    if (fromBlock == 'crossover106' && toBlock == '108' && isEastbound) {
-      train.isOnCrossover = false;
-      train.currentCrossoverRoute = null;
-    }
 
-    // WESTBOUND - Entering from lower track (109)
+    // WESTBOUND - Entering from lower track (109) when point 78B is reverse
     if (fromBlock == '109' && toBlock == 'crossover109' && !isEastbound) {
       train.currentCrossoverRoute = '109→crossover109→crossover106→104';
       train.isOnCrossover = true;
     }
-    // WESTBOUND - Entering from upper track (106)
-    if (fromBlock == '106' && toBlock == 'crossover106' && !isEastbound) {
-      train.currentCrossoverRoute = '106→crossover106→crossover109→107';
+    // WESTBOUND - Middle transition (crossover109 to crossover106)
+    if (fromBlock == 'crossover109' && toBlock == 'crossover106' && !isEastbound) {
+      train.currentCrossoverRoute = '109→crossover109→crossover106→104';
       train.isOnCrossover = true;
     }
     // WESTBOUND - Exiting to upper track (104)
     if (fromBlock == 'crossover106' && toBlock == '104' && !isEastbound) {
-      train.isOnCrossover = false;
-      train.currentCrossoverRoute = null;
-    }
-    // WESTBOUND - Exiting to lower track (107)
-    if (fromBlock == 'crossover109' && toBlock == '107' && !isEastbound) {
       train.isOnCrossover = false;
       train.currentCrossoverRoute = null;
     }

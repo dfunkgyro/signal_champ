@@ -7647,7 +7647,7 @@ class TerminalStationController extends ChangeNotifier {
 
       // Crossovers
       if (currentBlock.id == 'crossover106') return 'crossover109';
-      if (currentBlock.id == 'crossover109') return '109';
+      if (currentBlock.id == 'crossover109') return '107'; // FIXED: Crossover exits to block 107, not 109
     } else {
       // ========== WESTBOUND (Lower Track) ==========
 

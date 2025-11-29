@@ -497,18 +497,15 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   void _drawABOccupations(Canvas canvas) {
     if (!controller.axleCountersVisible) return;
 
-    // COMPREHENSIVE AB POSITIONS - All 10 ABs
+    // COMPREHENSIVE AB POSITIONS - Updated with new axle counter positions
     final Map<String, Offset> abPositions = {
-      'AB100': const Offset(274, 135), // ac100(100,120) ↔ ac106(447,150)
-      'AB101': const Offset(300, 335), // ac101(100,320) ↔ ac105(500,350)
-      'AB104': const Offset(498, 135), // ac106(447,150) ↔ ac104(550,120)
-      'AB105': const Offset(474, 250), // ac105(500,350) ↔ ac106(447,150)
-      'AB106': const Offset(500, 175), // ac106(447,150) ↔ ac107(553,200) - Crossover
-      'AB107': const Offset(551, 160), // ac104(550,120) ↔ ac107(553,200)
-      'AB108': const Offset(626, 160), // ac107(553,200) ↔ ac108(700,120)
-      'AB109': const Offset(701, 260), // ac107(553,200) ↔ ac109(850,320)
-      'AB111': const Offset(1000, 335), // ac109(850,320) ↔ ac111(1150,320)
-      'AB112': const Offset(1000, 135), // ac108(700,120) ↔ ac112(1300,120)
+      'AB100': const Offset(140, 120), // ac100(380,120) ↔ ac214(-100,120)
+      'AB101': const Offset(225, 320), // ac215(-100,320) ↔ ac101(550,320)
+      'AB105': const Offset(502, 210), // ac106(420,140) ↔ ac105(585,280)
+      'AB108': const Offset(625, 120), // ac104(550,120) ↔ ac108(700,120)
+      'AB109': const Offset(740, 320), // ac107(630,320) ↔ ac109(850,320)
+      'AB111': const Offset(1000, 320), // ac109(850,320) ↔ ac111(1150,320)
+      'AB112': const Offset(1000, 120), // ac108(700,120) ↔ ac112(1300,120)
     };
 
     for (var abId in abPositions.keys) {
@@ -559,37 +556,25 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           ..style = PaintingStyle.stroke;
 
         switch (abId) {
-          case 'AB100': // ac100(100,120) ↔ ac106(447,150)
+          case 'AB100': // ac100(380,120) ↔ ac214(-100,120)
             canvas.drawLine(
-                const Offset(100, 120), const Offset(447, 150), linePaint);
+                const Offset(380, 120), const Offset(-100, 120), linePaint);
             break;
-          case 'AB101': // ac101(100,320) ↔ ac105(500,350)
+          case 'AB101': // ac215(-100,320) ↔ ac101(550,320)
             canvas.drawLine(
-                const Offset(100, 320), const Offset(500, 350), linePaint);
+                const Offset(-100, 320), const Offset(550, 320), linePaint);
             break;
-          case 'AB104': // ac106(447,150) ↔ ac104(550,120)
+          case 'AB105': // ac106(420,140) ↔ ac105(585,280)
             canvas.drawLine(
-                const Offset(447, 150), const Offset(550, 120), linePaint);
+                const Offset(420, 140), const Offset(585, 280), linePaint);
             break;
-          case 'AB105': // ac105(500,350) ↔ ac106(447,150)
+          case 'AB108': // ac104(550,120) ↔ ac108(700,120)
             canvas.drawLine(
-                const Offset(500, 350), const Offset(447, 150), linePaint);
+                const Offset(550, 120), const Offset(700, 120), linePaint);
             break;
-          case 'AB106': // ac106(447,150) ↔ ac107(553,200) - Crossover path
+          case 'AB109': // ac107(630,320) ↔ ac109(850,320)
             canvas.drawLine(
-                const Offset(447, 150), const Offset(553, 200), linePaint);
-            break;
-          case 'AB107': // ac104(550,120) ↔ ac107(553,200)
-            canvas.drawLine(
-                const Offset(550, 120), const Offset(553, 200), linePaint);
-            break;
-          case 'AB108': // ac107(553,200) ↔ ac108(700,120)
-            canvas.drawLine(
-                const Offset(553, 200), const Offset(700, 120), linePaint);
-            break;
-          case 'AB109': // ac107(553,200) ↔ ac109(850,320)
-            canvas.drawLine(
-                const Offset(553, 200), const Offset(850, 320), linePaint);
+                const Offset(630, 320), const Offset(850, 320), linePaint);
             break;
           case 'AB111': // ac109(850,320) ↔ ac111(1150,320)
             canvas.drawLine(
@@ -1171,9 +1156,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       Color pointColor;
 
       // Determine point color based on state
-      final ab106Occupied = controller.ace.isABOccupied('AB106');
-      final isABDeadlocked =
-          (point.id == '78A' || point.id == '78B') && ab106Occupied;
+      final isABDeadlocked = false; // AB106 removed - no longer used
 
       if (isABDeadlocked) {
         pointColor = themeData.pointDeadlockColor; // Deadlock color

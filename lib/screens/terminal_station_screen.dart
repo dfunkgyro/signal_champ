@@ -1086,12 +1086,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   // Top Panel Points Section
   Widget _buildTopPointsSection(TerminalStationController controller) {
-    // Deadlock logic for 78A/B
-    final ab104Occupied = controller.ace.isABOccupied('AB104');
-    final ab106Occupied = controller.ace.isABOccupied('AB106');
+    // Deadlock logic for 78A/B - AB104, AB106, AB107 removed
     final ab109Occupied = controller.ace.isABOccupied('AB109');
-    final ab106DeadlockActive = ab106Occupied;
-    final anyABDeadlock = ab104Occupied || ab106Occupied || ab109Occupied;
+    final anyABDeadlock = ab109Occupied;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1107,12 +1104,12 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: ab106DeadlockActive ? Colors.deepOrange : Colors.red,
+                  color: Colors.red,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text(
-                  ab106DeadlockActive ? 'AB106 DEADLOCK' : 'AB DEADLOCKED',
-                  style: const TextStyle(
+                child: const Text(
+                  'AB DEADLOCKED',
+                  style: TextStyle(
                       fontSize: 8,
                       color: Colors.white,
                       fontWeight: FontWeight.bold),
@@ -1134,18 +1131,18 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               _buildPointControl(context, controller, '77B'),
               // 78A/B (with specific deadlock logic)
               _buildPointControl(
-                context, 
-                controller, 
-                '78A', 
-                isDeadlocked: ab104Occupied || ab106Occupied,
-                deadlockReason: ab106Occupied ? 'AB106 Occ' : (ab104Occupied ? 'AB104 Occ' : 'Free'),
+                context,
+                controller,
+                '78A',
+                isDeadlocked: false, // AB104, AB106 removed
+                deadlockReason: 'Free',
               ),
               _buildPointControl(
-                context, 
-                controller, 
+                context,
+                controller,
                 '78B',
-                isDeadlocked: ab109Occupied || ab106Occupied,
-                deadlockReason: ab106Occupied ? 'AB106 Occ' : (ab109Occupied ? 'AB109 Occ' : 'Free'),
+                isDeadlocked: ab109Occupied,
+                deadlockReason: ab109Occupied ? 'AB109 Occ' : 'Free',
               ),
               // 79A/B
               _buildPointControl(context, controller, '79A'),

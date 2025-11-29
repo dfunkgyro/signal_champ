@@ -272,7 +272,7 @@ IMPORTANT RULES:
 - Block IDs: 100-115, 198-215, 300-319
 - Crossover IDs: crossover_211_212, crossover106, crossover109, crossover_303_304
 - Platform IDs: P1-P6
-- AB sections: AB100, AB105, AB106, AB108, AB111
+- AB sections: AB100, AB101, AB105, AB108, AB109, AB111, AB112
 
 When providing fault-finding advice, use the diagnostic flowchart from the SSM knowledge base.
 

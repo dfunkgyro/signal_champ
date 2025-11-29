@@ -145,6 +145,7 @@ class AxleCounterEvaluator {
     abResults.clear();
 
     // Get all counter values
+    // Middle section
     final ac100 = axleCounters['ac100']?.count ?? 0;
     final ac104 = axleCounters['ac104']?.count ?? 0;
     final ac108 = axleCounters['ac108']?.count ?? 0;
@@ -156,36 +157,70 @@ class AxleCounterEvaluator {
     final ac109 = axleCounters['ac109']?.count ?? 0;
     final ac111 = axleCounters['ac111']?.count ?? 0;
 
+    // Left section (upper track 200-214)
+    final ac200 = axleCounters['ac200']?.count ?? 0;
+    final ac202 = axleCounters['ac202']?.count ?? 0;
+    final ac204 = axleCounters['ac204']?.count ?? 0;
+    final ac206 = axleCounters['ac206']?.count ?? 0;
+    final ac208 = axleCounters['ac208']?.count ?? 0;
+    final ac210 = axleCounters['ac210']?.count ?? 0;
+    final ac212 = axleCounters['ac212']?.count ?? 0;
+    final ac214 = axleCounters['ac214']?.count ?? 0;
+
+    // Left section (lower track 197-215)
+    final ac197 = axleCounters['ac197']?.count ?? 0;
+    final ac199 = axleCounters['ac199']?.count ?? 0;
+    final ac201 = axleCounters['ac201']?.count ?? 0;
+    final ac203 = axleCounters['ac203']?.count ?? 0;
+    final ac205 = axleCounters['ac205']?.count ?? 0;
+    final ac207 = axleCounters['ac207']?.count ?? 0;
+    final ac209 = axleCounters['ac209']?.count ?? 0;
+    final ac211 = axleCounters['ac211']?.count ?? 0;
+    final ac213 = axleCounters['ac213']?.count ?? 0;
+    final ac215 = axleCounters['ac215']?.count ?? 0;
+
+    // Right section (upper track 300-318)
+    final ac300 = axleCounters['ac300']?.count ?? 0;
+    final ac302 = axleCounters['ac302']?.count ?? 0;
+    final ac304 = axleCounters['ac304']?.count ?? 0;
+    final ac306 = axleCounters['ac306']?.count ?? 0;
+    final ac308 = axleCounters['ac308']?.count ?? 0;
+    final ac310 = axleCounters['ac310']?.count ?? 0;
+    final ac312 = axleCounters['ac312']?.count ?? 0;
+    final ac314 = axleCounters['ac314']?.count ?? 0;
+    final ac316 = axleCounters['ac316']?.count ?? 0;
+    final ac318 = axleCounters['ac318']?.count ?? 0;
+
+    // Right section (lower track 301-319)
+    final ac301 = axleCounters['ac301']?.count ?? 0;
+    final ac303 = axleCounters['ac303']?.count ?? 0;
+    final ac305 = axleCounters['ac305']?.count ?? 0;
+    final ac307 = axleCounters['ac307']?.count ?? 0;
+    final ac309 = axleCounters['ac309']?.count ?? 0;
+    final ac311 = axleCounters['ac311']?.count ?? 0;
+    final ac313 = axleCounters['ac313']?.count ?? 0;
+    final ac315 = axleCounters['ac315']?.count ?? 0;
+    final ac317 = axleCounters['ac317']?.count ?? 0;
+    final ac319 = axleCounters['ac319']?.count ?? 0;
+
     // Update AB sections with bidirectional handling - COMPREHENSIVE MAPPING
-    // AB100: Upper track start to crossover106 (ac100 ↔ ac106)
-    abResults['AB100'] = _calculateBidirectionalSection('AB100', ac100, ac106);
-    abResults['AB100'] = _calculateBidirectionalSection('AB100', ac106, ac100);
+    // AB100: Upper track - ac100 ↔ ac214 (entry/exit both ways)
+    abResults['AB100'] = _calculateBidirectionalSection('AB100', ac100, ac214);
+    abResults['AB100'] = _calculateBidirectionalSection('AB100', ac214, ac100);
 
-    // AB101: Lower track start to middle (ac101 ↔ ac105)
-    abResults['AB101'] = _calculateBidirectionalSection('AB101', ac101, ac105);
-    abResults['AB101'] = _calculateBidirectionalSection('AB101', ac105, ac101);
+    // AB101: Lower track - ac215 ↔ ac101 (entry/exit both ways)
+    abResults['AB101'] = _calculateBidirectionalSection('AB101', ac215, ac101);
+    abResults['AB101'] = _calculateBidirectionalSection('AB101', ac101, ac215);
 
-    // AB104: Crossover106 to track 104 (ac106 ↔ ac104)
-    abResults['AB104'] = _calculateBidirectionalSection('AB104', ac106, ac104);
-    abResults['AB104'] = _calculateBidirectionalSection('AB104', ac104, ac106);
-
-    // AB105: Track 105 to crossover106 (ac105 ↔ ac106)
-    abResults['AB105'] = _calculateBidirectionalSection('AB105', ac105, ac106);
+    // AB105: ac106 ↔ ac105 (entry/exit both ways)
     abResults['AB105'] = _calculateBidirectionalSection('AB105', ac106, ac105);
+    abResults['AB105'] = _calculateBidirectionalSection('AB105', ac105, ac106);
 
-    // AB106: Crossover path (crossover106 ↔ crossover109)
-    abResults['AB106'] = _calculateBidirectionalSection('AB106', ac106, ac107);
-    abResults['AB106'] = _calculateBidirectionalSection('AB106', ac107, ac106);
+    // AB108: ac104 ↔ ac108 (entry/exit both ways)
+    abResults['AB108'] = _calculateBidirectionalSection('AB108', ac104, ac108);
+    abResults['AB108'] = _calculateBidirectionalSection('AB108', ac108, ac104);
 
-    // AB107: Track 104 to crossover109 (ac104 ↔ ac107)
-    abResults['AB107'] = _calculateBidirectionalSection('AB107', ac104, ac107);
-    abResults['AB107'] = _calculateBidirectionalSection('AB107', ac107, ac104);
-
-    // AB108: Crossover109 exit to track 108 (ac107 ↔ ac108)
-    abResults['AB108'] = _calculateBidirectionalSection('AB108', ac107, ac108);
-    abResults['AB108'] = _calculateBidirectionalSection('AB108', ac108, ac107);
-
-    // AB109: Crossover109 to track 109 (ac107 ↔ ac109)
+    // AB109: ac107 ↔ ac109 (entry/exit both ways)
     abResults['AB109'] = _calculateBidirectionalSection('AB109', ac107, ac109);
     abResults['AB109'] = _calculateBidirectionalSection('AB109', ac109, ac107);
 
@@ -196,6 +231,112 @@ class AxleCounterEvaluator {
     // AB112: Track 108 to eastern boundary (ac108 ↔ ac112)
     abResults['AB112'] = _calculateBidirectionalSection('AB112', ac108, ac112);
     abResults['AB112'] = _calculateBidirectionalSection('AB112', ac112, ac108);
+
+    // LEFT SECTION AB OCCUPANCY - Upper track (200-214)
+    abResults['AB200'] = _calculateBidirectionalSection('AB200', ac200, ac202);
+    abResults['AB200'] = _calculateBidirectionalSection('AB200', ac202, ac200);
+
+    abResults['AB202'] = _calculateBidirectionalSection('AB202', ac202, ac204);
+    abResults['AB202'] = _calculateBidirectionalSection('AB202', ac204, ac202);
+
+    abResults['AB204'] = _calculateBidirectionalSection('AB204', ac204, ac206);
+    abResults['AB204'] = _calculateBidirectionalSection('AB204', ac206, ac204);
+
+    abResults['AB206'] = _calculateBidirectionalSection('AB206', ac206, ac208);
+    abResults['AB206'] = _calculateBidirectionalSection('AB206', ac208, ac206);
+
+    abResults['AB208'] = _calculateBidirectionalSection('AB208', ac208, ac210);
+    abResults['AB208'] = _calculateBidirectionalSection('AB208', ac210, ac208);
+
+    abResults['AB210'] = _calculateBidirectionalSection('AB210', ac210, ac212);
+    abResults['AB210'] = _calculateBidirectionalSection('AB210', ac212, ac210);
+
+    abResults['AB212'] = _calculateBidirectionalSection('AB212', ac212, ac214);
+    abResults['AB212'] = _calculateBidirectionalSection('AB212', ac214, ac212);
+
+    // LEFT SECTION AB OCCUPANCY - Lower track (197-215)
+    abResults['AB197'] = _calculateBidirectionalSection('AB197', ac197, ac199);
+    abResults['AB197'] = _calculateBidirectionalSection('AB197', ac199, ac197);
+
+    abResults['AB199'] = _calculateBidirectionalSection('AB199', ac199, ac201);
+    abResults['AB199'] = _calculateBidirectionalSection('AB199', ac201, ac199);
+
+    abResults['AB201'] = _calculateBidirectionalSection('AB201', ac201, ac203);
+    abResults['AB201'] = _calculateBidirectionalSection('AB201', ac203, ac201);
+
+    abResults['AB203'] = _calculateBidirectionalSection('AB203', ac203, ac205);
+    abResults['AB203'] = _calculateBidirectionalSection('AB203', ac205, ac203);
+
+    abResults['AB205'] = _calculateBidirectionalSection('AB205', ac205, ac207);
+    abResults['AB205'] = _calculateBidirectionalSection('AB205', ac207, ac205);
+
+    abResults['AB207'] = _calculateBidirectionalSection('AB207', ac207, ac209);
+    abResults['AB207'] = _calculateBidirectionalSection('AB207', ac209, ac207);
+
+    abResults['AB209'] = _calculateBidirectionalSection('AB209', ac209, ac211);
+    abResults['AB209'] = _calculateBidirectionalSection('AB209', ac211, ac209);
+
+    abResults['AB211'] = _calculateBidirectionalSection('AB211', ac211, ac213);
+    abResults['AB211'] = _calculateBidirectionalSection('AB211', ac213, ac211);
+
+    abResults['AB213'] = _calculateBidirectionalSection('AB213', ac213, ac215);
+    abResults['AB213'] = _calculateBidirectionalSection('AB213', ac215, ac213);
+
+    // RIGHT SECTION AB OCCUPANCY - Upper track (300-318)
+    abResults['AB300'] = _calculateBidirectionalSection('AB300', ac300, ac302);
+    abResults['AB300'] = _calculateBidirectionalSection('AB300', ac302, ac300);
+
+    abResults['AB302'] = _calculateBidirectionalSection('AB302', ac302, ac304);
+    abResults['AB302'] = _calculateBidirectionalSection('AB302', ac304, ac302);
+
+    abResults['AB304'] = _calculateBidirectionalSection('AB304', ac304, ac306);
+    abResults['AB304'] = _calculateBidirectionalSection('AB304', ac306, ac304);
+
+    abResults['AB306'] = _calculateBidirectionalSection('AB306', ac306, ac308);
+    abResults['AB306'] = _calculateBidirectionalSection('AB306', ac308, ac306);
+
+    abResults['AB308'] = _calculateBidirectionalSection('AB308', ac308, ac310);
+    abResults['AB308'] = _calculateBidirectionalSection('AB308', ac310, ac308);
+
+    abResults['AB310'] = _calculateBidirectionalSection('AB310', ac310, ac312);
+    abResults['AB310'] = _calculateBidirectionalSection('AB310', ac312, ac310);
+
+    abResults['AB312'] = _calculateBidirectionalSection('AB312', ac312, ac314);
+    abResults['AB312'] = _calculateBidirectionalSection('AB312', ac314, ac312);
+
+    abResults['AB314'] = _calculateBidirectionalSection('AB314', ac314, ac316);
+    abResults['AB314'] = _calculateBidirectionalSection('AB314', ac316, ac314);
+
+    abResults['AB316'] = _calculateBidirectionalSection('AB316', ac316, ac318);
+    abResults['AB316'] = _calculateBidirectionalSection('AB316', ac318, ac316);
+
+    // RIGHT SECTION AB OCCUPANCY - Lower track (301-319)
+    abResults['AB301'] = _calculateBidirectionalSection('AB301', ac301, ac303);
+    abResults['AB301'] = _calculateBidirectionalSection('AB301', ac303, ac301);
+
+    abResults['AB303'] = _calculateBidirectionalSection('AB303', ac303, ac305);
+    abResults['AB303'] = _calculateBidirectionalSection('AB303', ac305, ac303);
+
+    abResults['AB305'] = _calculateBidirectionalSection('AB305', ac305, ac307);
+    abResults['AB305'] = _calculateBidirectionalSection('AB305', ac307, ac305);
+
+    abResults['AB307'] = _calculateBidirectionalSection('AB307', ac307, ac309);
+    abResults['AB307'] = _calculateBidirectionalSection('AB307', ac309, ac307);
+
+    abResults['AB309'] = _calculateBidirectionalSection('AB309', ac309, ac311);
+    abResults['AB309'] = _calculateBidirectionalSection('AB309', ac311, ac309);
+
+    abResults['AB311'] = _calculateBidirectionalSection('AB311', ac311, ac313);
+    abResults['AB311'] = _calculateBidirectionalSection('AB311', ac313, ac311);
+
+    abResults['AB313'] = _calculateBidirectionalSection('AB313', ac313, ac315);
+    abResults['AB313'] = _calculateBidirectionalSection('AB313', ac315, ac313);
+
+    abResults['AB315'] = _calculateBidirectionalSection('AB315', ac315, ac317);
+    abResults['AB315'] = _calculateBidirectionalSection('AB315', ac317, ac315);
+
+    abResults['AB317'] = _calculateBidirectionalSection('AB317', ac317, ac319);
+    abResults['AB317'] = _calculateBidirectionalSection('AB317', ac319, ac317);
 
     print(
         '🔢 ACE Results: ${abResults.entries.map((e) => '${e.key}=${e.value}').join(', ')}');
@@ -2400,9 +2541,9 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac_cx211_212'] = AxleCounter(
         id: 'ac_cx211_212', blockId: 'crossover_211_212', x: -375, y: 200);
 
-    // MIDDLE SECTION AXLE COUNTERS (100-115) - Original
+    // MIDDLE SECTION AXLE COUNTERS (100-115) - REPOSITIONED
     axleCounters['ac100'] =
-        AxleCounter(id: 'ac100', blockId: '100', x: 100, y: 120);
+        AxleCounter(id: 'ac100', blockId: '100', x: 380, y: 120); // MOVED: Repositioned to x:380
     axleCounters['ac104'] =
         AxleCounter(id: 'ac104', blockId: '104', x: 550, y: 120);
     axleCounters['ac108'] =
@@ -2411,30 +2552,30 @@ class TerminalStationController extends ChangeNotifier {
         AxleCounter(id: 'ac112', blockId: '112', x: 1300, y: 120);
 
     axleCounters['ac101'] =
-        AxleCounter(id: 'ac101', blockId: '101', x: 100, y: 320);
+        AxleCounter(id: 'ac101', blockId: '105', x: 550, y: 320); // MOVED: Repositioned to block 105 at x:550
     axleCounters['ac105'] =
-        AxleCounter(id: 'ac105', blockId: '105', x: 500, y: 350); // MOVED: Updated x to 500 (middle of block 105) due to crossover repositioning
+        AxleCounter(id: 'ac105', blockId: 'crossover109', x: 585, y: 280); // MOVED: Repositioned to crossover109 at x:585, y:280
     axleCounters['ac109'] =
         AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
     axleCounters['ac111'] =
         AxleCounter(id: 'ac111', blockId: '111', x: 1150, y: 320);
 
     // Middle section crossovers
-    // UPDATED: ac106 positioned halfway along crossover106 (y=150), 3 units left of running rails (x=447)
+    // REPOSITIONED: ac106 moved to crossover106 at x:420, y:140
     axleCounters['ac106'] = AxleCounter(
       id: 'ac106',
       blockId: 'crossover106',
-      x: 447,
-      y: 150,
+      x: 420,
+      y: 140,
       isTwin: false,
       twinLabel: 'ac106',
     );
-    // UPDATED: ac107 positioned halfway along crossover109 (y=200), 3 units right of running rails (x=553)
+    // REPOSITIONED: ac107 moved to block 107 at x:630, y:320
     axleCounters['ac107'] = AxleCounter(
       id: 'ac107',
-      blockId: 'crossover109',
-      x: 553,
-      y: 200,
+      blockId: '107',
+      x: 630,
+      y: 320,
       isTwin: false,
       twinLabel: 'ac107',
     );
@@ -3226,7 +3367,7 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L04'] = Signal(
       id: 'L04',
-      x: -100,
+      x: -120, // MOVED: 20 units left from -100
       y: 340, // Lower track westbound signal position
       direction: SignalDirection.west,
       routes: [
@@ -3616,7 +3757,7 @@ class TerminalStationController extends ChangeNotifier {
     trainStops['TL03'] =
         TrainStop(id: 'TL03', signalId: 'L03', x: -800, y: 120); // Signal at -810, eastbound +10
     trainStops['TL04'] =
-        TrainStop(id: 'TL04', signalId: 'L04', x: -110, y: 340); // Signal at -100, westbound -10
+        TrainStop(id: 'TL04', signalId: 'L04', x: -130, y: 340); // MOVED: Signal at -120, westbound -10
     trainStops['TL05'] =
         TrainStop(id: 'TL05', signalId: 'L05', x: -190, y: 120); // Signal at -200, eastbound +10
     trainStops['TL06'] =

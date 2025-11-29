@@ -1004,11 +1004,115 @@ class TerminalStationController extends ChangeNotifier {
   void clearLayer(String layerId) {
     final layer = layers.firstWhereOrNull((l) => l.id == layerId);
     if (layer == null || layer.isLocked) return;
-    
+
     final componentCount = layer.componentIds.length;
     layer.componentIds.clear();
     _logEvent('🧹 Cleared $componentCount components from layer: ${layer.name}');
     notifyListeners();
+  }
+
+  /// Create a component from the palette and add to the active layer
+  /// Returns the component ID if successful, null otherwise
+  String? createComponentFromPalette({
+    required String componentType,
+    required double x,
+    required double y,
+  }) {
+    // Check if there's an active layer
+    if (activeLayer == null) {
+      _logEvent('⚠️ No active layer - please select or create a layer first');
+      return null;
+    }
+
+    // Check if active layer is locked
+    if (activeLayer!.isLocked) {
+      _logEvent('🔒 Cannot add components to locked layer: ${activeLayer!.name}');
+      return null;
+    }
+
+    // Generate unique ID for the component
+    final componentId = generateUniqueId(componentType);
+
+    try {
+      // Create the component based on type
+      switch (componentType.toLowerCase()) {
+        case 'block':
+          // Create a block with default length
+          final block = BlockSection(
+            id: componentId,
+            startX: x,
+            endX: x + 200, // Default 200 units length
+            y: y,
+          );
+          blocks[componentId] = block;
+          break;
+
+        case 'signal':
+          createSignal(componentId, x, y);
+          break;
+
+        case 'point':
+        case 'switch':
+          createPoint(componentId, x, y);
+          break;
+
+        case 'crossover':
+          // Create a simple crossover (two points)
+          final point1Id = generateUniqueId('point');
+          final point2Id = generateUniqueId('point');
+          createPoint(point1Id, x, y);
+          createPoint(point2Id, x + 200, y + 200);
+          activeLayer!.addComponent(point1Id);
+          activeLayer!.addComponent(point2Id);
+          _logEvent('✅ Created crossover: $point1Id, $point2Id on layer "${activeLayer!.name}"');
+          selectComponent(point1Id, 'point');
+          return point1Id; // Return first point ID
+
+        case 'platform':
+          createPlatform(componentId, componentId.toUpperCase(), x, y);
+          break;
+
+        case 'trainstop':
+          createTrainStop(componentId, x, y);
+          break;
+
+        case 'bufferstop':
+          createBufferStop(componentId, x, y);
+          break;
+
+        case 'axlecounter':
+          // Find a default block or use first available
+          String blockId = blocks.keys.isNotEmpty ? blocks.keys.first : '100';
+          createAxleCounter(componentId, x, y, blockId);
+          break;
+
+        case 'transponder':
+          createTransponder(componentId, x, y);
+          break;
+
+        case 'wifiantenna':
+          createWifiAntenna(componentId, x, y);
+          break;
+
+        default:
+          _logEvent('❌ Unknown component type: $componentType');
+          return null;
+      }
+
+      // Add component to active layer
+      activeLayer!.addComponent(componentId);
+
+      // Select the newly created component
+      selectComponent(componentId, componentType.toLowerCase());
+
+      _logEvent('✅ Created $componentType "$componentId" on layer "${activeLayer!.name}"');
+      notifyListeners();
+
+      return componentId;
+    } catch (e) {
+      _logEvent('❌ Error creating $componentType: $e');
+      return null;
+    }
   }
 
   // ============================================================================
@@ -9071,6 +9175,12 @@ class TerminalStationController extends ChangeNotifier {
       if (isRunning) {
         pauseSimulation();
       }
+
+      // Initialize default layers if none exist
+      if (layers.isEmpty) {
+        _initializeDefaultLayers();
+      }
+
       _logEvent('🔧 Edit Mode ENABLED - Simulation paused');
     } else {
       // Exiting edit mode - clear selection
@@ -9080,6 +9190,74 @@ class TerminalStationController extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// Initialize the 5 default layers when first entering edit mode
+  void _initializeDefaultLayers() {
+    // Create default layers from bottom to top
+    final defaultLayers = [
+      RailwayLayer(name: 'Background', type: LayerType.background),
+      RailwayLayer(name: 'Tracks', type: LayerType.tracks),
+      RailwayLayer(name: 'Signals & Points', type: LayerType.signals),
+      RailwayLayer(name: 'Platforms', type: LayerType.platforms),
+      RailwayLayer(name: 'CBTC', type: LayerType.cbtc),
+    ];
+
+    layers.addAll(defaultLayers);
+    activeLayer = layers[1]; // Set Tracks as initial active layer (skip Background)
+
+    // Assign existing components to appropriate layers
+    _assignExistingComponentsToLayers();
+
+    _logEvent('📁 Initialized ${layers.length} default layers');
+  }
+
+  /// Assign all existing components to their appropriate layers
+  void _assignExistingComponentsToLayers() {
+    final tracksLayer = layers.firstWhereOrNull((l) => l.type == LayerType.tracks);
+    final signalsLayer = layers.firstWhereOrNull((l) => l.type == LayerType.signals);
+    final platformsLayer = layers.firstWhereOrNull((l) => l.type == LayerType.platforms);
+    final cbtcLayer = layers.firstWhereOrNull((l) => l.type == LayerType.cbtc);
+
+    // Assign blocks to tracks layer
+    if (tracksLayer != null) {
+      for (final blockId in blocks.keys) {
+        tracksLayer.addComponent(blockId);
+      }
+    }
+
+    // Assign signals and points to signals layer
+    if (signalsLayer != null) {
+      for (final signalId in signals.keys) {
+        signalsLayer.addComponent(signalId);
+      }
+      for (final pointId in points.keys) {
+        signalsLayer.addComponent(pointId);
+      }
+    }
+
+    // Assign platforms and stops to platforms layer
+    if (platformsLayer != null) {
+      for (final platform in platforms) {
+        platformsLayer.addComponent(platform.id);
+      }
+      for (final stop in trainStops) {
+        platformsLayer.addComponent(stop.id);
+      }
+    }
+
+    // Assign CBTC devices to CBTC layer
+    if (cbtcLayer != null) {
+      for (final counterId in axleCounters.keys) {
+        cbtcLayer.addComponent(counterId);
+      }
+      for (final transponderId in transponders.keys) {
+        cbtcLayer.addComponent(transponderId);
+      }
+      for (final antennaId in wifiAntennas.keys) {
+        cbtcLayer.addComponent(antennaId);
+      }
+    }
   }
 
   /// Change selection mode (pointer, quickSelect, marquee, lasso)

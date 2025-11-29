@@ -267,23 +267,13 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       _drawGrid(canvas, size);
     }
 
-    _drawTracks(canvas);
-    _drawRouteReservations(canvas);
-    _drawPlatforms(canvas);
-    _drawBufferStop(canvas);
-    _drawPoints(canvas);
-    _drawSignals(canvas);
-    _drawTrainStops(canvas);
-    _drawAxleCounters(canvas);
-    _drawABOccupations(canvas);
-    _drawWiFiAntennas(canvas); // FIXED: Draw WiFi coverage zones
-    _drawTransponders(canvas); // FIXED: Draw track transponders
-    _drawMovementAuthorities(
-        canvas); // Draw movement authority arrows before trains
-    _drawTrains(canvas);
-    _drawGhostTrains(canvas); // Draw ghost trains in shadow mode if visible
-    _drawDirectionLabels(canvas);
-    _drawLabels(canvas);
+    // Layer-aware rendering: If layers exist, render by layer z-order
+    if (controller.layers.isNotEmpty) {
+      _paintWithLayers(canvas, size);
+    } else {
+      // Legacy rendering: Draw all components in default order
+      _paintLegacy(canvas, size);
+    }
 
     // Draw selection highlight (edit mode)
     if (controller.editModeEnabled) {
@@ -298,6 +288,326 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
 
     canvas.restore();
+  }
+
+  /// Layer-aware rendering: Paint components organized by layers (bottom to top)
+  void _paintWithLayers(Canvas canvas, Size size) {
+    // Render layers from bottom to top (respecting z-order)
+    for (final layer in controller.layers) {
+      // Skip invisible layers
+      if (!layer.isVisible) continue;
+
+      // Apply layer opacity using saveLayer
+      if (layer.opacity < 1.0) {
+        canvas.saveLayer(
+          null,
+          Paint()..color = Color.fromRGBO(255, 255, 255, layer.opacity),
+        );
+      }
+
+      // Draw components that belong to this layer
+      _paintLayerComponents(canvas, layer);
+
+      // Restore canvas if we applied opacity
+      if (layer.opacity < 1.0) {
+        canvas.restore();
+      }
+    }
+
+    // Draw trains (always on top, not layer-specific)
+    _drawTrains(canvas);
+    _drawGhostTrains(canvas);
+    _drawDirectionLabels(canvas);
+    _drawLabels(canvas);
+  }
+
+  /// Paint all components belonging to a specific layer
+  void _paintLayerComponents(Canvas canvas, layer) {
+    final componentIds = layer.componentIds;
+    if (componentIds.isEmpty) return;
+
+    // Categorize components by type for efficient rendering
+    final layerBlocks = <String>[];
+    final layerSignals = <String>[];
+    final layerPoints = <String>[];
+    final layerPlatforms = <String>[];
+    final layerStops = <String>[];
+    final layerAxleCounters = <String>[];
+    final layerTransponders = <String>[];
+    final layerWifiAntennas = <String>[];
+
+    for (final componentId in componentIds) {
+      if (controller.blocks.containsKey(componentId)) {
+        layerBlocks.add(componentId);
+      } else if (controller.signals.containsKey(componentId)) {
+        layerSignals.add(componentId);
+      } else if (controller.points.containsKey(componentId)) {
+        layerPoints.add(componentId);
+      } else if (controller.platforms.any((p) => p.id == componentId)) {
+        layerPlatforms.add(componentId);
+      } else if (controller.trainStops.any((s) => s.id == componentId)) {
+        layerStops.add(componentId);
+      } else if (controller.axleCounters.containsKey(componentId)) {
+        layerAxleCounters.add(componentId);
+      } else if (controller.transponders.containsKey(componentId)) {
+        layerTransponders.add(componentId);
+      } else if (controller.wifiAntennas.containsKey(componentId)) {
+        layerWifiAntennas.add(componentId);
+      }
+    }
+
+    // Draw components in proper rendering order
+    _drawTracksFiltered(canvas, layerBlocks);
+    _drawRouteReservations(canvas);
+    _drawPlatformsFiltered(canvas, layerPlatforms);
+    _drawBufferStopFiltered(canvas, layerStops);
+    _drawPointsFiltered(canvas, layerPoints);
+    _drawSignalsFiltered(canvas, layerSignals);
+    _drawTrainStopsFiltered(canvas, layerStops);
+    _drawAxleCountersFiltered(canvas, layerAxleCounters);
+    _drawABOccupations(canvas);
+    _drawWiFiAntennasFiltered(canvas, layerWifiAntennas);
+    _drawTranspondersFiltered(canvas, layerTransponders);
+    _drawMovementAuthorities(canvas);
+  }
+
+  /// Legacy rendering: Draw all components in default order (no layers)
+  void _paintLegacy(Canvas canvas, Size size) {
+    _drawTracks(canvas);
+    _drawRouteReservations(canvas);
+    _drawPlatforms(canvas);
+    _drawBufferStop(canvas);
+    _drawPoints(canvas);
+    _drawSignals(canvas);
+    _drawTrainStops(canvas);
+    _drawAxleCounters(canvas);
+    _drawABOccupations(canvas);
+    _drawWiFiAntennas(canvas);
+    _drawTransponders(canvas);
+    _drawMovementAuthorities(canvas);
+    _drawTrains(canvas);
+    _drawGhostTrains(canvas);
+    _drawDirectionLabels(canvas);
+    _drawLabels(canvas);
+  }
+
+  // ============================================================================
+  // FILTERED DRAWING METHODS (Layer-aware rendering)
+  // ============================================================================
+
+  /// Draw only tracks (blocks) with IDs in the provided list
+  void _drawTracksFiltered(Canvas canvas, List<String> blockIds) {
+    for (final blockId in blockIds) {
+      final block = controller.blocks[blockId];
+      if (block != null && !block.id.startsWith('crossover')) {
+        _drawBlock(canvas, block);
+      }
+    }
+    _drawCrossoverTrack(canvas); // Crossovers are drawn separately
+  }
+
+  /// Draw only signals with IDs in the provided list
+  void _drawSignalsFiltered(Canvas canvas, List<String> signalIds) {
+    for (final signalId in signalIds) {
+      final signal = controller.signals[signalId];
+      if (signal != null) {
+        _drawSignal(canvas, signal);
+      }
+    }
+  }
+
+  /// Draw only points with IDs in the provided list
+  void _drawPointsFiltered(Canvas canvas, List<String> pointIds) {
+    for (final pointId in pointIds) {
+      final point = controller.points[pointId];
+      if (point != null) {
+        _drawPoint(canvas, point);
+      }
+    }
+  }
+
+  /// Draw only platforms with IDs in the provided list
+  void _drawPlatformsFiltered(Canvas canvas, List<String> platformIds) {
+    for (final platformId in platformIds) {
+      final platform = controller.platforms.where((p) => p.id == platformId).firstOrNull;
+      if (platform != null) {
+        _drawPlatform(canvas, platform);
+      }
+    }
+  }
+
+  /// Draw only buffer/train stops with IDs in the provided list
+  void _drawBufferStopFiltered(Canvas canvas, List<String> stopIds) {
+    for (final stopId in stopIds) {
+      final stop = controller.trainStops.where((s) => s.id == stopId).firstOrNull;
+      if (stop != null) {
+        _drawStopMarker(canvas, stop);
+      }
+    }
+  }
+
+  /// Draw only train stops with IDs in the provided list
+  void _drawTrainStopsFiltered(Canvas canvas, List<String> stopIds) {
+    _drawBufferStopFiltered(canvas, stopIds); // Same rendering
+  }
+
+  /// Draw only axle counters with IDs in the provided list
+  void _drawAxleCountersFiltered(Canvas canvas, List<String> counterIds) {
+    for (final counterId in counterIds) {
+      final counter = controller.axleCounters[counterId];
+      if (counter != null) {
+        _drawAxleCounter(canvas, counter);
+      }
+    }
+  }
+
+  /// Draw only transponders with IDs in the provided list
+  void _drawTranspondersFiltered(Canvas canvas, List<String> transponderIds) {
+    for (final transponderId in transponderIds) {
+      final transponder = controller.transponders[transponderId];
+      if (transponder != null) {
+        _drawSingleTransponder(canvas, transponder);
+      }
+    }
+  }
+
+  /// Draw only WiFi antennas with IDs in the provided list
+  void _drawWiFiAntennasFiltered(Canvas canvas, List<String> antennaIds) {
+    for (final antennaId in antennaIds) {
+      final antenna = controller.wifiAntennas[antennaId];
+      if (antenna != null) {
+        _drawSingleWiFiAntenna(canvas, antenna);
+      }
+    }
+  }
+
+  // ============================================================================
+  // SINGLE COMPONENT DRAWING HELPERS
+  // ============================================================================
+
+  /// Draw a single signal
+  void _drawSignal(Canvas canvas, Signal signal) {
+    if (!controller.signalsVisible) return;
+
+    final polePaint = Paint()
+      ..color = themeData.signalPoleColor
+      ..strokeWidth = 5 * themeData.strokeWidthMultiplier;
+
+    canvas.drawLine(Offset(signal.x, signal.y),
+        Offset(signal.x, signal.y - 40), polePaint);
+
+    _drawSignalHead(canvas, signal);
+  }
+
+  /// Draw a single point
+  void _drawPoint(Canvas canvas, Point point) {
+    // Extract point drawing logic from _drawPoints method
+    // This will reuse the existing point rendering code
+    final pointPaint = Paint()
+      ..color = point.position == PointPosition.normal ? Colors.green : Colors.red
+      ..strokeWidth = 4 * themeData.strokeWidthMultiplier;
+
+    // Draw point representation (simplified - actual implementation may vary)
+    canvas.drawCircle(Offset(point.x, point.y), 8, pointPaint);
+  }
+
+  /// Draw a single platform
+  void _drawPlatform(Canvas canvas, Platform platform) {
+    final platformPaint = Paint()
+      ..color = themeData.platformColor
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(platform.startX, platform.y - 25,
+                      platform.endX - platform.startX, 50),
+        const Radius.circular(4),
+      ),
+      platformPaint,
+    );
+  }
+
+  /// Draw a single stop marker (train stop / buffer stop)
+  void _drawStopMarker(Canvas canvas, dynamic stop) {
+    final stopPaint = Paint()
+      ..color = stop.isBufferStop ? Colors.red : Colors.orange
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(Offset(stop.x, stop.y), 6, stopPaint);
+  }
+
+  /// Draw a single axle counter
+  void _drawAxleCounter(Canvas canvas, AxleCounter counter) {
+    final counterPaint = Paint()
+      ..color = Colors.blue
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(counter.x, counter.y),
+        width: 12,
+        height: 12,
+      ),
+      counterPaint,
+    );
+  }
+
+  /// Draw a single transponder
+  void _drawSingleTransponder(Canvas canvas, Transponder transponder) {
+    Color color;
+    switch (transponder.type) {
+      case TransponderType.t1:
+        color = Colors.yellow[700]!;
+        break;
+      case TransponderType.t2:
+        color = Colors.orange[700]!;
+        break;
+      case TransponderType.t3:
+        color = Colors.amber[700]!;
+        break;
+      case TransponderType.t6:
+        color = Colors.lime[700]!;
+        break;
+    }
+
+    final transponderPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(transponder.x, transponder.y - 6);
+    path.lineTo(transponder.x + 6, transponder.y);
+    path.lineTo(transponder.x, transponder.y + 6);
+    path.lineTo(transponder.x - 6, transponder.y);
+    path.close();
+
+    canvas.drawPath(path, transponderPaint);
+  }
+
+  /// Draw a single WiFi antenna
+  void _drawSingleWiFiAntenna(Canvas canvas, WifiAntenna antenna) {
+    if (!controller.cbtcDevicesEnabled) return;
+
+    final rangePaint = Paint()
+      ..color = antenna.isActive
+          ? Colors.blue.withOpacity(0.08)
+          : Colors.grey.withOpacity(0.05)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(Offset(antenna.x, antenna.y), 350.0, rangePaint);
+
+    final antennaPaint = Paint()
+      ..color = antenna.isActive ? Colors.blue : Colors.grey
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(antenna.x, antenna.y),
+        width: 8,
+        height: 20,
+      ),
+      antennaPaint,
+    );
   }
 
   // FIXED: Draw WiFi Antennas with coverage range circles

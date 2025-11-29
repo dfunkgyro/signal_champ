@@ -10,6 +10,8 @@ import '../widgets/relay_rack_panel.dart';
 import '../widgets/edit_mode_toolbar.dart';
 import '../widgets/dot_matrix_display.dart';
 import '../widgets/layer_panel.dart';
+import '../widgets/component_palette.dart';
+import '../widgets/canvas_drop_target.dart';
 import 'scenario_marketplace_screen.dart';
 import 'dart:math' as math;
 
@@ -250,33 +252,49 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               ),
 
               // Layer 3: Left Sidebar (higher z-order)
-              if (_showLeftPanel)
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 320,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      border: Border(
-                        right: BorderSide(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 2,
+              Consumer<TerminalStationController>(
+                builder: (context, controller, child) {
+                  if (!_showLeftPanel) return const SizedBox.shrink();
+
+                  // Show Component Palette in edit mode
+                  if (controller.editModeEnabled) {
+                    return const Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: ComponentPalette(),
+                    );
+                  }
+
+                  // Show Control Panel in normal mode
+                  return Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 320,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        border: Border(
+                          right: BorderSide(
+                            color: Theme.of(context).colorScheme.outline,
+                            width: 2,
+                          ),
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                            offset: const Offset(2, 0),
+                          ),
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                          offset: const Offset(2, 0),
-                        ),
-                      ],
+                      child: _buildControlPanel(),
                     ),
-                    child: _buildControlPanel(),
-                  ),
-                ),
+                  );
+                },
+              ),
 
               // Layer 4: Right Sidebar (higher z-order)
               // Layer 4: Right Sidebar (higher z-order)
@@ -3941,13 +3959,22 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       color: Colors.grey[200],
       child: Consumer<TerminalStationController>(
         builder: (context, controller, _) {
-          // In edit mode, wrap with scrollbars for navigation
+          // Wrap in CanvasDropTarget for drag-and-drop from palette
+          final canvasWidget = controller.editModeEnabled
+              ? _buildScrollableCanvas(controller)
+              : _buildCanvasContent(controller);
+
+          // In edit mode, enable drop target for palette components
           if (controller.editModeEnabled) {
-            return _buildScrollableCanvas(controller);
+            return CanvasDropTarget(
+              offset: Offset(_offsetX, _offsetY),
+              scale: _zoom,
+              child: canvasWidget,
+            );
           }
 
-          // Normal mode: standard canvas with panning
-          return _buildCanvasContent(controller);
+          // Normal mode: standard canvas without drop target
+          return canvasWidget;
         },
       ),
     );

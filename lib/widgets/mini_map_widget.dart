@@ -314,17 +314,19 @@ class MiniMapPainterEnhanced extends CustomPainter {
       final viewportMinimapWidth = viewportCanvasWidth * scaleX;
       final viewportMinimapHeight = viewportCanvasHeight * scaleY;
 
-      // Draw viewport rectangle centered on the correct position
+      // Draw viewport rectangle centered on the correct position (stroke only, no fill to prevent imprint)
+      final viewportPaint = Paint()
+        ..color = Colors.white.withOpacity(0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
       canvas.drawRect(
         Rect.fromCenter(
           center: Offset(minimapCenterX, minimapCenterY),
           width: viewportMinimapWidth,
           height: viewportMinimapHeight,
         ),
-        Paint()
-          ..color = Colors.white.withOpacity(0.3)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
+        viewportPaint,
       );
     }
 

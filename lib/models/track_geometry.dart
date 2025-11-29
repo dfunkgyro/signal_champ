@@ -304,20 +304,21 @@ class TrackNetworkGeometry {
     addPath(TrackPath.straight(id: '115', startX: 1400, endX: 1600, y: 300));
 
     // Crossover segments - diagonal paths with speed restrictions
+    // FIXED: Coordinates now match point 78A (400,100) to point 78B (600,300)
     addPath(TrackPath.crossover(
       id: 'crossover106',
-      startX: 600,
+      startX: 400,
       startY: 100,
-      endX: 700,
+      endX: 500,
       endY: 200,
       speedLimit: 2.0, // 40% of normal speed
     ));
 
     addPath(TrackPath.crossover(
       id: 'crossover109',
-      startX: 700,
+      startX: 500,
       startY: 200,
-      endX: 800,
+      endX: 600,
       endY: 300,
       speedLimit: 2.0, // 40% of normal speed
     ));

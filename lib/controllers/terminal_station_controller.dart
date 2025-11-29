@@ -9272,6 +9272,24 @@ class TerminalStationController extends ChangeNotifier {
   /// removeFromSelection: if true, removes from selection (Alt/Option key behavior)
   void selectComponent(String type, String id,
       {bool addToSelection = false, bool removeFromSelection = false}) {
+    // PHASE 5.1: Layer-aware selection
+    // Check if component can be edited (must be on active layer and not locked)
+    final componentLayer = getComponentLayer(id);
+
+    // If layers exist and component is not on active layer, warn user
+    if (layers.isNotEmpty && activeLayer != null && componentLayer != null) {
+      if (componentLayer != activeLayer) {
+        _logEvent('⚠️ Cannot select "$id" - not on active layer. Switch to "${componentLayer.name}" layer first.');
+        return;
+      }
+
+      // PHASE 5.5: Locked layer protection
+      if (componentLayer.isLocked) {
+        _logEvent('🔒 Cannot select "$id" - layer "${componentLayer.name}" is locked.');
+        return;
+      }
+    }
+
     if (removeFromSelection) {
       // Alt/Option key - remove from selection
       multiSelection.removeWhere((s) => s.type == type && s.id == id);
@@ -9282,7 +9300,7 @@ class TerminalStationController extends ChangeNotifier {
       }
       _logEvent('➖ Removed from selection: $type $id');
     } else if (addToSelection) {
-      // Shift key - add to selection
+      // PHASE 5.2: Shift key - add to multi-selection
       if (!multiSelection.any((s) => s.type == type && s.id == id)) {
         final component = SelectedComponent(
           type: type,
@@ -9299,6 +9317,7 @@ class TerminalStationController extends ChangeNotifier {
       multiSelection.clear();
       selectedComponentType = type;
       selectedComponentId = id;
+      _logEvent('✓ Selected: $type $id');
     }
     notifyListeners();
   }
@@ -10174,6 +10193,165 @@ class TerminalStationController extends ChangeNotifier {
       default:
         return false;
     }
+  }
+
+  // ============================================================================
+  // PHASE 5.3: GROUP OPERATIONS FOR MULTI-SELECTION
+  // ============================================================================
+
+  /// Delete all selected components (multi-selection support)
+  void deleteMultiSelection() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected');
+      return;
+    }
+
+    final count = multiSelection.length;
+    final componentsToDelete = List<SelectedComponent>.from(multiSelection);
+
+    for (final component in componentsToDelete) {
+      deleteComponent(component.type, component.id);
+    }
+
+    multiSelection.clear();
+    clearSelection();
+    _logEvent('🗑️ Deleted $count components');
+    notifyListeners();
+  }
+
+  /// Copy all selected components to clipboard (multi-selection support)
+  void copyMultiSelection() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected to copy');
+      return;
+    }
+
+    final clipboardData = <Map<String, dynamic>>[];
+
+    for (final component in multiSelection) {
+      final data = getComponentData(component.type, component.id);
+      if (data.isNotEmpty) {
+        clipboardData.add({
+          'type': component.type,
+          'id': component.id,
+          'data': data,
+          'originalX': component.originalX,
+          'originalY': component.originalY,
+        });
+      }
+    }
+
+    if (clipboardData.isEmpty) {
+      _logEvent('❌ No valid components to copy');
+      return;
+    }
+
+    // Store multi-component clipboard
+    _clipboard = {
+      'multi': true,
+      'components': clipboardData,
+      'count': clipboardData.length,
+    };
+
+    _logEvent('📋 Copied ${clipboardData.length} components');
+    notifyListeners();
+  }
+
+  /// Paste multiple components from clipboard
+  void pasteMultiSelection({Offset? pastePosition}) {
+    if (_clipboard == null || _clipboard!['multi'] != true) {
+      // Fall back to single-component paste
+      pasteComponent(pastePosition: pastePosition);
+      return;
+    }
+
+    final components = _clipboard!['components'] as List<Map<String, dynamic>>;
+    if (components.isEmpty) {
+      _logEvent('❌ Clipboard is empty');
+      return;
+    }
+
+    // Calculate bounding box center of original selection
+    final originalXs = components.map((c) => c['originalX'] as double).toList();
+    final originalYs = components.map((c) => c['originalY'] as double).toList();
+    final centerX = (originalXs.reduce((a, b) => a + b)) / originalXs.length;
+    final centerY = (originalYs.reduce((a, b) => a + b)) / originalYs.length;
+
+    // Target position (default offset by 50,50)
+    final targetCenter = pastePosition ?? Offset(centerX + 50, centerY + 50);
+    final dx = targetCenter.dx - centerX;
+    final dy = targetCenter.dy - centerY;
+
+    final newSelection = <SelectedComponent>[];
+
+    // Paste each component with relative offset preserved
+    for (final component in components) {
+      final type = component['type'] as String;
+      final originalData = component['data'] as Map<String, dynamic>;
+      final originalX = component['originalX'] as double;
+      final originalY = component['originalY'] as double;
+
+      // Calculate new position
+      final newX = originalX + dx;
+      final newY = originalY + dy;
+
+      // Generate new ID
+      final newId = _generateUniqueId(type);
+
+      // Create copy of data with new position
+      final newData = Map<String, dynamic>.from(originalData);
+      newData['x'] = newX;
+      newData['y'] = newY;
+      newData['id'] = newId;
+
+      try {
+        _addComponentFromData(type, newId, newData);
+
+        // Add to active layer if layers exist
+        if (activeLayer != null) {
+          activeLayer!.addComponent(newId);
+        }
+
+        newSelection.add(SelectedComponent(
+          type: type,
+          id: newId,
+          originalX: newX,
+          originalY: newY,
+        ));
+      } catch (e) {
+        _logEvent('⚠️ Failed to paste $type: $e');
+      }
+    }
+
+    // Select all newly pasted components
+    multiSelection.clear();
+    multiSelection.addAll(newSelection);
+
+    _logEvent('📌 Pasted ${newSelection.length} components');
+    notifyListeners();
+  }
+
+  /// Move all selected components by delta
+  void moveMultiSelection(double dx, double dy) {
+    if (multiSelection.isEmpty) return;
+
+    for (final component in multiSelection) {
+      _moveComponent(component.type, component.id, dx, dy);
+    }
+
+    _logEvent('↔️ Moved ${multiSelection.length} components');
+    notifyListeners();
+  }
+
+  /// Duplicate all selected components
+  void duplicateMultiSelection() {
+    if (multiSelection.isEmpty) {
+      _logEvent('❌ No components selected to duplicate');
+      return;
+    }
+
+    copyMultiSelection();
+    pasteMultiSelection();
   }
 
   /// Add component from data map (placeholder - needs full implementation)
@@ -11161,6 +11339,496 @@ class TerminalStationController extends ChangeNotifier {
       debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
+  }
+
+  // ============================================================================
+  // PHASE 6: DATA PERSISTENCE WITH LAYERS
+  // ============================================================================
+
+  /// Export entire layout to JSON including layers (Phase 6.1)
+  Map<String, dynamic> exportLayoutToJson() {
+    final data = <String, dynamic>{};
+
+    // Version information for backward compatibility
+    data['version'] = '2.0'; // Version 2.0 includes layers
+    data['exportDate'] = DateTime.now().toIso8601String();
+
+    // PHASE 6.1: Export layer definitions
+    data['layers'] = layers.map((layer) => layer.toJson()).toList();
+    data['activeLayerId'] = activeLayer?.id;
+
+    // Export all components
+    data['blocks'] = blocks.values.map((block) {
+      return {
+        'id': block.id,
+        'name': block.name,
+        'startX': block.startX,
+        'endX': block.endX,
+        'y': block.y,
+        'occupied': block.occupied,
+        'occupyingTrainId': block.occupyingTrainId,
+      };
+    }).toList();
+
+    data['signals'] = signals.values.map((signal) {
+      return {
+        'id': signal.id,
+        'name': signal.name,
+        'x': signal.x,
+        'y': signal.y,
+        'direction': signal.direction.toString(),
+        'aspect': signal.aspect.toString(),
+        'locked': signal.locked,
+        'routes': signal.routes.map((r) => {
+          'id': r.id,
+          'description': r.description,
+          'blockIds': r.blockIds,
+          'pointStates': r.pointStates,
+        }).toList(),
+      };
+    }).toList();
+
+    data['points'] = points.values.map((point) {
+      return {
+        'id': point.id,
+        'name': point.name,
+        'x': point.x,
+        'y': point.y,
+        'position': point.position.toString(),
+        'locked': point.locked,
+      };
+    }).toList();
+
+    data['platforms'] = platforms.map((platform) {
+      return {
+        'id': platform.id,
+        'name': platform.name,
+        'startX': platform.startX,
+        'endX': platform.endX,
+        'y': platform.y,
+      };
+    }).toList();
+
+    data['trainStops'] = trainStops.values.map((stop) {
+      return {
+        'id': stop.id,
+        'signalId': stop.signalId,
+        'x': stop.x,
+        'y': stop.y,
+        'enabled': stop.enabled,
+      };
+    }).toList();
+
+    data['bufferStops'] = bufferStops.values.map((stop) {
+      return {
+        'id': stop.id,
+        'x': stop.x,
+        'y': stop.y,
+      };
+    }).toList();
+
+    data['axleCounters'] = axleCounters.values.map((counter) {
+      return {
+        'id': counter.id,
+        'blockId': counter.blockId,
+        'x': counter.x,
+        'y': counter.y,
+        'flipped': counter.flipped,
+        'isTwin': counter.isTwin,
+        'twinLabel': counter.twinLabel,
+      };
+    }).toList();
+
+    data['transponders'] = transponders.values.map((t) {
+      return {
+        'id': t.id,
+        'x': t.x,
+        'y': t.y,
+        'type': t.type.toString(),
+        'description': t.description,
+        'baliseGroupId': t.baliseGroupId,
+      };
+    }).toList();
+
+    data['wifiAntennas'] = wifiAntennas.values.map((wifi) {
+      return {
+        'id': wifi.id,
+        'x': wifi.x,
+        'y': wifi.y,
+        'isActive': wifi.isActive,
+      };
+    }).toList();
+
+    data['crossovers'] = crossovers.map((xo) {
+      return {
+        'id': xo.id,
+        'name': xo.name,
+        'blockId': xo.blockId,
+        'pointIds': xo.pointIds,
+        'type': xo.type.toString(),
+        'gapAngle': xo.gapAngle,
+      };
+    }).toList();
+
+    _logEvent('💾 Exported layout with ${layers.length} layers');
+    return data;
+  }
+
+  /// Import layout from JSON with layer support (Phase 6.2 & 6.3)
+  void importLayoutFromJson(Map<String, dynamic> data) {
+    try {
+      final version = data['version'] as String? ?? '1.0';
+      _logEvent('📂 Loading layout version $version');
+
+      // Clear existing data
+      blocks.clear();
+      signals.clear();
+      points.clear();
+      platforms.clear();
+      trainStops.clear();
+      bufferStops.clear();
+      axleCounters.clear();
+      transponders.clear();
+      wifiAntennas.clear();
+      crossovers.clear();
+      layers.clear();
+      activeLayer = null;
+
+      // PHASE 6.3: Migration strategy for old save files
+      if (version == '1.0' || !data.containsKey('layers')) {
+        _logEvent('🔄 Migrating legacy layout (no layers) to v2.0');
+        _migrateLegacyLayout(data);
+      } else {
+        // PHASE 6.2: Load layer structure
+        final layersData = data['layers'] as List?;
+        if (layersData != null) {
+          for (final layerJson in layersData) {
+            final layer = RailwayLayer.fromJson(layerJson as Map<String, dynamic>);
+            layers.add(layer);
+          }
+          _logEvent('✅ Loaded ${layers.length} layers');
+
+          // Restore active layer
+          final activeLayerId = data['activeLayerId'] as String?;
+          if (activeLayerId != null) {
+            activeLayer = layers.firstWhereOrNull((l) => l.id == activeLayerId);
+          }
+        }
+      }
+
+      // Load blocks
+      final blocksData = data['blocks'] as List?;
+      if (blocksData != null) {
+        for (final blockJson in blocksData) {
+          final block = blockJson as Map<String, dynamic>;
+          blocks[block['id'] as String] = BlockSection(
+            id: block['id'] as String,
+            name: block['name'] as String?,
+            startX: (block['startX'] as num).toDouble(),
+            endX: (block['endX'] as num).toDouble(),
+            y: (block['y'] as num).toDouble(),
+          );
+        }
+        _logEvent('✅ Loaded ${blocks.length} blocks');
+      }
+
+      // Load signals
+      final signalsData = data['signals'] as List?;
+      if (signalsData != null) {
+        for (final signalJson in signalsData) {
+          final sig = signalJson as Map<String, dynamic>;
+          final routesData = sig['routes'] as List?;
+          final routes = routesData?.map((r) {
+            final routeMap = r as Map<String, dynamic>;
+            return SignalRoute(
+              id: routeMap['id'] as String,
+              description: routeMap['description'] as String,
+              blockIds: List<String>.from(routeMap['blockIds'] as List),
+              pointStates: Map<String, PointPosition>.from(
+                (routeMap['pointStates'] as Map).map((k, v) =>
+                  MapEntry(k as String, PointPosition.values.firstWhere(
+                    (pos) => pos.toString() == v,
+                    orElse: () => PointPosition.normal,
+                  ))
+                ),
+              ),
+            );
+          }).toList() ?? [];
+
+          signals[sig['id'] as String] = Signal(
+            id: sig['id'] as String,
+            name: sig['name'] as String,
+            x: (sig['x'] as num).toDouble(),
+            y: (sig['y'] as num).toDouble(),
+            direction: SignalDirection.values.firstWhere(
+              (d) => d.toString() == sig['direction'],
+              orElse: () => SignalDirection.right,
+            ),
+            routes: routes,
+            aspect: SignalAspect.values.firstWhere(
+              (a) => a.toString() == sig['aspect'],
+              orElse: () => SignalAspect.red,
+            ),
+          );
+        }
+        _logEvent('✅ Loaded ${signals.length} signals');
+      }
+
+      // Load points
+      final pointsData = data['points'] as List?;
+      if (pointsData != null) {
+        for (final pointJson in pointsData) {
+          final pt = pointJson as Map<String, dynamic>;
+          points[pt['id'] as String] = Point(
+            id: pt['id'] as String,
+            name: pt['name'] as String,
+            x: (pt['x'] as num).toDouble(),
+            y: (pt['y'] as num).toDouble(),
+            position: PointPosition.values.firstWhere(
+              (p) => p.toString() == pt['position'],
+              orElse: () => PointPosition.normal,
+            ),
+          );
+        }
+        _logEvent('✅ Loaded ${points.length} points');
+      }
+
+      // Load platforms
+      final platformsData = data['platforms'] as List?;
+      if (platformsData != null) {
+        for (final platformJson in platformsData) {
+          final plat = platformJson as Map<String, dynamic>;
+          platforms.add(Platform(
+            id: plat['id'] as String,
+            name: plat['name'] as String,
+            startX: (plat['startX'] as num).toDouble(),
+            endX: (plat['endX'] as num).toDouble(),
+            y: (plat['y'] as num).toDouble(),
+          ));
+        }
+        _logEvent('✅ Loaded ${platforms.length} platforms');
+      }
+
+      // Load train stops
+      final stopsData = data['trainStops'] as List?;
+      if (stopsData != null) {
+        for (final stopJson in stopsData) {
+          final stop = stopJson as Map<String, dynamic>;
+          trainStops[stop['id'] as String] = TrainStop(
+            id: stop['id'] as String,
+            signalId: stop['signalId'] as String,
+            x: (stop['x'] as num).toDouble(),
+            y: (stop['y'] as num).toDouble(),
+            enabled: stop['enabled'] as bool? ?? true,
+          );
+        }
+        _logEvent('✅ Loaded ${trainStops.length} train stops');
+      }
+
+      // Load buffer stops
+      final bufferData = data['bufferStops'] as List?;
+      if (bufferData != null) {
+        for (final bufferJson in bufferData) {
+          final buffer = bufferJson as Map<String, dynamic>;
+          bufferStops[buffer['id'] as String] = BufferStop(
+            id: buffer['id'] as String,
+            x: (buffer['x'] as num).toDouble(),
+            y: (buffer['y'] as num).toDouble(),
+          );
+        }
+        _logEvent('✅ Loaded ${bufferStops.length} buffer stops');
+      }
+
+      // Load axle counters
+      final countersData = data['axleCounters'] as List?;
+      if (countersData != null) {
+        for (final counterJson in countersData) {
+          final counter = counterJson as Map<String, dynamic>;
+          axleCounters[counter['id'] as String] = AxleCounter(
+            id: counter['id'] as String,
+            blockId: counter['blockId'] as String,
+            x: (counter['x'] as num).toDouble(),
+            y: (counter['y'] as num).toDouble(),
+            flipped: counter['flipped'] as bool? ?? false,
+            isTwin: counter['isTwin'] as bool? ?? false,
+            twinLabel: counter['twinLabel'] as String?,
+          );
+        }
+        _logEvent('✅ Loaded ${axleCounters.length} axle counters');
+        ace = AxleCounterEvaluator(axleCounters);
+      }
+
+      // Load transponders
+      final transpondersData = data['transponders'] as List?;
+      if (transpondersData != null) {
+        for (final transponderJson in transpondersData) {
+          final trans = transponderJson as Map<String, dynamic>;
+          transponders[trans['id'] as String] = Transponder(
+            id: trans['id'] as String,
+            x: (trans['x'] as num).toDouble(),
+            y: (trans['y'] as num).toDouble(),
+            type: TransponderType.values.firstWhere(
+              (t) => t.toString() == trans['type'],
+              orElse: () => TransponderType.cbtc,
+            ),
+            description: trans['description'] as String? ?? '',
+            baliseGroupId: trans['baliseGroupId'] as int?,
+          );
+        }
+        _logEvent('✅ Loaded ${transponders.length} transponders');
+      }
+
+      // Load WiFi antennas
+      final wifiData = data['wifiAntennas'] as List?;
+      if (wifiData != null) {
+        for (final wifiJson in wifiData) {
+          final wifi = wifiJson as Map<String, dynamic>;
+          wifiAntennas[wifi['id'] as String] = WifiAntenna(
+            id: wifi['id'] as String,
+            x: (wifi['x'] as num).toDouble(),
+            y: (wifi['y'] as num).toDouble(),
+            isActive: wifi['isActive'] as bool? ?? true,
+          );
+        }
+        _logEvent('✅ Loaded ${wifiAntennas.length} WiFi antennas');
+      }
+
+      // Load crossovers
+      final crossoversData = data['crossovers'] as List?;
+      if (crossoversData != null) {
+        for (final xoJson in crossoversData) {
+          final xo = xoJson as Map<String, dynamic>;
+          crossovers.add(Crossover(
+            id: xo['id'] as String,
+            name: xo['name'] as String,
+            blockId: xo['blockId'] as String,
+            pointIds: List<String>.from(xo['pointIds'] as List),
+            type: CrossoverType.values.firstWhere(
+              (t) => t.toString() == xo['type'],
+              orElse: () => CrossoverType.righthand,
+            ),
+            gapAngle: (xo['gapAngle'] as num?)?.toDouble() ?? 15.0,
+          ));
+        }
+        _logEvent('✅ Loaded ${crossovers.length} crossovers');
+      }
+
+      _logEvent('✨ Layout loaded successfully!');
+      notifyListeners();
+    } catch (e, stackTrace) {
+      _logEvent('❌ Error loading layout: $e');
+      debugPrint('Layout load error: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
+
+  /// PHASE 6.3: Migrate legacy layouts without layers to v2.0 format
+  void _migrateLegacyLayout(Map<String, dynamic> data) {
+    // Create default layers for legacy layouts
+    final backgroundLayer = RailwayLayer(
+      name: 'Background',
+      type: LayerType.background,
+      opacity: 0.3,
+    );
+
+    final tracksLayer = RailwayLayer(
+      name: 'Tracks',
+      type: LayerType.tracks,
+    );
+
+    final signalsLayer = RailwayLayer(
+      name: 'Signals & Points',
+      type: LayerType.signals,
+    );
+
+    final platformsLayer = RailwayLayer(
+      name: 'Platforms',
+      type: LayerType.platforms,
+    );
+
+    final cbtcLayer = RailwayLayer(
+      name: 'CBTC Infrastructure',
+      type: LayerType.cbtc,
+    );
+
+    layers.addAll([
+      backgroundLayer,
+      tracksLayer,
+      signalsLayer,
+      platformsLayer,
+      cbtcLayer,
+    ]);
+
+    // Auto-assign components to appropriate layers based on type
+    final blocksData = data['blocks'] as List?;
+    if (blocksData != null) {
+      for (final block in blocksData) {
+        tracksLayer.addComponent(block['id'] as String);
+      }
+    }
+
+    final signalsData = data['signals'] as List?;
+    if (signalsData != null) {
+      for (final signal in signalsData) {
+        signalsLayer.addComponent(signal['id'] as String);
+      }
+    }
+
+    final pointsData = data['points'] as List?;
+    if (pointsData != null) {
+      for (final point in pointsData) {
+        signalsLayer.addComponent(point['id'] as String);
+      }
+    }
+
+    final platformsData = data['platforms'] as List?;
+    if (platformsData != null) {
+      for (final platform in platformsData) {
+        platformsLayer.addComponent(platform['id'] as String);
+      }
+    }
+
+    final stopsData = data['trainStops'] as List?;
+    if (stopsData != null) {
+      for (final stop in stopsData) {
+        platformsLayer.addComponent(stop['id'] as String);
+      }
+    }
+
+    final bufferData = data['bufferStops'] as List?;
+    if (bufferData != null) {
+      for (final buffer in bufferData) {
+        tracksLayer.addComponent(buffer['id'] as String);
+      }
+    }
+
+    final countersData = data['axleCounters'] as List?;
+    if (countersData != null) {
+      for (final counter in countersData) {
+        cbtcLayer.addComponent(counter['id'] as String);
+      }
+    }
+
+    final transpondersData = data['transponders'] as List?;
+    if (transpondersData != null) {
+      for (final trans in transpondersData) {
+        cbtcLayer.addComponent(trans['id'] as String);
+      }
+    }
+
+    final wifiData = data['wifiAntennas'] as List?;
+    if (wifiData != null) {
+      for (final wifi in wifiData) {
+        cbtcLayer.addComponent(wifi['id'] as String);
+      }
+    }
+
+    // Set tracks as active layer
+    activeLayer = tracksLayer;
+
+    _logEvent('✅ Migrated legacy layout to layer system');
+    _logEvent('📁 Created 5 default layers with auto-assigned components');
   }
 
   @override

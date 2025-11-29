@@ -3967,7 +3967,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           // In edit mode, enable drop target for palette components
           if (controller.editModeEnabled) {
             return CanvasDropTarget(
-              offset: Offset(_offsetX, _offsetY),
+              offset: Offset(_cameraOffsetX, _cameraOffsetY),
               scale: _zoom,
               child: canvasWidget,
             );

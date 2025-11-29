@@ -13,6 +13,7 @@ import 'package:rail_champ/models/scenario_models.dart';
 import 'package:rail_champ/controllers/edit_commands.dart';
 import 'package:rail_champ/models/railway_network_editor.dart';
 import 'package:rail_champ/models/track_geometry.dart';
+import 'package:rail_champ/models/railway_layer.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -794,6 +795,221 @@ class TerminalStationController extends ChangeNotifier {
       selectedComponentType; // Type of selected component (signal, point, etc.)
   String? selectedComponentId; // ID of selected component
   final List<SelectedComponent> multiSelection = []; // Multi-select support
+
+  // ============================================================================
+  // LAYER MANAGEMENT SYSTEM - Organize components into layers
+  // ============================================================================
+  final List<RailwayLayer> layers = []; // All layers (bottom to top)
+  RailwayLayer? activeLayer; // Currently selected layer for editing
+  
+  /// Get the layer that contains a specific component
+  RailwayLayer? getComponentLayer(String componentId) {
+    for (final layer in layers) {
+      if (layer.containsComponent(componentId)) {
+        return layer;
+      }
+    }
+    return null;
+  }
+  
+  /// Check if a component can be edited (layer must be active and unlocked)
+  bool canEditComponent(String componentId) {
+    final layer = getComponentLayer(componentId);
+    if (layer == null) return true; // Components without layer can be edited
+    return layer == activeLayer && !layer.isLocked;
+  }
+  
+  // ============================================================================
+  // LAYER MANAGEMENT METHODS
+  // ============================================================================
+  
+  /// Add a new layer
+  void addLayer({String? name, LayerType type = LayerType.custom}) {
+    final newLayer = RailwayLayer(
+      name: name ?? 'Layer ${layers.length + 1}',
+      type: type,
+    );
+    layers.add(newLayer);
+    activeLayer = newLayer;
+    _logEvent('📁 Added new layer: ${newLayer.name}');
+    notifyListeners();
+  }
+  
+  /// Remove a layer (moves components to active layer or first available layer)
+  void removeLayer(String layerId) {
+    final layerIndex = layers.indexWhere((l) => l.id == layerId);
+    if (layerIndex == -1) return;
+    
+    final layer = layers[layerIndex];
+    if (layer.isLocked) {
+      _logEvent('⚠️ Cannot remove locked layer: ${layer.name}');
+      return;
+    }
+    
+    // Move components to another layer
+    final targetLayer = activeLayer != layer ? activeLayer : (layers.length > 1 ? layers.first : null);
+    if (targetLayer != null) {
+      for (final componentId in layer.componentIds) {
+        targetLayer.addComponent(componentId);
+      }
+    }
+    
+    layers.removeAt(layerIndex);
+    if (activeLayer == layer) {
+      activeLayer = layers.isNotEmpty ? layers.last : null;
+    }
+    
+    _logEvent('🗑️ Removed layer: ${layer.name}');
+    notifyListeners();
+  }
+  
+  /// Duplicate a layer with all its components
+  void duplicateLayer(String layerId) {
+    final layer = layers.firstWhereOrNull((l) => l.id == layerId);
+    if (layer == null) return;
+    
+    final duplicatedLayer = layer.copyWith(
+      id: null, // Generate new ID
+      name: '${layer.name} Copy',
+    );
+    
+    layers.add(duplicatedLayer);
+    activeLayer = duplicatedLayer;
+    _logEvent('📋 Duplicated layer: ${layer.name}');
+    notifyListeners();
+  }
+  
+  /// Move layer up in z-order (towards top)
+  void moveLayerUp(String layerId) {
+    final index = layers.indexWhere((l) => l.id == layerId);
+    if (index == -1 || index >= layers.length - 1) return;
+    
+    final layer = layers.removeAt(index);
+    layers.insert(index + 1, layer);
+    _logEvent('⬆️ Moved layer up: ${layer.name}');
+    notifyListeners();
+  }
+  
+  /// Move layer down in z-order (towards bottom)
+  void moveLayerDown(String layerId) {
+    final index = layers.indexWhere((l) => l.id == layerId);
+    if (index <= 0) return;
+    
+    final layer = layers.removeAt(index);
+    layers.insert(index - 1, layer);
+    _logEvent('⬇️ Moved layer down: ${layer.name}');
+    notifyListeners();
+  }
+  
+  /// Set the active layer for editing
+  void setActiveLayer(String layerId) {
+    final layer = layers.firstWhereOrNull((l) => l.id == layerId);
+    if (layer == null) return;
+    
+    activeLayer = layer;
+    _logEvent('✏️ Active layer: ${layer.name}');
+    notifyListeners();
+  }
+  
+  /// Toggle layer visibility
+  void toggleLayerVisibility(String layerId) {
+    final layer = layers.firstWhereOrNull((l) => l.id == layerId);
+    if (layer == null) return;
+    
+    layer.isVisible = !layer.isVisible;
+    _logEvent('👁️ ${layer.isVisible ? "Shown" : "Hidden"} layer: ${layer.name}');
+    notifyListeners();
+  }
+  
+  /// Toggle layer lock status
+  void toggleLayerLock(String layerId) {
+    final layer = layers.firstWhereOrNull((l) => l.id == layerId);
+    if (layer == null) return;
+    
+    layer.isLocked = !layer.isLocked;
+    _logEvent('🔒 ${layer.isLocked ? "Locked" : "Unlocked"} layer: ${layer.name}');
+    notifyListeners();
+  }
+  
+  /// Set layer opacity
+  void setLayerOpacity(String layerId, double opacity) {
+    final layer = layers.firstWhereOrNull((l) => l.id == layerId);
+    if (layer == null) return;
+    
+    layer.opacity = opacity.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+  
+  /// Rename a layer
+  void renameLayer(String layerId, String newName) {
+    final layer = layers.firstWhereOrNull((l) => l.id == layerId);
+    if (layer == null) return;
+    
+    layer.name = newName;
+    _logEvent('✏️ Renamed layer to: $newName');
+    notifyListeners();
+  }
+  
+  /// Move a component from one layer to another
+  void moveComponentToLayer(String componentId, String targetLayerId) {
+    final currentLayer = getComponentLayer(componentId);
+    final targetLayer = layers.firstWhereOrNull((l) => l.id == targetLayerId);
+    
+    if (targetLayer == null) return;
+    
+    currentLayer?.removeComponent(componentId);
+    targetLayer.addComponent(componentId);
+    notifyListeners();
+  }
+  
+  /// Reorder layers (for drag-and-drop)
+  void reorderLayers(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= layers.length) return;
+    if (newIndex < 0 || newIndex >= layers.length) return;
+    
+    final layer = layers.removeAt(oldIndex);
+    layers.insert(newIndex, layer);
+    _logEvent('🔄 Reordered layers');
+    notifyListeners();
+  }
+  
+  /// Merge layer down (combine with layer below)
+  void mergeLayerDown(String layerId) {
+    final index = layers.indexWhere((l) => l.id == layerId);
+    if (index <= 0) return; // Can't merge bottom layer
+    
+    final upperLayer = layers[index];
+    final lowerLayer = layers[index - 1];
+    
+    if (lowerLayer.isLocked) {
+      _logEvent('⚠️ Cannot merge into locked layer: ${lowerLayer.name}');
+      return;
+    }
+    
+    // Move all components from upper to lower layer
+    for (final componentId in upperLayer.componentIds) {
+      lowerLayer.addComponent(componentId);
+    }
+    
+    layers.removeAt(index);
+    if (activeLayer == upperLayer) {
+      activeLayer = lowerLayer;
+    }
+    
+    _logEvent('🔗 Merged "${upperLayer.name}" into "${lowerLayer.name}"');
+    notifyListeners();
+  }
+  
+  /// Clear all components from a layer
+  void clearLayer(String layerId) {
+    final layer = layers.firstWhereOrNull((l) => l.id == layerId);
+    if (layer == null || layer.isLocked) return;
+    
+    final componentCount = layer.componentIds.length;
+    layer.componentIds.clear();
+    _logEvent('🧹 Cleared $componentCount components from layer: ${layer.name}');
+    notifyListeners();
+  }
 
   // ============================================================================
   // RAILWAY NETWORK EDITOR - Professional editing system
@@ -4254,8 +4470,101 @@ class TerminalStationController extends ChangeNotifier {
         y: 300,
         description: 'T1 - Crossover Tag');
 
+    // Initialize default layers
+    _initializeDefaultLayers();
+
     _logEvent(
         '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, ${signals.length} signals, ${points.length} points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
+  }
+
+  // ============================================================================
+  // LAYER INITIALIZATION - Create default layers and assign components
+  // ============================================================================
+  
+  void _initializeDefaultLayers() {
+    // Clear any existing layers
+    layers.clear();
+    
+    // Create 5 default layers
+    final backgroundLayer = RailwayLayer(
+      name: 'Background',
+      type: LayerType.background,
+      isLocked: true, // Background is locked by default
+    );
+    
+    final tracksLayer = RailwayLayer(
+      name: 'Tracks',
+      type: LayerType.tracks,
+    );
+    
+    final signalsPointsLayer = RailwayLayer(
+      name: 'Signals & Points',
+      type: LayerType.signals,
+    );
+    
+    final platformsLayer = RailwayLayer(
+      name: 'Platforms',
+      type: LayerType.platforms,
+    );
+    
+    final cbtcLayer = RailwayLayer(
+      name: 'CBTC',
+      type: LayerType.cbtc,
+    );
+    
+    // Add layers in order (bottom to top)
+    layers.addAll([
+      backgroundLayer,
+      tracksLayer,
+      signalsPointsLayer,
+      platformsLayer,
+      cbtcLayer,
+    ]);
+    
+    // Set tracks layer as active by default
+    activeLayer = tracksLayer;
+    
+    // Assign all existing components to appropriate layers
+    // Assign blocks and crossovers to tracks layer
+    for (final blockId in blocks.keys) {
+      tracksLayer.addComponent(blockId);
+    }
+    
+    // Assign signals to signals layer
+    for (final signalId in signals.keys) {
+      signalsPointsLayer.addComponent(signalId);
+    }
+    
+    // Assign points to signals layer
+    for (final pointId in points.keys) {
+      signalsPointsLayer.addComponent(pointId);
+    }
+    
+    // Assign platforms and train stops to platforms layer
+    for (final platform in platforms) {
+      platformsLayer.addComponent(platform.id);
+    }
+    for (final stopId in trainStops.keys) {
+      platformsLayer.addComponent(stopId);
+    }
+    
+    // Assign CBTC infrastructure to CBTC layer
+    for (final counterId in axleCounters.keys) {
+      cbtcLayer.addComponent(counterId);
+    }
+    for (final antennaId in wifiAntennas.keys) {
+      cbtcLayer.addComponent(antennaId);
+    }
+    for (final transponderId in transponders.keys) {
+      cbtcLayer.addComponent(transponderId);
+    }
+    
+    _logEvent('📁 Initialized ${layers.length} default layers with ${_getTotalComponentCount()} components');
+  }
+  
+  /// Get total number of components across all layers
+  int _getTotalComponentCount() {
+    return layers.fold(0, (sum, layer) => sum + layer.componentIds.length);
   }
 
   // ============================================================================
@@ -7698,15 +8007,32 @@ class TerminalStationController extends ChangeNotifier {
     });
 
     for (var train in trains) {
-      // CRITICAL FIX: Check CROSSOVER blocks FIRST in separate loop - guarantees priority
+      // CRITICAL FIX: Check crossover blocks in X-position order to ensure proper sequencing
+      // Sort crossover blocks by X position to guarantee correct detection order
       BlockSection? assignedBlock;
 
       // LOOP 1: Check ONLY crossover blocks first (absolute priority)
-      for (var block in blocks.values) {
-        if (block.name?.contains('crossover') ?? false) {
-          if (block.containsPosition(train.x, train.y)) {
+      // Sort by startX to ensure we check blocks in left-to-right order
+      final crossoverBlocks = blocks.values
+          .where((block) => block.name?.contains('crossover') ?? false)
+          .toList()
+        ..sort((a, b) => a.startX.compareTo(b.startX));
+
+      for (var block in crossoverBlocks) {
+        if (block.containsPosition(train.x, train.y)) {
+          // Additional check: for overlapping crossovers, prefer the one closest to train's X
+          if (assignedBlock == null) {
             assignedBlock = block;
-            break; // Found crossover match - stop immediately
+          } else {
+            // If multiple crossovers match, choose the one whose center is closer to train X
+            final currentBlockCenter = (assignedBlock.startX + assignedBlock.endX) / 2;
+            final newBlockCenter = (block.startX + block.endX) / 2;
+            final currentDistance = (train.x - currentBlockCenter).abs();
+            final newDistance = (train.x - newBlockCenter).abs();
+            
+            if (newDistance < currentDistance) {
+              assignedBlock = block;
+            }
           }
         }
       }

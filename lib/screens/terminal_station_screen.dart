@@ -9,6 +9,7 @@ import '../widgets/ai_agent_panel.dart';
 import '../widgets/relay_rack_panel.dart';
 import '../widgets/edit_mode_toolbar.dart';
 import '../widgets/dot_matrix_display.dart';
+import '../widgets/layer_panel.dart';
 import 'scenario_marketplace_screen.dart';
 import 'dart:math' as math;
 
@@ -278,33 +279,48 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 ),
 
               // Layer 4: Right Sidebar (higher z-order)
-              if (_showRightPanel)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 320,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      border: Border(
-                        left: BorderSide(
-                          color: Theme.of(context).colorScheme.outline,
-                          width: 2,
+              // Layer 4: Right Sidebar (higher z-order)
+              Consumer<TerminalStationController>(
+                builder: (context, controller, child) {
+                  if (!_showRightPanel) return const SizedBox.shrink();
+
+                  if (controller.editModeEnabled) {
+                    return const Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: LayerPanel(),
+                    );
+                  }
+
+                  return Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 320,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        border: Border(
+                          left: BorderSide(
+                            color: Theme.of(context).colorScheme.outline,
+                            width: 2,
+                          ),
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                            offset: const Offset(-2, 0),
+                          ),
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                          offset: const Offset(-2, 0),
-                        ),
-                      ],
+                      child: _buildStatusPanel(),
                     ),
-                    child: _buildStatusPanel(),
-                  ),
-                ),
+                  );
+                },
+              ),
 
               // Layer 5: Toggle buttons (highest z-order)
               // Left panel toggle button

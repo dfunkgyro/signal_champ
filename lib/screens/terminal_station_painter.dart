@@ -332,6 +332,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     final layerPoints = <String>[];
     final layerPlatforms = <String>[];
     final layerStops = <String>[];
+    final layerBufferStops = <String>[];
+    final layerCrossovers = <String>[];
     final layerAxleCounters = <String>[];
     final layerTransponders = <String>[];
     final layerWifiAntennas = <String>[];
@@ -343,10 +345,14 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         layerSignals.add(componentId);
       } else if (controller.points.containsKey(componentId)) {
         layerPoints.add(componentId);
+      } else if (controller.crossovers.containsKey(componentId)) {
+        layerCrossovers.add(componentId);
       } else if (controller.platforms.any((p) => p.id == componentId)) {
         layerPlatforms.add(componentId);
       } else if (controller.trainStops.values.any((s) => s.id == componentId)) {
         layerStops.add(componentId);
+      } else if (controller.bufferStops.containsKey(componentId)) {
+        layerBufferStops.add(componentId);
       } else if (controller.axleCounters.containsKey(componentId)) {
         layerAxleCounters.add(componentId);
       } else if (controller.transponders.containsKey(componentId)) {
@@ -358,9 +364,10 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     // Draw components in proper rendering order
     _drawTracksFiltered(canvas, layerBlocks);
+    _drawCrossoverTrackFiltered(canvas, layerCrossovers); // Draw crossovers
     _drawRouteReservations(canvas);
     _drawPlatformsFiltered(canvas, layerPlatforms);
-    _drawBufferStopFiltered(canvas, layerStops);
+    _drawBufferStopFiltered(canvas, layerBufferStops); // Fixed: use layerBufferStops
     _drawPointsFiltered(canvas, layerPoints);
     _drawSignalsFiltered(canvas, layerSignals);
     _drawTrainStopsFiltered(canvas, layerStops);
@@ -403,7 +410,7 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         _drawBlock(canvas, block);
       }
     }
-    _drawCrossoverTrack(canvas); // Crossovers are drawn separately
+    // Note: Crossovers are drawn separately via _drawCrossoverTrackFiltered
   }
 
   /// Draw only signals with IDs in the provided list
@@ -436,19 +443,68 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     }
   }
 
-  /// Draw only buffer/train stops with IDs in the provided list
-  void _drawBufferStopFiltered(Canvas canvas, List<String> stopIds) {
+  /// Draw only buffer stops with IDs in the provided list
+  void _drawBufferStopFiltered(Canvas canvas, List<String> bufferStopIds) {
+    for (final stopId in bufferStopIds) {
+      final bufferStop = controller.bufferStops[stopId];
+      if (bufferStop != null) {
+        // Draw individual buffer stop
+        final bufferPaint = Paint()
+          ..color = Colors.red
+          ..style = PaintingStyle.fill;
+
+        canvas.drawRect(
+          Rect.fromLTWH(
+            bufferStop.x - bufferStop.width / 2,
+            bufferStop.y - bufferStop.height / 2,
+            bufferStop.width,
+            bufferStop.height,
+          ),
+          bufferPaint,
+        );
+
+        // Draw yellow diagonal stripes
+        final stripePaint = Paint()
+          ..color = Colors.yellow
+          ..strokeWidth = 2;
+
+        final stripeCount = (bufferStop.width / 5).floor();
+        for (int i = 0; i < stripeCount; i++) {
+          canvas.drawLine(
+            Offset(
+              bufferStop.x - bufferStop.width / 2 + (i * 5),
+              bufferStop.y - bufferStop.height / 2,
+            ),
+            Offset(
+              bufferStop.x - bufferStop.width / 2 + (i * 5),
+              bufferStop.y + bufferStop.height / 2,
+            ),
+            stripePaint,
+          );
+        }
+      }
+    }
+  }
+
+  /// Draw only crossovers with IDs in the provided list
+  /// For now, if any crossover should be shown, we draw all crossovers
+  /// TODO: Refactor _drawCrossoverTrack to support filtered rendering
+  void _drawCrossoverTrackFiltered(Canvas canvas, List<String> crossoverIds) {
+    if (crossoverIds.isNotEmpty) {
+      // Draw all crossovers if any should be shown
+      // This is a temporary solution until crossover rendering is refactored
+      _drawCrossoverTrack(canvas);
+    }
+  }
+
+  /// Draw only train stops with IDs in the provided list
+  void _drawTrainStopsFiltered(Canvas canvas, List<String> stopIds) {
     for (final stopId in stopIds) {
       final stop = controller.trainStops.values.where((s) => s.id == stopId).firstOrNull;
       if (stop != null) {
         _drawStopMarker(canvas, stop);
       }
     }
-  }
-
-  /// Draw only train stops with IDs in the provided list
-  void _drawTrainStopsFiltered(Canvas canvas, List<String> stopIds) {
-    _drawBufferStopFiltered(canvas, stopIds); // Same rendering
   }
 
   /// Draw only axle counters with IDs in the provided list

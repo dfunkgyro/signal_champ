@@ -5,7 +5,9 @@ import 'package:rail_champ/controllers/terminal_station_controller.dart';
 
 /// Toolbar for Edit Mode with undo/redo and component actions
 class EditModeToolbar extends StatelessWidget {
-  const EditModeToolbar({Key? key}) : super(key: key);
+  final VoidCallback? onResetView;
+
+  const EditModeToolbar({Key? key, this.onResetView}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -595,6 +597,26 @@ class EditModeToolbar extends StatelessWidget {
             ),
           ),
 
+          const SizedBox(width: 8),
+
+          // Reset view to center button
+          Tooltip(
+            message: 'Reset View to Center\nCenter the canvas in the viewport',
+            child: IconButton(
+              icon: const Icon(Icons.center_focus_strong, color: Colors.white),
+              onPressed: onResetView,
+              splashRadius: 20,
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Divider
+          Container(
+            width: 1,
+            height: 24,
+            color: Colors.white.withOpacity(0.5),
+          ),
           const SizedBox(width: 8),
 
           // Close edit mode button

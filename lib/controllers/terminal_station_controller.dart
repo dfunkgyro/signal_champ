@@ -14,6 +14,7 @@ import 'package:rail_champ/controllers/edit_commands.dart';
 import 'package:rail_champ/models/railway_network_editor.dart';
 import 'package:rail_champ/models/track_geometry.dart';
 import 'package:rail_champ/models/railway_layer.dart';
+import 'package:rail_champ/models/track_graph.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -690,6 +691,9 @@ class TerminalStationController extends ChangeNotifier {
   final List<Platform> platforms = [];
   final Map<String, TrainStop> trainStops = {};
   final List<String> eventLog = [];
+
+  // Track graph for physical railway topology
+  late final TrackGraph trackGraph = TrackGraph();
 
   // FIXED: Add CBTC infrastructure
   final Map<String, WifiAntenna> wifiAntennas = {};
@@ -7570,235 +7574,34 @@ class TerminalStationController extends ChangeNotifier {
     }
   }
 
+  /// Get next block by following physical track graph
+  /// This replaces the old hardcoded routing with track graph traversal
   String? _getNextBlockForTrain(Train train) {
     if (train.currentBlockId == null) return null;
 
     final currentBlock = blocks[train.currentBlockId!];
     if (currentBlock == null) return null;
 
-    // MIRRORED TERMINAL STATION ROUTING - Continuous loop through 3 sections
-    // Upper track ALWAYS eastbound →, Lower track ALWAYS westbound ←
+    // Use track graph to determine next block based on physical track geometry
+    final nextBlock = trackGraph.getNextBlock(
+      train.currentBlockId!,
+      train.direction,
+      points,
+    );
 
-    if (train.direction > 0) {
-      // ========== EASTBOUND (Upper Track) ==========
-
-      // LEFT SECTION (200-214)
-      switch (currentBlock.id) {
-        case '200':
-          return '202';
-        case '202':
-          return '204';
-        case '204':
-          return '206';
-        case '206':
-          return '208';
-        case '208':
-          // ✅ CRITICAL FIX: Check point 76A position before entering block 210
-          final point76A = points['76A'];
-          if (point76A?.position == PointPosition.reverse) {
-            return 'crossover_211_212'; // Diverge to crossover (upper to lower)
-          }
-          return '210'; // Straight through (76A normal)
-        case '210':
-          return '212';
-        case '212':
-          return '214';
-        case '214':
-          return '100'; // Continue to MIDDLE section
-        case 'crossover_211_212':
-          // Eastbound through crossover (upper to lower)
-          final point77B = points['77B'];
-          if (point77B?.position == PointPosition.reverse) {
-            return '213'; // Exit to block 213 (lower track)
-          }
-          return '212'; // Continue straight (should not happen if routed correctly)
+    // Log routing decision for debugging (optional - can be removed in production)
+    if (kDebugMode && nextBlock != null) {
+      final controllingPoint = trackGraph.getControllingPoint(
+        train.currentBlockId!,
+        train.direction,
+      );
+      if (controllingPoint != null) {
+        final point = points[controllingPoint];
+        print('🚂 ${train.name}: ${train.currentBlockId} → $nextBlock via $controllingPoint (${point?.position.name})');
       }
-
-      // MIDDLE SECTION (100-114)
-      switch (currentBlock.id) {
-        case '100':
-          return '102';
-        case '102':
-          // ✅ CRITICAL FIX: Check point 78A BEFORE entering block 104
-          // Point 78A is at x=400 (end of block 102 / start of block 104)
-          // Must decide route BEFORE entering block 104
-          final point78A = points['78A'];
-          if (point78A?.position == PointPosition.reverse) {
-            return 'crossover106'; // Diverge to crossover (upper to lower)
-          }
-          return '104'; // Straight through (78A normal)
-        case '104':
-          // Continue straight (already past point 78A)
-          return '106';
-        case '106':
-          return '108';
-        case '108':
-          return '110';
-        case '110':
-          return '112';
-        case '112':
-          return '114';
-        case '114':
-          return '300'; // FIXED: Block 114 continues to RIGHT SECTION block 300
-        case '101':
-          return '103';
-        case '103':
-          return '105';
-        case '105':
-          return '107';
-        case '107':
-          return '109';
-        case '109':
-          return '111';
-        case '111':
-          return '113'; // NEW: Eastbound from 111 to 113
-        case '113':
-          return '115'; // NEW: Continue eastbound to 115
-        case '115':
-          return '101'; // NEW: Connect to reversing area
-        case 'crossover106':
-          return 'crossover109';
-        case 'crossover109':
-          return '107'; // FIXED: Crossover exits to block 107 (x=600), not 109 (x=800)
-      }
-
-      // RIGHT SECTION (300-314)
-      switch (currentBlock.id) {
-        case '300':
-          return '302';
-        case '302':
-          // ✅ CRITICAL FIX: Check point 79A position before entering crossover
-          final point79A = points['79A'];
-          if (point79A?.position == PointPosition.reverse) {
-            return 'crossover_303_304'; // Diverge to crossover (upper to lower)
-          }
-          return '304'; // Straight through (79A normal)
-        case '304':
-          return '306';
-        case '306':
-          return '308';
-        case '308':
-          return '310';
-        case '310':
-          return '312';
-        case '312':
-          return '314';
-        case '314':
-          return '200'; // FIXED: Loop back to beginning (continuous loop)
-        case 'crossover_303_304':
-          // Eastbound through crossover (upper to lower)
-          final point80B = points['80B'];
-          if (point80B?.position == PointPosition.reverse) {
-            return '305'; // Exit to block 305 (lower track)
-          }
-          return '304'; // Continue straight (should not happen if routed correctly)
-      }
-
-      // Crossovers
-      if (currentBlock.id == 'crossover106') return 'crossover109';
-      if (currentBlock.id == 'crossover109') return '107'; // FIXED: Crossover exits to block 107, not 109
-    } else {
-      // ========== WESTBOUND (Lower Track) ==========
-
-      // RIGHT SECTION (301-315) - going west
-      switch (currentBlock.id) {
-        case '315':
-          return '313';
-        case '313':
-          return '311';
-        case '311':
-          return '309';
-        case '309':
-          return '307';
-        case '307':
-          return '305';
-        case '305':
-          // ✅ CRITICAL FIX: Check point 79B position before entering crossover westbound
-          final point79B = points['79B'];
-          if (point79B?.position == PointPosition.reverse) {
-            return 'crossover_303_304'; // Diverge to crossover (lower to upper)
-          }
-          return '303'; // Straight through (79B normal)
-        case '303':
-          return '301';
-        case '301':
-          return '115'; // FIXED: Continue to MIDDLE SECTION block 115
-        case 'crossover_303_304':
-          // Westbound through crossover (lower to upper)
-          final point80A = points['80A'];
-          if (point80A?.position == PointPosition.reverse) {
-            return '302'; // Exit to block 302 (upper track)
-          }
-          return '304'; // Continue straight (should not happen if routed correctly)
-        case 'crossover109':
-          return 'crossover106';
-        case 'crossover106':
-          return '104';
-      }
-
-      // MIDDLE SECTION (101-115) - going west
-      switch (currentBlock.id) {
-        case '115':
-          return '113';
-        case '113':
-          return '111';
-        case '111':
-          return '109'; // Westbound from 111 to 109 (no crossover check)
-        case '109':
-          // ✅ FIXED: Check point 78B position for crossover entry
-          final point78B = points['78B'];
-          if (point78B?.position == PointPosition.reverse) {
-            return 'crossover109'; // Diverge to crossover
-          }
-          return '107'; // Straight through (78B normal)
-        case '107':
-          return '105';
-        case '105':
-          return '103';
-        case '103':
-          return '101';
-        case '101':
-          return '215'; // Continue to LEFT section
-      }
-
-      // LEFT SECTION (201-215) - going west
-      switch (currentBlock.id) {
-        case '215':
-          return '213';
-        case '213':
-          // ✅ CRITICAL FIX: Check point 76B position before entering crossover westbound
-          final point76B = points['76B'];
-          if (point76B?.position == PointPosition.reverse) {
-            return 'crossover_211_212'; // Diverge to crossover (lower to upper)
-          }
-          return '211'; // Straight through (76B normal)
-        case '211':
-          return '209';
-        case '209':
-          return '207';
-        case '207':
-          return '205';
-        case '205':
-          return '203';
-        case '203':
-          return '201';
-        case '201':
-          return '315'; // FIXED: Loop back to right section (continuous loop)
-        case 'crossover_211_212':
-          // Westbound through crossover (lower to upper)
-          final point77A = points['77A'];
-          if (point77A?.position == PointPosition.reverse) {
-            return '210'; // Exit to block 210 (upper track)
-          }
-          return '212'; // Continue straight (should not happen if routed correctly)
-      }
-
-      // Crossovers
-      if (currentBlock.id == 'crossover109') return 'crossover106';
-      if (currentBlock.id == 'crossover106') return '104';
     }
 
-    return null;
+    return nextBlock;
   }
 
   /// Automatically route CBTC train by throwing points and setting routes

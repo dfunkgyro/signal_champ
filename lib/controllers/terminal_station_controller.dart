@@ -3747,11 +3747,9 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['L02'] = Signal(
       id: 'L02',
-      blockId: '211', // Moved 1 block west (was 212)
-      x: -450, // Moved west (was -150)
+      x: -450, // Moved west (was -150), in block 211
       y: 320,
-      direction: 1, // Facing EAST (was -1)
-      type: SignalType.main,
+      direction: SignalDirection.east, // Facing EAST (was -1)
       routes: [
         SignalRoute(
           id: 'L02_R1',
@@ -4057,11 +4055,9 @@ class TerminalStationController extends ChangeNotifier {
 
     signals['R02'] = Signal(
       id: 'R02',
-      blockId: '312', // Moved to eastbound road near 312/314
-      x: 2850, // Relocated (was 2250)
+      x: 2850, // Relocated (was 2250), in block 312 near 312/314
       y: 120, // Upper track (eastbound)
-      direction: 1, // Facing EAST
-      type: SignalType.main,
+      direction: SignalDirection.east, // Facing EAST
       routes: [
         SignalRoute(
           id: 'R02_R1',
@@ -4189,6 +4185,8 @@ class TerminalStationController extends ChangeNotifier {
     // LEFT SECTION: Signals and trainstops
     trainStops['TL01'] =
         TrainStop(id: 'TL01', signalId: 'L01', x: -1700, y: 120); // Signal at -1710, eastbound +10
+    trainStops['TL02'] =
+        TrainStop(
         id: 'TL02',
         signalId: 'L02',
         x: -430, // In front of L02 (at -450 facing East)

@@ -1205,6 +1205,11 @@ class TerminalStationController extends ChangeNotifier {
   double cameraOffsetX = 0;
   double cameraOffsetY = 0;
   double cameraZoom = 0.8;
+
+  // Edit mode scroll position persistence
+  double? _savedEditModeScrollX;
+  double? _savedEditModeScrollY;
+  bool _isFirstEditModeEntry = true;
   String? followingTrainId; // ID of train being followed
   String? highlightedItemId; // ID of currently highlighted item
   String?
@@ -1671,6 +1676,31 @@ class TerminalStationController extends ChangeNotifier {
 
   void stopFollowingTrain() {
     followingTrainId = null;
+    notifyListeners();
+  }
+
+  // Edit mode scroll position persistence methods
+  void saveEditModeScrollPosition(double scrollX, double scrollY) {
+    _savedEditModeScrollX = scrollX;
+    _savedEditModeScrollY = scrollY;
+  }
+
+  Map<String, double?> getEditModeScrollPosition() {
+    return {
+      'scrollX': _savedEditModeScrollX,
+      'scrollY': _savedEditModeScrollY,
+      'isFirstEntry': _isFirstEditModeEntry ? 1.0 : 0.0,
+    };
+  }
+
+  void markEditModeEntryComplete() {
+    _isFirstEditModeEntry = false;
+  }
+
+  void resetEditModeScrollCenter() {
+    // This will be called by the screen when the reset button is clicked
+    // The screen will handle the actual centering logic
+    _logEvent('📐 Reset view to center');
     notifyListeners();
   }
 

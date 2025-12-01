@@ -1,0 +1,4 @@
+dependencies: \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashCPU_arm.c \
+  /Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/module.modulemap \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Target\ Support\ Files/Sentry/Sentry-prefix.pch

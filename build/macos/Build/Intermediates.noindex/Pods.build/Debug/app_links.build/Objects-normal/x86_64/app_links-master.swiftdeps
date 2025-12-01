@@ -1,0 +1,6 @@
+version: "Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)"
+options: "4a3fef6543ae70d3ae5e530de45cc4fa520cf06e08fa2941f66e963476e96c87"
+build_start_time: [1764584961, 828867912]
+build_end_time: [1764584972, 298820018]
+inputs:
+  "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/app_links-6.4.1/macos/app_links/Sources/app_links/AppLinksMacosPlugin.swift": [1761759122, 941771507]

@@ -1,0 +1,31 @@
+dependencies: \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/SentryCrashReport.c \
+  /Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/module.modulemap \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Target\ Support\ Files/Sentry/Sentry-prefix.pch \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/SentryCrashReport.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Monitors/SentryCrashMonitorContext.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashMachineContext.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashMachineContext_Apple.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashThread.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Monitors/SentryCrashMonitorType.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/SentryCrashReportWriter.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/SentryCrashBinaryImageCache.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashDynamicLinker.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashCPU.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/SentryCrashCachedData.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashFileUtils.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashJSONCodec.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashMach.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashMemory.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashObjC.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/SentryCrashReportFields.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/SentryCrashReportVersion.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashSignalInfo.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashStackCursor_Backtrace.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashStackCursor.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashStackCursor_MachineContext.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashString.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/SentryCrash/Recording/Tools/SentryCrashUUIDConversion.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Sentry/include/SentryInternalCDefines.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Sentry/include/SentryScopeSyncC.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Sentry/SentryAsyncSafeLog.h

@@ -4883,6 +4883,13 @@ class TerminalStationController extends ChangeNotifier {
   // LAYER INITIALIZATION - Create default layers and assign components
   // ============================================================================
 
+  /// Public method to reset layers to default state
+  /// Useful if components are missing from layers in edit mode
+  void resetLayers() {
+    _initializeDefaultLayers();
+    notifyListeners();
+  }
+
   void _initializeDefaultLayers() {
     // Clear any existing layers
     layers.clear();

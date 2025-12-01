@@ -1,0 +1,19 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)
+// swift-module-flags: -target x86_64-apple-macos11.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -Onone -module-name audioplayers_darwin
+// swift-module-flags-ignorable: -enable-bare-slash-regex
+import AVFAudio
+import AVFoundation
+import AVKit
+import FlutterMacOS
+import MediaPlayer
+import Swift
+import _Concurrency
+import _StringProcessing
+@_exported import audioplayers_darwin
+@objc @_hasMissingDesignatedInitializers public class SwiftAudioplayersDarwinPlugin : ObjectiveC.NSObject, FlutterMacOS.FlutterPlugin {
+  @objc public static func register(with registrar: FlutterMacOS.FlutterPluginRegistrar)
+  public func detachFromEngine(for registrar: FlutterMacOS.FlutterPluginRegistrar)
+  @objc public func handle(_ call: FlutterMacOS.FlutterMethodCall, result: @escaping FlutterMacOS.FlutterResult)
+  @objc deinit
+}

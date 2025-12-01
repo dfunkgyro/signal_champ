@@ -1,0 +1,45 @@
+dependencies: \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/GACAppAttestProvider.m \
+  /Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/AppCheckCore.build/module.modulemap \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Public/AppCheckCore/GACAppAttestProvider.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Public/AppCheckCore/GACAppCheckProvider.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Public/AppCheckCore/GACAppCheckAvailability.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/DCAppAttestService+GACAppAttestService.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/GACAppAttestService.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromises.h \
+  /Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/PromisesObjC.build/module.modulemap \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Wrap.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Validate.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Timeout.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Then.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Testing.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Retry.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Reduce.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Recover.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Race.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Do.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Delay.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Catch.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Await.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Async.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Any.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+Always.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromiseError.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/PromisesObjC/Sources/FBLPromises/include/FBLPromise+All.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/Target\ Support\ Files/PromisesObjC/PromisesObjC-umbrella.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/API/GACAppAttestAPIService.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/API/GACAppAttestAttestationResponse.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/GACAppAttestProviderState.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/Storage/GACAppAttestArtifactStorage.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/Storage/GACAppAttestKeyIDStorage.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Core/APIService/GACAppCheckAPIService.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Core/Backoff/GACAppCheckBackoffWrapper.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Core/GACAppCheckLogger+Internal.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Public/AppCheckCore/GACAppCheckErrors.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Public/AppCheckCore/GACAppCheckLogger.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Public/AppCheckCore/GACAppCheckToken.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Core/Utils/GACAppCheckCryptoUtils.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/AppAttestProvider/Errors/GACAppAttestRejectionError.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Core/Errors/GACAppCheckErrorUtil.h \
+  /Users/dfunkgyro/github1/signal_champ/macos/Pods/AppCheckCore/AppCheckCore/Sources/Core/Errors/GACAppCheckHTTPError.h

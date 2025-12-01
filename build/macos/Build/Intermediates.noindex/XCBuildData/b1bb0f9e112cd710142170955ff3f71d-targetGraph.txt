@@ -1,0 +1,163 @@
+Target dependency graph (44 targets)
+AppAuth-AppAuthCore_Privacy in Pods, no dependencies
+AppAuth in Pods, depends on:
+AppAuth-AppAuthCore_Privacy in Pods (explicit)
+GoogleUtilities-GoogleUtilities_Privacy in Pods, no dependencies
+GoogleUtilities in Pods, depends on:
+GoogleUtilities-GoogleUtilities_Privacy in Pods (explicit)
+PromisesObjC-FBLPromises_Privacy in Pods, no dependencies
+PromisesObjC in Pods, depends on:
+PromisesObjC-FBLPromises_Privacy in Pods (explicit)
+AppCheckCore in Pods, depends on:
+GoogleUtilities in Pods (explicit)
+PromisesObjC in Pods (explicit)
+GTMSessionFetcher-GTMSessionFetcher_Core_Privacy in Pods, no dependencies
+GTMSessionFetcher-GTMSessionFetcher_Full_Privacy in Pods, no dependencies
+GTMSessionFetcher in Pods, depends on:
+GTMSessionFetcher-GTMSessionFetcher_Core_Privacy in Pods (explicit)
+GTMSessionFetcher-GTMSessionFetcher_Full_Privacy in Pods (explicit)
+GTMAppAuth-GTMAppAuth_Privacy in Pods, depends on:
+AppAuth in Pods (implicit dependency via options '-framework AppAuth' in build setting 'OTHER_LDFLAGS')
+GTMSessionFetcher in Pods (implicit dependency via options '-framework GTMSessionFetcher' in build setting 'OTHER_LDFLAGS')
+GTMAppAuth in Pods, depends on:
+AppAuth in Pods (explicit)
+GTMAppAuth-GTMAppAuth_Privacy in Pods (explicit)
+GTMSessionFetcher in Pods (explicit)
+GoogleSignIn-GoogleSignIn in Pods, depends on:
+AppAuth in Pods (implicit dependency via options '-framework AppAuth' in build setting 'OTHER_LDFLAGS')
+AppCheckCore in Pods (implicit dependency via options '-framework AppCheckCore' in build setting 'OTHER_LDFLAGS')
+GTMAppAuth in Pods (implicit dependency via options '-framework GTMAppAuth' in build setting 'OTHER_LDFLAGS')
+GTMSessionFetcher in Pods (implicit dependency via options '-framework GTMSessionFetcher' in build setting 'OTHER_LDFLAGS')
+GoogleSignIn in Pods, depends on:
+AppAuth in Pods (explicit)
+AppCheckCore in Pods (explicit)
+GTMAppAuth in Pods (explicit)
+GTMSessionFetcher in Pods (explicit)
+GoogleSignIn-GoogleSignIn in Pods (explicit)
+Sentry-Sentry in Pods, no dependencies
+Sentry in Pods, depends on:
+Sentry-Sentry in Pods (explicit)
+FlutterMacOS in Pods, no dependencies
+app_links-app_links_macos_privacy in Pods, no dependencies
+app_links in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+app_links-app_links_macos_privacy in Pods (explicit)
+audioplayers_darwin in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+device_info_plus-device_info_plus_privacy in Pods, no dependencies
+device_info_plus in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+device_info_plus-device_info_plus_privacy in Pods (explicit)
+flutter_tts in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+geolocator_apple-geolocator_apple_privacy in Pods, no dependencies
+geolocator_apple in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+geolocator_apple-geolocator_apple_privacy in Pods (explicit)
+google_sign_in_ios-google_sign_in_ios_privacy in Pods, no dependencies
+google_sign_in_ios in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+GTMSessionFetcher in Pods (explicit)
+GoogleSignIn in Pods (explicit)
+google_sign_in_ios-google_sign_in_ios_privacy in Pods (explicit)
+package_info_plus-package_info_plus_privacy in Pods, no dependencies
+package_info_plus in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+package_info_plus-package_info_plus_privacy in Pods (explicit)
+path_provider_foundation-path_provider_foundation_privacy in Pods, no dependencies
+path_provider_foundation in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+path_provider_foundation-path_provider_foundation_privacy in Pods (explicit)
+sentry_flutter in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+Sentry in Pods (explicit)
+share_plus-share_plus_privacy in Pods, no dependencies
+share_plus in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+share_plus-share_plus_privacy in Pods (explicit)
+shared_preferences_foundation-shared_preferences_foundation_privacy in Pods, no dependencies
+shared_preferences_foundation in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+shared_preferences_foundation-shared_preferences_foundation_privacy in Pods (explicit)
+sign_in_with_apple in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+sqflite_darwin-sqflite_darwin_privacy in Pods, no dependencies
+sqflite_darwin in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+sqflite_darwin-sqflite_darwin_privacy in Pods (explicit)
+url_launcher_macos-url_launcher_macos_privacy in Pods, no dependencies
+url_launcher_macos in Pods, depends on:
+FlutterMacOS in Pods (explicit)
+url_launcher_macos-url_launcher_macos_privacy in Pods (explicit)
+Flutter Assemble in Runner, depends on:
+AppAuth in Pods (implicit dependency via options '-framework AppAuth' in build setting 'OTHER_LDFLAGS')
+AppCheckCore in Pods (implicit dependency via options '-framework AppCheckCore' in build setting 'OTHER_LDFLAGS')
+PromisesObjC in Pods (implicit dependency via options '-framework FBLPromises' in build setting 'OTHER_LDFLAGS')
+GTMAppAuth in Pods (implicit dependency via options '-framework GTMAppAuth' in build setting 'OTHER_LDFLAGS')
+GTMSessionFetcher in Pods (implicit dependency via options '-framework GTMSessionFetcher' in build setting 'OTHER_LDFLAGS')
+GoogleSignIn in Pods (implicit dependency via options '-framework GoogleSignIn' in build setting 'OTHER_LDFLAGS')
+GoogleUtilities in Pods (implicit dependency via options '-framework GoogleUtilities' in build setting 'OTHER_LDFLAGS')
+Sentry in Pods (implicit dependency via options '-framework Sentry' in build setting 'OTHER_LDFLAGS')
+app_links in Pods (implicit dependency via options '-framework app_links' in build setting 'OTHER_LDFLAGS')
+audioplayers_darwin in Pods (implicit dependency via options '-framework audioplayers_darwin' in build setting 'OTHER_LDFLAGS')
+device_info_plus in Pods (implicit dependency via options '-framework device_info_plus' in build setting 'OTHER_LDFLAGS')
+flutter_tts in Pods (implicit dependency via options '-framework flutter_tts' in build setting 'OTHER_LDFLAGS')
+geolocator_apple in Pods (implicit dependency via options '-framework geolocator_apple' in build setting 'OTHER_LDFLAGS')
+google_sign_in_ios in Pods (implicit dependency via options '-framework google_sign_in_ios' in build setting 'OTHER_LDFLAGS')
+package_info_plus in Pods (implicit dependency via options '-framework package_info_plus' in build setting 'OTHER_LDFLAGS')
+path_provider_foundation in Pods (implicit dependency via options '-framework path_provider_foundation' in build setting 'OTHER_LDFLAGS')
+sentry_flutter in Pods (implicit dependency via options '-framework sentry_flutter' in build setting 'OTHER_LDFLAGS')
+share_plus in Pods (implicit dependency via options '-framework share_plus' in build setting 'OTHER_LDFLAGS')
+shared_preferences_foundation in Pods (implicit dependency via options '-framework shared_preferences_foundation' in build setting 'OTHER_LDFLAGS')
+sign_in_with_apple in Pods (implicit dependency via options '-framework sign_in_with_apple' in build setting 'OTHER_LDFLAGS')
+sqflite_darwin in Pods (implicit dependency via options '-framework sqflite_darwin' in build setting 'OTHER_LDFLAGS')
+url_launcher_macos in Pods (implicit dependency via options '-framework url_launcher_macos' in build setting 'OTHER_LDFLAGS')
+Pods-Runner in Pods, depends on:
+AppAuth in Pods (explicit)
+AppCheckCore in Pods (explicit)
+FlutterMacOS in Pods (explicit)
+GTMAppAuth in Pods (explicit)
+GTMSessionFetcher in Pods (explicit)
+GoogleSignIn in Pods (explicit)
+GoogleUtilities in Pods (explicit)
+PromisesObjC in Pods (explicit)
+Sentry in Pods (explicit)
+app_links in Pods (explicit)
+audioplayers_darwin in Pods (explicit)
+device_info_plus in Pods (explicit)
+flutter_tts in Pods (explicit)
+geolocator_apple in Pods (explicit)
+google_sign_in_ios in Pods (explicit)
+package_info_plus in Pods (explicit)
+path_provider_foundation in Pods (explicit)
+sentry_flutter in Pods (explicit)
+share_plus in Pods (explicit)
+shared_preferences_foundation in Pods (explicit)
+sign_in_with_apple in Pods (explicit)
+sqflite_darwin in Pods (explicit)
+url_launcher_macos in Pods (explicit)
+Runner in Runner, depends on:
+Flutter Assemble in Runner (explicit)
+Pods-Runner in Pods (implicit dependency via file 'Pods_Runner.framework' in build phase 'Link Binary')
+AppAuth in Pods (implicit dependency via options '-framework AppAuth' in build setting 'OTHER_LDFLAGS')
+AppCheckCore in Pods (implicit dependency via options '-framework AppCheckCore' in build setting 'OTHER_LDFLAGS')
+PromisesObjC in Pods (implicit dependency via options '-framework FBLPromises' in build setting 'OTHER_LDFLAGS')
+GTMAppAuth in Pods (implicit dependency via options '-framework GTMAppAuth' in build setting 'OTHER_LDFLAGS')
+GTMSessionFetcher in Pods (implicit dependency via options '-framework GTMSessionFetcher' in build setting 'OTHER_LDFLAGS')
+GoogleSignIn in Pods (implicit dependency via options '-framework GoogleSignIn' in build setting 'OTHER_LDFLAGS')
+GoogleUtilities in Pods (implicit dependency via options '-framework GoogleUtilities' in build setting 'OTHER_LDFLAGS')
+Sentry in Pods (implicit dependency via options '-framework Sentry' in build setting 'OTHER_LDFLAGS')
+app_links in Pods (implicit dependency via options '-framework app_links' in build setting 'OTHER_LDFLAGS')
+audioplayers_darwin in Pods (implicit dependency via options '-framework audioplayers_darwin' in build setting 'OTHER_LDFLAGS')
+device_info_plus in Pods (implicit dependency via options '-framework device_info_plus' in build setting 'OTHER_LDFLAGS')
+flutter_tts in Pods (implicit dependency via options '-framework flutter_tts' in build setting 'OTHER_LDFLAGS')
+geolocator_apple in Pods (implicit dependency via options '-framework geolocator_apple' in build setting 'OTHER_LDFLAGS')
+google_sign_in_ios in Pods (implicit dependency via options '-framework google_sign_in_ios' in build setting 'OTHER_LDFLAGS')
+package_info_plus in Pods (implicit dependency via options '-framework package_info_plus' in build setting 'OTHER_LDFLAGS')
+path_provider_foundation in Pods (implicit dependency via options '-framework path_provider_foundation' in build setting 'OTHER_LDFLAGS')
+sentry_flutter in Pods (implicit dependency via options '-framework sentry_flutter' in build setting 'OTHER_LDFLAGS')
+share_plus in Pods (implicit dependency via options '-framework share_plus' in build setting 'OTHER_LDFLAGS')
+shared_preferences_foundation in Pods (implicit dependency via options '-framework shared_preferences_foundation' in build setting 'OTHER_LDFLAGS')
+sign_in_with_apple in Pods (implicit dependency via options '-framework sign_in_with_apple' in build setting 'OTHER_LDFLAGS')
+sqflite_darwin in Pods (implicit dependency via options '-framework sqflite_darwin' in build setting 'OTHER_LDFLAGS')
+url_launcher_macos in Pods (implicit dependency via options '-framework url_launcher_macos' in build setting 'OTHER_LDFLAGS')

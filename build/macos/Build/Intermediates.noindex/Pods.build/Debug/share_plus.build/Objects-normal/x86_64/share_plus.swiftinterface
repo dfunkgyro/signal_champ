@@ -1,0 +1,16 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)
+// swift-module-flags: -target x86_64-apple-macos11.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -Onone -module-name share_plus
+// swift-module-flags-ignorable: -enable-bare-slash-regex
+import Cocoa
+import FlutterMacOS
+import Swift
+import _Concurrency
+import _StringProcessing
+@_exported import share_plus
+@objc @_hasMissingDesignatedInitializers public class SharePlusMacosPlugin : ObjectiveC.NSObject, FlutterMacOS.FlutterPlugin, AppKit.NSSharingServicePickerDelegate {
+  @objc public static func register(with registrar: FlutterMacOS.FlutterPluginRegistrar)
+  @objc public func handle(_ call: FlutterMacOS.FlutterMethodCall, result: @escaping FlutterMacOS.FlutterResult)
+  @objc public func sharingServicePicker(_ sharingServicePicker: AppKit.NSSharingServicePicker, delegateFor sharingService: AppKit.NSSharingService) -> AppKit.NSSharingServiceDelegate?
+  @objc deinit
+}

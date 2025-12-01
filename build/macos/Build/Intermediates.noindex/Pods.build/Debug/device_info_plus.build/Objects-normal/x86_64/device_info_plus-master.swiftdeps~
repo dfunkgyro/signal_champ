@@ -1,0 +1,13 @@
+version: "Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)"
+options: "ebf1100e214df9cd8d4eb23a9f2bda733c04702445e6d8ff51dc2a2261a10668"
+build_start_time: [1764584961, 789042949]
+build_end_time: [1764584961, 849576950]
+inputs:
+  ? "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/device_info_plus-12.2.0/macos/device_info_plus/Sources/device_info_plus/CwlSysctl.swift"
+  : !private [1761759149, 52715539]
+  ? "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/device_info_plus-12.2.0/macos/device_info_plus/Sources/device_info_plus/DeviceIdentifiers.swift"
+  : !private [1761759149, 58079719]
+  ? "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/device_info_plus-12.2.0/macos/device_info_plus/Sources/device_info_plus/DeviceInfoPlusMacosPlugin.swift"
+  : !private [1761759149, 55641651]
+  ? "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/device_info_plus-12.2.0/macos/device_info_plus/Sources/device_info_plus/SystemUUID.swift"
+  : !private [1761759149, 61082363]

@@ -1024,6 +1024,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Block Control Section (NEW - moved from left sidebar)
+                        SizedBox(
+                          width: 350,
+                          child: const BlockControlPanel(),
+                        ),
+
+                        const VerticalDivider(width: 16),
+
                         // Canvas Theme Section
                         _buildCanvasThemeSection(),
 
@@ -2455,14 +2463,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 ),
               ),
 
-              const Divider(height: 32),
-
-              // NEW: Canvas Controls Section
-              _buildCanvasControlsSection(),
-              const Divider(height: 32),
-
-              // Block Control Panel
-              const BlockControlPanel(),
               const Divider(height: 32),
 
               // Smart Train Addition

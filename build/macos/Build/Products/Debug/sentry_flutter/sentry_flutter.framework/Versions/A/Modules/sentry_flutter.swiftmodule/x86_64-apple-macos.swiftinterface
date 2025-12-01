@@ -1,0 +1,22 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)
+// swift-module-flags: -target x86_64-apple-macos11.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -Onone -module-name sentry_flutter
+// swift-module-flags-ignorable: -enable-bare-slash-regex
+import AppKit
+import CoreVideo
+import FlutterMacOS
+import Sentry
+import Swift
+import _Concurrency
+import _StringProcessing
+@_exported import sentry_flutter
+final public class SentryFlutter {
+  public init()
+  final public func update(options: Sentry.Options, with data: [Swift.String : Any])
+  @objc deinit
+}
+@objc @_hasMissingDesignatedInitializers public class SentryFlutterPlugin : ObjectiveC.NSObject, FlutterMacOS.FlutterPlugin {
+  @objc public static func register(with registrar: FlutterMacOS.FlutterPluginRegistrar)
+  @objc public func handle(_ call: FlutterMacOS.FlutterMethodCall, result: @escaping FlutterMacOS.FlutterResult)
+  @objc deinit
+}

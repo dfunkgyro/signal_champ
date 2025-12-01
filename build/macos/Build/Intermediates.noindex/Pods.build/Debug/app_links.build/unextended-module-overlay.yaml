@@ -1,0 +1,14 @@
+{
+  'version': 0,
+  'use-external-names': 'false',
+  'case-sensitive': 'false',
+  'roots': [{
+    'type': 'directory',
+    'name': "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Products/Debug/app_links/app_links.framework/Modules"
+    'contents': [{
+      'type': 'file',
+      'name': "module.modulemap",
+      'external-contents': "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/app_links.build/unextended-module.modulemap",
+    }]
+  }]
+}

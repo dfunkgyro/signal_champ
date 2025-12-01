@@ -1,0 +1,50 @@
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/Performance/SwizzleClassNameExclude.swift":
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SwizzleClassNameExclude.d"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SwizzleClassNameExclude.o"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SwizzleClassNameExclude.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SwizzleClassNameExclude.dia"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Tools/URLSessionTaskHelper.swift":
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/URLSessionTaskHelper.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/URLSessionTaskHelper.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/URLSessionTaskHelper.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/URLSessionTaskHelper.o"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/SwiftDescriptor.swift":
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SwiftDescriptor.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SwiftDescriptor.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SwiftDescriptor.dia"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SwiftDescriptor.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Tools/UIImageHelper.swift":
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIImageHelper.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIImageHelper.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIImageHelper.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIImageHelper.o"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Tools/UIRedactBuilder.swift":
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIRedactBuilder.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIRedactBuilder.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIRedactBuilder.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIRedactBuilder.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Tools/SentryViewScreenshotProvider.swift":
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryViewScreenshotProvider.swiftdeps"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryViewScreenshotProvider.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryViewScreenshotProvider.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryViewScreenshotProvider.dia"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Extensions/StringExtensions.swift":
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/StringExtensions.dia"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/StringExtensions.swiftdeps"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/StringExtensions.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/StringExtensions.d"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Tools/SentryViewPhotographer.swift":
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryViewPhotographer.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryViewPhotographer.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryViewPhotographer.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryViewPhotographer.o"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Extensions/UIViewExtensions.swift":
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIViewExtensions.swiftdeps"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIViewExtensions.d"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIViewExtensions.o"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UIViewExtensions.dia"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Tools/UrlSanitized.swift":
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UrlSanitized.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UrlSanitized.dia"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UrlSanitized.d"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/UrlSanitized.o"

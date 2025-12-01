@@ -346,6 +346,27 @@ class _LayerPanelState extends State<LayerPanel> {
                   ],
                 ),
               ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, size: 18, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete Layer', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'reset',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh, size: 18, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text('Reset All Layers', style: TextStyle(color: Colors.orange)),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -427,6 +448,9 @@ class _LayerPanelState extends State<LayerPanel> {
       case 'delete':
         _confirmDeleteLayer(context, controller, activeLayer);
         break;
+      case 'reset':
+        _confirmResetLayers(context, controller);
+        break;
     }
   }
 
@@ -472,6 +496,34 @@ class _LayerPanelState extends State<LayerPanel> {
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmResetLayers(BuildContext context, TerminalStationController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset All Layers'),
+        content: const Text(
+          'This will delete all current layers and recreate the default structure (Tracks, Signals, Platforms, etc.).\n\n'
+          'All components will be automatically assigned to their default layers.\n\n'
+          'This is useful if the layout is missing or corrupted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              controller.resetLayers();
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Reset Layers'),
           ),
         ],
       ),

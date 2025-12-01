@@ -1,0 +1,50 @@
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryThreadCodable.swift":
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryThreadCodable.o"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryThreadCodable.dia"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryThreadCodable.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryThreadCodable.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryStacktraceCodable.swift":
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryStacktraceCodable.swiftdeps"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryStacktraceCodable.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryStacktraceCodable.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryStacktraceCodable.dia"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Protocol/SentrySessionListener.swift":
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySessionListener.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySessionListener.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySessionListener.o"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySessionListener.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/SentrySessionReplay.swift":
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySessionReplay.d"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySessionReplay.o"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySessionReplay.dia"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySessionReplay.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/SentryTouchTracker.swift":
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryTouchTracker.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryTouchTracker.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryTouchTracker.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryTouchTracker.dia"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/UserFeedback/Configuration/SentryUserFeedbackConfiguration.swift":
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserFeedbackConfiguration.dia"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserFeedbackConfiguration.swiftdeps"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserFeedbackConfiguration.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserFeedbackConfiguration.d"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/Performance/SentryTransactionNameSource.swift":
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryTransactionNameSource.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryTransactionNameSource.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryTransactionNameSource.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryTransactionNameSource.dia"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryUserCodable.swift":
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserCodable.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserCodable.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserCodable.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserCodable.o"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/UserFeedback/Configuration/SentryUserFeedbackFormConfiguration.swift":
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserFeedbackFormConfiguration.dia"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserFeedbackFormConfiguration.d"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserFeedbackFormConfiguration.o"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryUserFeedbackFormConfiguration.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/SentrySRDefaultBreadcrumbConverter.swift":
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySRDefaultBreadcrumbConverter.swiftdeps"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySRDefaultBreadcrumbConverter.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySRDefaultBreadcrumbConverter.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentrySRDefaultBreadcrumbConverter.dia"

@@ -1,0 +1,1336 @@
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "TopLevel",
+    "printedName": "TopLevel",
+    "children": [
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "device_info_plus",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "Sysctl",
+        "printedName": "Sysctl",
+        "children": [
+          {
+            "kind": "TypeDecl",
+            "name": "Error",
+            "printedName": "Error",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "unknown",
+                "printedName": "unknown",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(device_info_plus.Sysctl.Error.Type) -> device_info_plus.Sysctl.Error",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Error",
+                        "printedName": "device_info_plus.Sysctl.Error",
+                        "usr": "s:16device_info_plus6SysctlV5ErrorO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "device_info_plus.Sysctl.Error.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Error",
+                            "printedName": "device_info_plus.Sysctl.Error",
+                            "usr": "s:16device_info_plus6SysctlV5ErrorO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:16device_info_plus6SysctlV5ErrorO7unknownyA2EmF",
+                "mangledName": "$s16device_info_plus6SysctlV5ErrorO7unknownyA2EmF",
+                "moduleName": "device_info_plus"
+              },
+              {
+                "kind": "Var",
+                "name": "malformedUTF8",
+                "printedName": "malformedUTF8",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(device_info_plus.Sysctl.Error.Type) -> device_info_plus.Sysctl.Error",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Error",
+                        "printedName": "device_info_plus.Sysctl.Error",
+                        "usr": "s:16device_info_plus6SysctlV5ErrorO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "device_info_plus.Sysctl.Error.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Error",
+                            "printedName": "device_info_plus.Sysctl.Error",
+                            "usr": "s:16device_info_plus6SysctlV5ErrorO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:16device_info_plus6SysctlV5ErrorO13malformedUTF8yA2EmF",
+                "mangledName": "$s16device_info_plus6SysctlV5ErrorO13malformedUTF8yA2EmF",
+                "moduleName": "device_info_plus"
+              },
+              {
+                "kind": "Var",
+                "name": "invalidSize",
+                "printedName": "invalidSize",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(device_info_plus.Sysctl.Error.Type) -> device_info_plus.Sysctl.Error",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Error",
+                        "printedName": "device_info_plus.Sysctl.Error",
+                        "usr": "s:16device_info_plus6SysctlV5ErrorO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "device_info_plus.Sysctl.Error.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Error",
+                            "printedName": "device_info_plus.Sysctl.Error",
+                            "usr": "s:16device_info_plus6SysctlV5ErrorO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:16device_info_plus6SysctlV5ErrorO11invalidSizeyA2EmF",
+                "mangledName": "$s16device_info_plus6SysctlV5ErrorO11invalidSizeyA2EmF",
+                "moduleName": "device_info_plus"
+              },
+              {
+                "kind": "Var",
+                "name": "posixError",
+                "printedName": "posixError",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(device_info_plus.Sysctl.Error.Type) -> (Darwin.POSIXErrorCode) -> device_info_plus.Sysctl.Error",
+                    "children": [
+                      {
+                        "kind": "TypeFunc",
+                        "name": "Function",
+                        "printedName": "(Darwin.POSIXErrorCode) -> device_info_plus.Sysctl.Error",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Error",
+                            "printedName": "device_info_plus.Sysctl.Error",
+                            "usr": "s:16device_info_plus6SysctlV5ErrorO"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "POSIXErrorCode",
+                            "printedName": "Darwin.POSIXErrorCode",
+                            "usr": "c:@M@Darwin@E@POSIXErrorCode"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "device_info_plus.Sysctl.Error.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Error",
+                            "printedName": "device_info_plus.Sysctl.Error",
+                            "usr": "s:16device_info_plus6SysctlV5ErrorO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:16device_info_plus6SysctlV5ErrorO05posixE0yAE6Darwin14POSIXErrorCodeOcAEmF",
+                "mangledName": "$s16device_info_plus6SysctlV5ErrorO05posixE0yAE6Darwin14POSIXErrorCodeOcAEmF",
+                "moduleName": "device_info_plus"
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:16device_info_plus6SysctlV5ErrorO",
+            "mangledName": "$s16device_info_plus6SysctlV5ErrorO",
+            "moduleName": "device_info_plus",
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Error",
+                "printedName": "Error",
+                "usr": "s:s5ErrorP",
+                "mangledName": "$ss5ErrorP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              }
+            ]
+          },
+          {
+            "kind": "Function",
+            "name": "data",
+            "printedName": "data(for:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.Int8]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int8",
+                    "printedName": "Swift.Int8",
+                    "usr": "s:s4Int8V"
+                  }
+                ],
+                "usr": "s:Sa"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.Int32]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int32",
+                    "printedName": "Swift.Int32",
+                    "usr": "s:s5Int32V"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus6SysctlV4data3forSays4Int8VGSays5Int32VG_tKFZ",
+            "mangledName": "$s16device_info_plus6SysctlV4data3forSays4Int8VGSays5Int32VG_tKFZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "keys",
+            "printedName": "keys(for:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.Int32]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int32",
+                    "printedName": "Swift.Int32",
+                    "usr": "s:s5Int32V"
+                  }
+                ],
+                "usr": "s:Sa"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus6SysctlV4keys3forSays5Int32VGSS_tKFZ",
+            "mangledName": "$s16device_info_plus6SysctlV4keys3forSays5Int32VGSS_tKFZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "value",
+            "printedName": "value(ofType:forKeys:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "GenericTypeParam",
+                "printedName": "τ_0_0"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Metatype",
+                "printedName": "τ_0_0.Type",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "τ_0_0"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.Int32]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int32",
+                    "printedName": "Swift.Int32",
+                    "usr": "s:s5Int32V"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus6SysctlV5value6ofType7forKeysxxm_Says5Int32VGtKlFZ",
+            "mangledName": "$s16device_info_plus6SysctlV5value6ofType7forKeysxxm_Says5Int32VGtKlFZ",
+            "moduleName": "device_info_plus",
+            "genericSig": "<τ_0_0>",
+            "sugared_genericSig": "<T>",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "value",
+            "printedName": "value(ofType:forKeys:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "GenericTypeParam",
+                "printedName": "τ_0_0"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Metatype",
+                "printedName": "τ_0_0.Type",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "τ_0_0"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.Int32]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int32",
+                    "printedName": "Swift.Int32",
+                    "usr": "s:s5Int32V"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus6SysctlV5value6ofType7forKeysxxm_s5Int32VdtKlFZ",
+            "mangledName": "$s16device_info_plus6SysctlV5value6ofType7forKeysxxm_s5Int32VdtKlFZ",
+            "moduleName": "device_info_plus",
+            "genericSig": "<τ_0_0>",
+            "sugared_genericSig": "<T>",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "value",
+            "printedName": "value(ofType:forName:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "GenericTypeParam",
+                "printedName": "τ_0_0"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Metatype",
+                "printedName": "τ_0_0.Type",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "τ_0_0"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus6SysctlV5value6ofType7forNamexxm_SStKlFZ",
+            "mangledName": "$s16device_info_plus6SysctlV5value6ofType7forNamexxm_SStKlFZ",
+            "moduleName": "device_info_plus",
+            "genericSig": "<τ_0_0>",
+            "sugared_genericSig": "<T>",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "string",
+            "printedName": "string(for:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.Int32]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int32",
+                    "printedName": "Swift.Int32",
+                    "usr": "s:s5Int32V"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus6SysctlV6string3forSSSays5Int32VG_tKFZ",
+            "mangledName": "$s16device_info_plus6SysctlV6string3forSSSays5Int32VG_tKFZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "string",
+            "printedName": "string(for:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.Int32]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int32",
+                    "printedName": "Swift.Int32",
+                    "usr": "s:s5Int32V"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus6SysctlV6string3forSSs5Int32Vd_tKFZ",
+            "mangledName": "$s16device_info_plus6SysctlV6string3forSSs5Int32Vd_tKFZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "string",
+            "printedName": "string(for:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus6SysctlV6string3forS2S_tKFZ",
+            "mangledName": "$s16device_info_plus6SysctlV6string3forS2S_tKFZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Var",
+            "name": "hostName",
+            "printedName": "hostName",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV8hostNameSSvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV8hostNameSSvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV8hostNameSSvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV8hostNameSSvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "machine",
+            "printedName": "machine",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV7machineSSvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV7machineSSvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV7machineSSvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV7machineSSvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "model",
+            "printedName": "model",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV5modelSSvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV5modelSSvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV5modelSSvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV5modelSSvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "activeCPUs",
+            "printedName": "activeCPUs",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Int32",
+                "printedName": "Swift.Int32",
+                "usr": "s:s5Int32V"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV10activeCPUss5Int32VvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV10activeCPUss5Int32VvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int32",
+                    "printedName": "Swift.Int32",
+                    "usr": "s:s5Int32V"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV10activeCPUss5Int32VvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV10activeCPUss5Int32VvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "osRelease",
+            "printedName": "osRelease",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV9osReleaseSSvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV9osReleaseSSvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV9osReleaseSSvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV9osReleaseSSvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "osType",
+            "printedName": "osType",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV6osTypeSSvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV6osTypeSSvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV6osTypeSSvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV6osTypeSSvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "osVersion",
+            "printedName": "osVersion",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV9osVersionSSvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV9osVersionSSvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV9osVersionSSvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV9osVersionSSvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "version",
+            "printedName": "version",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV7versionSSvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV7versionSSvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV7versionSSvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV7versionSSvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "osRev",
+            "printedName": "osRev",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Int32",
+                "printedName": "Swift.Int32",
+                "usr": "s:s5Int32V"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV5osRevs5Int32VvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV5osRevs5Int32VvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int32",
+                    "printedName": "Swift.Int32",
+                    "usr": "s:s5Int32V"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV5osRevs5Int32VvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV5osRevs5Int32VvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "cpuFreq",
+            "printedName": "cpuFreq",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV7cpuFreqs5Int64VvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV7cpuFreqs5Int64VvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int64",
+                    "printedName": "Swift.Int64",
+                    "usr": "s:s5Int64V"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV7cpuFreqs5Int64VvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV7cpuFreqs5Int64VvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "memSize",
+            "printedName": "memSize",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "UInt64",
+                "printedName": "Swift.UInt64",
+                "usr": "s:s6UInt64V"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:16device_info_plus6SysctlV7memSizes6UInt64VvpZ",
+            "mangledName": "$s16device_info_plus6SysctlV7memSizes6UInt64VvpZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UInt64",
+                    "printedName": "Swift.UInt64",
+                    "usr": "s:s6UInt64V"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:16device_info_plus6SysctlV7memSizes6UInt64VvgZ",
+                "mangledName": "$s16device_info_plus6SysctlV7memSizes6UInt64VvgZ",
+                "moduleName": "device_info_plus",
+                "static": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Sysctl",
+                "printedName": "device_info_plus.Sysctl",
+                "usr": "s:16device_info_plus6SysctlV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:16device_info_plus6SysctlVACycfc",
+            "mangledName": "$s16device_info_plus6SysctlVACycfc",
+            "moduleName": "device_info_plus",
+            "implicit": true,
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:16device_info_plus6SysctlV",
+        "mangledName": "$s16device_info_plus6SysctlV",
+        "moduleName": "device_info_plus",
+        "declAttributes": [
+          "AccessControl",
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "device_info_plus"
+      },
+      {
+        "kind": "Function",
+        "name": "getMacModelName",
+        "printedName": "getMacModelName(modelNumber:)",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+          }
+        ],
+        "declKind": "Func",
+        "usr": "s:16device_info_plus15getMacModelName11modelNumberS2S_tF",
+        "mangledName": "$s16device_info_plus15getMacModelName11modelNumberS2S_tF",
+        "moduleName": "device_info_plus",
+        "declAttributes": [
+          "RawDocComment"
+        ],
+        "funcSelfKind": "NonMutating"
+      },
+      {
+        "kind": "Import",
+        "name": "Cocoa",
+        "printedName": "Cocoa",
+        "declKind": "Import",
+        "moduleName": "device_info_plus"
+      },
+      {
+        "kind": "Import",
+        "name": "FlutterMacOS",
+        "printedName": "FlutterMacOS",
+        "declKind": "Import",
+        "moduleName": "device_info_plus"
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "DeviceInfoPlusMacosPlugin",
+        "printedName": "DeviceInfoPlusMacosPlugin",
+        "children": [
+          {
+            "kind": "Function",
+            "name": "register",
+            "printedName": "register(with:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterPluginRegistrar",
+                "printedName": "FlutterMacOS.FlutterPluginRegistrar",
+                "usr": "c:objc(pl)FlutterPluginRegistrar"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@device_info_plus@objc(cs)DeviceInfoPlusMacosPlugin(cm)registerWithRegistrar:",
+            "mangledName": "$s16device_info_plus25DeviceInfoPlusMacosPluginC8register4withySo07FlutterH9Registrar_p_tFZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "objc_name": "registerWithRegistrar:",
+            "declAttributes": [
+              "Final",
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "handle",
+            "printedName": "handle(_:result:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodCall",
+                "printedName": "FlutterMacOS.FlutterMethodCall",
+                "usr": "c:objc(cs)FlutterMethodCall"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Any?) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Any?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "ProtocolComposition",
+                        "printedName": "Any"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@device_info_plus@objc(cs)DeviceInfoPlusMacosPlugin(im)handleMethodCall:result:",
+            "mangledName": "$s16device_info_plus25DeviceInfoPlusMacosPluginC6handle_6resultySo17FlutterMethodCallC_yypSgctF",
+            "moduleName": "device_info_plus",
+            "isOpen": true,
+            "objc_name": "handleMethodCall:result:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "DeviceInfoPlusMacosPlugin",
+                "printedName": "device_info_plus.DeviceInfoPlusMacosPlugin",
+                "usr": "c:@M@device_info_plus@objc(cs)DeviceInfoPlusMacosPlugin"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "c:@M@device_info_plus@objc(cs)DeviceInfoPlusMacosPlugin(im)init",
+            "mangledName": "$s16device_info_plus25DeviceInfoPlusMacosPluginCACycfc",
+            "moduleName": "device_info_plus",
+            "overriding": true,
+            "implicit": true,
+            "objc_name": "init",
+            "declAttributes": [
+              "Dynamic",
+              "ObjC",
+              "Override"
+            ],
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "c:@M@device_info_plus@objc(cs)DeviceInfoPlusMacosPlugin",
+        "mangledName": "$s16device_info_plus25DeviceInfoPlusMacosPluginC",
+        "moduleName": "device_info_plus",
+        "isOpen": true,
+        "declAttributes": [
+          "AccessControl",
+          "ObjC"
+        ],
+        "superclassUsr": "c:objc(cs)NSObject",
+        "inheritsConvenienceInitializers": true,
+        "superclassNames": [
+          "ObjectiveC.NSObject"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObservingPublishing",
+            "printedName": "_KeyValueCodingAndObservingPublishing",
+            "usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+            "mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObserving",
+            "printedName": "_KeyValueCodingAndObserving",
+            "usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+            "mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "device_info_plus"
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "SystemUUID",
+        "printedName": "SystemUUID",
+        "children": [
+          {
+            "kind": "Function",
+            "name": "getSystemUUID",
+            "printedName": "getSystemUUID()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:16device_info_plus10SystemUUIDO03getdE0SSSgyFZ",
+            "mangledName": "$s16device_info_plus10SystemUUIDO03getdE0SSSgyFZ",
+            "moduleName": "device_info_plus",
+            "static": true,
+            "declAttributes": [
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "s:16device_info_plus10SystemUUIDO",
+        "mangledName": "$s16device_info_plus10SystemUUIDO",
+        "moduleName": "device_info_plus",
+        "declAttributes": [
+          "AccessControl"
+        ]
+      }
+    ],
+    "json_format_version": 8
+  },
+  "ConstValues": []
+}

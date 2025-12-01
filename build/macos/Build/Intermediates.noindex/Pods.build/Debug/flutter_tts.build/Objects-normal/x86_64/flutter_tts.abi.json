@@ -1,0 +1,2143 @@
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "TopLevel",
+    "printedName": "TopLevel",
+    "children": [
+      {
+        "kind": "Import",
+        "name": "FlutterMacOS",
+        "printedName": "FlutterMacOS",
+        "declKind": "Import",
+        "moduleName": "flutter_tts"
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "flutter_tts"
+      },
+      {
+        "kind": "Import",
+        "name": "AVFoundation",
+        "printedName": "AVFoundation",
+        "declKind": "Import",
+        "moduleName": "flutter_tts"
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "FlutterTtsPlugin",
+        "printedName": "FlutterTtsPlugin",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "iosAudioCategoryKey",
+            "printedName": "iosAudioCategoryKey",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC19iosAudioCategoryKeySSvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC19iosAudioCategoryKeySSvp",
+            "moduleName": "flutter_tts",
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage",
+              "Final"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC19iosAudioCategoryKeySSvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC19iosAudioCategoryKeySSvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC19iosAudioCategoryKeySSvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC19iosAudioCategoryKeySSvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC19iosAudioCategoryKeySSvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC19iosAudioCategoryKeySSvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "iosAudioCategoryOptionsKey",
+            "printedName": "iosAudioCategoryOptionsKey",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC26iosAudioCategoryOptionsKeySSvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC26iosAudioCategoryOptionsKeySSvp",
+            "moduleName": "flutter_tts",
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage",
+              "Final"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC26iosAudioCategoryOptionsKeySSvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC26iosAudioCategoryOptionsKeySSvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC26iosAudioCategoryOptionsKeySSvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC26iosAudioCategoryOptionsKeySSvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC26iosAudioCategoryOptionsKeySSvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC26iosAudioCategoryOptionsKeySSvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "synthesizer",
+            "printedName": "synthesizer",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechSynthesizer",
+                "printedName": "AVFAudio.AVSpeechSynthesizer",
+                "usr": "c:objc(cs)AVSpeechSynthesizer"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC11synthesizerSo19AVSpeechSynthesizerCvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC11synthesizerSo19AVSpeechSynthesizerCvp",
+            "moduleName": "flutter_tts",
+            "declAttributes": [
+              "HasInitialValue",
+              "Final",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "AVSpeechSynthesizer",
+                    "printedName": "AVFAudio.AVSpeechSynthesizer",
+                    "usr": "c:objc(cs)AVSpeechSynthesizer"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC11synthesizerSo19AVSpeechSynthesizerCvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC11synthesizerSo19AVSpeechSynthesizerCvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "language",
+            "printedName": "language",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC8languageSSvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC8languageSSvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC8languageSSvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC8languageSSvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC8languageSSvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC8languageSSvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC8languageSSvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC8languageSSvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "rate",
+            "printedName": "rate",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC4rateSfvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC4rateSfvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Float",
+                    "printedName": "Swift.Float",
+                    "usr": "s:Sf"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC4rateSfvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC4rateSfvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Float",
+                    "printedName": "Swift.Float",
+                    "usr": "s:Sf"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC4rateSfvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC4rateSfvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC4rateSfvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC4rateSfvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "languages",
+            "printedName": "languages",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Set",
+                "printedName": "Swift.Set<Swift.String>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sh"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC9languagesShySSGvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC9languagesShySSGvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Set",
+                    "printedName": "Swift.Set<Swift.String>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sh"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC9languagesShySSGvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC9languagesShySSGvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Set",
+                    "printedName": "Swift.Set<Swift.String>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sh"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC9languagesShySSGvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC9languagesShySSGvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC9languagesShySSGvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC9languagesShySSGvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "volume",
+            "printedName": "volume",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC6volumeSfvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC6volumeSfvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Float",
+                    "printedName": "Swift.Float",
+                    "usr": "s:Sf"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC6volumeSfvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC6volumeSfvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Float",
+                    "printedName": "Swift.Float",
+                    "usr": "s:Sf"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC6volumeSfvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC6volumeSfvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC6volumeSfvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC6volumeSfvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "pitch",
+            "printedName": "pitch",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC5pitchSfvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC5pitchSfvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Float",
+                    "printedName": "Swift.Float",
+                    "usr": "s:Sf"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC5pitchSfvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC5pitchSfvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Float",
+                    "printedName": "Swift.Float",
+                    "usr": "s:Sf"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC5pitchSfvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC5pitchSfvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC5pitchSfvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC5pitchSfvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "voice",
+            "printedName": "voice",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "AVFAudio.AVSpeechSynthesisVoice?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "AVSpeechSynthesisVoice",
+                    "printedName": "AVFAudio.AVSpeechSynthesisVoice",
+                    "usr": "c:objc(cs)AVSpeechSynthesisVoice"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC5voiceSo22AVSpeechSynthesisVoiceCSgvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC5voiceSo22AVSpeechSynthesisVoiceCSgvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "AVFAudio.AVSpeechSynthesisVoice?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "AVSpeechSynthesisVoice",
+                        "printedName": "AVFAudio.AVSpeechSynthesisVoice",
+                        "usr": "c:objc(cs)AVSpeechSynthesisVoice"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC5voiceSo22AVSpeechSynthesisVoiceCSgvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC5voiceSo22AVSpeechSynthesisVoiceCSgvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "AVFAudio.AVSpeechSynthesisVoice?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "AVSpeechSynthesisVoice",
+                        "printedName": "AVFAudio.AVSpeechSynthesisVoice",
+                        "usr": "c:objc(cs)AVSpeechSynthesisVoice"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC5voiceSo22AVSpeechSynthesisVoiceCSgvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC5voiceSo22AVSpeechSynthesisVoiceCSgvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC5voiceSo22AVSpeechSynthesisVoiceCSgvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC5voiceSo22AVSpeechSynthesisVoiceCSgvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "awaitSpeakCompletion",
+            "printedName": "awaitSpeakCompletion",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC20awaitSpeakCompletionSbvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC20awaitSpeakCompletionSbvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC20awaitSpeakCompletionSbvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC20awaitSpeakCompletionSbvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC20awaitSpeakCompletionSbvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC20awaitSpeakCompletionSbvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC20awaitSpeakCompletionSbvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC20awaitSpeakCompletionSbvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "awaitSynthCompletion",
+            "printedName": "awaitSynthCompletion",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC20awaitSynthCompletionSbvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC20awaitSynthCompletionSbvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC20awaitSynthCompletionSbvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC20awaitSynthCompletionSbvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC20awaitSynthCompletionSbvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC20awaitSynthCompletionSbvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC20awaitSynthCompletionSbvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC20awaitSynthCompletionSbvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "speakResult",
+            "printedName": "speakResult",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ImplicitlyUnwrappedOptional",
+                "printedName": "((Any?) -> ())?",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(Any?) -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Any?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "ProtocolComposition",
+                            "printedName": "Any"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      }
+                    ]
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC11speakResultyypSgcSgvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC11speakResultyypSgcSgvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ImplicitlyUnwrappedOptional",
+                    "printedName": "((Any?) -> ())?",
+                    "children": [
+                      {
+                        "kind": "TypeFunc",
+                        "name": "Function",
+                        "printedName": "(Any?) -> ()",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Void",
+                            "printedName": "()"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Optional",
+                            "printedName": "Any?",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "ProtocolComposition",
+                                "printedName": "Any"
+                              }
+                            ],
+                            "usr": "s:Sq"
+                          }
+                        ]
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC11speakResultyypSgcSgvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC11speakResultyypSgcSgvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ImplicitlyUnwrappedOptional",
+                    "printedName": "((Any?) -> ())?",
+                    "children": [
+                      {
+                        "kind": "TypeFunc",
+                        "name": "Function",
+                        "printedName": "(Any?) -> ()",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Void",
+                            "printedName": "()"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Optional",
+                            "printedName": "Any?",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "ProtocolComposition",
+                                "printedName": "Any"
+                              }
+                            ],
+                            "usr": "s:Sq"
+                          }
+                        ]
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC11speakResultyypSgcSgvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC11speakResultyypSgcSgvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC11speakResultyypSgcSgvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC11speakResultyypSgcSgvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "synthResult",
+            "printedName": "synthResult",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ImplicitlyUnwrappedOptional",
+                "printedName": "((Any?) -> ())?",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(Any?) -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Any?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "ProtocolComposition",
+                            "printedName": "Any"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      }
+                    ]
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC11synthResultyypSgcSgvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC11synthResultyypSgcSgvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ImplicitlyUnwrappedOptional",
+                    "printedName": "((Any?) -> ())?",
+                    "children": [
+                      {
+                        "kind": "TypeFunc",
+                        "name": "Function",
+                        "printedName": "(Any?) -> ()",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Void",
+                            "printedName": "()"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Optional",
+                            "printedName": "Any?",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "ProtocolComposition",
+                                "printedName": "Any"
+                              }
+                            ],
+                            "usr": "s:Sq"
+                          }
+                        ]
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC11synthResultyypSgcSgvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC11synthResultyypSgcSgvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ImplicitlyUnwrappedOptional",
+                    "printedName": "((Any?) -> ())?",
+                    "children": [
+                      {
+                        "kind": "TypeFunc",
+                        "name": "Function",
+                        "printedName": "(Any?) -> ()",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Void",
+                            "printedName": "()"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Optional",
+                            "printedName": "Any?",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "ProtocolComposition",
+                                "printedName": "Any"
+                              }
+                            ],
+                            "usr": "s:Sq"
+                          }
+                        ]
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC11synthResultyypSgcSgvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC11synthResultyypSgcSgvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC11synthResultyypSgcSgvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC11synthResultyypSgcSgvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "channel",
+            "printedName": "channel",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodChannel",
+                "printedName": "FlutterMacOS.FlutterMethodChannel",
+                "usr": "c:objc(cs)FlutterMethodChannel"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC7channelSo0C13MethodChannelCvp",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC7channelSo0C13MethodChannelCvp",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FlutterMethodChannel",
+                    "printedName": "FlutterMacOS.FlutterMethodChannel",
+                    "usr": "c:objc(cs)FlutterMethodChannel"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC7channelSo0C13MethodChannelCvg",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC7channelSo0C13MethodChannelCvg",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FlutterMethodChannel",
+                    "printedName": "FlutterMacOS.FlutterMethodChannel",
+                    "usr": "c:objc(cs)FlutterMethodChannel"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC7channelSo0C13MethodChannelCvs",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC7channelSo0C13MethodChannelCvs",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:11flutter_tts16FlutterTtsPluginC7channelSo0C13MethodChannelCvM",
+                "mangledName": "$s11flutter_tts16FlutterTtsPluginC7channelSo0C13MethodChannelCvM",
+                "moduleName": "flutter_tts",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(channel:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterTtsPlugin",
+                "printedName": "flutter_tts.FlutterTtsPlugin",
+                "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodChannel",
+                "printedName": "FlutterMacOS.FlutterMethodChannel",
+                "usr": "c:objc(cs)FlutterMethodChannel"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:11flutter_tts16FlutterTtsPluginC7channelACSo0C13MethodChannelC_tcfc",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC7channelACSo0C13MethodChannelC_tcfc",
+            "moduleName": "flutter_tts",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "register",
+            "printedName": "register(with:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterPluginRegistrar",
+                "printedName": "FlutterMacOS.FlutterPluginRegistrar",
+                "usr": "c:objc(pl)FlutterPluginRegistrar"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(cm)registerWithRegistrar:",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC8register4withySo0cE9Registrar_p_tFZ",
+            "moduleName": "flutter_tts",
+            "static": true,
+            "objc_name": "registerWithRegistrar:",
+            "declAttributes": [
+              "Final",
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "handle",
+            "printedName": "handle(_:result:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodCall",
+                "printedName": "FlutterMacOS.FlutterMethodCall",
+                "usr": "c:objc(cs)FlutterMethodCall"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Any?) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Any?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "ProtocolComposition",
+                        "printedName": "Any"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(im)handleMethodCall:result:",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC6handle_6resultySo0C10MethodCallC_yypSgctF",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "objc_name": "handleMethodCall:result:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "speechSynthesizer",
+            "printedName": "speechSynthesizer(_:didFinish:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechSynthesizer",
+                "printedName": "AVFAudio.AVSpeechSynthesizer",
+                "usr": "c:objc(cs)AVSpeechSynthesizer"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechUtterance",
+                "printedName": "AVFAudio.AVSpeechUtterance",
+                "usr": "c:objc(cs)AVSpeechUtterance"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(im)speechSynthesizer:didFinishSpeechUtterance:",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC17speechSynthesizer_9didFinishySo08AVSpeechG0C_So0J9UtteranceCtF",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "objc_name": "speechSynthesizer:didFinishSpeechUtterance:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "speechSynthesizer",
+            "printedName": "speechSynthesizer(_:didStart:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechSynthesizer",
+                "printedName": "AVFAudio.AVSpeechSynthesizer",
+                "usr": "c:objc(cs)AVSpeechSynthesizer"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechUtterance",
+                "printedName": "AVFAudio.AVSpeechUtterance",
+                "usr": "c:objc(cs)AVSpeechUtterance"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(im)speechSynthesizer:didStartSpeechUtterance:",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC17speechSynthesizer_8didStartySo08AVSpeechG0C_So0J9UtteranceCtF",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "objc_name": "speechSynthesizer:didStartSpeechUtterance:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "speechSynthesizer",
+            "printedName": "speechSynthesizer(_:didPause:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechSynthesizer",
+                "printedName": "AVFAudio.AVSpeechSynthesizer",
+                "usr": "c:objc(cs)AVSpeechSynthesizer"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechUtterance",
+                "printedName": "AVFAudio.AVSpeechUtterance",
+                "usr": "c:objc(cs)AVSpeechUtterance"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(im)speechSynthesizer:didPauseSpeechUtterance:",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC17speechSynthesizer_8didPauseySo08AVSpeechG0C_So0J9UtteranceCtF",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "objc_name": "speechSynthesizer:didPauseSpeechUtterance:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "speechSynthesizer",
+            "printedName": "speechSynthesizer(_:didContinue:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechSynthesizer",
+                "printedName": "AVFAudio.AVSpeechSynthesizer",
+                "usr": "c:objc(cs)AVSpeechSynthesizer"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechUtterance",
+                "printedName": "AVFAudio.AVSpeechUtterance",
+                "usr": "c:objc(cs)AVSpeechUtterance"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(im)speechSynthesizer:didContinueSpeechUtterance:",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC17speechSynthesizer_11didContinueySo08AVSpeechG0C_So0J9UtteranceCtF",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "objc_name": "speechSynthesizer:didContinueSpeechUtterance:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "speechSynthesizer",
+            "printedName": "speechSynthesizer(_:didCancel:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechSynthesizer",
+                "printedName": "AVFAudio.AVSpeechSynthesizer",
+                "usr": "c:objc(cs)AVSpeechSynthesizer"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechUtterance",
+                "printedName": "AVFAudio.AVSpeechUtterance",
+                "usr": "c:objc(cs)AVSpeechUtterance"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(im)speechSynthesizer:didCancelSpeechUtterance:",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC17speechSynthesizer_9didCancelySo08AVSpeechG0C_So0J9UtteranceCtF",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "objc_name": "speechSynthesizer:didCancelSpeechUtterance:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "speechSynthesizer",
+            "printedName": "speechSynthesizer(_:willSpeakRangeOfSpeechString:utterance:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechSynthesizer",
+                "printedName": "AVFAudio.AVSpeechSynthesizer",
+                "usr": "c:objc(cs)AVSpeechSynthesizer"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "_NSRange",
+                "printedName": "Foundation._NSRange",
+                "usr": "c:@S@_NSRange"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVSpeechUtterance",
+                "printedName": "AVFAudio.AVSpeechUtterance",
+                "usr": "c:objc(cs)AVSpeechUtterance"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(im)speechSynthesizer:willSpeakRangeOfSpeechString:utterance:",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginC17speechSynthesizer_28willSpeakRangeOfSpeechString9utteranceySo08AVSpeechG0C_So8_NSRangeVSo0O9UtteranceCtF",
+            "moduleName": "flutter_tts",
+            "isOpen": true,
+            "objc_name": "speechSynthesizer:willSpeakRangeOfSpeechString:utterance:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterTtsPlugin",
+                "printedName": "flutter_tts.FlutterTtsPlugin",
+                "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin(im)init",
+            "mangledName": "$s11flutter_tts16FlutterTtsPluginCACycfc",
+            "moduleName": "flutter_tts",
+            "overriding": true,
+            "implicit": true,
+            "objc_name": "init",
+            "declAttributes": [
+              "Dynamic",
+              "ObjC",
+              "Override"
+            ],
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "c:@M@flutter_tts@objc(cs)FlutterTtsPlugin",
+        "mangledName": "$s11flutter_tts16FlutterTtsPluginC",
+        "moduleName": "flutter_tts",
+        "isOpen": true,
+        "declAttributes": [
+          "AccessControl",
+          "ObjC"
+        ],
+        "superclassUsr": "c:objc(cs)NSObject",
+        "hasMissingDesignatedInitializers": true,
+        "superclassNames": [
+          "ObjectiveC.NSObject"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObservingPublishing",
+            "printedName": "_KeyValueCodingAndObservingPublishing",
+            "usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+            "mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObserving",
+            "printedName": "_KeyValueCodingAndObserving",
+            "usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+            "mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "AVSpeechSynthesisVoiceQuality",
+        "printedName": "AVSpeechSynthesisVoiceQuality",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "stringValue",
+            "printedName": "stringValue",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:So29AVSpeechSynthesisVoiceQualityV11flutter_ttsE11stringValueSSvp",
+            "mangledName": "$sSo29AVSpeechSynthesisVoiceQualityV11flutter_ttsE11stringValueSSvp",
+            "moduleName": "flutter_tts",
+            "isFromExtension": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:So29AVSpeechSynthesisVoiceQualityV11flutter_ttsE11stringValueSSvg",
+                "mangledName": "$sSo29AVSpeechSynthesisVoiceQualityV11flutter_ttsE11stringValueSSvg",
+                "moduleName": "flutter_tts",
+                "isFromExtension": true,
+                "accessorKind": "get"
+              }
+            ]
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "c:@E@AVSpeechSynthesisVoiceQuality",
+        "moduleName": "AVFAudio",
+        "intro_Macosx": "10.14",
+        "objc_name": "AVSpeechSynthesisVoiceQuality",
+        "declAttributes": [
+          "Available",
+          "SynthesizedProtocol",
+          "ObjC",
+          "SynthesizedProtocol",
+          "Sendable",
+          "Dynamic"
+        ],
+        "enumRawTypeName": "Int",
+        "isExternal": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "RawRepresentable",
+            "printedName": "RawRepresentable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "RawValue",
+                "printedName": "RawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:SY",
+            "mangledName": "$sSY"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "AVSpeechSynthesisVoiceGender",
+        "printedName": "AVSpeechSynthesisVoiceGender",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "stringValue",
+            "printedName": "stringValue",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:So28AVSpeechSynthesisVoiceGenderV11flutter_ttsE11stringValueSSvp",
+            "mangledName": "$sSo28AVSpeechSynthesisVoiceGenderV11flutter_ttsE11stringValueSSvp",
+            "moduleName": "flutter_tts",
+            "isFromExtension": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:So28AVSpeechSynthesisVoiceGenderV11flutter_ttsE11stringValueSSvg",
+                "mangledName": "$sSo28AVSpeechSynthesisVoiceGenderV11flutter_ttsE11stringValueSSvg",
+                "moduleName": "flutter_tts",
+                "isFromExtension": true,
+                "accessorKind": "get"
+              }
+            ]
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "c:@E@AVSpeechSynthesisVoiceGender",
+        "moduleName": "AVFAudio",
+        "intro_Macosx": "10.15",
+        "objc_name": "AVSpeechSynthesisVoiceGender",
+        "declAttributes": [
+          "Available",
+          "SynthesizedProtocol",
+          "ObjC",
+          "SynthesizedProtocol",
+          "Sendable",
+          "Dynamic"
+        ],
+        "enumRawTypeName": "Int",
+        "isExternal": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "RawRepresentable",
+            "printedName": "RawRepresentable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "RawValue",
+                "printedName": "RawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:SY",
+            "mangledName": "$sSY"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          }
+        ]
+      }
+    ],
+    "json_format_version": 8
+  },
+  "ConstValues": [
+    {
+      "filePath": "\/Users\/dfunkgyro\/.pub-cache\/hosted\/pub.dev\/flutter_tts-4.2.3\/macos\/Classes\/FlutterTtsPlugin.swift",
+      "kind": "StringLiteral",
+      "offset": 179,
+      "length": 21,
+      "value": "\"iosAudioCategoryKey\""
+    },
+    {
+      "filePath": "\/Users\/dfunkgyro\/.pub-cache\/hosted\/pub.dev\/flutter_tts-4.2.3\/macos\/Classes\/FlutterTtsPlugin.swift",
+      "kind": "StringLiteral",
+      "offset": 242,
+      "length": 28,
+      "value": "\"iosAudioCategoryOptionsKey\""
+    },
+    {
+      "filePath": "\/Users\/dfunkgyro\/.pub-cache\/hosted\/pub.dev\/flutter_tts-4.2.3\/macos\/Classes\/FlutterTtsPlugin.swift",
+      "kind": "FloatLiteral",
+      "offset": 495,
+      "length": 3,
+      "value": "1.0"
+    },
+    {
+      "filePath": "\/Users\/dfunkgyro\/.pub-cache\/hosted\/pub.dev\/flutter_tts-4.2.3\/macos\/Classes\/FlutterTtsPlugin.swift",
+      "kind": "FloatLiteral",
+      "offset": 520,
+      "length": 3,
+      "value": "1.0"
+    },
+    {
+      "filePath": "\/Users\/dfunkgyro\/.pub-cache\/hosted\/pub.dev\/flutter_tts-4.2.3\/macos\/Classes\/FlutterTtsPlugin.swift",
+      "kind": "BooleanLiteral",
+      "offset": 596,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/dfunkgyro\/.pub-cache\/hosted\/pub.dev\/flutter_tts-4.2.3\/macos\/Classes\/FlutterTtsPlugin.swift",
+      "kind": "BooleanLiteral",
+      "offset": 637,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/dfunkgyro\/.pub-cache\/hosted\/pub.dev\/flutter_tts-4.2.3\/macos\/Classes\/FlutterTtsPlugin.swift",
+      "kind": "StringLiteral",
+      "offset": 72,
+      "length": 16,
+      "value": "\"flutter_tts.FlutterTtsPlugin\""
+    }
+  ]
+}

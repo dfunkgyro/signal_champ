@@ -1,0 +1,55 @@
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryBreadcrumbCodable.swift":
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryBreadcrumbCodable.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryBreadcrumbCodable.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryBreadcrumbCodable.o"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryBreadcrumbCodable.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Tools/HTTPHeaderSanitizer.swift":
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/HTTPHeaderSanitizer.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/HTTPHeaderSanitizer.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/HTTPHeaderSanitizer.dia"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/HTTPHeaderSanitizer.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Protocol/Codable/NSNumberDecodableWrapper.swift":
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NSNumberDecodableWrapper.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NSNumberDecodableWrapper.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NSNumberDecodableWrapper.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NSNumberDecodableWrapper.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Helper/SentryBaggageSerialization.swift":
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryBaggageSerialization.swiftdeps"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryBaggageSerialization.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryBaggageSerialization.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryBaggageSerialization.dia"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryCodable.swift":
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryCodable.dia"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryCodable.d"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryCodable.o"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryCodable.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/ANR/SentryANRType.swift":
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRType.swiftdeps"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRType.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRType.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRType.o"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Extensions/NSLock.swift":
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NSLock.o"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NSLock.dia"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NSLock.swiftdeps"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NSLock.d"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/ANR/SentryANRTracker.swift":
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRTracker.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRTracker.d"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRTracker.dia"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRTracker.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Integrations/ANR/SentryANRTrackerV2Delegate.swift":
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRTrackerV2Delegate.o"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRTrackerV2Delegate.dia"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRTrackerV2Delegate.swiftdeps"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/SentryANRTrackerV2Delegate.d"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Protocol/Codable/DecodeArbitraryData.swift":
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/DecodeArbitraryData.dia"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/DecodeArbitraryData.o"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/DecodeArbitraryData.d"
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/DecodeArbitraryData.swiftdeps"
+"/Users/dfunkgyro/github1/signal_champ/macos/Pods/Sentry/Sources/Swift/Extensions/NumberExtensions.swift":
+  swift-dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NumberExtensions.swiftdeps"
+  diagnostics: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NumberExtensions.dia"
+  dependencies: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NumberExtensions.d"
+  object: "/Users/dfunkgyro/github1/signal_champ/build/macos/Build/Intermediates.noindex/Pods.build/Debug/Sentry.build/Objects-normal/x86_64/NumberExtensions.o"

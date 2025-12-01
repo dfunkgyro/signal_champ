@@ -1,0 +1,25 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)
+// swift-module-flags: -target x86_64-apple-macos11.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -Onone -module-name app_links
+// swift-module-flags-ignorable: -enable-bare-slash-regex
+import Cocoa
+import FlutterMacOS
+import Swift
+import _Concurrency
+import _StringProcessing
+@_exported import app_links
+@_hasMissingDesignatedInitializers public class AppLinks {
+  public static let shared: app_links.AppLinksMacosPlugin
+  @objc deinit
+}
+@objc @_inheritsConvenienceInitializers public class AppLinksMacosPlugin : ObjectiveC.NSObject, FlutterMacOS.FlutterPlugin, FlutterMacOS.FlutterStreamHandler, FlutterMacOS.FlutterAppLifecycleDelegate {
+  @objc public static func register(with registrar: FlutterMacOS.FlutterPluginRegistrar)
+  public func getUniversalLink(_ userActivity: Foundation.NSUserActivity) -> Foundation.URL?
+  @objc public func handleWillFinishLaunching(_ notification: Foundation.Notification)
+  @objc public func handle(_ call: FlutterMacOS.FlutterMethodCall, result: @escaping FlutterMacOS.FlutterResult)
+  @objc public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterMacOS.FlutterEventSink) -> FlutterMacOS.FlutterError?
+  @objc public func onCancel(withArguments arguments: Any?) -> FlutterMacOS.FlutterError?
+  public func handleLink(link: Swift.String)
+  @objc override dynamic public init()
+  @objc deinit
+}

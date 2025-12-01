@@ -8755,25 +8755,27 @@ class TerminalStationController extends ChangeNotifier {
     final mappings = trackGraph.getPointMappingsForBlock(currentBlockId, train.direction);
 
     for (final mapping in mappings) {
-      // Check if train is approaching a point that's in reverse position
-      // This means the point is routing traffic away from the train's intended path
       final point = points[mapping.pointId];
-      if (point?.position == PointPosition.reverse) {
-        // Check if this is a route to a crossover (which requires reverse position)
-        // If so, don't trigger collision
-        if (crossoverBlocks.contains(mapping.exitBlockId)) {
-          continue; // This is a valid crossover route
-        }
+      if (point == null) continue;
 
-        _logEvent(
-            '💥 COLLISION: ${train.name} in block $currentBlockId approaching reversed point ${mapping.pointId} at (${mapping.pointX}, ${mapping.pointY})!');
-        _reversePointCollisions[train.id] = currentBlockId; // Track collision
-        train.emergencyBrake = true;
-        train.speed = 0;
-        train.targetSpeed = 0;
-        _initiateReversePointCollisionRecovery(train);
-        return true;
+      // CRITICAL FIX: Only check the ACTIVE route (where point position matches required position)
+      // A block can have multiple routes via the same point (normal vs reverse)
+      // We must only check the route that matches the current point position
+      if (point.position != mapping.requiredPosition) {
+        continue; // This route is not active, skip it
       }
+
+      // At this point, we know this is the active route based on current point position
+      // Now check if this active route is valid (not a collision scenario)
+
+      // For crossover routes in reverse position, this is VALID routing (not a collision)
+      if (crossoverBlocks.contains(mapping.exitBlockId) &&
+          mapping.requiredPosition == PointPosition.reverse) {
+        continue; // Valid crossover route
+      }
+
+      // FUTURE: Add additional collision checks here if needed
+      // For now, no collisions are triggered for active routes
     }
 
     return false;

@@ -12,6 +12,7 @@ import '../widgets/dot_matrix_display.dart';
 import '../widgets/layer_panel.dart';
 import '../widgets/component_palette.dart';
 import '../widgets/canvas_drop_target.dart';
+import '../widgets/block_control_panel.dart';
 import 'scenario_marketplace_screen.dart';
 import 'dart:math' as math;
 
@@ -2460,6 +2461,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               _buildCanvasControlsSection(),
               const Divider(height: 32),
 
+              // Block Control Panel
+              const BlockControlPanel(),
+              const Divider(height: 32),
+
               // Smart Train Addition
               _buildAddTrainSection(controller),
               const Divider(height: 32),
@@ -4603,7 +4608,19 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       if (point != null) _showPointDialog(controller, point);
     } else if (closestType == 'block' && closestId != null) {
       final block = controller.blocks[closestId];
-      if (block != null) _showBlockDialog(controller, block);
+      if (block != null) {
+        // Toggle block status directly
+        controller.toggleBlockClosed(block.id);
+        final isClosed = controller.isBlockClosed(block.id);
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Block ${block.id} ${isClosed ? "CLOSED" : "OPENED"}'),
+            duration: const Duration(seconds: 1),
+            backgroundColor: isClosed ? Colors.red : Colors.green,
+          ),
+        );
+      }
     }
   }
 
@@ -4966,68 +4983,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     );
   }
 
-  // Show block control dialog
-  void _showBlockDialog(
-      TerminalStationController controller, BlockSection block) {
-    final isClosed = controller.isBlockClosed(block.id);
-    final blockName = block.name ?? 'Block ${block.id}';
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(blockName),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ID: ${block.id}',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text('Occupied: ${block.occupied ? "YES" : "NO"}'),
-              if (block.occupied && block.occupyingTrainId != null) ...[
-                const SizedBox(height: 4),
-                Text('Train: ${block.occupyingTrainId}'),
-              ],
-              const SizedBox(height: 8),
-              Text('Status: ${isClosed ? "🚫 CLOSED" : "✅ OPEN"}',
-                  style: TextStyle(
-                    color: isClosed ? Colors.red : Colors.green,
-                    fontWeight: FontWeight.bold,
-                  )),
-              const SizedBox(height: 8),
-              Text(
-                  'Position: ${block.startX.toInt()} - ${block.endX.toInt()}, Y: ${block.y.toInt()}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 16),
-              if (isClosed)
-                const Text(
-                  '⚠️ Auto trains will emergency brake if in or approaching this block',
-                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                ),
-            ],
-          ),
-          actions: [
-            TextButton.icon(
-              icon: Icon(isClosed ? Icons.lock_open : Icons.block),
-              label: Text(isClosed ? 'Open Block' : 'Close Block'),
-              style: TextButton.styleFrom(
-                foregroundColor: isClosed ? Colors.green : Colors.red,
-              ),
-              onPressed: () {
-                controller.toggleBlockClosed(block.id);
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Widget _buildStatusPanel() {
     return Container(

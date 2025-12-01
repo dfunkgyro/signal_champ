@@ -1,5 +1,53 @@
 import 'railway_model.dart';
 
+/// Maps points to their controlling blocks and validates physical locations
+/// This is the SINGLE SOURCE OF TRUTH for point-block relationships
+class PointBlockMapping {
+  final String pointId;
+  final String approachBlockId; // Block train is in when approaching point
+  final String exitBlockId; // Block train enters after passing point
+  final double pointX; // Physical x-coordinate of point
+  final double pointY; // Physical y-coordinate of point
+  final int direction; // 1 for eastbound, -1 for westbound
+  final PointPosition requiredPosition; // Position required for this route
+
+  PointBlockMapping({
+    required this.pointId,
+    required this.approachBlockId,
+    required this.exitBlockId,
+    required this.pointX,
+    required this.pointY,
+    required this.direction,
+    required this.requiredPosition,
+  });
+
+  /// Validate that point is geometrically within the approach block's range
+  bool validate(Map<String, dynamic> blocks) {
+    final block = blocks[approachBlockId];
+    if (block == null) {
+      print('❌ Validation failed: Block $approachBlockId not found for point $pointId');
+      return false;
+    }
+
+    // Check if point x is at or near block boundary
+    final atStartBoundary = (pointX - block.startX).abs() < 1.0;
+    final atEndBoundary = (pointX - block.endX).abs() < 1.0;
+    final withinBlock = pointX >= block.startX && pointX <= block.endX;
+
+    if (!atStartBoundary && !atEndBoundary && !withinBlock) {
+      print('❌ Validation failed: Point $pointId at x=$pointX is not at boundary or within block $approachBlockId (${block.startX}-${block.endX})');
+      return false;
+    }
+
+    return true;
+  }
+
+  @override
+  String toString() {
+    return 'Point $pointId ($pointX, $pointY): Block $approachBlockId → $exitBlockId (${direction > 0 ? 'EB' : 'WB'}, ${requiredPosition.name})';
+  }
+}
+
 /// Represents a physical track connection between blocks
 /// This models the real-world railway where tracks physically connect at points
 class TrackConnection {
@@ -49,8 +97,107 @@ class TrackGraph {
   // Map of point ID → their configurations
   final Map<String, PointConfiguration> _pointConfigurations = {};
 
+  // Map of (blockId, direction) → point controlling that block's exits
+  final Map<String, List<PointBlockMapping>> _pointBlockMappings = {};
+
   TrackGraph() {
     _buildGraph();
+  }
+
+  /// Build point-block mappings from track connections
+  /// This creates the unified mapping that serves as single source of truth
+  void buildPointBlockMappings(Map<String, dynamic> points, Map<String, dynamic> blocks) {
+    _pointBlockMappings.clear();
+
+    // Process eastbound connections
+    for (final entry in _eastboundConnections.entries) {
+      final fromBlockId = entry.key;
+      for (final connection in entry.value) {
+        if (connection.viaPointId != null) {
+          final point = points[connection.viaPointId];
+          if (point != null) {
+            final mapping = PointBlockMapping(
+              pointId: connection.viaPointId!,
+              approachBlockId: fromBlockId,
+              exitBlockId: connection.toBlockId,
+              pointX: point.x.toDouble(),
+              pointY: point.y.toDouble(),
+              direction: 1, // Eastbound
+              requiredPosition: connection.requiredPointPosition!,
+            );
+
+            // Validate the mapping
+            if (!mapping.validate(blocks)) {
+              print('⚠️ WARNING: Invalid point-block mapping: $mapping');
+            }
+
+            // Store by approach block
+            _pointBlockMappings.putIfAbsent(fromBlockId, () => []);
+            _pointBlockMappings[fromBlockId]!.add(mapping);
+          }
+        }
+      }
+    }
+
+    // Process westbound connections
+    for (final entry in _westboundConnections.entries) {
+      final fromBlockId = entry.key;
+      for (final connection in entry.value) {
+        if (connection.viaPointId != null) {
+          final point = points[connection.viaPointId];
+          if (point != null) {
+            final mapping = PointBlockMapping(
+              pointId: connection.viaPointId!,
+              approachBlockId: fromBlockId,
+              exitBlockId: connection.toBlockId,
+              pointX: point.x.toDouble(),
+              pointY: point.y.toDouble(),
+              direction: -1, // Westbound
+              requiredPosition: connection.requiredPointPosition!,
+            );
+
+            // Validate the mapping
+            if (!mapping.validate(blocks)) {
+              print('⚠️ WARNING: Invalid point-block mapping: $mapping');
+            }
+
+            // Store by approach block
+            _pointBlockMappings.putIfAbsent(fromBlockId, () => []);
+            _pointBlockMappings[fromBlockId]!.add(mapping);
+          }
+        }
+      }
+    }
+
+    print('✅ Built ${_pointBlockMappings.length} point-block mappings');
+  }
+
+  /// Get point-block mappings for a given block and direction
+  List<PointBlockMapping> getPointMappingsForBlock(String blockId, int direction) {
+    final mappings = _pointBlockMappings[blockId] ?? [];
+    return mappings.where((m) => m.direction == direction).toList();
+  }
+
+  /// Get all point-block mappings for a specific point
+  List<PointBlockMapping> getPointMappings(String pointId) {
+    final results = <PointBlockMapping>[];
+    for (final mappings in _pointBlockMappings.values) {
+      results.addAll(mappings.where((m) => m.pointId == pointId));
+    }
+    return results;
+  }
+
+  /// Get the blocks that approach a specific point (for deadlock detection)
+  List<String> getBlocksApproachingPoint(String pointId) {
+    final blocks = <String>[];
+    for (final entry in _pointBlockMappings.entries) {
+      for (final mapping in entry.value) {
+        if (mapping.pointId == pointId) {
+          blocks.add(mapping.approachBlockId);
+        }
+      }
+    }
+    return blocks;
   }
 
   /// Build the complete track graph for the terminal station

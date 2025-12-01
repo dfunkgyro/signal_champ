@@ -2050,110 +2050,112 @@ class TerminalStationController extends ChangeNotifier {
   // ============================================================================
 
   bool _arePointsDeadlocked() {
-    final point78A = points['78A'];
-    final point78B = points['78B'];
+    // UNIFIED DEADLOCK DETECTION for ALL 10 points
+    bool anyPointDeadlocked = false;
 
-    bool point78ADeadlocked = false;
-    bool point78BDeadlocked = false;
+    // List of all points to check
+    final pointIds = ['76A', '76B', '77A', '77B', '78A', '78B', '79A', '79B', '80A', '80B'];
 
-    // Check AB104 occupation for point 78A deadlock
-    if (ace.isABOccupied('AB104')) {
-      point78ADeadlocked = true;
-      if (!point78A!.locked) {
-        _logEvent('🔒 Point 78A deadlocked: AB104 occupied');
-        point78A.locked = true;
-        point78A.lockedByAB = true;
-      }
-    } else {
-      // AB104 is clear, remove deadlock if it was set by AB occupation
-      if (point78A!.locked &&
-          point78A.lockedByAB &&
-          !ace.isABOccupied('AB106')) {
-        point78A.locked = false;
-        point78A.lockedByAB = false;
-        _logEvent('🔓 Point 78A unlocked: AB104 clear');
-      }
-    }
+    for (final pointId in pointIds) {
+      final point = points[pointId];
+      if (point == null) continue;
 
-    // Check AB109 occupation for point 78B deadlock
-    if (ace.isABOccupied('AB109')) {
-      point78BDeadlocked = true;
-      if (!point78B!.locked) {
-        _logEvent('🔒 Point 78B deadlocked: AB109 occupied');
-        point78B.locked = true;
-        point78B.lockedByAB = true;
-      }
-    } else {
-      // AB109 is clear, remove deadlock if it was set by AB occupation
-      if (point78B!.locked &&
-          point78B.lockedByAB &&
-          !ace.isABOccupied('AB106')) {
-        point78B.locked = false;
-        point78B.lockedByAB = false;
-        _logEvent('🔓 Point 78B unlocked: AB109 clear');
+      // Check if this point is deadlocked by AB occupation
+      final isDeadlocked = _isPointDeadlockedByAB(pointId);
+
+      if (isDeadlocked) {
+        anyPointDeadlocked = true;
+        if (!point.locked) {
+          _logEvent('🔒 Point $pointId deadlocked by AB occupation');
+          point.locked = true;
+          point.lockedByAB = true;
+        }
+      } else {
+        // Point is not deadlocked, unlock if it was locked by AB
+        if (point.locked && point.lockedByAB) {
+          point.locked = false;
+          point.lockedByAB = false;
+          _logEvent('🔓 Point $pointId unlocked: AB sections clear');
+        }
       }
     }
 
-    // Check AB106 occupation for both points deadlock
-    if (ace.isABOccupied('AB106')) {
-      point78ADeadlocked = true;
-      point78BDeadlocked = true;
-
-      if (!point78A!.locked) {
-        _logEvent('🔒 Point 78A deadlocked: AB106 occupied');
-        point78A.locked = true;
-        point78A.lockedByAB = true;
-      }
-
-      if (!point78B!.locked) {
-        _logEvent('🔒 Point 78B deadlocked: AB106 occupied');
-        point78B.locked = true;
-        point78B.lockedByAB = true;
-      }
-    } else {
-      // AB106 is clear, remove deadlock if it was set by AB106 occupation only
-      if (point78A!.locked &&
-          point78A.lockedByAB &&
-          !ace.isABOccupied('AB104')) {
-        point78A.locked = false;
-        point78A.lockedByAB = false;
-        _logEvent('🔓 Point 78A unlocked: AB106 clear');
-      }
-
-      if (point78B!.locked &&
-          point78B.lockedByAB &&
-          !ace.isABOccupied('AB109')) {
-        point78B.locked = false;
-        point78B.lockedByAB = false;
-        _logEvent('🔓 Point 78B unlocked: AB106 clear');
-      }
-    }
-
-    return point78ADeadlocked || point78BDeadlocked;
+    return anyPointDeadlocked;
   }
 
   // Public getter for point deadlock status
   bool get arePointsDeadlocked => _arePointsDeadlocked();
 
   bool _isPointDeadlockedByAB(String pointId) {
-    switch (pointId) {
-      case '78A':
-        return ace.isABOccupied('AB104') || ace.isABOccupied('AB106');
-      case '78B':
-        return ace.isABOccupied('AB109') || ace.isABOccupied('AB106');
-      default:
-        return false;
+    // UNIFIED DEADLOCK DETECTION using track graph mappings
+    // Get all blocks that approach this point
+    final approachingBlocks = trackGraph.getBlocksApproachingPoint(pointId);
+
+    // For each approaching block, check if it or its adjacent AB sections are occupied
+    for (final blockId in approachingBlocks) {
+      // Try to find AB section for this block or adjacent blocks
+      // AB sections typically named after the block they cover
+      final possibleABSections = [
+        'AB$blockId',
+        'AB${int.tryParse(blockId) != null ? (int.parse(blockId) - 1).toString() : blockId}',
+        'AB${int.tryParse(blockId) != null ? (int.parse(blockId) + 1).toString() : blockId}',
+      ];
+
+      for (final abSection in possibleABSections) {
+        if (ace.isABOccupied(abSection)) {
+          return true; // Point is deadlocked
+        }
+      }
     }
+
+    // Hardcoded mappings for known points (fallback for complex cases)
+    // These will be used if the dynamic detection above doesn't find anything
+    final Map<String, List<String>> pointToABMapping = {
+      '76A': ['AB208', 'AB210'], // Left crossover upper entry
+      '76B': ['AB213', 'AB211'], // Left crossover lower entry
+      '77A': ['AB210', 'AB212'], // Left crossover upper exit
+      '77B': ['AB209', 'AB211'], // Left crossover lower exit
+      '78A': ['AB104', 'AB106'], // Central crossover upper entry
+      '78B': ['AB109', 'AB106'], // Central crossover lower entry
+      '79A': ['AB302'], // Right crossover upper entry
+      '79B': ['AB305'], // Right crossover lower exit
+      '80A': ['AB304'], // Right crossover upper exit
+      '80B': ['AB303'], // Right crossover lower entry
+    };
+
+    final abSections = pointToABMapping[pointId];
+    if (abSections != null) {
+      for (final abSection in abSections) {
+        if (ace.isABOccupied(abSection)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   Map<String, bool> getABDeadlockStatus() {
-    return {
-      'point78A': _isPointDeadlockedByAB('78A'),
-      'point78B': _isPointDeadlockedByAB('78B'),
-      'ab104': ace.isABOccupied('AB104'),
-      'ab106': ace.isABOccupied('AB106'),
-      'ab109': ace.isABOccupied('AB109'),
-    };
+    // Return deadlock status for ALL 10 points
+    final pointIds = ['76A', '76B', '77A', '77B', '78A', '78B', '79A', '79B', '80A', '80B'];
+    final status = <String, bool>{};
+
+    for (final pointId in pointIds) {
+      status['point$pointId'] = _isPointDeadlockedByAB(pointId);
+    }
+
+    // Include key AB sections for debugging
+    status['ab104'] = ace.isABOccupied('AB104');
+    status['ab106'] = ace.isABOccupied('AB106');
+    status['ab109'] = ace.isABOccupied('AB109');
+    status['ab208'] = ace.isABOccupied('AB208');
+    status['ab210'] = ace.isABOccupied('AB210');
+    status['ab302'] = ace.isABOccupied('AB302');
+    status['ab303'] = ace.isABOccupied('AB303');
+    status['ab304'] = ace.isABOccupied('AB304');
+    status['ab305'] = ace.isABOccupied('AB305');
+
+    return status;
   }
 
   // Add this method to reset individual train emergency brakes
@@ -2965,9 +2967,8 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac101'] = AxleCounter(
         id: 'ac101',
         blockId: '105',
-        x: 550,
-        y: 320); // MOVED: Repositioned to block 105 at x:550
-    // ac105 deleted per user request
+        x: 595,
+        y: 320); // FIXED: At end of block 105, just before point 78B at x:600
     axleCounters['ac109'] =
         AxleCounter(id: 'ac109', blockId: '109', x: 850, y: 320);
     axleCounters['ac111'] =
@@ -2984,13 +2985,13 @@ class TerminalStationController extends ChangeNotifier {
     axleCounters['ac78a_west'] = AxleCounter(
       id: 'ac78a_west',
       blockId: '102', // West of crossover
-      x: 380, // 20 units west of point 78A at x:400
+      x: 395, // FIXED: 5 units west of point 78A at x:400 (end of block 102)
       y: 100,
     );
     axleCounters['ac78a_east'] = AxleCounter(
       id: 'ac78a_east',
       blockId: '107', // East of crossover
-      x: 620, // 20 units east of point 78B at x:600
+      x: 605, // FIXED: 5 units east of point 78B at x:600 (start of block 107)
       y: 300,
     );
 
@@ -4874,6 +4875,9 @@ class TerminalStationController extends ChangeNotifier {
 
     // Initialize default layers
     _initializeDefaultLayers();
+
+    // Build point-block mappings from track graph (single source of truth)
+    trackGraph.buildPointBlockMappings(points, blocks);
 
     _logEvent(
         '🚉 MIRRORED TERMINAL STATION INITIALIZED: 3 stations, 6 platforms, ${signals.length} signals, ${points.length} points, ${blocks.length} blocks, ${trainStops.length} train stops, ${wifiAntennas.length} WiFi antennas, ${transponders.length} transponders');
@@ -8596,46 +8600,48 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
 
-    // CENTER SECTION DOUBLE CROSSOVER (blocks 106, 108, 107, 109, crossover106, crossover109)
+    // CENTER SECTION CROSSOVER (blocks 102, 104, 105, 107, crossover106, crossover109)
+    // FIXED: Using correct block references based on track graph
     if (train.direction > 0) {
-      if (fromBlockId == '106' && toBlockId == 'crossover106') {
+      // Eastbound: block 102 → point 78A → crossover106/104
+      if (fromBlockId == '102' && toBlockId == 'crossover106') {
         return point78A?.position == PointPosition.reverse;
       }
+      if (fromBlockId == '102' && toBlockId == '104') {
+        return point78A?.position == PointPosition.normal;
+      }
+      // Eastbound: crossover transit (committed path)
       if (fromBlockId == 'crossover106' && toBlockId == 'crossover109') {
-        return true;
+        return true; // Committed crossover path
       }
-      if (fromBlockId == 'crossover109' && toBlockId == '109') {
-        return point78B?.position == PointPosition.reverse;
-      }
-      if (fromBlockId == '109' && toBlockId == 'crossover109') {
-        return point78B?.position == PointPosition.reverse;
-      }
-      if (fromBlockId == 'crossover109' && toBlockId == 'crossover106') {
-        return true;
-      }
-      if (fromBlockId == 'crossover106' && toBlockId == '108') {
-        return point78A?.position == PointPosition.reverse;
+      // Eastbound: crossover109 → block 107 (exit point)
+      if (fromBlockId == 'crossover109' && toBlockId == '107') {
+        return true; // Direct exit, no point control
       }
     }
 
     if (train.direction < 0) {
+      // Westbound: block 109 → point 78B → crossover109/107
       if (fromBlockId == '109' && toBlockId == 'crossover109') {
         return point78B?.position == PointPosition.reverse;
       }
+      if (fromBlockId == '109' && toBlockId == '107') {
+        return point78B?.position == PointPosition.normal;
+      }
+      // Westbound: crossover transit (committed path)
       if (fromBlockId == 'crossover109' && toBlockId == 'crossover106') {
-        return true;
+        return true; // Committed crossover path
       }
-      if (fromBlockId == 'crossover106' && toBlockId == '106') {
+      // Westbound: crossover106 → block 104 (exit point)
+      if (fromBlockId == 'crossover106' && toBlockId == '104') {
+        return true; // Direct exit, no point control
+      }
+      // Westbound: block 104 → point 78A → crossover106/102
+      if (fromBlockId == '104' && toBlockId == 'crossover106') {
         return point78A?.position == PointPosition.reverse;
       }
-      if (fromBlockId == '106' && toBlockId == 'crossover106') {
-        return point78A?.position == PointPosition.reverse;
-      }
-      if (fromBlockId == 'crossover106' && toBlockId == 'crossover109') {
-        return true;
-      }
-      if (fromBlockId == 'crossover109' && toBlockId == '107') {
-        return point78B?.position == PointPosition.reverse;
+      if (fromBlockId == '104' && toBlockId == '102') {
+        return point78A?.position == PointPosition.normal;
       }
     }
 
@@ -8744,98 +8750,23 @@ class TerminalStationController extends ChangeNotifier {
       return false; // Train is on valid crossover route sequence
     }
 
-    // LEFT CROSSOVER - Check points 76A, 76B, 77A, 77B
-    // Eastbound approaching from converging side (lower track to upper via points in reverse)
-    if (train.direction > 0 && currentBlockId == '211') {
-      final point76B = points['76B'];
-      final point77B = points['77B'];
-      if (point76B?.position == PointPosition.reverse &&
-          point77B?.position == PointPosition.reverse) {
-        _logEvent(
-            '💥 COLLISION: ${train.name} running through reversed points 76B/77B from converging side!');
-        _reversePointCollisions[train.id] = currentBlockId; // Track collision
-        train.emergencyBrake = true;
-        train.speed = 0;
-        train.targetSpeed = 0;
-        _initiateReversePointCollisionRecovery(train);
-        return true;
-      }
-    }
+    // UNIFIED COLLISION DETECTION using point-block mappings
+    // Query track graph for points controlling current block
+    final mappings = trackGraph.getPointMappingsForBlock(currentBlockId, train.direction);
 
-    // Westbound approaching from converging side (upper track to lower via points in reverse)
-    if (train.direction < 0 && currentBlockId == '212') {
-      final point76A = points['76A'];
-      final point77A = points['77A'];
-      if (point76A?.position == PointPosition.reverse &&
-          point77A?.position == PointPosition.reverse) {
-        _logEvent(
-            '💥 COLLISION: ${train.name} running through reversed points 76A/77A from converging side!');
-        _reversePointCollisions[train.id] = currentBlockId; // Track collision
-        train.emergencyBrake = true;
-        train.speed = 0;
-        train.targetSpeed = 0;
-        _initiateReversePointCollisionRecovery(train);
-        return true;
-      }
-    }
+    for (final mapping in mappings) {
+      // Check if train is approaching a point that's in reverse position
+      // This means the point is routing traffic away from the train's intended path
+      final point = points[mapping.pointId];
+      if (point?.position == PointPosition.reverse) {
+        // Check if this is a route to a crossover (which requires reverse position)
+        // If so, don't trigger collision
+        if (crossoverBlocks.contains(mapping.exitBlockId)) {
+          continue; // This is a valid crossover route
+        }
 
-    // CENTRAL CROSSOVER - Check points 78A, 78B
-    // Eastbound approaching from converging side
-    if (train.direction > 0 && currentBlockId == '109') {
-      final point78B = points['78B'];
-      if (point78B?.position == PointPosition.reverse) {
         _logEvent(
-            '💥 COLLISION: ${train.name} running through reversed point 78B from converging side!');
-        _reversePointCollisions[train.id] = currentBlockId; // Track collision
-        train.emergencyBrake = true;
-        train.speed = 0;
-        train.targetSpeed = 0;
-        _initiateReversePointCollisionRecovery(train);
-        return true;
-      }
-    }
-
-    // Westbound approaching from converging side
-    if (train.direction < 0 && currentBlockId == '108') {
-      final point78A = points['78A'];
-      if (point78A?.position == PointPosition.reverse) {
-        _logEvent(
-            '💥 COLLISION: ${train.name} running through reversed point 78A from converging side!');
-        _reversePointCollisions[train.id] = currentBlockId; // Track collision
-        train.emergencyBrake = true;
-        train.speed = 0;
-        train.targetSpeed = 0;
-        _initiateReversePointCollisionRecovery(train);
-        return true;
-      }
-    }
-
-    // RIGHT CROSSOVER - Check points 79A, 79B, 80A, 80B
-    // Eastbound approaching from converging side
-    if (train.direction > 0 && currentBlockId == '303') {
-      final point79B = points['79B'];
-      final point80B = points['80B'];
-      if (point79B?.position == PointPosition.reverse &&
-          point80B?.position == PointPosition.reverse) {
-        _logEvent(
-            '💥 COLLISION: ${train.name} running through reversed points 79B/80B from converging side!');
-        _reversePointCollisions[train.id] = currentBlockId; // Track collision
-        train.emergencyBrake = true;
-        train.speed = 0;
-        train.targetSpeed = 0;
-        _initiateReversePointCollisionRecovery(train);
-        return true;
-      }
-    }
-
-    // Westbound approaching from converging side
-    if (train.direction < 0 && currentBlockId == '304') {
-      final point79A = points['79A'];
-      final point80A = points['80A'];
-      if (point79A?.position == PointPosition.reverse &&
-          point80A?.position == PointPosition.reverse) {
-        _logEvent(
-            '💥 COLLISION: ${train.name} running through reversed points 79A/80A from converging side!');
+            '💥 COLLISION: ${train.name} in block $currentBlockId approaching reversed point ${mapping.pointId} at (${mapping.pointX}, ${mapping.pointY})!');
         _reversePointCollisions[train.id] = currentBlockId; // Track collision
         train.emergencyBrake = true;
         train.speed = 0;

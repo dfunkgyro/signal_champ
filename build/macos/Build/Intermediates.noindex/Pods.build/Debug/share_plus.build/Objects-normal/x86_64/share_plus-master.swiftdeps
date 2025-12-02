@@ -1,6 +1,0 @@
-version: "Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)"
-options: "37096a7853891b1f69a47a45174a4ff0cf5f4d5f18f7181e9352a9b0aa99c49c"
-build_start_time: [1764584951, 285608053]
-build_end_time: [1764584962, 250699043]
-inputs:
-  "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/share_plus-12.0.1/macos/share_plus/Sources/share_plus/SharePlusMacosPlugin.swift": [1761759227, 466387748]

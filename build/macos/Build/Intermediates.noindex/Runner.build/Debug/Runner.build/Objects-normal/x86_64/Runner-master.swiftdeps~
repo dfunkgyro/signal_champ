@@ -1,8 +1,0 @@
-version: "Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)"
-options: "39364fdae223a8603b03cc20aacd0a3a2b2d5b6430b660740a199cb6ba3b74d2"
-build_start_time: [1764585043, 957745075]
-build_end_time: [1764585044, 4003047]
-inputs:
-  "/Users/dfunkgyro/github1/signal_champ/macos/Flutter/GeneratedPluginRegistrant.swift": !private [1764514450, 0]
-  "/Users/dfunkgyro/github1/signal_champ/macos/Runner/AppDelegate.swift": !private [1764514450, 0]
-  "/Users/dfunkgyro/github1/signal_champ/macos/Runner/MainFlutterWindow.swift": !private [1764514450, 0]

@@ -1,9 +1,0 @@
-version: "Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)"
-options: "5ed0953268c64db19b4a329f009dac6039446faa6d18c4d7eb284c5b70cef8a7"
-build_start_time: [1764584951, 9785175]
-build_end_time: [1764584961, 716253042]
-inputs:
-  "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/sign_in_with_apple-7.0.1/macos/Classes/SignInWithAppleAvailablePlugin.swift": [1763541160, 841284513]
-  "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/sign_in_with_apple-7.0.1/macos/Classes/SignInWithAppleError.swift": [1763541160, 840441226]
-  "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/sign_in_with_apple-7.0.1/macos/Classes/SignInWithApplePlugin.swift": [1763541160, 841975212]
-  "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/sign_in_with_apple-7.0.1/macos/Classes/SignInWithAppleUnavailablePlugin.swift": [1763541160, 839765310]

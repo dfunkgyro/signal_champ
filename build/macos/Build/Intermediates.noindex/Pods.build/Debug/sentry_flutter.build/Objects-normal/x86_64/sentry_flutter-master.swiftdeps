@@ -1,8 +1,0 @@
-version: "Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)"
-options: "6cdedf01306aa9ef08ab462aae05bb9f96b458febd4630d18fc442cab505cb35"
-build_start_time: [1764584979, 36542892]
-build_end_time: [1764585002, 13441085]
-inputs:
-  "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/macos/sentry_flutter/Sources/sentry_flutter/SentryFlutter.swift": [1763630101, 117115974]
-  ? "/Users/dfunkgyro/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/macos/sentry_flutter/Sources/sentry_flutter/SentryFlutterPlugin.swift"
-  : [1763630101, 117745876]

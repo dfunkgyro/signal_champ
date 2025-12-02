@@ -4013,6 +4013,77 @@ class TerminalStationController extends ChangeNotifier {
       ],
     );
 
+    // BOUNDARY SIGNALS AT X=0 (Left-Middle Section Junction)
+    // Westbound signals: Middle → Left
+    signals['L10'] = Signal(
+      id: 'L10',
+      x: -10, // Just west of x=0 boundary
+      y: 80, // Upper track
+      direction: SignalDirection.west,
+      routes: [
+        SignalRoute(
+          id: 'L10_R1',
+          name: 'Enter West Section Upper',
+          requiredBlocksClear: ['214', '212'],
+          requiredPointPositions: {},
+          pathBlocks: ['100', '214', '212'],
+          protectedBlocks: ['214', '212'],
+        ),
+      ],
+    );
+
+    signals['L11'] = Signal(
+      id: 'L11',
+      x: -10, // Just west of x=0 boundary
+      y: 320, // Lower track
+      direction: SignalDirection.west,
+      routes: [
+        SignalRoute(
+          id: 'L11_R1',
+          name: 'Enter West Section Lower',
+          requiredBlocksClear: ['215', '213'],
+          requiredPointPositions: {},
+          pathBlocks: ['101', '215', '213'],
+          protectedBlocks: ['215', '213'],
+        ),
+      ],
+    );
+
+    // Eastbound signals: Left → Middle
+    signals['L12'] = Signal(
+      id: 'L12',
+      x: 10, // Just east of x=0 boundary
+      y: 80, // Upper track
+      direction: SignalDirection.east,
+      routes: [
+        SignalRoute(
+          id: 'L12_R1',
+          name: 'Exit West Section Upper',
+          requiredBlocksClear: ['100', '102'],
+          requiredPointPositions: {},
+          pathBlocks: ['214', '100', '102'],
+          protectedBlocks: ['100', '102'],
+        ),
+      ],
+    );
+
+    signals['L13'] = Signal(
+      id: 'L13',
+      x: 10, // Just east of x=0 boundary
+      y: 320, // Lower track
+      direction: SignalDirection.east,
+      routes: [
+        SignalRoute(
+          id: 'L13_R1',
+          name: 'Exit West Section Lower',
+          requiredBlocksClear: ['101', '103'],
+          requiredPointPositions: {},
+          pathBlocks: ['215', '101', '103'],
+          protectedBlocks: ['101', '103'],
+        ),
+      ],
+    );
+
     // MIDDLE SECTION SIGNALS (100-115)
     // Upper track eastbound signals
     signals['C31'] = Signal(
@@ -4154,6 +4225,77 @@ class TerminalStationController extends ChangeNotifier {
     );
 
     // Signal C04 removed - no longer needed after crossover repositioning
+
+    // BOUNDARY SIGNALS AT X=1600 (Middle-Right Section Junction)
+    // Eastbound signals: Middle → Right
+    signals['R09'] = Signal(
+      id: 'R09',
+      x: 1610, // Just east of x=1600 boundary
+      y: 80, // Upper track
+      direction: SignalDirection.east,
+      routes: [
+        SignalRoute(
+          id: 'R09_R1',
+          name: 'Enter East Section Upper',
+          requiredBlocksClear: ['300', '302'],
+          requiredPointPositions: {},
+          pathBlocks: ['114', '300', '302'],
+          protectedBlocks: ['300', '302'],
+        ),
+      ],
+    );
+
+    signals['R10'] = Signal(
+      id: 'R10',
+      x: 1610, // Just east of x=1600 boundary
+      y: 320, // Lower track
+      direction: SignalDirection.east,
+      routes: [
+        SignalRoute(
+          id: 'R10_R1',
+          name: 'Enter East Section Lower',
+          requiredBlocksClear: ['301', '303'],
+          requiredPointPositions: {},
+          pathBlocks: ['115', '301', '303'],
+          protectedBlocks: ['301', '303'],
+        ),
+      ],
+    );
+
+    // Westbound signals: Right → Middle
+    signals['R11'] = Signal(
+      id: 'R11',
+      x: 1590, // Just west of x=1600 boundary
+      y: 80, // Upper track
+      direction: SignalDirection.west,
+      routes: [
+        SignalRoute(
+          id: 'R11_R1',
+          name: 'Exit East Section Upper',
+          requiredBlocksClear: ['114', '112'],
+          requiredPointPositions: {},
+          pathBlocks: ['300', '114', '112'],
+          protectedBlocks: ['114', '112'],
+        ),
+      ],
+    );
+
+    signals['R12'] = Signal(
+      id: 'R12',
+      x: 1590, // Just west of x=1600 boundary
+      y: 320, // Lower track
+      direction: SignalDirection.west,
+      routes: [
+        SignalRoute(
+          id: 'R12_R1',
+          name: 'Exit East Section Lower',
+          requiredBlocksClear: ['115', '113'],
+          requiredPointPositions: {},
+          pathBlocks: ['301', '115', '113'],
+          protectedBlocks: ['115', '113'],
+        ),
+      ],
+    );
 
     // RIGHT SECTION SIGNALS (300-315)
     // Upper track eastbound signals

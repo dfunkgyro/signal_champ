@@ -243,7 +243,7 @@ class TrackGraph {
 
     _addEastbound('211', '213');
     _addEastbound('213', '215');
-    _addEastbound('215', '301'); // Continue to right section
+    _addEastbound('215', '101'); // Continue to middle section
 
     // ===== WESTBOUND (Lower Track 201-215) =====
 
@@ -308,7 +308,7 @@ class TrackGraph {
     _addEastbound('109', '111');
     _addEastbound('111', '113');
     _addEastbound('113', '115');
-    _addEastbound('115', '101'); // Reversing area loop
+    _addEastbound('115', '301'); // Continue to right section
 
     // ===== WESTBOUND (Lower Track 101-115) =====
 

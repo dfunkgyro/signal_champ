@@ -208,9 +208,13 @@ class TrackGraph {
     _buildRightSection();
   }
 
-  /// LEFT SECTION (Blocks 200-215)
+  /// LEFT SECTION (Blocks 196-215, includes west buffer stops)
   void _buildLeftSection() {
-    // ===== EASTBOUND (Upper Track 200-214) =====
+    // ===== EASTBOUND (Upper Track 196-214) =====
+
+    // West end buffer blocks (upper track)
+    _addEastbound('196', '200'); // Exit buffer stop to main line
+    _addEastbound('198', '200'); // Buffer approach to main line
 
     // Straight blocks (no points)
     _addEastbound('200', '202');
@@ -231,7 +235,11 @@ class TrackGraph {
     _addEastbound('crossover_211_212', '212', viaPoint: '77B', requiredPosition: PointPosition.reverse);
     _addEastbound('crossover_211_212', '213', viaPoint: '77B', requiredPosition: PointPosition.normal);
 
-    // Lower track eastbound (blocks 201-215)
+    // Lower track eastbound (blocks 197-215)
+    // West end buffer blocks (lower track)
+    _addEastbound('197', '201'); // Exit buffer stop to main line
+    _addEastbound('199', '201'); // Buffer approach to main line
+
     _addEastbound('201', '203');
     _addEastbound('203', '205');
     _addEastbound('205', '207');
@@ -258,7 +266,8 @@ class TrackGraph {
     _addWestbound('207', '205');
     _addWestbound('205', '203');
     _addWestbound('203', '201');
-    _addWestbound('201', '315'); // Loop back to right section
+    _addWestbound('201', '199'); // To west buffer approach
+    _addWestbound('199', '197'); // To west buffer stop
 
     // Crossover westbound exit → Point 77A controls exit
     _addWestbound('crossover_211_212', '210', viaPoint: '77A', requiredPosition: PointPosition.reverse);
@@ -276,7 +285,8 @@ class TrackGraph {
     _addWestbound('206', '204');
     _addWestbound('204', '202');
     _addWestbound('202', '200');
-    _addWestbound('200', '114'); // Continue to middle section
+    _addWestbound('200', '198'); // To west buffer approach
+    _addWestbound('198', '196'); // To west buffer stop
   }
 
   /// MIDDLE SECTION (Blocks 100-115)
@@ -344,9 +354,9 @@ class TrackGraph {
     _addWestbound('100', '214'); // Continue to left section
   }
 
-  /// RIGHT SECTION (Blocks 300-315)
+  /// RIGHT SECTION (Blocks 300-319, includes east buffer stops)
   void _buildRightSection() {
-    // ===== EASTBOUND (Upper Track 300-314) =====
+    // ===== EASTBOUND (Upper Track 300-318) =====
 
     _addEastbound('300', '302');
 
@@ -359,7 +369,8 @@ class TrackGraph {
     _addEastbound('308', '310');
     _addEastbound('310', '312');
     _addEastbound('312', '314');
-    _addEastbound('314', '200'); // Loop back to left section
+    _addEastbound('314', '316'); // To east buffer approach
+    _addEastbound('316', '318'); // To east buffer stop
 
     // Crossover eastbound exit → Point 80B controls exit
     _addEastbound('crossover_303_304', '304', viaPoint: '80B', requiredPosition: PointPosition.reverse);
@@ -377,9 +388,14 @@ class TrackGraph {
     _addEastbound('309', '311');
     _addEastbound('311', '313');
     _addEastbound('313', '315');
-    _addEastbound('315', '201'); // Continue to left section
+    _addEastbound('315', '317'); // To east buffer approach
+    _addEastbound('317', '319'); // To east buffer stop
 
-    // ===== WESTBOUND (Lower Track 301-315) =====
+    // ===== WESTBOUND (Lower Track 317-301) =====
+
+    // East end buffer blocks (lower track)
+    _addWestbound('319', '317'); // Exit buffer stop to approach
+    _addWestbound('317', '315'); // Buffer approach to main line
 
     _addWestbound('315', '313');
     _addWestbound('313', '311');
@@ -398,7 +414,11 @@ class TrackGraph {
     _addWestbound('crossover_303_304', '302', viaPoint: '80A', requiredPosition: PointPosition.reverse);
     _addWestbound('crossover_303_304', '303', viaPoint: '80A', requiredPosition: PointPosition.normal);
 
-    // Upper track westbound (blocks 300-314)
+    // Upper track westbound (blocks 318-300)
+    // East end buffer blocks (upper track)
+    _addWestbound('318', '316'); // Exit buffer stop to approach
+    _addWestbound('316', '314'); // Buffer approach to main line
+
     _addWestbound('314', '312');
     _addWestbound('312', '310');
     _addWestbound('310', '308');

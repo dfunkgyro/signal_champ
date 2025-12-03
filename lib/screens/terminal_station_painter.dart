@@ -1097,7 +1097,40 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     const gapLength = 5.0;
     const reservationOffset = 3.0; // Offset perpendicular to track direction
 
-    if (block.id == 'crossover106') {
+    if (block.id == 'crossover_211_212') {
+      // LEFT SECTION: Double diamond crossover at 135-degree angle (upper-right to lower-left for westbound)
+      // Crossover spans from -600 to -300 (300 units)
+      // Diagonal section: -550 to -350 (200 units) at 135 degrees
+      double totalDistance = math.sqrt(math.pow(200, 2) + math.pow(200, 2)); // ~283 units
+      double currentDistance = 0;
+      bool drawDash = true;
+
+      // Calculate perpendicular offset for 135-degree angle (upper-right to lower-left)
+      final offsetX = reservationOffset * math.cos(3 * math.pi / 4 + math.pi / 2);
+      final offsetY = reservationOffset * math.sin(3 * math.pi / 4 + math.pi / 2);
+
+      while (currentDistance < totalDistance) {
+        double t1 = currentDistance / totalDistance;
+        double t2 =
+            math.min((currentDistance + dashLength) / totalDistance, 1.0);
+
+        if (drawDash) {
+          // Draw from upper-right (-300, 100) to lower-left (-500, 300)
+          final x1 = -300 - (200 * t1) + offsetX;
+          final y1 = 100 + (200 * t1) + offsetY;
+          final x2 = -300 - (200 * t2) + offsetX;
+          final y2 = 100 + (200 * t2) + offsetY;
+
+          // Draw glow, main line, and pulse
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), glowPaint);
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), reservationPaint);
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), pulsePaint);
+        }
+
+        currentDistance += dashLength + gapLength;
+        drawDash = !drawDash;
+      }
+    } else if (block.id == 'crossover106') {
       // 45-degree crossover from upper-left to lower-right
       double totalDistance = math.sqrt(math.pow(100, 2) + math.pow(100, 2));
       double currentDistance = 0;
@@ -1147,6 +1180,39 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
           final y1 = 200 + (100 * t1) + offsetY;
           final x2 = 500 + (100 * t2) + offsetX;
           final y2 = 200 + (100 * t2) + offsetY;
+
+          // Draw glow, main line, and pulse
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), glowPaint);
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), reservationPaint);
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), pulsePaint);
+        }
+
+        currentDistance += dashLength + gapLength;
+        drawDash = !drawDash;
+      }
+    } else if (block.id == 'crossover_303_304') {
+      // RIGHT SECTION: Double diamond crossover at 45-degree angle (upper-left to lower-right for eastbound)
+      // Crossover spans from 1800 to 2100 (300 units)
+      // Diagonal section: 1850 to 2050 (200 units) at 45 degrees
+      double totalDistance = math.sqrt(math.pow(200, 2) + math.pow(200, 2)); // ~283 units
+      double currentDistance = 0;
+      bool drawDash = true;
+
+      // Calculate perpendicular offset for 45-degree angle (upper-left to lower-right)
+      final offsetX = reservationOffset * math.cos(math.pi / 4 + math.pi / 2);
+      final offsetY = reservationOffset * math.sin(math.pi / 4 + math.pi / 2);
+
+      while (currentDistance < totalDistance) {
+        double t1 = currentDistance / totalDistance;
+        double t2 =
+            math.min((currentDistance + dashLength) / totalDistance, 1.0);
+
+        if (drawDash) {
+          // Draw from upper-left (1850, 100) to lower-right (2050, 300)
+          final x1 = 1850 + (200 * t1) + offsetX;
+          final y1 = 100 + (200 * t1) + offsetY;
+          final x2 = 1850 + (200 * t2) + offsetX;
+          final y2 = 100 + (200 * t2) + offsetY;
 
           // Draw glow, main line, and pulse
           canvas.drawLine(Offset(x1, y1), Offset(x2, y2), glowPaint);

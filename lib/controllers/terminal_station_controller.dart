@@ -3936,21 +3936,21 @@ class TerminalStationController extends ChangeNotifier {
         SignalRoute(
           id: 'L05_R1',
           name: 'From Central (Straight)',
-          requiredBlocksClear: ['101', '214'],
+          requiredBlocksClear: ['208', '210', '210A', '212'],
           requiredPointPositions: {
             '76A': PointPosition.normal,
             '76B': PointPosition.normal,
           },
-          pathBlocks: ['101', '214'],
-          protectedBlocks: ['101', '214'],
+          pathBlocks: ['208', '210', '210A', '212'],
+          protectedBlocks: ['208', '210', '210A', '212'],
         ),
         SignalRoute(
           id: 'L05_R2',
           name: 'From Central via Crossover (Diverging)',
           requiredBlocksClear: ['crossover_211_212', '211', '213'],
           requiredPointPositions: {
-            '76A': PointPosition.reverse,
-            '76B': PointPosition.reverse,
+            '77A': PointPosition.reverse,
+            '77B': PointPosition.reverse,
           },
           pathBlocks: ['crossover_211_212', '211', '213'],
           protectedBlocks: ['crossover_211_212', '211', '213'],
@@ -7826,11 +7826,13 @@ class TerminalStationController extends ChangeNotifier {
         }
       }
 
-      // Accelerate/brake
+      // Accelerate/brake with improved smoothness
+      // Increased acceleration from 0.05 to 0.15 for more responsive movement
+      // Increased deceleration from 0.1 to 0.25 for smoother braking
       if (train.speed < train.targetSpeed) {
-        train.speed = math.min(train.speed + 0.05, train.targetSpeed);
+        train.speed = math.min(train.speed + 0.15, train.targetSpeed);
       } else if (train.speed > train.targetSpeed) {
-        train.speed = math.max(train.speed - 0.1, train.targetSpeed);
+        train.speed = math.max(train.speed - 0.25, train.targetSpeed);
       }
 
       // Move train
@@ -8244,6 +8246,8 @@ class TerminalStationController extends ChangeNotifier {
       double x, double currentY, int direction) {
     final point76A = points['76A'];
     final point76B = points['76B'];
+    final point77A = points['77A'];
+    final point77B = points['77B'];
     final point78A = points['78A'];
     final point78B = points['78B'];
     final point80A = points['80A'];
@@ -8252,13 +8256,19 @@ class TerminalStationController extends ChangeNotifier {
     double y = currentY;
     double rotation = 0.0;
 
-    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-600 to -300, points 76A/77B/76B)
+    // LEFT SECTION DOUBLE DIAMOND CROSSOVER (x=-600 to -300, points 76A/77A/77B/76B)
     // CRITICAL FIX: Corrected x-range to match actual crossover block
     // crossover_211_212: startX=-600, endX=-300, y=200
-    // FIXED: Check both current track AND direction to determine crossover routing
+    // Points: 76A (west, upper), 77A (east, upper), 77B (west, lower), 76B (east, lower)
+    // FIXED: Check ALL 4 points for proper crossover routing
     if (x >= -600 && x < -300) {
-      if (point76A?.position == PointPosition.reverse &&
-          point76B?.position == PointPosition.reverse) {
+      // Check if any of the crossover points are in reverse position
+      final isReversed = (point76A?.position == PointPosition.reverse ||
+          point76B?.position == PointPosition.reverse ||
+          point77A?.position == PointPosition.reverse ||
+          point77B?.position == PointPosition.reverse);
+
+      if (isReversed) {
         
         // 45-degree movement logic:
         // The crossover block is 300 units long (-600 to -300).

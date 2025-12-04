@@ -18,7 +18,7 @@ enum CrossoverType {
 
 enum SignalDirection { east, west }
 
-enum SignalAspect { red, green, blue }
+enum SignalAspect { red, yellow, green, blue }
 
 enum RouteState { unset, setting, set, releasing }
 

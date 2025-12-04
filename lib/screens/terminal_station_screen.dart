@@ -27,6 +27,7 @@ import '../services/widget_preferences_service.dart';
 import '../services/sound_service.dart';
 import '../widgets/crossover_route_table_terminal.dart';
 import '../widgets/layout_selector_dropdown.dart';
+import '../widgets/control_table_panel.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -320,6 +321,20 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       appBar: AppBar(
         title: const Text('Railway Simulator'),
         actions: [
+          Consumer<TerminalStationController>(
+            builder: (context, controller, child) => IconButton(
+              icon: Icon(
+                Icons.table_chart,
+                color: controller.controlTableModeEnabled ? Colors.blue : null,
+              ),
+              onPressed: () {
+                controller.toggleControlTableMode();
+              },
+              tooltip: controller.controlTableModeEnabled
+                  ? 'Exit Control Table Mode'
+                  : 'Control Table Mode - Edit Signal Logic',
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.dashboard_customize),
             onPressed: () {
@@ -365,6 +380,40 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               Consumer<TerminalStationController>(
                 builder: (context, controller, child) {
                   if (!_showLeftPanel) return const SizedBox.shrink();
+
+                  // Show Control Table Panel in control table mode
+                  if (controller.controlTableModeEnabled) {
+                    return Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 380,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          border: Border(
+                            right: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                              width: 2,
+                            ),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                              offset: const Offset(2, 0),
+                            ),
+                          ],
+                        ),
+                        child: const ControlTablePanel(
+                          title: 'Control Table (Left)',
+                          isLeftSidebar: true,
+                        ),
+                      ),
+                    );
+                  }
 
                   // Show Component Palette in edit mode
                   if (controller.editModeEnabled) {
@@ -412,6 +461,40 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 builder: (context, controller, child) {
                   if (!_showRightPanel) return const SizedBox.shrink();
 
+                  // Show Control Table Panel in control table mode
+                  if (controller.controlTableModeEnabled) {
+                    return Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 380,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          border: Border(
+                            left: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                              width: 2,
+                            ),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                              offset: const Offset(-2, 0),
+                            ),
+                          ],
+                        ),
+                        child: const ControlTablePanel(
+                          title: 'Control Table (Right)',
+                          isLeftSidebar: false,
+                        ),
+                      ),
+                    );
+                  }
+
                   if (controller.editModeEnabled) {
                     return const Positioned(
                       right: 0,
@@ -452,49 +535,57 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
               // Layer 5: Toggle buttons (highest z-order)
               // Left panel toggle button
-              Positioned(
-                left: _showLeftPanel ? 320 : 0,
-                top: 10,
-                child: Material(
-                  elevation: 8,
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(8),
-                    bottomRight: Radius.circular(8),
-                  ),
-                  child: InkWell(
-                    onTap: () =>
-                        setState(() => _showLeftPanel = !_showLeftPanel),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(8),
-                          bottomRight: Radius.circular(8),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
+              Consumer<TerminalStationController>(
+                builder: (context, controller, child) {
+                  final panelWidth = controller.controlTableModeEnabled ? 380.0 : 320.0;
+                  return Positioned(
+                    left: _showLeftPanel ? panelWidth : 0,
+                    top: 10,
+                    child: Material(
+                      elevation: 8,
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(8),
+                        bottomRight: Radius.circular(8),
                       ),
-                      child: Icon(
-                        _showLeftPanel
-                            ? Icons.chevron_left
-                            : Icons.chevron_right,
-                        color: Theme.of(context).colorScheme.primary,
+                      child: InkWell(
+                        onTap: () =>
+                            setState(() => _showLeftPanel = !_showLeftPanel),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(8),
+                              bottomRight: Radius.circular(8),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            _showLeftPanel
+                                ? Icons.chevron_left
+                                : Icons.chevron_right,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
 
               // Right panel toggle button
-              Positioned(
-                right: _showRightPanel ? 320 : 0,
-                top: 10,
+              Consumer<TerminalStationController>(
+                builder: (context, controller, child) {
+                  final panelWidth = controller.controlTableModeEnabled ? 380.0 : 320.0;
+                  return Positioned(
+                    right: _showRightPanel ? panelWidth : 0,
+                    top: 10,
                 child: Material(
                   elevation: 8,
                   borderRadius: const BorderRadius.only(
@@ -529,6 +620,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     ),
                   ),
                 ),
+                  );
+                },
               ),
             ],
           ),

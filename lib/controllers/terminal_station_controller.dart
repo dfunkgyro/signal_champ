@@ -15,6 +15,7 @@ import 'package:rail_champ/models/railway_network_editor.dart';
 import 'package:rail_champ/models/track_geometry.dart';
 import 'package:rail_champ/models/railway_layer.dart';
 import 'package:rail_champ/models/track_graph.dart';
+import 'package:rail_champ/models/control_table_models.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -811,6 +812,10 @@ class TerminalStationController extends ChangeNotifier {
   double editModeGridSize = 10.0; // Snap-to-grid size in edit mode
   bool snapToGridEnabled = true; // NEW: Enable/disable snap-to-grid
   double gridSnapSize = 25.0; // NEW: Configurable snap size
+
+  // Control Table Mode system
+  bool controlTableModeEnabled = false;
+  final ControlTableConfiguration controlTableConfig = ControlTableConfiguration();
 
   // Clipboard for copy/paste operations
   Map<String, dynamic>? _clipboard; // NEW: Stores copied component data
@@ -6686,14 +6691,14 @@ class TerminalStationController extends ChangeNotifier {
           continue;
         }
 
-        // C30 Route 2: Show yellow (blue) when using crossover (78A and 78B reverse)
+        // C30 Route 2: Show yellow when using crossover (78A and 78B reverse)
         if (signal.activeRouteId == 'C30_R2') {
           final point78A = points['78A'];
           final point78B = points['78B'];
           if (point78A?.position == PointPosition.reverse &&
               point78B?.position == PointPosition.reverse) {
             // Show yellow aspect when diverging via crossover
-            signal.aspect = allClear ? SignalAspect.blue : SignalAspect.red;
+            signal.aspect = allClear ? SignalAspect.yellow : SignalAspect.red;
             continue;
           }
         }
@@ -6736,12 +6741,37 @@ class TerminalStationController extends ChangeNotifier {
         }
       }
 
-      // Special logic for R08 - show blue (yellow) if R01 is red
+      // Special logic for R08 - show yellow if R01 is red
       if (signal.id == 'R08') {
         final r01Signal = signals['R01'];
         if (r01Signal != null && r01Signal.aspect == SignalAspect.red) {
-          // R01 is red, so R08 shows blue (caution/approach)
-          signal.aspect = allClear ? SignalAspect.blue : SignalAspect.red;
+          // R01 is red, so R08 shows yellow (caution/approach)
+          signal.aspect = allClear ? SignalAspect.yellow : SignalAspect.red;
+          continue;
+        }
+      }
+
+      // Check control table for custom aspect configuration
+      final controlTableEntry = controlTableConfig.getEntry('${signal.id}_${signal.activeRouteId}');
+      if (controlTableEntry != null && controlTableEntry.enabled) {
+        // Check approach blocks if defined
+        if (controlTableEntry.approachBlocks.isNotEmpty) {
+          bool trainInApproachBlock = false;
+          for (var train in trains) {
+            if (controlTableEntry.approachBlocks.contains(train.currentBlockId)) {
+              trainInApproachBlock = true;
+              break;
+            }
+          }
+          if (!trainInApproachBlock && controlTableEntry.approachBlocks.isNotEmpty) {
+            signal.aspect = SignalAspect.red;
+            continue;
+          }
+        }
+
+        // Apply target aspect from control table if all conditions are met
+        if (allClear) {
+          signal.aspect = controlTableEntry.targetAspect;
           continue;
         }
       }
@@ -9510,6 +9540,79 @@ class TerminalStationController extends ChangeNotifier {
       _logEvent('🔧 Edit Mode DISABLED');
     }
 
+    notifyListeners();
+  }
+
+  /// Toggle control table mode on/off
+  void toggleControlTableMode() {
+    controlTableModeEnabled = !controlTableModeEnabled;
+
+    if (controlTableModeEnabled) {
+      // Entering control table mode - disable edit mode
+      if (editModeEnabled) {
+        toggleEditMode();
+      }
+
+      // Initialize control table from current signal configuration
+      if (controlTableConfig.entries.isEmpty) {
+        controlTableConfig.initializeFromSignals(signals);
+      }
+
+      _logEvent('📊 Control Table Mode ENABLED - Review and edit signal logic');
+    } else {
+      // Exiting control table mode
+      if (controlTableConfig.hasUnsavedChanges) {
+        _logEvent('⚠️ Control Table Mode DISABLED - Unsaved changes detected');
+      } else {
+        _logEvent('📊 Control Table Mode DISABLED');
+      }
+    }
+
+    notifyListeners();
+  }
+
+  /// Apply control table changes to signal routes
+  void applyControlTableChanges() {
+    for (var entry in controlTableConfig.entries.values) {
+      final signal = signals[entry.signalId];
+      if (signal == null) continue;
+
+      // Find the matching route
+      final routeIndex = signal.routes.indexWhere((r) => r.id == entry.routeId);
+      if (routeIndex == -1) continue;
+
+      // Update the route with new configuration from control table
+      signal.routes[routeIndex] = SignalRoute(
+        id: entry.routeId,
+        name: entry.routeName,
+        requiredBlocksClear: List.from(entry.requiredBlocksClear),
+        requiredPointPositions: Map.from(entry.requiredPointPositions),
+        conflictingRoutes: List.from(entry.conflictingRoutes),
+        pathBlocks: List.from(entry.pathBlocks),
+        protectedBlocks: List.from(entry.protectedBlocks),
+      );
+    }
+
+    // Mark as saved
+    controlTableConfig.markAsSaved();
+
+    // Update signal aspects based on new configuration
+    _updateSignalAspects();
+
+    _logEvent('✅ Control Table changes applied to signal configuration');
+    notifyListeners();
+  }
+
+  /// Export control table configuration to JSON
+  Map<String, dynamic> exportControlTable() {
+    return controlTableConfig.toJson();
+  }
+
+  /// Import control table configuration from JSON
+  void importControlTable(Map<String, dynamic> json) {
+    controlTableConfig.fromJson(json);
+    applyControlTableChanges();
+    _logEvent('📥 Control Table configuration imported');
     notifyListeners();
   }
 

@@ -1876,6 +1876,8 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
     Color lightColor;
     if (signal.aspect == SignalAspect.green) {
       lightColor = themeData.signalGreenColor;
+    } else if (signal.aspect == SignalAspect.yellow) {
+      lightColor = Colors.yellow;
     } else if (signal.aspect == SignalAspect.blue) {
       lightColor = Colors.blue;
     } else {
@@ -1888,13 +1890,16 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     canvas.drawCircle(Offset(signal.x, signal.y - 42.5), 6, lightPaint);
 
-    // Add glow effect for green and blue signals
+    // Add glow effect for green, yellow, and blue signals
     if (themeData.showGlow &&
         (signal.aspect == SignalAspect.green ||
+            signal.aspect == SignalAspect.yellow ||
             signal.aspect == SignalAspect.blue)) {
       final glowColor = signal.aspect == SignalAspect.green
           ? themeData.signalGreenColor
-          : Colors.blue;
+          : signal.aspect == SignalAspect.yellow
+              ? Colors.yellow
+              : Colors.blue;
       final glowPaint = Paint()
         ..color = glowColor.withOpacity(0.4)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);

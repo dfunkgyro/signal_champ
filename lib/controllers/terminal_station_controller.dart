@@ -816,7 +816,7 @@ class TerminalStationController extends ChangeNotifier {
 
   // Control Table Mode system
   bool controlTableModeEnabled = false;
-  final ControlTableConfiguration controlTableConfig = ControlTableConfiguration();
+  final ExtendedControlTableConfiguration controlTableConfig = ExtendedControlTableConfiguration();
 
   // Clipboard for copy/paste operations
   Map<String, dynamic>? _clipboard; // NEW: Stores copied component data
@@ -9559,7 +9559,12 @@ class TerminalStationController extends ChangeNotifier {
         controlTableConfig.initializeFromSignals(signals);
       }
 
-      _logEvent('📊 Control Table Mode ENABLED - Review and edit signal logic');
+      // Initialize point entries if empty
+      if (controlTableConfig.pointEntries.isEmpty && points.isNotEmpty) {
+        controlTableConfig.initializePointEntries(points);
+      }
+
+      _logEvent('📊 Control Table Mode ENABLED - Review and edit signal logic, points, and ABs');
     } else {
       // Exiting control table mode
       if (controlTableConfig.hasUnsavedChanges) {

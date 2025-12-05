@@ -312,6 +312,8 @@ class SearchThumbnailOverlay extends StatelessWidget {
         return Colors.green[300]!;
       case SignalAspect.blue:
         return Colors.blue[300]!;
+      case SignalAspect.yellow:
+        return Colors.yellow[300]!;
     }
   }
 }

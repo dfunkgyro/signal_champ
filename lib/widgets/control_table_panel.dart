@@ -5,9 +5,7 @@ import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../models/control_table_models.dart';
 import '../screens/terminal_station_models.dart';
-
-// Conditional import for web
-import 'dart:html' as html if (dart.library.io) 'dart:io';
+import '../utils/file_download_helper.dart';
 
 /// Control Table Panel - displays editable control table for signal configuration
 /// This panel allows users to view and modify the conditions under which signals
@@ -1078,20 +1076,7 @@ class _ControlTablePanelState extends State<ControlTablePanel> {
   }
 
   Future<void> _downloadFile(String content, String filename, String format) async {
-    if (kIsWeb) {
-      // Running on web - trigger browser download
-      final bytes = content.codeUnits;
-      final blob = html.Blob([bytes]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..setAttribute('download', filename)
-        ..click();
-      html.Url.revokeObjectUrl(url);
-    } else {
-      // For desktop/mobile - copy to clipboard and show dialog
-      await Clipboard.setData(ClipboardData(text: content));
-      print('Control table exported and copied to clipboard.');
-    }
+    await FileDownloadHelper.downloadFile(content, filename);
   }
 
   void _copyToClipboard(BuildContext context, String content) async {

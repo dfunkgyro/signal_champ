@@ -262,3 +262,283 @@ class ControlTableConfiguration extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+/// Point Control Table Entry - defines conditions for point movement
+/// Includes deadlocking and flank protection
+class PointControlTableEntry {
+  final String id;
+  final String pointId;
+
+  /// Deadlock conditions - blocks that prevent point movement when occupied
+  List<String> deadlockBlocks;
+
+  /// Approach blocks that prevent point movement
+  List<String> deadlockApproachBlocks;
+
+  /// Flank protection - points that lock this point when in specific positions
+  Map<String, PointPosition> flankProtectionPoints;
+
+  /// Whether this point can be moved manually
+  bool manualControlEnabled;
+
+  /// Notes about this point's interlocking
+  String notes;
+
+  PointControlTableEntry({
+    required this.id,
+    required this.pointId,
+    this.deadlockBlocks = const [],
+    this.deadlockApproachBlocks = const [],
+    this.flankProtectionPoints = const {},
+    this.manualControlEnabled = true,
+    this.notes = '',
+  });
+
+  PointControlTableEntry copyWith({
+    String? id,
+    String? pointId,
+    List<String>? deadlockBlocks,
+    List<String>? deadlockApproachBlocks,
+    Map<String, PointPosition>? flankProtectionPoints,
+    bool? manualControlEnabled,
+    String? notes,
+  }) {
+    return PointControlTableEntry(
+      id: id ?? this.id,
+      pointId: pointId ?? this.pointId,
+      deadlockBlocks: deadlockBlocks ?? this.deadlockBlocks,
+      deadlockApproachBlocks: deadlockApproachBlocks ?? this.deadlockApproachBlocks,
+      flankProtectionPoints: flankProtectionPoints ?? this.flankProtectionPoints,
+      manualControlEnabled: manualControlEnabled ?? this.manualControlEnabled,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'pointId': pointId,
+      'deadlockBlocks': deadlockBlocks,
+      'deadlockApproachBlocks': deadlockApproachBlocks,
+      'flankProtectionPoints': flankProtectionPoints.map(
+        (key, value) => MapEntry(key, value.name),
+      ),
+      'manualControlEnabled': manualControlEnabled,
+      'notes': notes,
+    };
+  }
+
+  factory PointControlTableEntry.fromJson(Map<String, dynamic> json) {
+    return PointControlTableEntry(
+      id: json['id'] as String,
+      pointId: json['pointId'] as String,
+      deadlockBlocks: List<String>.from(json['deadlockBlocks'] ?? []),
+      deadlockApproachBlocks: List<String>.from(json['deadlockApproachBlocks'] ?? []),
+      flankProtectionPoints: (json['flankProtectionPoints'] as Map<String, dynamic>?)
+          ?.map((key, value) => MapEntry(
+                key,
+                PointPosition.values.firstWhere((e) => e.name == value),
+              )) ??
+          {},
+      manualControlEnabled: json['manualControlEnabled'] as bool? ?? true,
+      notes: json['notes'] as String? ?? '',
+    );
+  }
+}
+
+/// AB (Approach Block) Configuration
+/// Defines an approach blocking section with associated axle counters
+class ABConfiguration {
+  final String id;
+  String name;
+
+  /// The two axle counter IDs that form this AB
+  String axleCounter1Id;
+  String axleCounter2Id;
+
+  /// Whether this AB is enabled
+  bool enabled;
+
+  /// Color to highlight when active (default purple)
+  String highlightColor;
+
+  /// Notes about this AB
+  String notes;
+
+  ABConfiguration({
+    required this.id,
+    required this.name,
+    required this.axleCounter1Id,
+    required this.axleCounter2Id,
+    this.enabled = true,
+    this.highlightColor = 'purple',
+    this.notes = '',
+  });
+
+  ABConfiguration copyWith({
+    String? id,
+    String? name,
+    String? axleCounter1Id,
+    String? axleCounter2Id,
+    bool? enabled,
+    String? highlightColor,
+    String? notes,
+  }) {
+    return ABConfiguration(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      axleCounter1Id: axleCounter1Id ?? this.axleCounter1Id,
+      axleCounter2Id: axleCounter2Id ?? this.axleCounter2Id,
+      enabled: enabled ?? this.enabled,
+      highlightColor: highlightColor ?? this.highlightColor,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'axleCounter1Id': axleCounter1Id,
+      'axleCounter2Id': axleCounter2Id,
+      'enabled': enabled,
+      'highlightColor': highlightColor,
+      'notes': notes,
+    };
+  }
+
+  factory ABConfiguration.fromJson(Map<String, dynamic> json) {
+    return ABConfiguration(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      axleCounter1Id: json['axleCounter1Id'] as String,
+      axleCounter2Id: json['axleCounter2Id'] as String,
+      enabled: json['enabled'] as bool? ?? true,
+      highlightColor: json['highlightColor'] as String? ?? 'purple',
+      notes: json['notes'] as String? ?? '',
+    );
+  }
+
+  /// Check if train wheels are detected (AB is occupied)
+  bool isOccupied(Map<String, dynamic> axleCounters) {
+    final ac1 = axleCounters[axleCounter1Id];
+    final ac2 = axleCounters[axleCounter2Id];
+
+    if (ac1 == null || ac2 == null) return false;
+
+    // AB is occupied if axle count difference between counters is non-zero
+    final count1 = ac1['count'] as int? ?? 0;
+    final count2 = ac2['count'] as int? ?? 0;
+
+    return (count1 - count2).abs() > 0;
+  }
+}
+
+/// Extended Control Table Configuration with Points and AB
+class ExtendedControlTableConfiguration extends ControlTableConfiguration {
+  /// Map of point control table entries by point ID
+  Map<String, PointControlTableEntry> pointEntries = {};
+
+  /// Map of AB configurations by AB ID
+  Map<String, ABConfiguration> abConfigurations = {};
+
+  @override
+  void updateEntry(ControlTableEntry entry) {
+    super.updateEntry(entry);
+  }
+
+  /// Add or update a point entry
+  void updatePointEntry(PointControlTableEntry entry) {
+    pointEntries[entry.id] = entry;
+    hasUnsavedChanges = true;
+    notifyListeners();
+  }
+
+  /// Remove a point entry
+  void removePointEntry(String entryId) {
+    pointEntries.remove(entryId);
+    hasUnsavedChanges = true;
+    notifyListeners();
+  }
+
+  /// Get point entry by point ID
+  PointControlTableEntry? getPointEntry(String pointId) {
+    return pointEntries[pointId];
+  }
+
+  /// Add or update an AB configuration
+  void updateABConfiguration(ABConfiguration config) {
+    abConfigurations[config.id] = config;
+    hasUnsavedChanges = true;
+    notifyListeners();
+  }
+
+  /// Remove an AB configuration
+  void removeABConfiguration(String configId) {
+    abConfigurations.remove(configId);
+    hasUnsavedChanges = true;
+    notifyListeners();
+  }
+
+  /// Get AB configuration by ID
+  ABConfiguration? getABConfiguration(String id) {
+    return abConfigurations[id];
+  }
+
+  @override
+  void clear() {
+    super.clear();
+    pointEntries.clear();
+    abConfigurations.clear();
+  }
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    super.fromJson(json);
+
+    pointEntries.clear();
+    final pointEntriesList = json['pointEntries'] as List?;
+    if (pointEntriesList != null) {
+      for (var entryJson in pointEntriesList) {
+        final entry = PointControlTableEntry.fromJson(entryJson as Map<String, dynamic>);
+        pointEntries[entry.id] = entry;
+      }
+    }
+
+    abConfigurations.clear();
+    final abConfigsList = json['abConfigurations'] as List?;
+    if (abConfigsList != null) {
+      for (var configJson in abConfigsList) {
+        final config = ABConfiguration.fromJson(configJson as Map<String, dynamic>);
+        abConfigurations[config.id] = config;
+      }
+    }
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = super.toJson();
+    json['pointEntries'] = pointEntries.values.map((e) => e.toJson()).toList();
+    json['abConfigurations'] = abConfigurations.values.map((e) => e.toJson()).toList();
+    return json;
+  }
+
+  /// Initialize point entries from existing points
+  void initializePointEntries(Map<String, Point> points) {
+    pointEntries.clear();
+    for (var point in points.values) {
+      final entry = PointControlTableEntry(
+        id: point.id,
+        pointId: point.id,
+        deadlockBlocks: [],
+        deadlockApproachBlocks: [],
+        flankProtectionPoints: {},
+        manualControlEnabled: true,
+        notes: '',
+      );
+      pointEntries[entry.id] = entry;
+    }
+    hasUnsavedChanges = true;
+    notifyListeners();
+  }
+}

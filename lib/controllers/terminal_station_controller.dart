@@ -17,6 +17,7 @@ import 'package:rail_champ/models/railway_layer.dart';
 import 'package:rail_champ/models/track_graph.dart';
 import 'package:rail_champ/models/control_table_models.dart';
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 // ============================================================================
@@ -9614,6 +9615,147 @@ class TerminalStationController extends ChangeNotifier {
     applyControlTableChanges();
     _logEvent('📥 Control Table configuration imported');
     notifyListeners();
+  }
+
+  /// Export complete control table as formatted JSON
+  String exportControlTableAsJson() {
+    final jsonData = {
+      'version': '1.0',
+      'exportDate': DateTime.now().toIso8601String(),
+      'layoutName': 'Railway Control Table',
+      'signals': signals.keys.toList(),
+      'blocks': blocks.keys.toList(),
+      'points': points.keys.toList(),
+      'controlTable': {
+        'entries': controlTableConfig.entries.values.map((entry) {
+          return {
+            'signal': entry.signalId,
+            'route': entry.routeName,
+            'routeId': entry.routeId,
+            'targetAspect': entry.targetAspect.name,
+            'enabled': entry.enabled,
+            'conditions': {
+              'requiredBlocksClear': entry.requiredBlocksClear,
+              'approachBlocks': entry.approachBlocks,
+              'protectedBlocks': entry.protectedBlocks,
+              'pathBlocks': entry.pathBlocks,
+              'requiredPointPositions': entry.requiredPointPositions.map(
+                (key, value) => MapEntry(key, value.name),
+              ),
+              'conflictingSignals': entry.conflictingRoutes,
+            },
+            'releaseCondition': entry.releaseCondition,
+            'notes': entry.notes,
+          };
+        }).toList(),
+      },
+    };
+
+    // Pretty print JSON
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert(jsonData);
+  }
+
+  /// Export complete control table as XML
+  String exportControlTableAsXml() {
+    final buffer = StringBuffer();
+    buffer.writeln('<?xml version="1.0" encoding="UTF-8"?>');
+    buffer.writeln('<ControlTable version="1.0" exportDate="${DateTime.now().toIso8601String()}">');
+    buffer.writeln('  <LayoutInfo>');
+    buffer.writeln('    <Name>Railway Control Table</Name>');
+    buffer.writeln('    <SignalCount>${signals.length}</SignalCount>');
+    buffer.writeln('    <BlockCount>${blocks.length}</BlockCount>');
+    buffer.writeln('    <PointCount>${points.length}</PointCount>');
+    buffer.writeln('  </LayoutInfo>');
+
+    buffer.writeln('  <Signals>');
+    for (var signalId in signals.keys) {
+      buffer.writeln('    <Signal id="$signalId"/>');
+    }
+    buffer.writeln('  </Signals>');
+
+    buffer.writeln('  <Blocks>');
+    for (var blockId in blocks.keys) {
+      buffer.writeln('    <Block id="$blockId"/>');
+    }
+    buffer.writeln('  </Blocks>');
+
+    buffer.writeln('  <Points>');
+    for (var pointId in points.keys) {
+      buffer.writeln('    <Point id="$pointId"/>');
+    }
+    buffer.writeln('  </Points>');
+
+    buffer.writeln('  <Routes>');
+    for (var entry in controlTableConfig.entries.values) {
+      buffer.writeln('    <Route>');
+      buffer.writeln('      <Signal>${entry.signalId}</Signal>');
+      buffer.writeln('      <RouteName>${entry.routeName}</RouteName>');
+      buffer.writeln('      <RouteId>${entry.routeId}</RouteId>');
+      buffer.writeln('      <TargetAspect>${entry.targetAspect.name}</TargetAspect>');
+      buffer.writeln('      <Enabled>${entry.enabled}</Enabled>');
+
+      buffer.writeln('      <Conditions>');
+
+      buffer.writeln('        <RequiredBlocksClear>');
+      for (var blockId in entry.requiredBlocksClear) {
+        buffer.writeln('          <Block>$blockId</Block>');
+      }
+      buffer.writeln('        </RequiredBlocksClear>');
+
+      buffer.writeln('        <ApproachBlocks>');
+      for (var blockId in entry.approachBlocks) {
+        buffer.writeln('          <Block>$blockId</Block>');
+      }
+      buffer.writeln('        </ApproachBlocks>');
+
+      buffer.writeln('        <ProtectedBlocks>');
+      for (var blockId in entry.protectedBlocks) {
+        buffer.writeln('          <Block>$blockId</Block>');
+      }
+      buffer.writeln('        </ProtectedBlocks>');
+
+      buffer.writeln('        <PathBlocks>');
+      for (var blockId in entry.pathBlocks) {
+        buffer.writeln('          <Block>$blockId</Block>');
+      }
+      buffer.writeln('        </PathBlocks>');
+
+      buffer.writeln('        <RequiredPointPositions>');
+      for (var pointEntry in entry.requiredPointPositions.entries) {
+        buffer.writeln('          <Point id="${pointEntry.key}" position="${pointEntry.value.name}"/>');
+      }
+      buffer.writeln('        </RequiredPointPositions>');
+
+      buffer.writeln('        <ConflictingSignals>');
+      for (var conflictId in entry.conflictingRoutes) {
+        buffer.writeln('          <Signal>$conflictId</Signal>');
+      }
+      buffer.writeln('        </ConflictingSignals>');
+
+      buffer.writeln('      </Conditions>');
+
+      buffer.writeln('      <ReleaseCondition>${_escapeXml(entry.releaseCondition)}</ReleaseCondition>');
+      if (entry.notes.isNotEmpty) {
+        buffer.writeln('      <Notes>${_escapeXml(entry.notes)}</Notes>');
+      }
+
+      buffer.writeln('    </Route>');
+    }
+    buffer.writeln('  </Routes>');
+
+    buffer.writeln('</ControlTable>');
+    return buffer.toString();
+  }
+
+  /// Escape XML special characters
+  String _escapeXml(String text) {
+    return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&apos;');
   }
 
   /// Change selection mode (pointer, quickSelect, marquee, lasso)

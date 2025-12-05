@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import '../controllers/terminal_station_controller.dart';
 import '../models/control_table_models.dart';
 import '../screens/terminal_station_models.dart';
+
+// Conditional import for web
+import 'dart:html' as html if (dart.library.io) 'dart:io';
 
 /// Control Table Panel - displays editable control table for signal configuration
 /// This panel allows users to view and modify the conditions under which signals
@@ -137,54 +142,86 @@ class _ControlTablePanelState extends State<ControlTablePanel> {
                     bottom: BorderSide(color: Colors.grey[700]!),
                   ),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: controller.controlTableConfig.hasUnsavedChanges
-                            ? () {
-                                controller.applyControlTableChanges();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Control table changes applied'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              }
-                            : null,
-                        icon: const Icon(Icons.save, size: 16),
-                        label: const Text('Apply'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[700],
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          controller.controlTableConfig.initializeFromSignals(
-                            controller.signals,
-                          );
-                          setState(() {
-                            _selectedSignalId = null;
-                            _expandedEntryId = null;
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Control table reset to current configuration'),
-                              backgroundColor: Colors.orange,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: controller.controlTableConfig.hasUnsavedChanges
+                                ? () {
+                                    controller.applyControlTableChanges();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Control table changes applied'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            icon: const Icon(Icons.save, size: 16),
+                            label: const Text('Apply'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[700],
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Reset'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange[700],
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              controller.controlTableConfig.initializeFromSignals(
+                                controller.signals,
+                              );
+                              setState(() {
+                                _selectedSignalId = null;
+                                _expandedEntryId = null;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Control table reset to current configuration'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text('Reset'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange[700],
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _exportControlTable(context, controller, 'json'),
+                            icon: const Icon(Icons.download, size: 16),
+                            label: const Text('Export JSON'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[700],
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _exportControlTable(context, controller, 'xml'),
+                            icon: const Icon(Icons.download, size: 16),
+                            label: const Text('Export XML'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple[700],
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -468,6 +505,11 @@ class _ControlTablePanelState extends State<ControlTablePanel> {
 
           // Required Point Positions
           _buildPointPositionsSection(context, controller, entry),
+
+          const SizedBox(height: 8),
+
+          // Conflicting Signals
+          _buildConflictingSignalsSection(context, controller, entry),
 
           const SizedBox(height: 8),
 
@@ -828,6 +870,293 @@ class _ControlTablePanelState extends State<ControlTablePanel> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildConflictingSignalsSection(
+    BuildContext context,
+    TerminalStationController controller,
+    ControlTableEntry entry,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning, color: Colors.red[300], size: 14),
+              const SizedBox(width: 6),
+              Text(
+                'Conflicting Signals (Must be RED)',
+                style: TextStyle(
+                  color: Colors.grey[300],
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: Icon(Icons.edit, color: Colors.blue[300], size: 16),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => _showConflictingSignalsDialog(context, controller, entry),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          if (entry.conflictingRoutes.isEmpty)
+            Text(
+              'None - No conflicting signals',
+              style: TextStyle(color: Colors.grey[500], fontSize: 10),
+            )
+          else
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: entry.conflictingRoutes
+                  .map((routeId) => Chip(
+                        label: Text(
+                          routeId,
+                          style: const TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                        backgroundColor: Colors.red[900]!.withOpacity(0.3),
+                        padding: EdgeInsets.zero,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ))
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showConflictingSignalsDialog(
+    BuildContext context,
+    TerminalStationController controller,
+    ControlTableEntry entry,
+  ) {
+    // Get all signals and their routes
+    final allSignalRoutes = <String>[];
+    for (var signal in controller.signals.values) {
+      for (var route in signal.routes) {
+        allSignalRoutes.add('${signal.id}_${route.id}');
+      }
+    }
+    allSignalRoutes.sort();
+
+    List<String> selectedConflicts = List.from(entry.conflictingRoutes);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Colors.grey[850],
+          title: const Text(
+            'Conflicting Signals',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: SizedBox(
+            width: 300,
+            height: 400,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select signals that must show RED for ${entry.signalId} ${entry.routeName} to show ${entry.targetAspect.name.toUpperCase()}',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: allSignalRoutes.length,
+                    itemBuilder: (context, index) {
+                      final routeId = allSignalRoutes[index];
+                      // Don't allow signal to conflict with itself
+                      if (routeId == entry.id) return const SizedBox.shrink();
+
+                      final isSelected = selectedConflicts.contains(routeId);
+                      return CheckboxListTile(
+                        title: Text(
+                          routeId,
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        value: isSelected,
+                        activeColor: Colors.red,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            if (value == true) {
+                              selectedConflicts.add(routeId);
+                            } else {
+                              selectedConflicts.remove(routeId);
+                            }
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                controller.controlTableConfig.updateEntry(
+                  entry.copyWith(conflictingRoutes: selectedConflicts),
+                );
+                Navigator.pop(context);
+                setState(() {});
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _exportControlTable(
+    BuildContext context,
+    TerminalStationController controller,
+    String format,
+  ) async {
+    try {
+      String content;
+      String filename;
+
+      if (format == 'json') {
+        content = controller.exportControlTableAsJson();
+        filename = 'control_table_${DateTime.now().millisecondsSinceEpoch}.json';
+      } else {
+        content = controller.exportControlTableAsXml();
+        filename = 'control_table_${DateTime.now().millisecondsSinceEpoch}.xml';
+      }
+
+      // For web: trigger download
+      // For desktop/mobile: show save dialog or copy to clipboard
+
+      // Try to use the platform's file save functionality
+      await _downloadFile(content, filename, format);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Control table exported as $format'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Copy',
+              textColor: Colors.white,
+              onPressed: () {
+                // Copy to clipboard as fallback
+                _copyToClipboard(context, content);
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _downloadFile(String content, String filename, String format) async {
+    if (kIsWeb) {
+      // Running on web - trigger browser download
+      final bytes = content.codeUnits;
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.AnchorElement(href: url)
+        ..setAttribute('download', filename)
+        ..click();
+      html.Url.revokeObjectUrl(url);
+    } else {
+      // For desktop/mobile - copy to clipboard and show dialog
+      await Clipboard.setData(ClipboardData(text: content));
+      print('Control table exported and copied to clipboard.');
+    }
+  }
+
+  void _copyToClipboard(BuildContext context, String content) async {
+    await Clipboard.setData(ClipboardData(text: content));
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[850],
+        title: const Text(
+          'Control Table Export',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: SizedBox(
+          width: 600,
+          height: 400,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green[900],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white, size: 16),
+                    SizedBox(width: 8),
+                    Text(
+                      'Copied to clipboard!',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.grey[700]!),
+                  ),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      content,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

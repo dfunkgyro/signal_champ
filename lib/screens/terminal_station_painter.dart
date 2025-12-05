@@ -949,6 +949,79 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         }
       }
     }
+
+    // Draw dynamically configured ABs from control table
+    if (controller.controlTableModeEnabled) {
+      for (var abConfig in controller.controlTableConfig.abConfigurations.values) {
+        if (!abConfig.enabled) continue;
+
+        // Get the two axle counters
+        final ac1 = controller.axleCounters[abConfig.axleCounter1Id];
+        final ac2 = controller.axleCounters[abConfig.axleCounter2Id];
+
+        if (ac1 == null || ac2 == null) continue;
+
+        // Calculate midpoint between the two axle counters for label position
+        final midX = (ac1.position.x + ac2.position.x) / 2;
+        final midY = (ac1.position.y + ac2.position.y) / 2;
+
+        // Check if AB is occupied
+        final isOccupied = abConfig.isOccupied(controller.axleCounters);
+
+        // Draw AB label
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: abConfig.name,
+            style: TextStyle(
+              color: isOccupied ? Colors.purple : Colors.grey[600],
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(
+            canvas,
+            Offset(midX - textPainter.width / 2,
+                midY - textPainter.height / 2));
+
+        // Draw purple visualization line when AB is OCCUPIED
+        if (isOccupied) {
+          final linePaint = Paint()
+            ..color = Colors.purple
+            ..strokeWidth = 3
+            ..style = PaintingStyle.stroke;
+
+          canvas.drawLine(
+            Offset(ac1.position.x, ac1.position.y),
+            Offset(ac2.position.x, ac2.position.y),
+            linePaint,
+          );
+
+          // Draw wheel count indicator
+          final wheelCount = (ac1.count - ac2.count).abs();
+          if (wheelCount > 0) {
+            final wheelTextPainter = TextPainter(
+              text: TextSpan(
+                text: '🛞 $wheelCount',
+                style: const TextStyle(
+                  color: Colors.orange,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              textDirection: TextDirection.ltr,
+            );
+            wheelTextPainter.layout();
+            wheelTextPainter.paint(
+                canvas,
+                Offset(midX - wheelTextPainter.width / 2,
+                    midY + 12)); // Below AB label
+          }
+        }
+      }
+    }
   }
 
   void _drawRouteReservations(Canvas canvas) {

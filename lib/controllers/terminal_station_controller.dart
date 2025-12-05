@@ -2093,7 +2093,31 @@ class TerminalStationController extends ChangeNotifier {
   bool get arePointsDeadlocked => _arePointsDeadlocked();
 
   bool _isPointDeadlockedByAB(String pointId) {
-    // UNIFIED DEADLOCK DETECTION using track graph mappings
+    // If control table mode is enabled and we have an entry for this point, use it
+    if (controlTableModeEnabled && controlTableConfig.pointEntries.containsKey(pointId)) {
+      final entry = controlTableConfig.pointEntries[pointId]!;
+
+      // Check each deadlock AB defined in the control table
+      for (final abId in entry.deadlockApproachBlocks) {
+        // Check if this is a configured AB
+        if (controlTableConfig.abConfigurations.containsKey(abId)) {
+          final abConfig = controlTableConfig.abConfigurations[abId]!;
+          if (abConfig.isOccupied(axleCounters)) {
+            _logEvent('❌ Point $pointId deadlocked: AB ${abConfig.name} is occupied');
+            return true;
+          }
+        } else {
+          // Try legacy AB occupation check (for backwards compatibility with old AB naming)
+          if (ace.isABOccupied(abId)) {
+            _logEvent('❌ Point $pointId deadlocked: AB $abId is occupied');
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // LEGACY: UNIFIED DEADLOCK DETECTION using track graph mappings
     // Get all blocks that approach this point
     final approachingBlocks = trackGraph.getBlocksApproachingPoint(pointId);
 
@@ -2135,6 +2159,38 @@ class TerminalStationController extends ChangeNotifier {
         if (ace.isABOccupied(abSection)) {
           return true;
         }
+      }
+    }
+
+    return false;
+  }
+
+  /// Check if a point is protected by flank protection rules
+  /// Flank protection means another point must be in a specific position
+  /// before this point can move
+  bool _isPointFlankProtected(String pointId) {
+    // Only check if control table mode is enabled
+    if (!controlTableModeEnabled || !controlTableConfig.pointEntries.containsKey(pointId)) {
+      return false; // No flank protection defined
+    }
+
+    final entry = controlTableConfig.pointEntries[pointId]!;
+
+    // Check each flank protection point
+    for (final protectingPointId in entry.flankProtectionPoints.keys) {
+      final requiredPosition = entry.flankProtectionPoints[protectingPointId]!;
+      final protectingPoint = points[protectingPointId];
+
+      if (protectingPoint == null) {
+        _logEvent('⚠️ Flank protection point $protectingPointId not found');
+        continue;
+      }
+
+      // If the protecting point is NOT in the required position, this point is protected
+      if (protectingPoint.position != requiredPosition) {
+        _logEvent(
+            '❌ Point $pointId cannot move: Flank protected by point $protectingPointId (requires ${requiredPosition.name}, currently ${protectingPoint.position.name})');
+        return true;
       }
     }
 
@@ -5357,6 +5413,7 @@ class TerminalStationController extends ChangeNotifier {
   // ============================================================================
 
   bool _arePointsMovable() {
+    // Legacy hardcoded check - kept as fallback
     final deadlockBlocks = {'104', '106', '107', '109'};
     for (var blockId in deadlockBlocks) {
       if (blocks[blockId]?.occupied == true) {
@@ -5364,6 +5421,27 @@ class TerminalStationController extends ChangeNotifier {
       }
     }
     return true;
+  }
+
+  /// Check if a specific point is deadlocked by occupied blocks
+  /// Uses control table configuration if available, otherwise falls back to legacy logic
+  bool _isPointDeadlockedByBlocks(String pointId) {
+    // If control table mode is enabled and we have an entry for this point, use it
+    if (controlTableModeEnabled && controlTableConfig.pointEntries.containsKey(pointId)) {
+      final entry = controlTableConfig.pointEntries[pointId]!;
+
+      // Check each deadlock block defined in the control table
+      for (final blockId in entry.deadlockBlocks) {
+        if (blocks[blockId]?.occupied == true) {
+          _logEvent('❌ Point $pointId deadlocked: Block $blockId is occupied');
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Fallback to legacy global check
+    return !_arePointsMovable();
   }
 
   // ============================================================================
@@ -6241,22 +6319,30 @@ class TerminalStationController extends ChangeNotifier {
       return;
     }
 
-    // Check if point is deadlocked by AB occupation
-    if (_isPointDeadlockedByAB(pointId)) {
-      final ab106Occupied = ace.isABOccupied('AB106');
-      final specificAB = pointId == '78A'
-          ? (ab106Occupied ? 'AB106' : 'AB104')
-          : (ab106Occupied ? 'AB106' : 'AB109');
+    // Check manual control enabled (from control table)
+    if (controlTableModeEnabled && controlTableConfig.pointEntries.containsKey(pointId)) {
+      final entry = controlTableConfig.pointEntries[pointId]!;
+      if (!entry.manualControlEnabled) {
+        _logEvent('❌ Point $pointId: Manual control is disabled in control table');
+        return;
+      }
+    }
 
-      _logEvent(
-          '❌ Point $pointId cannot swing: Deadlocked by $specificAB occupation');
+    // Check if point is deadlocked by block occupation
+    if (_isPointDeadlockedByBlocks(pointId)) {
+      // Error already logged in method
       return;
     }
 
-    // Check traditional deadlock (trains in critical blocks)
-    if (!_arePointsMovable()) {
-      _logEvent(
-          '❌ Points deadlocked: Train occupying critical block (104, 106, 107, or 109)');
+    // Check if point is deadlocked by AB occupation
+    if (_isPointDeadlockedByAB(pointId)) {
+      // Error already logged in method
+      return;
+    }
+
+    // Check flank protection
+    if (_isPointFlankProtected(pointId)) {
+      // Error already logged in method
       return;
     }
 
@@ -9653,6 +9739,28 @@ class TerminalStationController extends ChangeNotifier {
             'notes': entry.notes,
           };
         }).toList(),
+        'pointEntries': controlTableConfig.pointEntries.values.map((entry) {
+          return {
+            'pointId': entry.pointId,
+            'deadlockBlocks': entry.deadlockBlocks,
+            'deadlockApproachBlocks': entry.deadlockApproachBlocks,
+            'flankProtectionPoints': entry.flankProtectionPoints.map(
+              (key, value) => MapEntry(key, value.name),
+            ),
+            'manualControlEnabled': entry.manualControlEnabled,
+            'notes': entry.notes,
+          };
+        }).toList(),
+        'abConfigurations': controlTableConfig.abConfigurations.values.map((ab) {
+          return {
+            'id': ab.id,
+            'name': ab.name,
+            'axleCounter1': ab.axleCounter1Id,
+            'axleCounter2': ab.axleCounter2Id,
+            'enabled': ab.enabled,
+            'highlightColor': ab.highlightColor,
+          };
+        }).toList(),
       },
     };
 
@@ -9748,6 +9856,53 @@ class TerminalStationController extends ChangeNotifier {
       buffer.writeln('    </Route>');
     }
     buffer.writeln('  </Routes>');
+
+    // Add Point Control Table entries
+    buffer.writeln('  <PointControlTable>');
+    for (var entry in controlTableConfig.pointEntries.values) {
+      buffer.writeln('    <PointEntry>');
+      buffer.writeln('      <PointId>${entry.pointId}</PointId>');
+      buffer.writeln('      <ManualControlEnabled>${entry.manualControlEnabled}</ManualControlEnabled>');
+
+      buffer.writeln('      <DeadlockBlocks>');
+      for (var blockId in entry.deadlockBlocks) {
+        buffer.writeln('        <Block>$blockId</Block>');
+      }
+      buffer.writeln('      </DeadlockBlocks>');
+
+      buffer.writeln('      <DeadlockApproachBlocks>');
+      for (var abId in entry.deadlockApproachBlocks) {
+        buffer.writeln('        <AB>$abId</AB>');
+      }
+      buffer.writeln('      </DeadlockApproachBlocks>');
+
+      buffer.writeln('      <FlankProtectionPoints>');
+      for (var pointEntry in entry.flankProtectionPoints.entries) {
+        buffer.writeln('        <Point id="${pointEntry.key}" requiredPosition="${pointEntry.value.name}"/>');
+      }
+      buffer.writeln('      </FlankProtectionPoints>');
+
+      if (entry.notes.isNotEmpty) {
+        buffer.writeln('      <Notes>${_escapeXml(entry.notes)}</Notes>');
+      }
+
+      buffer.writeln('    </PointEntry>');
+    }
+    buffer.writeln('  </PointControlTable>');
+
+    // Add AB Configurations
+    buffer.writeln('  <ABConfigurations>');
+    for (var ab in controlTableConfig.abConfigurations.values) {
+      buffer.writeln('    <AB>');
+      buffer.writeln('      <Id>${ab.id}</Id>');
+      buffer.writeln('      <Name>${_escapeXml(ab.name)}</Name>');
+      buffer.writeln('      <AxleCounter1>${ab.axleCounter1Id}</AxleCounter1>');
+      buffer.writeln('      <AxleCounter2>${ab.axleCounter2Id}</AxleCounter2>');
+      buffer.writeln('      <Enabled>${ab.enabled}</Enabled>');
+      buffer.writeln('      <HighlightColor>${ab.highlightColor}</HighlightColor>');
+      buffer.writeln('    </AB>');
+    }
+    buffer.writeln('  </ABConfigurations>');
 
     buffer.writeln('</ControlTable>');
     return buffer.toString();

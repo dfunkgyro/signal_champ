@@ -1,0 +1,548 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/control_table_models.dart';
+import '../screens/terminal_station_models.dart';
+
+/// Specialized AI service for Control Table analysis and suggestions
+/// Uses OpenAI to provide expert signalling advice and automated control table generation
+class ControlTableAIService {
+  final String _apiKey;
+  final String _baseUrl = 'https://api.openai.com/v1/chat/completions';
+  final String _model;
+
+  ControlTableAIService({
+    required String apiKey,
+    String model = 'gpt-4-turbo-preview',
+  })  : _apiKey = apiKey,
+        _model = model;
+
+  /// Analyze the current railway layout and control table configuration
+  /// Provides comprehensive analysis with safety checks and optimization suggestions
+  Future<ControlTableAnalysis> analyzeControlTable({
+    required Map<String, Signal> signals,
+    required Map<String, Point> points,
+    required Map<String, Block> blocks,
+    required Map<String, AxleCounter> axleCounters,
+    required ControlTableConfiguration controlTableConfig,
+  }) async {
+    final context = _buildContextString(
+      signals: signals,
+      points: points,
+      blocks: blocks,
+      axleCounters: axleCounters,
+      controlTableConfig: controlTableConfig,
+    );
+
+    final systemPrompt = _buildAnalysisSystemPrompt();
+
+    try {
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_apiKey',
+        },
+        body: jsonEncode({
+          'model': _model,
+          'messages': [
+            {'role': 'system', 'content': systemPrompt},
+            {'role': 'user', 'content': 'Analyze this railway control table configuration:\n\n$context'},
+          ],
+          'temperature': 0.3, // Lower temperature for more consistent technical analysis
+          'max_tokens': 4000,
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final content = jsonResponse['choices'][0]['message']['content'] as String;
+        return _parseAnalysisResponse(content);
+      } else {
+        throw Exception('API Error: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      return ControlTableAnalysis(
+        success: false,
+        errorMessage: 'Analysis failed: $e',
+        suggestions: [],
+        conflicts: [],
+        summary: 'Unable to complete analysis',
+      );
+    }
+  }
+
+  /// Process user chat messages and return AI responses
+  Future<ChatResponse> processChatMessage({
+    required String userMessage,
+    required List<ChatMessage> conversationHistory,
+    required Map<String, Signal> signals,
+    required Map<String, Point> points,
+    required Map<String, Block> blocks,
+    required Map<String, AxleCounter> axleCounters,
+    required ControlTableConfiguration controlTableConfig,
+  }) async {
+    final context = _buildContextString(
+      signals: signals,
+      points: points,
+      blocks: blocks,
+      axleCounters: axleCounters,
+      controlTableConfig: controlTableConfig,
+    );
+
+    final systemPrompt = _buildChatSystemPrompt(context);
+
+    // Build conversation history
+    final messages = <Map<String, String>>[
+      {'role': 'system', 'content': systemPrompt},
+      ...conversationHistory.map((msg) => {
+            'role': msg.isUser ? 'user' : 'assistant',
+            'content': msg.content,
+          }),
+      {'role': 'user', 'content': userMessage},
+    ];
+
+    try {
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_apiKey',
+        },
+        body: jsonEncode({
+          'model': _model,
+          'messages': messages,
+          'temperature': 0.5,
+          'max_tokens': 2000,
+        }),
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final content = jsonResponse['choices'][0]['message']['content'] as String;
+
+        return ChatResponse(
+          success: true,
+          message: content,
+          suggestions: _extractSuggestionsFromChat(content),
+        );
+      } else {
+        throw Exception('API Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      return ChatResponse(
+        success: false,
+        message: 'Sorry, I encountered an error: $e',
+        suggestions: [],
+      );
+    }
+  }
+
+  /// Generate AB (Approach Block) suggestions based on signal and axle counter placement
+  Future<List<ABSuggestion>> suggestABConfigurations({
+    required Map<String, Signal> signals,
+    required Map<String, AxleCounter> axleCounters,
+    required Map<String, Block> blocks,
+  }) async {
+    final context = '''
+SIGNALS:
+${signals.entries.map((e) => '- ${e.key}: ${e.value.direction.name} at position (${e.value.position.dx.toStringAsFixed(1)}, ${e.value.position.dy.toStringAsFixed(1)})').join('\n')}
+
+AXLE COUNTERS:
+${axleCounters.entries.map((e) => '- ${e.key}: count=${e.value.count} at position (${e.value.position.dx.toStringAsFixed(1)}, ${e.value.position.dy.toStringAsFixed(1)})').join('\n')}
+
+BLOCKS:
+${blocks.entries.map((e) => '- ${e.key}: ${e.value.occupied ? "OCCUPIED" : "CLEAR"}').join('\n')}
+''';
+
+    final systemPrompt = '''
+You are a railway signalling expert specializing in Approach Block (AB) configuration.
+
+Approach Blocks use two axle counters to detect train presence between them. They are essential for:
+1. Signal approach locking - preventing signal clearing when train detected approaching
+2. Route interlocking - ensuring routes are held while trains are in approach
+3. Safety critical operations
+
+Analyze the provided railway layout and suggest optimal AB configurations.
+
+For each suggestion, provide:
+1. A descriptive name (e.g., "Signal S01 Approach", "Platform 1 Entry")
+2. The two axle counters that should form the AB (must be sequential/adjacent)
+3. The purpose/reason for this AB configuration
+4. Which signals would benefit from this AB
+
+Respond in JSON format:
+{
+  "suggestions": [
+    {
+      "name": "AB name",
+      "axleCounter1": "AC_ID1",
+      "axleCounter2": "AC_ID2",
+      "purpose": "description",
+      "relatedSignals": ["S01", "S02"]
+    }
+  ]
+}
+''';
+
+    try {
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_apiKey',
+        },
+        body: jsonEncode({
+          'model': _model,
+          'messages': [
+            {'role': 'system', 'content': systemPrompt},
+            {'role': 'user', 'content': context},
+          ],
+          'temperature': 0.3,
+          'max_tokens': 2000,
+        }),
+      ).timeout(const Duration(seconds: 25));
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final content = jsonResponse['choices'][0]['message']['content'] as String;
+        return _parseABSuggestions(content);
+      }
+    } catch (e) {
+      print('Error generating AB suggestions: $e');
+    }
+
+    return [];
+  }
+
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
+
+  String _buildContextString({
+    required Map<String, Signal> signals,
+    required Map<String, Point> points,
+    required Map<String, Block> blocks,
+    required Map<String, AxleCounter> axleCounters,
+    required ControlTableConfiguration controlTableConfig,
+  }) {
+    final buffer = StringBuffer();
+
+    // Signals and Routes
+    buffer.writeln('=== SIGNALS AND ROUTES ===');
+    for (var signal in signals.values) {
+      buffer.writeln('Signal ${signal.id} (${signal.direction.name}):');
+      for (var route in signal.routes) {
+        final entry = controlTableConfig.getEntry(signal.id, route.id);
+        if (entry != null) {
+          buffer.writeln('  Route ${route.id}:');
+          buffer.writeln('    Target: ${entry.targetAspect.name}');
+          buffer.writeln('    Required Blocks Clear: ${entry.requiredBlocksClear.join(", ")}');
+          buffer.writeln('    Approach Blocks: ${entry.approachBlocks.join(", ")}');
+          buffer.writeln('    Protected Blocks: ${entry.protectedBlocks.join(", ")}');
+          buffer.writeln('    Point Positions: ${entry.requiredPointPositions.entries.map((e) => '${e.key}=${e.value.name}').join(", ")}');
+          buffer.writeln('    Conflicts: ${entry.conflictingRoutes.join(", ")}');
+          buffer.writeln('    Enabled: ${entry.enabled}');
+        }
+      }
+    }
+
+    // Points
+    buffer.writeln('\n=== POINTS ===');
+    for (var point in points.values) {
+      final entry = controlTableConfig.getPointEntry(point.id);
+      buffer.writeln('Point ${point.id} (${point.name}):');
+      buffer.writeln('  Current: ${point.position.name}, Locked: ${point.locked}');
+      if (entry != null) {
+        buffer.writeln('  Deadlock Blocks: ${entry.deadlockBlocks.join(", ")}');
+        buffer.writeln('  Deadlock ABs: ${entry.deadlockApproachBlocks.join(", ")}');
+        buffer.writeln('  Flank Protection: ${entry.flankProtectionPoints.entries.map((e) => '${e.key}=${e.value.name}').join(", ")}');
+      }
+    }
+
+    // Blocks
+    buffer.writeln('\n=== BLOCKS ===');
+    for (var block in blocks.values) {
+      buffer.writeln('Block ${block.id}: ${block.occupied ? "OCCUPIED" : "CLEAR"}');
+    }
+
+    // Axle Counters
+    buffer.writeln('\n=== AXLE COUNTERS ===');
+    for (var ac in axleCounters.values) {
+      buffer.writeln('${ac.id}: count=${ac.count}');
+    }
+
+    // ABs
+    buffer.writeln('\n=== APPROACH BLOCKS (ABs) ===');
+    for (var ab in controlTableConfig.abConfigurations.values) {
+      buffer.writeln('${ab.name} (${ab.id}): ${ab.axleCounter1Id} ↔ ${ab.axleCounter2Id}, Enabled: ${ab.enabled}');
+    }
+
+    return buffer.toString();
+  }
+
+  String _buildAnalysisSystemPrompt() {
+    return '''
+You are an expert railway signalling engineer specializing in control table analysis and safety validation.
+
+Your task is to analyze railway control table configurations and provide:
+1. Safety conflict detection (routes that could be set simultaneously causing danger)
+2. Missing protection (signals without adequate approach blocks or point protection)
+3. Deadlock prevention (points without proper deadlock blocks)
+4. Optimization opportunities (redundant rules, missing efficiency improvements)
+5. AB configuration suggestions
+
+CRITICAL SAFETY RULES:
+- Conflicting routes MUST have each other listed in conflictingRoutes
+- All routes requiring point positions MUST have those points in requiredPointPositions
+- Points MUST have deadlock blocks to prevent movement when trains present
+- Signals should have approach blocks for approach locking
+- Flank protection points should lock points that could create danger
+
+Respond in JSON format:
+{
+  "summary": "Brief overview of findings",
+  "conflicts": [
+    {
+      "type": "route_conflict|missing_protection|deadlock_issue|optimization",
+      "severity": "critical|warning|info",
+      "title": "Issue title",
+      "description": "Detailed description",
+      "affectedItems": ["S01_R1", "S02_R1"],
+      "suggestion": "How to fix"
+    }
+  ],
+  "suggestions": [
+    {
+      "type": "signal_rule|point_rule|ab_config|conflict_fix",
+      "title": "Suggestion title",
+      "description": "What to do",
+      "priority": "high|medium|low",
+      "changes": {
+        "action": "add_ab|update_signal_entry|update_point_entry|add_conflict",
+        "data": {}
+      }
+    }
+  ]
+}
+''';
+  }
+
+  String _buildChatSystemPrompt(String context) {
+    return '''
+You are an expert railway signalling consultant helping configure a railway control table system.
+
+You have access to the current railway configuration:
+
+$context
+
+You can:
+1. Answer questions about the current configuration
+2. Explain signalling concepts and best practices
+3. Suggest improvements and optimizations
+4. Help diagnose conflicts and safety issues
+5. Generate specific configuration suggestions
+
+When providing suggestions that can be applied, format them clearly and explain what changes you're recommending.
+
+Be concise but thorough. Use railway signalling terminology correctly.
+''';
+  }
+
+  ControlTableAnalysis _parseAnalysisResponse(String content) {
+    try {
+      // Try to extract JSON from the response
+      final jsonStart = content.indexOf('{');
+      final jsonEnd = content.lastIndexOf('}') + 1;
+
+      if (jsonStart >= 0 && jsonEnd > jsonStart) {
+        final jsonStr = content.substring(jsonStart, jsonEnd);
+        final json = jsonDecode(jsonStr);
+
+        return ControlTableAnalysis(
+          success: true,
+          summary: json['summary'] ?? 'Analysis complete',
+          conflicts: (json['conflicts'] as List?)?.map((c) => ConflictReport.fromJson(c)).toList() ?? [],
+          suggestions: (json['suggestions'] as List?)?.map((s) => ControlTableSuggestion.fromJson(s)).toList() ?? [],
+        );
+      }
+    } catch (e) {
+      print('Error parsing analysis response: $e');
+    }
+
+    // Fallback: return the content as summary
+    return ControlTableAnalysis(
+      success: true,
+      summary: content,
+      conflicts: [],
+      suggestions: [],
+    );
+  }
+
+  List<ControlTableSuggestion> _extractSuggestionsFromChat(String content) {
+    // Extract any structured suggestions from chat response
+    // This is a simple implementation - can be enhanced
+    return [];
+  }
+
+  List<ABSuggestion> _parseABSuggestions(String content) {
+    try {
+      final jsonStart = content.indexOf('{');
+      final jsonEnd = content.lastIndexOf('}') + 1;
+
+      if (jsonStart >= 0 && jsonEnd > jsonStart) {
+        final jsonStr = content.substring(jsonStart, jsonEnd);
+        final json = jsonDecode(jsonStr);
+
+        return (json['suggestions'] as List?)?.map((s) => ABSuggestion.fromJson(s)).toList() ?? [];
+      }
+    } catch (e) {
+      print('Error parsing AB suggestions: $e');
+    }
+    return [];
+  }
+}
+
+// ============================================================================
+// DATA MODELS
+// ============================================================================
+
+class ControlTableAnalysis {
+  final bool success;
+  final String summary;
+  final List<ConflictReport> conflicts;
+  final List<ControlTableSuggestion> suggestions;
+  final String? errorMessage;
+
+  ControlTableAnalysis({
+    required this.success,
+    required this.summary,
+    required this.conflicts,
+    required this.suggestions,
+    this.errorMessage,
+  });
+}
+
+class ConflictReport {
+  final String type; // route_conflict, missing_protection, deadlock_issue, optimization
+  final String severity; // critical, warning, info
+  final String title;
+  final String description;
+  final List<String> affectedItems;
+  final String suggestion;
+
+  ConflictReport({
+    required this.type,
+    required this.severity,
+    required this.title,
+    required this.description,
+    required this.affectedItems,
+    required this.suggestion,
+  });
+
+  factory ConflictReport.fromJson(Map<String, dynamic> json) {
+    return ConflictReport(
+      type: json['type'] ?? 'unknown',
+      severity: json['severity'] ?? 'info',
+      title: json['title'] ?? 'Issue',
+      description: json['description'] ?? '',
+      affectedItems: List<String>.from(json['affectedItems'] ?? []),
+      suggestion: json['suggestion'] ?? '',
+    );
+  }
+}
+
+class ControlTableSuggestion {
+  final String id;
+  final String type; // signal_rule, point_rule, ab_config, conflict_fix
+  final String title;
+  final String description;
+  final String priority; // high, medium, low
+  final Map<String, dynamic> changes;
+  bool applied;
+  DateTime timestamp;
+
+  ControlTableSuggestion({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.description,
+    required this.priority,
+    required this.changes,
+    this.applied = false,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  factory ControlTableSuggestion.fromJson(Map<String, dynamic> json) {
+    return ControlTableSuggestion(
+      id: json['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      type: json['type'] ?? 'unknown',
+      title: json['title'] ?? 'Suggestion',
+      description: json['description'] ?? '',
+      priority: json['priority'] ?? 'medium',
+      changes: json['changes'] ?? {},
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
+      'title': title,
+      'description': description,
+      'priority': priority,
+      'changes': changes,
+      'applied': applied,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+}
+
+class ABSuggestion {
+  final String name;
+  final String axleCounter1;
+  final String axleCounter2;
+  final String purpose;
+  final List<String> relatedSignals;
+
+  ABSuggestion({
+    required this.name,
+    required this.axleCounter1,
+    required this.axleCounter2,
+    required this.purpose,
+    required this.relatedSignals,
+  });
+
+  factory ABSuggestion.fromJson(Map<String, dynamic> json) {
+    return ABSuggestion(
+      name: json['name'] ?? 'Unnamed AB',
+      axleCounter1: json['axleCounter1'] ?? '',
+      axleCounter2: json['axleCounter2'] ?? '',
+      purpose: json['purpose'] ?? '',
+      relatedSignals: List<String>.from(json['relatedSignals'] ?? []),
+    );
+  }
+}
+
+class ChatMessage {
+  final String content;
+  final bool isUser;
+  final DateTime timestamp;
+
+  ChatMessage({
+    required this.content,
+    required this.isUser,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+}
+
+class ChatResponse {
+  final bool success;
+  final String message;
+  final List<ControlTableSuggestion> suggestions;
+
+  ChatResponse({
+    required this.success,
+    required this.message,
+    required this.suggestions,
+  });
+}

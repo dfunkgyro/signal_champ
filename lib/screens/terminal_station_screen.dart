@@ -28,6 +28,7 @@ import '../services/sound_service.dart';
 import '../widgets/crossover_route_table_terminal.dart';
 import '../widgets/layout_selector_dropdown.dart';
 import '../widgets/control_table_panel.dart';
+import '../widgets/ai_control_table_panel.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -487,9 +488,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                             ),
                           ],
                         ),
-                        child: const ControlTablePanel(
-                          title: 'Control Table (Right)',
-                          isLeftSidebar: false,
+                        child: const AIControlTablePanel(
+                          title: 'Control Table AI',
                         ),
                       ),
                     );

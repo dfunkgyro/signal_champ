@@ -812,6 +812,9 @@ class TerminalStationController extends ChangeNotifier {
   bool controlTableModeEnabled = false;
   final ExtendedControlTableConfiguration controlTableConfig = ExtendedControlTableConfiguration();
 
+  // Maintenance Mode system
+  bool maintenanceModeEnabled = false;
+
   // Clipboard for copy/paste operations
   Map<String, dynamic>? _clipboard; // NEW: Stores copied component data
   Offset? _clipboardOffset; // NEW: Original position of copied component
@@ -9554,6 +9557,11 @@ class TerminalStationController extends ChangeNotifier {
     controlTableModeEnabled = !controlTableModeEnabled;
 
     if (controlTableModeEnabled) {
+      // Disable maintenance mode if it's active
+      if (maintenanceModeEnabled) {
+        maintenanceModeEnabled = false;
+        _logEvent('🔧 Maintenance Mode DISABLED (switched to Control Table Mode)');
+      }
 
       // Initialize control table from current signal configuration
       if (controlTableConfig.entries.isEmpty) {
@@ -9573,6 +9581,25 @@ class TerminalStationController extends ChangeNotifier {
       } else {
         _logEvent('📊 Control Table Mode DISABLED');
       }
+    }
+
+    notifyListeners();
+  }
+
+  /// Toggle maintenance mode on/off
+  void toggleMaintenanceMode() {
+    maintenanceModeEnabled = !maintenanceModeEnabled;
+
+    if (maintenanceModeEnabled) {
+      // Disable control table mode if it's active
+      if (controlTableModeEnabled) {
+        controlTableModeEnabled = false;
+        _logEvent('📊 Control Table Mode DISABLED (switched to Maintenance Mode)');
+      }
+
+      _logEvent('🔧 Maintenance Mode ENABLED - View all components without trains');
+    } else {
+      _logEvent('🔧 Maintenance Mode DISABLED');
     }
 
     notifyListeners();

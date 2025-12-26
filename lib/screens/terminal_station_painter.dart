@@ -2294,6 +2294,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawTrains(Canvas canvas) {
+    // Skip drawing trains in maintenance mode
+    if (controller.maintenanceModeEnabled) {
+      return;
+    }
+
     // FIXED: Draw bellows between adjacent trains first
     _drawTrainBellows(canvas);
 

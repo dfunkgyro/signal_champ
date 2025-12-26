@@ -27,6 +27,8 @@ import '../widgets/crossover_route_table_terminal.dart';
 import '../widgets/layout_selector_dropdown.dart';
 import '../widgets/control_table_panel.dart';
 import '../widgets/ai_control_table_panel.dart';
+import '../widgets/maintenance_component_list_panel.dart';
+import '../widgets/maintenance_search_panel.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -272,6 +274,18 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 builder: (context, controller, child) {
                   if (!_showLeftPanel) return const SizedBox.shrink();
 
+                  // Show Maintenance Component List in maintenance mode
+                  if (controller.maintenanceModeEnabled) {
+                    return const Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: MaintenanceComponentListPanel(
+                        title: 'Components',
+                      ),
+                    );
+                  }
+
                   // Show Control Table Panel in control table mode
                   if (controller.controlTableModeEnabled) {
                     return Positioned(
@@ -341,6 +355,24 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               Consumer<TerminalStationController>(
                 builder: (context, controller, child) {
                   if (!_showRightPanel) return const SizedBox.shrink();
+
+                  // Show Maintenance Search Panel in maintenance mode
+                  if (controller.maintenanceModeEnabled) {
+                    return Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return MaintenanceSearchPanel(
+                            title: 'Search',
+                            viewportWidth: constraints.maxWidth,
+                            viewportHeight: constraints.maxHeight,
+                          );
+                        },
+                      ),
+                    );
+                  }
 
                   // Show Control Table Panel in control table mode
                   if (controller.controlTableModeEnabled) {

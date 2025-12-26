@@ -281,6 +281,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       _drawMaintenanceVisualAids(canvas, size);
     }
 
+    // Draw reservation test overlay
+    if (controller.reservationTestModeEnabled && controller.activeReservationTestResult != null) {
+      _drawReservationTestOverlay(canvas);
+    }
+
     drawCollisionEffects(canvas, controller, animationTick);
 
     // Draw tooltip last (if hovered object exists)
@@ -3646,5 +3651,159 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   void _drawDragSelectionBox(Canvas canvas) {
     // This will be implemented when we add drag selection support
     // For now, this is a placeholder
+  }
+
+  /// Draw reservation test overlay (color-coded blocks)
+  void _drawReservationTestOverlay(Canvas canvas) {
+    final result = controller.activeReservationTestResult;
+    if (result == null) return;
+
+    // Extract block sets from result
+    final correctBlocks = (result['correctBlocks'] as Set<String>?) ?? {};
+    final missingBlocks = (result['missingBlocks'] as Set<String>?) ?? {};
+    final extraBlocks = (result['extraBlocks'] as Set<String>?) ?? {};
+
+    // Paint for correct blocks (green)
+    final correctPaint = Paint()
+      ..color = Colors.green.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    final correctOutline = Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    // Paint for missing blocks (yellow/orange - CRITICAL!)
+    final missingPaint = Paint()
+      ..color = Colors.orange.withOpacity(0.4)
+      ..style = PaintingStyle.fill;
+
+    final missingOutline = Paint()
+      ..color = Colors.orange
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+
+    // Paint for extra blocks (red - WARNING)
+    final extraPaint = Paint()
+      ..color = Colors.red.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    final extraOutline = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    // Draw correct blocks
+    for (final blockId in correctBlocks) {
+      final block = controller.blockSections[blockId];
+      if (block != null) {
+        final rect = Rect.fromCenter(
+          center: Offset(block.x, block.y),
+          width: block.length,
+          height: 30,
+        );
+        canvas.drawRect(rect, correctPaint);
+        canvas.drawRect(rect, correctOutline);
+
+        // Draw checkmark
+        _drawIcon(canvas, Offset(block.x, block.y), Icons.check_circle,
+            Colors.green, 16);
+      }
+    }
+
+    // Draw missing blocks (CRITICAL!)
+    for (final blockId in missingBlocks) {
+      final block = controller.blockSections[blockId];
+      if (block != null) {
+        final rect = Rect.fromCenter(
+          center: Offset(block.x, block.y),
+          width: block.length,
+          height: 30,
+        );
+        canvas.drawRect(rect, missingPaint);
+        _drawDashedRect(canvas, rect, missingOutline);
+
+        // Draw warning icon
+        _drawIcon(canvas, Offset(block.x, block.y), Icons.warning,
+            Colors.orange, 20);
+
+        // Draw "MISSING" text
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: 'MISSING!',
+            style: TextStyle(
+              color: Colors.orange,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              backgroundColor: Colors.black.withOpacity(0.7),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(block.x - textPainter.width / 2, block.y + 20),
+        );
+      }
+    }
+
+    // Draw extra blocks (WARNING)
+    for (final blockId in extraBlocks) {
+      final block = controller.blockSections[blockId];
+      if (block != null) {
+        final rect = Rect.fromCenter(
+          center: Offset(block.x, block.y),
+          width: block.length,
+          height: 30,
+        );
+        canvas.drawRect(rect, extraPaint);
+        canvas.drawRect(rect, extraOutline);
+
+        // Draw error icon
+        _drawIcon(
+            canvas, Offset(block.x, block.y), Icons.error, Colors.red, 16);
+
+        // Draw "EXTRA" text
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: 'EXTRA',
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              backgroundColor: Colors.black.withOpacity(0.7),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(block.x - textPainter.width / 2, block.y + 20),
+        );
+      }
+    }
+  }
+
+  /// Helper to draw icon at position
+  void _drawIcon(
+      Canvas canvas, Offset position, IconData icon, Color color, double size) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontSize: size,
+          fontFamily: icon.fontFamily,
+          color: color,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(position.dx - size / 2, position.dy - size / 2),
+    );
   }
 }

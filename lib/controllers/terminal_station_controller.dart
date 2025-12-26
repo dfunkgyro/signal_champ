@@ -815,6 +815,12 @@ class TerminalStationController extends ChangeNotifier {
   // Maintenance Mode system
   bool maintenanceModeEnabled = false;
 
+  // Reservation Test system
+  bool reservationTestModeEnabled = false;
+  String? activeReservationTestSignalId;
+  String? activeReservationTestRouteId;
+  Map<String, dynamic>? activeReservationTestResult;
+
   // Clipboard for copy/paste operations
   Map<String, dynamic>? _clipboard; // NEW: Stores copied component data
   Offset? _clipboardOffset; // NEW: Original position of copied component

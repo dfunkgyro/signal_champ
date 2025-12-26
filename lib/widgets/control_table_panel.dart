@@ -6,6 +6,7 @@ import '../controllers/terminal_station_controller.dart';
 import '../models/control_table_models.dart';
 import '../screens/terminal_station_models.dart';
 import '../utils/file_download_helper.dart';
+import 'reservation_test_panel.dart';
 
 /// Control Table Panel - displays editable control table for signal configuration,
 /// points deadlocking/flank protection, and AB (Approach Block) management
@@ -46,7 +47,7 @@ class _ControlTablePanelState extends State<ControlTablePanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -127,6 +128,7 @@ class _ControlTablePanelState extends State<ControlTablePanel>
                         Tab(text: 'Signals', icon: Icon(Icons.traffic, size: 18)),
                         Tab(text: 'Points', icon: Icon(Icons.alt_route, size: 18)),
                         Tab(text: 'ABs', icon: Icon(Icons.sensors, size: 18)),
+                        Tab(text: 'Test', icon: Icon(Icons.verified_user, size: 18)),
                       ],
                     ),
                   ],
@@ -238,6 +240,8 @@ class _ControlTablePanelState extends State<ControlTablePanel>
                     _buildPointsTab(controller),
                     // ABs Tab
                     _buildABsTab(controller),
+                    // Reservation Test Tab
+                    const ReservationTestPanel(title: 'Reservation Test'),
                   ],
                 ),
               ),

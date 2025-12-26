@@ -215,6 +215,171 @@ Respond in JSON format:
     return [];
   }
 
+  /// Analyze signal reservations and identify configuration issues
+  /// This is critical for safety - ensures yellow reservations are correct
+  Future<List<ReservationAnalysisResult>> analyzeReservations({
+    required Map<String, Signal> signals,
+    required Map<String, Block> blocks,
+    required ControlTableConfiguration controlTableConfig,
+  }) async {
+    final context = _buildReservationContext(signals, blocks, controlTableConfig);
+
+    final systemPrompt = '''
+You are a railway signalling safety expert specializing in route reservation validation.
+
+CRITICAL SAFETY CONCEPT - Yellow Reservations:
+When a signal shows GREEN, it must reserve (protect) specific track blocks with YELLOW highlighting.
+These yellow reservations prevent conflicting routes and ensure train safety.
+
+SAFETY RULES FOR RESERVATIONS:
+1. MUST reserve ALL blocks in the train's path
+2. MUST reserve flank protection blocks (prevent side collisions)
+3. MUST reserve point protection blocks (prevent point movement under train)
+4. MISSING reservations = CRITICAL SAFETY HAZARD (collision risk!)
+5. Extra reservations = Warning (inefficiency, not safety issue)
+
+ANALYZE EACH SIGNAL ROUTE:
+For each signal and route, check if the requiredBlocks list includes:
+- All blocks the train will physically traverse
+- Flank protection blocks adjacent to points
+- Approach blocks for safety margins
+
+Respond in JSON format with issues found:
+{
+  "issues": [
+    {
+      "signalId": "S02",
+      "routeId": "route_1",
+      "severity": "CRITICAL" | "WARNING" | "INFO",
+      "issueType": "missing_block" | "extra_block" | "flank_protection" | "point_protection",
+      "blockId": "BLK_104",
+      "explanation": "Block 104 must be reserved for flank protection of point 78A",
+      "suggestedFix": "Add 'BLK_104' to requiredBlocks array",
+      "safetyImpact": "Without this reservation, point 78A could move while train approaching, causing derailment"
+    }
+  ]
+}
+
+Focus on CRITICAL issues (missing blocks) first, then warnings (extra blocks).
+''';
+
+    try {
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_apiKey',
+        },
+        body: jsonEncode({
+          'model': _model,
+          'messages': [
+            {'role': 'system', 'content': systemPrompt},
+            {'role': 'user', 'content': 'Analyze these signal reservations for safety:\n\n$context'},
+          ],
+          'temperature': 0.2, // Low temperature for safety-critical analysis
+          'max_tokens': 3000,
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final content = jsonResponse['choices'][0]['message']['content'] as String;
+        return _parseReservationAnalysis(content);
+      }
+    } catch (e) {
+      print('Error analyzing reservations: $e');
+    }
+
+    return [];
+  }
+
+  String _buildReservationContext(
+    Map<String, Signal> signals,
+    Map<String, Block> blocks,
+    ControlTableConfiguration controlTableConfig,
+  ) {
+    final buffer = StringBuffer();
+
+    buffer.writeln('=== SIGNAL ROUTE RESERVATIONS ===\n');
+
+    for (var signal in signals.values) {
+      buffer.writeln('Signal ${signal.id} (${signal.direction.name}):');
+
+      for (var route in signal.routes) {
+        final entryKey = '${signal.id}_${route.id}';
+        final controlEntry = controlTableConfig.entries[entryKey];
+
+        buffer.writeln('  Route: ${route.name} (ID: ${route.id})');
+        buffer.writeln('    Required Blocks (from route): ${route.requiredBlocks.join(", ")}');
+
+        if (controlEntry != null) {
+          buffer.writeln('    Required Blocks (from control table): ${controlEntry.requiredBlocks.join(", ")}');
+        }
+
+        // List approach blocks
+        if (route.approachBlocks.isNotEmpty) {
+          buffer.writeln('    Approach Blocks:');
+          for (var ab in route.approachBlocks) {
+            buffer.writeln('      - ${ab.fromBlock} → ${ab.toBlock}');
+          }
+        }
+
+        // List point positions
+        if (route.pointPositions.isNotEmpty) {
+          buffer.writeln('    Required Point Positions:');
+          route.pointPositions.forEach((pointId, position) {
+            buffer.writeln('      - $pointId: ${position.name}');
+          });
+        }
+
+        buffer.writeln();
+      }
+    }
+
+    buffer.writeln('\n=== AVAILABLE BLOCKS ===');
+    for (var block in blocks.values) {
+      buffer.writeln('- ${block.id}: ${block.occupied ? "OCCUPIED" : "CLEAR"}');
+    }
+
+    return buffer.toString();
+  }
+
+  List<ReservationAnalysisResult> _parseReservationAnalysis(String content) {
+    try {
+      // Remove markdown code blocks if present
+      String jsonContent = content.trim();
+      if (jsonContent.startsWith('```json')) {
+        jsonContent = jsonContent.substring(7);
+      }
+      if (jsonContent.startsWith('```')) {
+        jsonContent = jsonContent.substring(3);
+      }
+      if (jsonContent.endsWith('```')) {
+        jsonContent = jsonContent.substring(0, jsonContent.length - 3);
+      }
+
+      final parsed = jsonDecode(jsonContent.trim());
+      final issues = parsed['issues'] as List? ?? [];
+
+      return issues.map((issue) {
+        return ReservationAnalysisResult(
+          signalId: issue['signalId'] ?? '',
+          routeId: issue['routeId'] ?? '',
+          severity: issue['severity'] ?? 'WARNING',
+          issueType: issue['issueType'] ?? 'unknown',
+          blockId: issue['blockId'] ?? '',
+          explanation: issue['explanation'] ?? '',
+          suggestedFix: issue['suggestedFix'] ?? '',
+          safetyImpact: issue['safetyImpact'] ?? '',
+        );
+      }).toList();
+    } catch (e) {
+      print('Error parsing reservation analysis: $e');
+      print('Content: $content');
+      return [];
+    }
+  }
+
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
@@ -613,4 +778,41 @@ class ChatResponse {
     required this.message,
     required this.suggestions,
   });
+}
+
+/// Result of AI reservation analysis for a signal route
+class ReservationAnalysisResult {
+  final String signalId;
+  final String routeId;
+  final String severity; // CRITICAL, WARNING, INFO
+  final String issueType; // missing_block, extra_block, flank_protection, etc.
+  final String blockId;
+  final String explanation;
+  final String suggestedFix;
+  final String safetyImpact;
+
+  ReservationAnalysisResult({
+    required this.signalId,
+    required this.routeId,
+    required this.severity,
+    required this.issueType,
+    required this.blockId,
+    required this.explanation,
+    required this.suggestedFix,
+    required this.safetyImpact,
+  });
+
+  bool get isCritical => severity == 'CRITICAL';
+  bool get isWarning => severity == 'WARNING';
+
+  Color get severityColor {
+    switch (severity) {
+      case 'CRITICAL':
+        return Colors.red;
+      case 'WARNING':
+        return Colors.orange;
+      default:
+        return Colors.blue;
+    }
+  }
 }

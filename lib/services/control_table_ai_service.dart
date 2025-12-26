@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/control_table_models.dart';
+import '../models/direction_models.dart';
 import '../screens/terminal_station_models.dart';
 
 /// Specialized AI service for Control Table analysis and suggestions
@@ -230,12 +231,30 @@ Respond in JSON format:
     // Signals and Routes
     buffer.writeln('=== SIGNALS AND ROUTES ===');
     for (var signal in signals.values) {
-      buffer.writeln('Signal ${signal.id} (${signal.direction.name}):');
+      final gd = signal.direction.guidewayDirection.abbreviation;
+      final cardinalDir = signal.direction.name.toUpperCase();
+      final junctionInfo = signal.isAtJunction
+          ? ' [Junction: ${signal.junctionId}, Position: ${signal.junctionPosition.abbreviation}]'
+          : '';
+      buffer.writeln('Signal ${signal.id} (Direction: $cardinalDir, $gd)$junctionInfo:');
+
       for (var route in signal.routes) {
         final entry = controlTableConfig.getEntry(signal.id, route.id);
         if (entry != null) {
           buffer.writeln('  Route ${route.id}:');
           buffer.writeln('    Target: ${entry.targetAspect.name}');
+
+          // Add directional requirements
+          if (entry.requiredGD != null) {
+            buffer.writeln('    Required GD: ${entry.requiredGD!.abbreviation}');
+          }
+          if (entry.junctionPosition != null && entry.junctionPosition != JunctionPosition.none) {
+            buffer.writeln('    Junction Position: ${entry.junctionPosition!.displayName}');
+          }
+          if (entry.directionChange != null) {
+            buffer.writeln('    Direction Change: ${entry.directionChange!.changeType}');
+          }
+
           buffer.writeln('    Required Blocks Clear: ${entry.requiredBlocksClear.join(", ")}');
           buffer.writeln('    Approach Blocks: ${entry.approachBlocks.join(", ")}');
           buffer.writeln('    Protected Blocks: ${entry.protectedBlocks.join(", ")}');
@@ -250,8 +269,19 @@ Respond in JSON format:
     buffer.writeln('\n=== POINTS ===');
     for (var point in points.values) {
       final entry = controlTableConfig.getPointEntry(point.id);
-      buffer.writeln('Point ${point.id} (${point.name}):');
+      final junctionInfo = point.isJunctionPoint
+          ? ' [Junction: ${point.junctionId}]'
+          : '';
+      buffer.writeln('Point ${point.id} (${point.name})$junctionInfo:');
       buffer.writeln('  Current: ${point.position.name}, Locked: ${point.locked}');
+
+      // Add junction direction change info if applicable
+      if (point.currentDirectionChange != null) {
+        buffer.writeln('  Direction Change (${point.position.name}): ${point.currentDirectionChange!.changeType}');
+        buffer.writeln('    Approach: ${point.currentDirectionChange!.approachDirection.name} (${point.currentDirectionChange!.approachGD.abbreviation})');
+        buffer.writeln('    Exit: ${point.currentDirectionChange!.exitDirection.name} (${point.currentDirectionChange!.exitGD.abbreviation})');
+      }
+
       if (entry != null) {
         buffer.writeln('  Deadlock Blocks: ${entry.deadlockBlocks.join(", ")}');
         buffer.writeln('  Deadlock ABs: ${entry.deadlockApproachBlocks.join(", ")}');
@@ -262,7 +292,10 @@ Respond in JSON format:
     // Blocks
     buffer.writeln('\n=== BLOCKS ===');
     for (var block in blocks.values) {
-      buffer.writeln('Block ${block.id}: ${block.occupied ? "OCCUPIED" : "CLEAR"}');
+      final dirInfo = block.primaryDirection != null
+          ? ' (Direction: ${block.primaryDirection!.name.toUpperCase()}, ${block.guidewayDirection!.abbreviation}${block.isBidirectional ? ", Bidirectional" : ""})'
+          : '';
+      buffer.writeln('Block ${block.id}: ${block.occupied ? "OCCUPIED" : "CLEAR"}$dirInfo');
     }
 
     // Axle Counters
@@ -290,6 +323,22 @@ Your task is to analyze railway control table configurations and provide:
 3. Deadlock prevention (points without proper deadlock blocks)
 4. Optimization opportunities (redundant rules, missing efficiency improvements)
 5. AB configuration suggestions
+6. Directional logic validation (GD0/GD1 compliance and junction position correctness)
+
+RAILWAY DIRECTIONAL CONCEPTS:
+
+Cardinal Directions:
+- North (N), East (E), South (S), West (W) - physical direction of track/train travel
+
+Guideway Directions (GD):
+- GD0: Trains traveling SOUTH or WEST (decreasing/backward direction)
+- GD1: Trains traveling NORTH or EAST (increasing/forward direction)
+
+Junction Positions (Alpha/Gamma):
+- Alpha (α): Main/through route at a junction
+- Gamma (γ): Diverging route at a junction
+- At junctions, trains can change GD (e.g., GD0 → GD1 or GD1 → GD0)
+- 3-way junctions allow left/right/straight routing with potential GD changes
 
 CRITICAL SAFETY RULES:
 - Conflicting routes MUST have each other listed in conflictingRoutes
@@ -297,6 +346,9 @@ CRITICAL SAFETY RULES:
 - Points MUST have deadlock blocks to prevent movement when trains present
 - Signals should have approach blocks for approach locking
 - Flank protection points should lock points that could create danger
+- Routes with GD changes at junctions MUST have correct junction position (Alpha/Gamma) configured
+- Blocks should be marked with their primary direction and GD (unless bidirectional)
+- Opposing GD traffic on same block (if not bidirectional) is a CRITICAL safety hazard
 
 Respond in JSON format:
 {
@@ -335,16 +387,32 @@ You have access to the current railway configuration:
 
 $context
 
+DIRECTIONAL CONCEPTS YOU UNDERSTAND:
+
+Cardinal Directions: North (N), East (E), South (S), West (W)
+
+Guideway Directions (GD):
+- GD0: Trains traveling SOUTH or WEST (decreasing direction)
+- GD1: Trains traveling NORTH or EAST (increasing direction)
+
+Junction Positions:
+- Alpha (α): Main/through route at junctions
+- Gamma (γ): Diverging route at junctions
+- Junctions can cause GD changes (GD0→GD1 or GD1→GD0)
+- 3-way junctions allow trains to go left, right, or straight, changing GD allocation
+
 You can:
-1. Answer questions about the current configuration
-2. Explain signalling concepts and best practices
-3. Suggest improvements and optimizations
-4. Help diagnose conflicts and safety issues
-5. Generate specific configuration suggestions
+1. Answer questions about the current configuration (including directional logic)
+2. Explain signalling concepts, GD0/GD1, and Alpha/Gamma positions
+3. Suggest improvements and optimizations with directional awareness
+4. Help diagnose conflicts and safety issues including directional violations
+5. Generate specific configuration suggestions respecting GD requirements
+6. Explain junction routing and direction changes
+7. Validate that routes have correct GD and junction position configurations
 
 When providing suggestions that can be applied, format them clearly and explain what changes you're recommending.
 
-Be concise but thorough. Use railway signalling terminology correctly.
+Be concise but thorough. Use railway signalling terminology correctly. Always consider directional logic in your recommendations.
 ''';
   }
 

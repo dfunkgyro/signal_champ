@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../screens/terminal_station_models.dart';
+import 'direction_models.dart';
 
 /// Control Table Entry - represents a single row in the control table
 /// This defines the conditions under which a signal can display a specific aspect
@@ -43,6 +44,11 @@ class ControlTableEntry {
   /// User notes for this control table entry
   String notes;
 
+  /// Directional information for this route
+  GuidewayDirection? requiredGD;  // Required guideway direction (GD0 or GD1), null if bidirectional
+  JunctionPosition? junctionPosition;  // Alpha, Gamma, or None for junction routes
+  JunctionDirectionChange? directionChange;  // Direction change at junction if applicable
+
   ControlTableEntry({
     required this.id,
     required this.signalId,
@@ -59,6 +65,9 @@ class ControlTableEntry {
     this.customConditions = const {},
     this.enabled = true,
     this.notes = '',
+    this.requiredGD,
+    this.junctionPosition,
+    this.directionChange,
   });
 
   /// Create a copy with modified fields
@@ -78,6 +87,9 @@ class ControlTableEntry {
     Map<String, dynamic>? customConditions,
     bool? enabled,
     String? notes,
+    GuidewayDirection? requiredGD,
+    JunctionPosition? junctionPosition,
+    JunctionDirectionChange? directionChange,
   }) {
     return ControlTableEntry(
       id: id ?? this.id,
@@ -95,6 +107,9 @@ class ControlTableEntry {
       customConditions: customConditions ?? this.customConditions,
       enabled: enabled ?? this.enabled,
       notes: notes ?? this.notes,
+      requiredGD: requiredGD ?? this.requiredGD,
+      junctionPosition: junctionPosition ?? this.junctionPosition,
+      directionChange: directionChange ?? this.directionChange,
     );
   }
 

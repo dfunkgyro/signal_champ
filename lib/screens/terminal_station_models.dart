@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'collision_analysis_system.dart' as collision_system;
+import '../models/direction_models.dart';
 
 // ============================================================================
 // ENUMS
@@ -16,7 +17,35 @@ enum CrossoverType {
   doubleSlip     // Double slip crossover
 }
 
-enum SignalDirection { east, west }
+enum SignalDirection {
+  north,
+  east,
+  south,
+  west;
+
+  /// Convert to CardinalDirection
+  CardinalDirection get toCardinal {
+    switch (this) {
+      case SignalDirection.north:
+        return CardinalDirection.north;
+      case SignalDirection.east:
+        return CardinalDirection.east;
+      case SignalDirection.south:
+        return CardinalDirection.south;
+      case SignalDirection.west:
+        return CardinalDirection.west;
+    }
+  }
+
+  /// Get guideway direction (GD0 or GD1)
+  GuidewayDirection get guidewayDirection => toCardinal.guidewayDirection;
+
+  /// Check if this is GD0 (South or West)
+  bool get isGD0 => this == SignalDirection.south || this == SignalDirection.west;
+
+  /// Check if this is GD1 (North or East)
+  bool get isGD1 => this == SignalDirection.north || this == SignalDirection.east;
+}
 
 enum SignalAspect { red, yellow, green, blue }
 
@@ -78,6 +107,10 @@ class BlockSection {
   bool occupied;
   String? occupyingTrainId;
 
+  // Directional information
+  CardinalDirection? primaryDirection;  // Primary operational direction
+  bool isBidirectional;  // Can trains travel in both directions?
+
   BlockSection({
     required this.id,
     this.name,
@@ -86,7 +119,24 @@ class BlockSection {
     required this.y,
     this.occupied = false,
     this.occupyingTrainId,
+    this.primaryDirection,
+    this.isBidirectional = false,
   });
+
+  /// Get the guideway direction for this block
+  GuidewayDirection? get guidewayDirection => primaryDirection?.guidewayDirection;
+
+  /// Check if this block supports a specific direction
+  bool supportsDirection(CardinalDirection direction) {
+    if (isBidirectional) return true;
+    return direction == primaryDirection;
+  }
+
+  /// Check if this block supports a specific GD
+  bool supportsGD(GuidewayDirection gd) {
+    if (isBidirectional) return true;
+    return gd == guidewayDirection;
+  }
 
   bool containsPosition(double x, double y) {
     // Check X range first
@@ -154,6 +204,10 @@ class Point {
   double gapAngle;  // Gap angle based on crossover type
   String? crossoverId;  // Associated crossover ID
 
+  // Junction directional information
+  String? junctionId;  // ID of the junction this point is part of
+  Map<PointPosition, JunctionDirectionChange>? directionChanges;  // Direction changes for each position
+
   Point({
     required this.id,
     String? name,
@@ -164,7 +218,18 @@ class Point {
     this.lockedByAB = false,
     this.gapAngle = 15.0,
     this.crossoverId,
+    this.junctionId,
+    this.directionChanges,
   }) : name = name ?? id;  // Default name to id if not provided
+
+  /// Check if this point is part of a junction
+  bool get isJunctionPoint => junctionId != null;
+
+  /// Get the direction change for current point position
+  JunctionDirectionChange? get currentDirectionChange => directionChanges?[position];
+
+  /// Check if current position causes a GD change
+  bool get causesGDChange => currentDirectionChange?.changesGD ?? false;
 }
 
 class SignalRoute {
@@ -197,6 +262,10 @@ class Signal {
   String? activeRouteId;
   RouteState routeState;
 
+  // Directional information
+  JunctionPosition junctionPosition;  // Alpha, Gamma, or None
+  String? junctionId;  // Associated junction ID if at a junction
+
   Signal({
     required this.id,
     required this.x,
@@ -206,7 +275,18 @@ class Signal {
     this.aspect = SignalAspect.red,
     this.activeRouteId,
     this.routeState = RouteState.unset,
+    this.junctionPosition = JunctionPosition.none,
+    this.junctionId,
   });
+
+  /// Get the guideway direction (GD0 or GD1) for this signal
+  GuidewayDirection get guidewayDirection => direction.guidewayDirection;
+
+  /// Check if this signal is at a junction
+  bool get isAtJunction => junctionPosition != JunctionPosition.none && junctionId != null;
+
+  /// Get display name with direction and GD info
+  String get displayInfo => '$id (${direction.name.toUpperCase()}, ${guidewayDirection.abbreviation})';
 }
 
 class Platform {
@@ -299,7 +379,8 @@ class Train {
   double y;
   double speed;
   double targetSpeed;
-  int direction;
+  int direction; // -1 = left/west, 1 = right/east
+  CardinalDirection cardinalDirection; // N, E, S, W direction of travel
   Color color;
   TrainControlMode controlMode;
   bool manualStop;
@@ -365,6 +446,7 @@ class Train {
     required this.speed,
     required this.targetSpeed,
     required this.direction,
+    this.cardinalDirection = CardinalDirection.east, // Default to east
     required this.color,
     required this.controlMode,
     this.manualStop = false,
@@ -401,6 +483,28 @@ class Train {
     this.cbtcReentryAlertTime,
     this.awaitingCbtcReentry = false,
   });
+
+  /// Get the guideway direction (GD0 or GD1) for this train
+  GuidewayDirection get guidewayDirection => cardinalDirection.guidewayDirection;
+
+  /// Check if train is traveling in GD0 (South or West)
+  bool get isGD0 => cardinalDirection.isGD0;
+
+  /// Check if train is traveling in GD1 (North or East)
+  bool get isGD1 => cardinalDirection.isGD1;
+
+  /// Update cardinal direction based on int direction field
+  /// This maintains compatibility with existing code
+  void updateCardinalFromIntDirection() {
+    // direction: -1 = left/west, 1 = right/east
+    // But we need to know if we're on horizontal or vertical track
+    // For now, use simple mapping:
+    if (direction < 0) {
+      cardinalDirection = CardinalDirection.west;
+    } else {
+      cardinalDirection = CardinalDirection.east;
+    }
+  }
 
   // Helper to get wheel count based on train type
   int get wheelCount {

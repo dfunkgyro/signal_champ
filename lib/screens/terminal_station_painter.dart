@@ -276,6 +276,11 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
       _drawSelectionHighlight(canvas);
     }
 
+    // Draw maintenance mode visual aids
+    if (controller.maintenanceModeEnabled) {
+      _drawMaintenanceVisualAids(canvas, size);
+    }
+
     drawCollisionEffects(canvas, controller, animationTick);
 
     // Draw tooltip last (if hovered object exists)
@@ -3509,5 +3514,137 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
         Rect.fromCenter(center: center, width: size, height: size);
     canvas.drawRect(handleRect, fillPaint);
     canvas.drawRect(handleRect, outlinePaint);
+  }
+
+  /// Draw maintenance mode visual aids (selection boxes, grid, measurements)
+  void _drawMaintenanceVisualAids(Canvas canvas, Size size) {
+    // Get maintenance edit controller if available
+    // For now, we'll just draw basic selection highlights
+
+    // Draw bounding boxes for selected components
+    _drawSelectedComponentBoundingBoxes(canvas);
+
+    // Draw drag selection box if active
+    _drawDragSelectionBox(canvas);
+  }
+
+  /// Draw bounding boxes for selected components
+  void _drawSelectedComponentBoundingBoxes(Canvas canvas) {
+    // Selection highlight paint
+    final selectionPaint = Paint()
+      ..color = Colors.orange.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    final selectionOutlinePaint = Paint()
+      ..color = Colors.orange
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final handlePaint = Paint()
+      ..color = Colors.orange
+      ..style = PaintingStyle.fill;
+
+    final handleOutlinePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    // Highlight selected signal
+    if (controller.selectedComponentType == 'signal' &&
+        controller.selectedComponentId != null) {
+      final signal = controller.signals[controller.selectedComponentId];
+      if (signal != null) {
+        final rect = Rect.fromCenter(
+          center: Offset(signal.x, signal.y),
+          width: 40,
+          height: 40,
+        );
+        canvas.drawRect(rect, selectionPaint);
+        _drawDashedRect(canvas, rect, selectionOutlinePaint);
+
+        // Draw corner handles
+        _drawHandle(canvas, rect.topLeft, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(canvas, rect.topRight, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(
+            canvas, rect.bottomLeft, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(
+            canvas, rect.bottomRight, 8, handlePaint, handleOutlinePaint);
+      }
+    }
+
+    // Highlight selected point
+    if (controller.selectedComponentType == 'point' &&
+        controller.selectedComponentId != null) {
+      final point = controller.points[controller.selectedComponentId];
+      if (point != null) {
+        final rect = Rect.fromCenter(
+          center: Offset(point.x, point.y),
+          width: 50,
+          height: 50,
+        );
+        canvas.drawRect(rect, selectionPaint);
+        _drawDashedRect(canvas, rect, selectionOutlinePaint);
+
+        // Draw corner handles
+        _drawHandle(canvas, rect.topLeft, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(canvas, rect.topRight, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(
+            canvas, rect.bottomLeft, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(
+            canvas, rect.bottomRight, 8, handlePaint, handleOutlinePaint);
+      }
+    }
+
+    // Highlight selected block
+    if (controller.selectedComponentType == 'block' &&
+        controller.selectedComponentId != null) {
+      final block = controller.blockSections[controller.selectedComponentId];
+      if (block != null) {
+        final rect = Rect.fromCenter(
+          center: Offset(block.x, block.y),
+          width: math.max(block.length, 40),
+          height: 40,
+        );
+        canvas.drawRect(rect, selectionPaint);
+        _drawDashedRect(canvas, rect, selectionOutlinePaint);
+
+        // Draw corner handles
+        _drawHandle(canvas, rect.topLeft, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(canvas, rect.topRight, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(
+            canvas, rect.bottomLeft, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(
+            canvas, rect.bottomRight, 8, handlePaint, handleOutlinePaint);
+      }
+    }
+
+    // Highlight selected axle counter
+    if (controller.selectedComponentType == 'axleCounter' &&
+        controller.selectedComponentId != null) {
+      final ac = controller.axleCounters[controller.selectedComponentId];
+      if (ac != null) {
+        final rect = Rect.fromCenter(
+          center: Offset(ac.x, ac.y),
+          width: 30,
+          height: 30,
+        );
+        canvas.drawRect(rect, selectionPaint);
+        _drawDashedRect(canvas, rect, selectionOutlinePaint);
+
+        // Draw corner handles
+        _drawHandle(canvas, rect.topLeft, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(canvas, rect.topRight, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(
+            canvas, rect.bottomLeft, 8, handlePaint, handleOutlinePaint);
+        _drawHandle(
+            canvas, rect.bottomRight, 8, handlePaint, handleOutlinePaint);
+      }
+    }
+  }
+
+  /// Draw drag selection box (for multi-select)
+  void _drawDragSelectionBox(Canvas canvas) {
+    // This will be implemented when we add drag selection support
+    // For now, this is a placeholder
   }
 }

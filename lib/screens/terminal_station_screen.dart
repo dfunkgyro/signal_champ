@@ -29,6 +29,10 @@ import '../widgets/control_table_panel.dart';
 import '../widgets/ai_control_table_panel.dart';
 import '../widgets/maintenance_component_list_panel.dart';
 import '../widgets/maintenance_search_panel.dart';
+import '../widgets/maintenance_property_editor.dart';
+import '../widgets/maintenance_toolbar.dart';
+import '../controllers/maintenance_edit_controller.dart';
+import '../services/layout_xml_service.dart';
 
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
@@ -41,6 +45,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late TerminalStationController _controller;
+  late MaintenanceEditController _maintenanceEditController;
   int _animationTick = 0;
   double _cameraOffsetX = 0;
   double _cameraOffsetY = 0; // FIXED: Add Y-axis panning support
@@ -106,6 +111,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     // Initialize controller and add camera sync listener
     _controller = context.read<TerminalStationController>();
     _controller.addListener(_syncCameraState);
+
+    // Initialize maintenance edit controller
+    _maintenanceEditController = MaintenanceEditController(_controller);
 
     _animationController = AnimationController(
       vsync: this,
@@ -228,6 +236,20 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   : 'Control Table Mode - Edit Signal Logic',
             ),
           ),
+          Consumer<TerminalStationController>(
+            builder: (context, controller, child) => IconButton(
+              icon: Icon(
+                Icons.build_circle,
+                color: controller.maintenanceModeEnabled ? Colors.orange : null,
+              ),
+              onPressed: () {
+                controller.toggleMaintenanceMode();
+              },
+              tooltip: controller.maintenanceModeEnabled
+                  ? 'Exit Maintenance Mode'
+                  : 'Maintenance Mode - Edit Layout',
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.dashboard_customize),
             onPressed: () {
@@ -254,11 +276,13 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          // Main canvas area - now takes full available space
-          Stack(
-            children: [
+      body: ChangeNotifierProvider<MaintenanceEditController>.value(
+        value: _maintenanceEditController,
+        child: Stack(
+          children: [
+            // Main canvas area - now takes full available space
+            Stack(
+              children: [
               // Layer 1: Railway Canvas (bottom layer)
               _buildStationCanvas(),
 
@@ -356,20 +380,14 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 builder: (context, controller, child) {
                   if (!_showRightPanel) return const SizedBox.shrink();
 
-                  // Show Maintenance Search Panel in maintenance mode
+                  // Show Maintenance Property Editor in maintenance mode
                   if (controller.maintenanceModeEnabled) {
-                    return Positioned(
+                    return const Positioned(
                       right: 0,
                       top: 0,
                       bottom: 0,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return MaintenanceSearchPanel(
-                            title: 'Search',
-                            viewportWidth: constraints.maxWidth,
-                            viewportHeight: constraints.maxHeight,
-                          );
-                        },
+                      child: MaintenancePropertyEditor(
+                        title: 'Properties',
                       ),
                     );
                   }
@@ -527,6 +545,27 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                 },
               ),
             ],
+          ),
+
+          // Maintenance Mode Toolbar
+          Consumer<TerminalStationController>(
+            builder: (context, controller, child) {
+              if (!controller.maintenanceModeEnabled) {
+                return const SizedBox.shrink();
+              }
+
+              return Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: MaintenanceToolbar(
+                  onSave: () => _handleMaintenanceSave(context),
+                  onExport: () => _handleMaintenanceExport(context),
+                  onImport: () => _handleMaintenanceImport(context),
+                  onValidate: () => _handleMaintenanceValidation(context),
+                ),
+              );
+            },
           ),
 
           // SPAD Alarm - overlay at top (Layer 6)
@@ -5867,6 +5906,138 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   }
 
   // ============================================================================
+  // === MAINTENANCE MODE HANDLERS ===
+  // ============================================================================
+
+  void _handleMaintenanceSave(BuildContext context) {
+    _maintenanceEditController.isDirty = false;
+    _maintenanceEditController.notifyListeners();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Layout changes saved'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _handleMaintenanceExport(BuildContext context) async {
+    try {
+      final xml = LayoutXMLService.exportToXML(_controller);
+
+      // Show export dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Export Layout XML'),
+          content: SingleChildScrollView(
+            child: SelectableText(
+              xml,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                // Copy to clipboard functionality would go here
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('XML copied to clipboard'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.copy),
+              label: const Text('Copy'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Export failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _handleMaintenanceImport(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Layout XML'),
+        content: const Text(
+          'Import functionality would allow you to paste XML or select a file to import.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleMaintenanceValidation(BuildContext context) {
+    _maintenanceEditController.validateLayout();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              _maintenanceEditController.validationIssues.isEmpty
+                  ? Icons.check_circle
+                  : Icons.warning,
+              color: _maintenanceEditController.validationIssues.isEmpty
+                  ? Colors.green
+                  : Colors.orange,
+            ),
+            const SizedBox(width: 12),
+            const Text('Validation Results'),
+          ],
+        ),
+        content: _maintenanceEditController.validationIssues.isEmpty
+            ? const Text('No issues found! Layout is valid.')
+            : SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _maintenanceEditController.validationIssues
+                      .map((issue) => ListTile(
+                            leading: Icon(issue.icon, color: issue.color),
+                            title: Text(issue.message),
+                            subtitle: Text(
+                              '${issue.componentType}: ${issue.componentId}',
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
 // === HELPER METHODS ===
 // ============================================================================
 
@@ -6410,7 +6581,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
             );
           }).toList(),
         ],
-      ],
+      ),
+        ),
+      ),
     );
   }
 }

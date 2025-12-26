@@ -808,12 +808,6 @@ class TerminalStationController extends ChangeNotifier {
   bool gridVisible = false;
   double gridSpacing = 100.0;
 
-  // Edit Mode system
-  bool editModeEnabled = false;
-  double editModeGridSize = 10.0; // Snap-to-grid size in edit mode
-  bool snapToGridEnabled = true; // NEW: Enable/disable snap-to-grid
-  double gridSnapSize = 25.0; // NEW: Configurable snap size
-
   // Control Table Mode system
   bool controlTableModeEnabled = false;
   final ExtendedControlTableConfiguration controlTableConfig = ExtendedControlTableConfiguration();
@@ -1216,10 +1210,6 @@ class TerminalStationController extends ChangeNotifier {
   double cameraOffsetY = 0;
   double cameraZoom = 0.8;
 
-  // Edit mode scroll position persistence
-  double? _savedEditModeScrollX;
-  double? _savedEditModeScrollY;
-  bool _isFirstEditModeEntry = true;
   String? followingTrainId; // ID of train being followed
   String? highlightedItemId; // ID of currently highlighted item
   String?
@@ -1687,31 +1677,6 @@ class TerminalStationController extends ChangeNotifier {
 
   void stopFollowingTrain() {
     followingTrainId = null;
-    notifyListeners();
-  }
-
-  // Edit mode scroll position persistence methods
-  void saveEditModeScrollPosition(double scrollX, double scrollY) {
-    _savedEditModeScrollX = scrollX;
-    _savedEditModeScrollY = scrollY;
-  }
-
-  Map<String, double?> getEditModeScrollPosition() {
-    return {
-      'scrollX': _savedEditModeScrollX,
-      'scrollY': _savedEditModeScrollY,
-      'isFirstEntry': _isFirstEditModeEntry ? 1.0 : 0.0,
-    };
-  }
-
-  void markEditModeEntryComplete() {
-    _isFirstEditModeEntry = false;
-  }
-
-  void resetEditModeScrollCenter() {
-    // This will be called by the screen when the reset button is clicked
-    // The screen will handle the actual centering logic
-    _logEvent('📐 Reset view to center');
     notifyListeners();
   }
 
@@ -9584,61 +9549,11 @@ class TerminalStationController extends ChangeNotifier {
     buffer.writeln('  </DoubleDiamondCrossover>');
   }
 
-  // ============================================================================
-  // EDIT MODE FUNCTIONALITY
-  // ============================================================================
-
-  /// Toggle edit mode on/off
-  void toggleEditMode() {
-    editModeEnabled = !editModeEnabled;
-
-    if (editModeEnabled) {
-      // Entering edit mode - pause simulation
-      if (isRunning) {
-        pauseSimulation();
-      }
-
-      // Initialize default layers if none exist OR if layers have no components assigned
-      // (this handles the case where layers were created but components weren't migrated)
-      final totalComponentsInLayers = _getTotalComponentCount();
-      final totalComponentsInController = blocks.length +
-          signals.length +
-          points.length +
-          platforms.length +
-          trainStops.length +
-          bufferStops.length +
-          crossovers.length +
-          axleCounters.length +
-          wifiAntennas.length +
-          transponders.length;
-
-      if (layers.isEmpty ||
-          totalComponentsInLayers < totalComponentsInController) {
-        _initializeDefaultLayers();
-        _logEvent(
-            '📁 Re-assigned $totalComponentsInController components to layers');
-      }
-
-      _logEvent('🔧 Edit Mode ENABLED - Simulation paused');
-    } else {
-      // Exiting edit mode - clear selection
-      selectedComponentType = null;
-      selectedComponentId = null;
-      _logEvent('🔧 Edit Mode DISABLED');
-    }
-
-    notifyListeners();
-  }
-
   /// Toggle control table mode on/off
   void toggleControlTableMode() {
     controlTableModeEnabled = !controlTableModeEnabled;
 
     if (controlTableModeEnabled) {
-      // Entering control table mode - disable edit mode
-      if (editModeEnabled) {
-        toggleEditMode();
-      }
 
       // Initialize control table from current signal configuration
       if (controlTableConfig.entries.isEmpty) {

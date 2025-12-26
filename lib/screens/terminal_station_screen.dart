@@ -7,11 +7,9 @@ import 'package:rail_champ/controllers/canvas_theme_controller.dart';
 import '../widgets/collision_alarm_ui.dart';
 import '../widgets/ai_agent_panel.dart';
 import '../widgets/relay_rack_panel.dart';
-import '../widgets/edit_mode_toolbar.dart';
 import '../widgets/dot_matrix_display.dart';
 import '../widgets/layer_panel.dart';
 import '../widgets/component_palette.dart';
-import '../widgets/canvas_drop_target.dart';
 import '../widgets/block_control_panel.dart';
 import 'scenario_marketplace_screen.dart';
 import 'dart:math' as math;
@@ -106,7 +104,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     // Initialize controller and add camera sync listener
     _controller = context.read<TerminalStationController>();
     _controller.addListener(_syncCameraState);
-    _controller.addListener(_handleEditModeChange);
 
     _animationController = AnimationController(
       vsync: this,
@@ -134,117 +131,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     }
   }
 
-  /// Handles edit mode state changes for scroll position persistence
-  bool _previousEditModeState = false;
-  void _handleEditModeChange() {
-    if (!mounted) return;
-
-    final currentEditMode = _controller.editModeEnabled;
-
-    // Entering edit mode
-    if (currentEditMode && !_previousEditModeState) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _restoreOrCenterScrollPosition();
-        }
-      });
-    }
-    // Exiting edit mode
-    else if (!currentEditMode && _previousEditModeState) {
-      _saveScrollPosition();
-    }
-
-    _previousEditModeState = currentEditMode;
-  }
-
-  /// Centers the scroll view on the canvas
-  void _centerScrollView() {
-    if (!mounted) return;
-
-    // Calculate center position
-    final canvasWidth = _canvasWidth;
-    final canvasHeight = _canvasHeight;
-    final scrollableWidth = canvasWidth * _zoom;
-    final scrollableHeight = canvasHeight * _zoom;
-
-    final viewportWidth = MediaQuery.of(context).size.width;
-    final viewportHeight = MediaQuery.of(context).size.height;
-
-    // Center position is half of the scrollable area minus half of the viewport
-    final centerX = (scrollableWidth - viewportWidth) / 2;
-    final centerY = (scrollableHeight - viewportHeight) / 2;
-
-    // Jump to center if controllers are attached
-    if (_horizontalScrollController.hasClients) {
-      _horizontalScrollController.jumpTo(centerX.clamp(
-        _horizontalScrollController.position.minScrollExtent,
-        _horizontalScrollController.position.maxScrollExtent,
-      ));
-    }
-    if (_verticalScrollController.hasClients) {
-      _verticalScrollController.jumpTo(centerY.clamp(
-        _verticalScrollController.position.minScrollExtent,
-        _verticalScrollController.position.maxScrollExtent,
-      ));
-    }
-
-    _controller.markEditModeEntryComplete();
-  }
-
-  /// Saves current scroll position to controller
-  void _saveScrollPosition() {
-    if (_horizontalScrollController.hasClients && _verticalScrollController.hasClients) {
-      _controller.saveEditModeScrollPosition(
-        _horizontalScrollController.offset,
-        _verticalScrollController.offset,
-      );
-    }
-  }
-
-  /// Restores scroll position or centers view on first entry
-  void _restoreOrCenterScrollPosition() {
-    if (!mounted) return;
-
-    final scrollPosition = _controller.getEditModeScrollPosition();
-    final isFirstEntry = scrollPosition['isFirstEntry'] == 1.0;
-
-    if (isFirstEntry) {
-      // First time entering edit mode - center the view
-      _centerScrollView();
-    } else {
-      // Restore previous scroll position
-      final savedX = scrollPosition['scrollX'];
-      final savedY = scrollPosition['scrollY'];
-
-      if (savedX != null && savedY != null) {
-        if (_horizontalScrollController.hasClients) {
-          _horizontalScrollController.jumpTo(savedX.clamp(
-            _horizontalScrollController.position.minScrollExtent,
-            _horizontalScrollController.position.maxScrollExtent,
-          ));
-        }
-        if (_verticalScrollController.hasClients) {
-          _verticalScrollController.jumpTo(savedY.clamp(
-            _verticalScrollController.position.minScrollExtent,
-            _verticalScrollController.position.maxScrollExtent,
-          ));
-        }
-      } else {
-        // No saved position - center the view
-        _centerScrollView();
-      }
-    }
-  }
-
-  /// Public method to reset scroll view to center (called from toolbar button)
-  void resetScrollViewToCenter() {
-    _centerScrollView();
-  }
 
   @override
   void dispose() {
     _controller.removeListener(_syncCameraState);
-    _controller.removeListener(_handleEditModeChange);
     _animationController.dispose();
     _horizontalScrollController.dispose();
     _verticalScrollController.dispose();
@@ -416,17 +306,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     );
                   }
 
-                  // Show Component Palette in edit mode
-                  if (controller.editModeEnabled) {
-                    return const Positioned(
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      child: ComponentPalette(),
-                    );
-                  }
-
-                  // Show Control Panel in normal mode
+                  // Show Control Panel
                   return Positioned(
                     left: 0,
                     top: 0,
@@ -492,15 +372,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                           title: 'Control Table AI',
                         ),
                       ),
-                    );
-                  }
-
-                  if (controller.editModeEnabled) {
-                    return const Positioned(
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      child: LayerPanel(),
                     );
                   }
 
@@ -717,17 +588,6 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
           ),
 
           // Edit Mode Toolbar - bottom center (Layer 10)
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: EditModeToolbar(
-                onResetView: resetScrollViewToCenter,
-              ),
-            ),
-          ),
-
           // Draggable Floating Add Train Button (Layer 11)
           Consumer<TerminalStationController>(
             builder: (context, controller, _) {

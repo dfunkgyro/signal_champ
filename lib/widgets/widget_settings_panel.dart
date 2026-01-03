@@ -70,6 +70,10 @@ class _WidgetSettingsPanelState extends State<WidgetSettingsPanel> {
                       _buildSearchWidgetSettings(prefsService),
                       const SizedBox(height: 32),
 
+                      // Auto-Pan Settings
+                      _buildAutoPanSettings(prefsService),
+                      const SizedBox(height: 32),
+
                       // AI Agent Settings
                       _buildAiAgentSettings(prefsService),
                       const SizedBox(height: 32),
@@ -307,6 +311,40 @@ class _WidgetSettingsPanelState extends State<WidgetSettingsPanel> {
           label: 'Gradient Color',
           currentColor: prefsService.aiAgentColor,
           onColorSelected: (color) => prefsService.setAiAgentColor(color),
+        ),
+      ],
+    );
+  }
+
+  /// Build auto-pan settings section
+  Widget _buildAutoPanSettings(WidgetPreferencesService prefsService) {
+    return _buildSection(
+      icon: Icons.my_location,
+      title: 'Auto-Pan Settings',
+      children: [
+        Text(
+          'Apply an offset after auto-centering.',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.6),
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildSlider(
+          label: 'X Offset',
+          value: prefsService.autoPanOffsetX,
+          min: -1000,
+          max: 1000,
+          divisions: 200,
+          onChanged: (value) => prefsService.setAutoPanOffsetX(value),
+        ),
+        _buildSlider(
+          label: 'Y Offset',
+          value: prefsService.autoPanOffsetY,
+          min: -1000,
+          max: 1000,
+          divisions: 200,
+          onChanged: (value) => prefsService.setAutoPanOffsetY(value),
         ),
       ],
     );

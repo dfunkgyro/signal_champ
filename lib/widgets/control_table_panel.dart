@@ -1592,6 +1592,7 @@ class _ControlTablePanelState extends State<ControlTablePanel>
           // Point header
           InkWell(
             onTap: () {
+              controller.requestCanvasCenter(Offset(point.x, point.y));
               setState(() {
                 _selectedPointId = isExpanded ? null : point.id;
               });
@@ -2249,6 +2250,20 @@ class _ControlTablePanelState extends State<ControlTablePanel>
           // AB header
           InkWell(
             onTap: () {
+              Offset? target;
+              if (ac1 != null && ac2 != null) {
+                target = Offset(
+                  (ac1.x + ac2.x) / 2,
+                  (ac1.y + ac2.y) / 2,
+                );
+              } else if (ac1 != null) {
+                target = Offset(ac1.x, ac1.y);
+              } else if (ac2 != null) {
+                target = Offset(ac2.x, ac2.y);
+              }
+              if (target != null) {
+                controller.requestCanvasCenter(target);
+              }
               setState(() {
                 _selectedABId = isExpanded ? null : ab.id;
               });

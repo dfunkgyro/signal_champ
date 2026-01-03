@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'railway_model.dart';
 
 /// Maps points to their controlling blocks and validates physical locations
@@ -99,9 +101,81 @@ class TrackGraph {
 
   // Map of (blockId, direction) → point controlling that block's exits
   final Map<String, List<PointBlockMapping>> _pointBlockMappings = {};
+  final Map<String, List<String>> _dynamicConnections = {};
+  bool _useDynamicGraph = false;
 
   TrackGraph() {
     _buildGraph();
+  }
+
+  void buildDynamicGraph(Map<String, dynamic> blocks,
+      {double tolerance = 8.0}) {
+    _dynamicConnections.clear();
+    _useDynamicGraph = true;
+
+    final endpoints = <_DynamicEndpoint>[];
+    blocks.forEach((id, block) {
+      final start = _blockStart(block);
+      final end = _blockEnd(block);
+      endpoints.add(_DynamicEndpoint(blockId: id, position: start));
+      endpoints.add(_DynamicEndpoint(blockId: id, position: end));
+    });
+
+    for (var i = 0; i < endpoints.length; i++) {
+      for (var j = i + 1; j < endpoints.length; j++) {
+        final a = endpoints[i];
+        final b = endpoints[j];
+        if (a.blockId == b.blockId) continue;
+        if ((a.position - b.position).distance <= tolerance) {
+          _addDynamicConnection(a.blockId, b.blockId);
+          _addDynamicConnection(b.blockId, a.blockId);
+        }
+      }
+    }
+
+    _useDynamicGraph = _dynamicConnections.isNotEmpty;
+  }
+
+  void clearDynamicGraph() {
+    _dynamicConnections.clear();
+    _useDynamicGraph = false;
+  }
+
+  void _addDynamicConnection(String from, String to) {
+    _dynamicConnections.putIfAbsent(from, () => []);
+    if (!_dynamicConnections[from]!.contains(to)) {
+      _dynamicConnections[from]!.add(to);
+    }
+  }
+
+  Offset _blockStart(dynamic block) {
+    return Offset(block.startX, block.y);
+  }
+
+  Offset _blockEnd(dynamic block) {
+    return Offset(block.endX, block.endY ?? block.y);
+  }
+
+  Offset _blockCenter(dynamic block) {
+    final start = _blockStart(block);
+    final end = _blockEnd(block);
+    return Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
+  }
+
+  Offset _directionVector(dynamic block, int direction) {
+    final start = _blockStart(block);
+    final end = _blockEnd(block);
+    final vector = direction > 0 ? (end - start) : (start - end);
+    if (vector.distance == 0) {
+      return Offset(direction.toDouble(), 0);
+    }
+    return vector;
+  }
+
+  Offset _normalize(Offset vector) {
+    final length = vector.distance;
+    if (length == 0) return Offset.zero;
+    return Offset(vector.dx / length, vector.dy / length);
   }
 
   /// Build point-block mappings from track connections
@@ -457,7 +531,42 @@ class TrackGraph {
 
   /// Get next block by following physical track geometry
   /// This is the core routing function - it follows the track graph based on point positions
-  String? getNextBlock(String currentBlockId, int direction, Map<String, dynamic> points) {
+  String? getNextBlock(
+    String currentBlockId,
+    int direction,
+    Map<String, dynamic> points, {
+    Map<String, dynamic>? blocks,
+  }) {
+    if (_useDynamicGraph) {
+      final candidates = _dynamicConnections[currentBlockId];
+      if (candidates == null || candidates.isEmpty) {
+        return null;
+      }
+      if (blocks == null) {
+        return candidates.first;
+      }
+      final currentBlock = blocks[currentBlockId];
+      if (currentBlock == null) {
+        return candidates.first;
+      }
+      final currentCenter = _blockCenter(currentBlock);
+      final dirVector = _normalize(_directionVector(currentBlock, direction));
+      var bestCandidate = candidates.first;
+      var bestScore = -double.infinity;
+      for (final candidateId in candidates) {
+        final candidate = blocks[candidateId];
+        if (candidate == null) continue;
+        final candidateCenter = _blockCenter(candidate);
+        final toCandidate = _normalize(candidateCenter - currentCenter);
+        final score = dirVector.dx * toCandidate.dx + dirVector.dy * toCandidate.dy;
+        if (score > bestScore) {
+          bestScore = score;
+          bestCandidate = candidateId;
+        }
+      }
+      return bestCandidate;
+    }
+
     final connections = direction > 0
         ? _eastboundConnections[currentBlockId]
         : _westboundConnections[currentBlockId];
@@ -487,6 +596,10 @@ class TrackGraph {
 
   /// Get all possible next blocks from current block (regardless of point positions)
   List<String> getPossibleNextBlocks(String currentBlockId, int direction) {
+    if (_useDynamicGraph) {
+      return List<String>.from(_dynamicConnections[currentBlockId] ?? const []);
+    }
+
     final connections = direction > 0
         ? _eastboundConnections[currentBlockId]
         : _westboundConnections[currentBlockId];
@@ -498,6 +611,8 @@ class TrackGraph {
 
   /// Get the point controlling routing from this block (if any)
   String? getControllingPoint(String currentBlockId, int direction) {
+    if (_useDynamicGraph) return null;
+
     final connections = direction > 0
         ? _eastboundConnections[currentBlockId]
         : _westboundConnections[currentBlockId];
@@ -516,6 +631,14 @@ class TrackGraph {
 
   /// Get detailed routing information for debugging
   String getRoutingInfo(String currentBlockId, int direction, Map<String, dynamic> points) {
+    if (_useDynamicGraph) {
+      final candidates = _dynamicConnections[currentBlockId] ?? const [];
+      if (candidates.isEmpty) {
+        return 'No connections from $currentBlockId (dynamic)';
+      }
+      return 'Dynamic routes from $currentBlockId: ${candidates.join(', ')}';
+    }
+
     final connections = direction > 0
         ? _eastboundConnections[currentBlockId]
         : _westboundConnections[currentBlockId];
@@ -541,4 +664,11 @@ class TrackGraph {
 
     return buffer.toString();
   }
+}
+
+class _DynamicEndpoint {
+  final String blockId;
+  final Offset position;
+
+  _DynamicEndpoint({required this.blockId, required this.position});
 }

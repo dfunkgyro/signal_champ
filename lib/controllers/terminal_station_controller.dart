@@ -1246,6 +1246,8 @@ class TerminalStationController extends ChangeNotifier {
   double cameraOffsetX = 0;
   double cameraOffsetY = 0;
   double cameraZoom = 0.8;
+  double autoPanOffsetX = 0.0;
+  double autoPanOffsetY = 0.0;
 
   String? followingTrainId; // ID of train being followed
   String? highlightedItemId; // ID of currently highlighted item
@@ -1679,8 +1681,15 @@ class TerminalStationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setAutoPanOffsets(double offsetX, double offsetY) {
+    autoPanOffsetX = offsetX;
+    autoPanOffsetY = offsetY;
+  }
+
   void panToPosition(double x, double y,
       {double? zoom, double? viewportWidth, double? viewportHeight}) {
+    final adjustedX = x + autoPanOffsetX;
+    final adjustedY = y + autoPanOffsetY;
     // If viewport dimensions are provided, center the position in viewport
     if (viewportWidth != null && viewportHeight != null) {
       final targetZoom = zoom ?? cameraZoom;
@@ -1689,12 +1698,12 @@ class TerminalStationController extends ChangeNotifier {
       // Formula: cameraOffset = -itemPosition (to move item to origin)
       //          + viewportCenter (to move from origin to center of screen)
       // Note: viewportCenter is in screen pixels, but camera works in canvas units
-      cameraOffsetX = -x + (viewportWidth / 2);
-      cameraOffsetY = -y + (viewportHeight / 2);
+      cameraOffsetX = -adjustedX + (viewportWidth / 2);
+      cameraOffsetY = -adjustedY + (viewportHeight / 2);
     } else {
       // Legacy behavior - simple offset
-      cameraOffsetX = -x;
-      cameraOffsetY = -y;
+      cameraOffsetX = -adjustedX;
+      cameraOffsetY = -adjustedY;
     }
 
     if (zoom != null) {
@@ -2247,8 +2256,7 @@ class TerminalStationController extends ChangeNotifier {
       if (train.controlMode == TrainControlMode.manual) {
         for (var trainStop in trainStops.values) {
           if (trainStop.enabled && trainStop.active) {
-            final distance = (train.x - trainStop.x).abs();
-            if (distance < 30 && (train.y - trainStop.y).abs() < 30) {
+            if (_isTrainNearStop(train, trainStop)) {
               if (train.speed > 0) {
                 _handleTrainStopSPAD(train, trainStop);
               }
@@ -3264,9 +3272,7 @@ class TerminalStationController extends ChangeNotifier {
 
   void _updateGhostTrainBlock(GhostTrain ghost) {
     for (var block in blocks.values) {
-      if (ghost.x >= block.startX &&
-          ghost.x <= block.endX &&
-          (ghost.y - block.y).abs() < 50) {
+      if (block.containsPosition(ghost.x, ghost.y)) {
         ghost.currentBlockId = block.id;
         break;
       }
@@ -3277,9 +3283,11 @@ class TerminalStationController extends ChangeNotifier {
     if (ghost.doorsOpen) return;
 
     for (var platform in platforms) {
-      if (ghost.x >= platform.startX &&
-          ghost.x <= platform.endX &&
-          (ghost.y - platform.y).abs() < 50) {
+      if (_isPositionAtPlatform(
+        Offset(ghost.x, ghost.y),
+        platform,
+        blockId: ghost.currentBlockId,
+      )) {
         // Ghost arrived at platform
         ghost.currentPlatformId = platform.id;
         ghost.platformArrivalTime = DateTime.now();
@@ -3559,11 +3567,8 @@ class TerminalStationController extends ChangeNotifier {
     if (block == null) return null;
 
     for (var platform in platforms) {
-      if ((block.startX >= platform.startX && block.startX <= platform.endX) ||
-          (block.endX >= platform.startX && block.endX <= platform.endX)) {
-        if ((block.y - platform.y).abs() < 50) {
-          return platform;
-        }
+      if (_isPlatformNearBlock(platform, block)) {
+        return platform;
       }
     }
     return null;
@@ -5452,9 +5457,11 @@ class TerminalStationController extends ChangeNotifier {
 
   bool _isTrainAtPlatform(Train train) {
     for (var platform in platforms) {
-      if (train.x >= platform.startX &&
-          train.x <= platform.endX &&
-          (train.y - platform.y).abs() < 50) {
+      if (_isPositionAtPlatform(
+        Offset(train.x, train.y),
+        platform,
+        blockId: train.currentBlockId,
+      )) {
         return true;
       }
     }
@@ -5463,13 +5470,102 @@ class TerminalStationController extends ChangeNotifier {
 
   String? _getPlatformForTrain(Train train) {
     for (var platform in platforms) {
-      if (train.x >= platform.startX &&
-          train.x <= platform.endX &&
-          (train.y - platform.y).abs() < 50) {
+      if (_isPositionAtPlatform(
+        Offset(train.x, train.y),
+        platform,
+        blockId: train.currentBlockId,
+      )) {
         return platform.id;
       }
     }
     return null;
+  }
+
+  bool _isTrainNearStop(Train train, TrainStop stop) {
+    final blockId = train.currentBlockId;
+    if (blockId != null) {
+      final block = blocks[blockId];
+      if (block != null && block.isAngled) {
+        final trainPos = Offset(train.x, train.y);
+        final stopPos = Offset(stop.x, stop.y);
+        final projectedTrain = block.projectPosition(trainPos);
+        final projectedStop = block.projectPosition(stopPos);
+        if ((projectedStop - stopPos).distance > 40) {
+          return false;
+        }
+        return (projectedTrain - projectedStop).distance < 30;
+      }
+    }
+
+    final distance = (train.x - stop.x).abs();
+    return distance < 30 && (train.y - stop.y).abs() < 30;
+  }
+
+  bool _isPositionAtPlatform(
+    Offset position,
+    Platform platform, {
+    String? blockId,
+    double tolerance = 50,
+  }) {
+    if (blockId != null) {
+      final block = blocks[blockId];
+      if (block != null && block.isAngled) {
+        final platformStart = Offset(platform.startX, platform.y);
+        final platformEnd = Offset(platform.endX, platform.y);
+        final platformCenter = Offset(
+          platform.startX + (platform.endX - platform.startX) / 2,
+          platform.y,
+        );
+        if ((block.projectPosition(platformCenter) - platformCenter)
+                .distance >
+            tolerance) {
+          return false;
+        }
+        final startT = block.projectT(platformStart);
+        final endT = block.projectT(platformEnd);
+        final minT = math.min(startT, endT);
+        final maxT = math.max(startT, endT);
+        final posT = block.projectT(position);
+        final projected = block.projectPosition(position);
+        final lateral = (projected - position).distance;
+        return posT >= minT - 0.02 &&
+            posT <= maxT + 0.02 &&
+            lateral <= tolerance;
+      }
+    }
+
+    return position.dx >= platform.startX &&
+        position.dx <= platform.endX &&
+        (position.dy - platform.y).abs() < tolerance;
+  }
+
+  bool _isPlatformNearBlock(Platform platform, BlockSection block) {
+    if (!block.isAngled) {
+      if ((block.startX >= platform.startX &&
+              block.startX <= platform.endX) ||
+          (block.endX >= platform.startX &&
+              block.endX <= platform.endX)) {
+        return (block.y - platform.y).abs() < 50;
+      }
+      return false;
+    }
+
+    final platformStart = Offset(platform.startX, platform.y);
+    final platformEnd = Offset(platform.endX, platform.y);
+    final platformCenter = Offset(
+      platform.startX + (platform.endX - platform.startX) / 2,
+      platform.y,
+    );
+    if ((block.projectPosition(platformCenter) - platformCenter).distance >
+        60) {
+      return false;
+    }
+    final startT = block.projectT(platformStart);
+    final endT = block.projectT(platformEnd);
+    final minT = math.min(startT, endT);
+    final maxT = math.max(startT, endT);
+    final blockT = block.projectT(platformCenter);
+    return blockT >= minT - 0.02 && blockT <= maxT + 0.02;
   }
 
   void openTrainDoors(String trainId) {
@@ -5546,9 +5642,12 @@ class TerminalStationController extends ChangeNotifier {
 
       // Check if train is at a platform
       for (var platform in platforms) {
-        final atPlatform = train.x >= platform.startX &&
-            train.x <= platform.endX &&
-            (train.y - platform.y).abs() < 20;
+        final atPlatform = _isPositionAtPlatform(
+          Offset(train.x, train.y),
+          platform,
+          blockId: train.currentBlockId,
+          tolerance: 20,
+        );
 
         if (atPlatform) {
           // FIXED: Check if this is the same platform where doors last opened
@@ -7285,6 +7384,7 @@ class TerminalStationController extends ChangeNotifier {
             startX: (blockData['startX'] as num).toDouble(),
             endX: (blockData['endX'] as num).toDouble(),
             y: (blockData['y'] as num).toDouble(),
+            endY: (blockData['endY'] as num?)?.toDouble(),
             name: blockData['name'] as String?,
             occupied: blockData['occupied'] as bool? ?? false,
           );
@@ -7469,6 +7569,13 @@ class TerminalStationController extends ChangeNotifier {
       _logEvent('✅ Layout loaded: ${layoutConfig.name}');
       _logEvent(
           '📊 Loaded ${blocks.length} blocks, ${signals.length} signals, ${points.length} points');
+
+      final dynamicRouting = data['dynamicRouting'] == true;
+      if (dynamicRouting) {
+        trackGraph.buildDynamicGraph(blocks);
+      } else {
+        trackGraph.clearDynamicGraph();
+      }
 
       // Resume simulation if it was running
       if (wasRunning) {
@@ -7965,13 +8072,30 @@ class TerminalStationController extends ChangeNotifier {
       // Move train
       if (train.speed > 0) {
         final oldBlockId = train.currentBlockId;
-        final nextX =
-            train.x + (train.speed * simulationSpeed * train.direction);
+        final currentBlock =
+            oldBlockId == null ? null : blocks[oldBlockId];
+        final stepDistance = train.speed * simulationSpeed;
+        Offset nextPosition;
+        if (currentBlock != null && currentBlock.isAngled) {
+          final directionVector =
+              currentBlock.endPoint - currentBlock.startPoint;
+          final length = directionVector.distance;
+          final unit = length == 0
+              ? const Offset(1, 0)
+              : directionVector / length;
+          final travelDirection =
+              train.direction >= 0 ? unit : -unit;
+          nextPosition = Offset(train.x, train.y) +
+              (travelDirection * stepDistance);
+        } else {
+          final nextX = train.x + (stepDistance * train.direction);
+          nextPosition = Offset(nextX, train.y);
+        }
 
         // Check if this would move to a different block
         BlockSection? nextBlock;
         for (var block in blocks.values) {
-          if (block.containsPosition(nextX, train.y)) {
+          if (block.containsPosition(nextPosition.dx, nextPosition.dy)) {
             nextBlock = block;
             break;
           }
@@ -7993,7 +8117,8 @@ class TerminalStationController extends ChangeNotifier {
         }
 
         // Move is valid - proceed
-        train.x = nextX;
+        train.x = nextPosition.dx;
+        train.y = nextPosition.dy;
 
         // Update train's Y position and rotation based on current X position
         // This ensures the lead carriage gets correct positioning at crossovers
@@ -8069,8 +8194,8 @@ class TerminalStationController extends ChangeNotifier {
     if (followingTrainId != null) {
       final train = trains.where((t) => t.id == followingTrainId).firstOrNull;
       if (train != null) {
-        cameraOffsetX = -train.x;
-        cameraOffsetY = -train.y;
+        cameraOffsetX = -(train.x + autoPanOffsetX);
+        cameraOffsetY = -(train.y + autoPanOffsetY);
       } else {
         // Train no longer exists, stop following
         followingTrainId = null;
@@ -8111,6 +8236,7 @@ class TerminalStationController extends ChangeNotifier {
       train.currentBlockId!,
       train.direction,
       points,
+      blocks: blocks,
     );
 
     // Log routing decision for debugging (optional - can be removed in production)
@@ -8601,6 +8727,38 @@ class TerminalStationController extends ChangeNotifier {
   }
 
   void _updateTrainYPosition(Train train) {
+    final currentBlockId = train.currentBlockId;
+    BlockSection? angledBlock;
+    if (currentBlockId != null) {
+      final block = blocks[currentBlockId];
+      if (block != null &&
+          block.isAngled &&
+          !(block.name?.contains('crossover') ?? false)) {
+        angledBlock = block;
+      }
+    }
+
+    if (angledBlock == null) {
+      for (final block in blocks.values) {
+        if (block.isAngled &&
+            !(block.name?.contains('crossover') ?? false) &&
+            block.containsPosition(train.x, train.y)) {
+          angledBlock = block;
+          break;
+        }
+      }
+    }
+
+    if (angledBlock != null) {
+      final projected =
+          angledBlock.projectPosition(Offset(train.x, train.y));
+      train.x = projected.dx;
+      train.y = projected.dy;
+      train.rotation = angledBlock.angleRadians +
+          (train.direction < 0 ? math.pi : 0.0);
+      return;
+    }
+
     final result = calculatePathPosition(train.x, train.y, train.direction);
     train.y = result['y']!;
     train.rotation = result['rotation']!;
@@ -9335,8 +9493,9 @@ class TerminalStationController extends ChangeNotifier {
     for (var entry in blockEntries) {
       final id = entry.key;
       final block = entry.value;
+      final endY = block.endY;
       buffer.writeln(
-          '    <Block id="$id" startX="${block.startX}" endX="${block.endX}" y="${block.y}" occupied="${block.occupied}" occupyingTrain="${block.occupyingTrainId ?? 'none'}" />');
+          '    <Block id="$id" startX="${block.startX}" endX="${block.endX}" y="${block.y}" endY="$endY" occupied="${block.occupied}" occupyingTrain="${block.occupyingTrainId ?? 'none'}" />');
     }
     buffer.writeln('  </Blocks>');
 
@@ -12011,6 +12170,7 @@ class TerminalStationController extends ChangeNotifier {
         'startX': block.startX,
         'endX': block.endX,
         'y': block.y,
+        'endY': block.endY,
         'occupied': block.occupied,
         'occupyingTrainId': block.occupyingTrainId,
       };
@@ -12121,6 +12281,14 @@ class TerminalStationController extends ChangeNotifier {
     return data;
   }
 
+  static Map<String, dynamic> buildDefaultLayoutJson() {
+    final controller = TerminalStationController();
+    controller.resetLayoutToDefault();
+    final data = controller.exportLayoutToJson();
+    controller.dispose();
+    return data;
+  }
+
   /// Import layout from JSON with layer support (Phase 6.2 & 6.3)
   void importLayoutFromJson(Map<String, dynamic> data) {
     try {
@@ -12175,9 +12343,17 @@ class TerminalStationController extends ChangeNotifier {
             startX: (block['startX'] as num).toDouble(),
             endX: (block['endX'] as num).toDouble(),
             y: (block['y'] as num).toDouble(),
+            endY: (block['endY'] as num?)?.toDouble(),
           );
         }
         _logEvent('✅ Loaded ${blocks.length} blocks');
+      }
+
+      final dynamicRouting = data['dynamicRouting'] == true;
+      if (dynamicRouting) {
+        trackGraph.buildDynamicGraph(blocks);
+      } else {
+        trackGraph.clearDynamicGraph();
       }
 
       // Load signals
@@ -12244,7 +12420,10 @@ class TerminalStationController extends ChangeNotifier {
           );
         }
         _logEvent('✅ Loaded ${points.length} points');
+
       }
+
+      trackGraph.buildPointBlockMappings(points, blocks);
 
       // Load platforms
       final platformsData = data['platforms'] as List?;

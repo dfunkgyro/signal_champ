@@ -35,6 +35,327 @@ import '../widgets/canvas_drop_target.dart';
 import '../controllers/maintenance_edit_controller.dart';
 import '../services/layout_xml_service.dart';
 
+enum _SimulationLayoutTemplate {
+  opsFocus,
+  signalsFocus,
+  professional,
+  minimal,
+  managementCentre,
+  diagnostics,
+}
+
+enum _ControlPanelSection {
+  simulationSettings,
+  addTrain,
+  timetable,
+  pointControl,
+  wifiControl,
+  axleCounters,
+  abReset,
+  trainSummary,
+  trainDetails,
+  operationsAdvanced,
+  canvasControls,
+}
+
+enum _StatusPanelSection {
+  statusSummary,
+  runningTime,
+  axleCounterEvaluator,
+  abOccupation,
+  layoutSelector,
+  crossoverRoutes,
+  pointsStatus,
+  routeReservations,
+  eventLog,
+  timeAndDate,
+  quickActions,
+  relayRack,
+}
+
+enum _TopPanelSection {
+  blockControl,
+  canvasTheme,
+  points,
+  signals,
+  trainControls,
+  quickActions,
+}
+
+enum _BottomPanelSection {
+  runningTime,
+  quickActions,
+  trainControls,
+  signals,
+  points,
+  blockControl,
+  canvasTheme,
+}
+
+class _SimulationLayoutConfig {
+  final String name;
+  final List<_ControlPanelSection> left;
+  final List<_StatusPanelSection> right;
+  final List<_TopPanelSection> top;
+  final List<_BottomPanelSection> bottom;
+  final List<_ControlPanelSection> hiddenLeft;
+  final List<_StatusPanelSection> hiddenRight;
+
+  const _SimulationLayoutConfig({
+    required this.name,
+    required this.left,
+    required this.right,
+    required this.top,
+    required this.bottom,
+    this.hiddenLeft = const [],
+    this.hiddenRight = const [],
+  });
+}
+
+const Map<_SimulationLayoutTemplate, _SimulationLayoutConfig>
+    _simulationLayoutConfigs = {
+  _SimulationLayoutTemplate.opsFocus: _SimulationLayoutConfig(
+    name: 'Ops Focus',
+    left: [
+      _ControlPanelSection.simulationSettings,
+      _ControlPanelSection.trainSummary,
+      _ControlPanelSection.trainDetails,
+      _ControlPanelSection.addTrain,
+      _ControlPanelSection.timetable,
+      _ControlPanelSection.pointControl,
+      _ControlPanelSection.wifiControl,
+      _ControlPanelSection.axleCounters,
+      _ControlPanelSection.abReset,
+      _ControlPanelSection.operationsAdvanced,
+      _ControlPanelSection.canvasControls,
+    ],
+    right: [
+      _StatusPanelSection.statusSummary,
+      _StatusPanelSection.runningTime,
+      _StatusPanelSection.pointsStatus,
+      _StatusPanelSection.routeReservations,
+      _StatusPanelSection.eventLog,
+      _StatusPanelSection.axleCounterEvaluator,
+      _StatusPanelSection.abOccupation,
+      _StatusPanelSection.layoutSelector,
+      _StatusPanelSection.crossoverRoutes,
+      _StatusPanelSection.timeAndDate,
+      _StatusPanelSection.quickActions,
+      _StatusPanelSection.relayRack,
+    ],
+    top: [
+      _TopPanelSection.quickActions,
+      _TopPanelSection.trainControls,
+      _TopPanelSection.points,
+      _TopPanelSection.signals,
+      _TopPanelSection.blockControl,
+      _TopPanelSection.canvasTheme,
+    ],
+    bottom: [
+      _BottomPanelSection.runningTime,
+      _BottomPanelSection.quickActions,
+    ],
+  ),
+  _SimulationLayoutTemplate.signalsFocus: _SimulationLayoutConfig(
+    name: 'Signals Focus',
+    left: [
+      _ControlPanelSection.simulationSettings,
+      _ControlPanelSection.pointControl,
+      _ControlPanelSection.operationsAdvanced,
+      _ControlPanelSection.timetable,
+      _ControlPanelSection.trainSummary,
+      _ControlPanelSection.trainDetails,
+      _ControlPanelSection.addTrain,
+      _ControlPanelSection.axleCounters,
+      _ControlPanelSection.abReset,
+      _ControlPanelSection.wifiControl,
+      _ControlPanelSection.canvasControls,
+    ],
+    right: [
+      _StatusPanelSection.pointsStatus,
+      _StatusPanelSection.routeReservations,
+      _StatusPanelSection.crossoverRoutes,
+      _StatusPanelSection.statusSummary,
+      _StatusPanelSection.eventLog,
+      _StatusPanelSection.runningTime,
+      _StatusPanelSection.axleCounterEvaluator,
+      _StatusPanelSection.abOccupation,
+      _StatusPanelSection.layoutSelector,
+      _StatusPanelSection.timeAndDate,
+      _StatusPanelSection.quickActions,
+      _StatusPanelSection.relayRack,
+    ],
+    top: [
+      _TopPanelSection.signals,
+      _TopPanelSection.points,
+      _TopPanelSection.blockControl,
+      _TopPanelSection.quickActions,
+      _TopPanelSection.trainControls,
+      _TopPanelSection.canvasTheme,
+    ],
+    bottom: [
+      _BottomPanelSection.signals,
+      _BottomPanelSection.points,
+      _BottomPanelSection.runningTime,
+    ],
+  ),
+  _SimulationLayoutTemplate.professional: _SimulationLayoutConfig(
+    name: 'Professional',
+    left: [
+      _ControlPanelSection.simulationSettings,
+      _ControlPanelSection.addTrain,
+      _ControlPanelSection.timetable,
+      _ControlPanelSection.pointControl,
+      _ControlPanelSection.wifiControl,
+      _ControlPanelSection.trainSummary,
+      _ControlPanelSection.trainDetails,
+      _ControlPanelSection.axleCounters,
+      _ControlPanelSection.abReset,
+      _ControlPanelSection.operationsAdvanced,
+      _ControlPanelSection.canvasControls,
+    ],
+    right: [
+      _StatusPanelSection.statusSummary,
+      _StatusPanelSection.runningTime,
+      _StatusPanelSection.layoutSelector,
+      _StatusPanelSection.pointsStatus,
+      _StatusPanelSection.routeReservations,
+      _StatusPanelSection.eventLog,
+      _StatusPanelSection.axleCounterEvaluator,
+      _StatusPanelSection.abOccupation,
+      _StatusPanelSection.crossoverRoutes,
+      _StatusPanelSection.timeAndDate,
+      _StatusPanelSection.quickActions,
+      _StatusPanelSection.relayRack,
+    ],
+    top: [
+      _TopPanelSection.blockControl,
+      _TopPanelSection.quickActions,
+      _TopPanelSection.trainControls,
+      _TopPanelSection.points,
+      _TopPanelSection.signals,
+      _TopPanelSection.canvasTheme,
+    ],
+    bottom: [
+      _BottomPanelSection.runningTime,
+      _BottomPanelSection.quickActions,
+    ],
+  ),
+  _SimulationLayoutTemplate.minimal: _SimulationLayoutConfig(
+    name: 'Minimal',
+    left: [
+      _ControlPanelSection.simulationSettings,
+      _ControlPanelSection.addTrain,
+      _ControlPanelSection.trainSummary,
+    ],
+    right: [
+      _StatusPanelSection.runningTime,
+      _StatusPanelSection.statusSummary,
+      _StatusPanelSection.pointsStatus,
+    ],
+    top: [
+      _TopPanelSection.quickActions,
+    ],
+    bottom: const [],
+    hiddenLeft: [
+      _ControlPanelSection.pointControl,
+      _ControlPanelSection.wifiControl,
+      _ControlPanelSection.timetable,
+      _ControlPanelSection.axleCounters,
+      _ControlPanelSection.abReset,
+      _ControlPanelSection.trainDetails,
+      _ControlPanelSection.operationsAdvanced,
+      _ControlPanelSection.canvasControls,
+    ],
+    hiddenRight: [
+      _StatusPanelSection.axleCounterEvaluator,
+      _StatusPanelSection.abOccupation,
+      _StatusPanelSection.layoutSelector,
+      _StatusPanelSection.crossoverRoutes,
+      _StatusPanelSection.routeReservations,
+      _StatusPanelSection.eventLog,
+      _StatusPanelSection.timeAndDate,
+      _StatusPanelSection.quickActions,
+      _StatusPanelSection.relayRack,
+    ],
+  ),
+  _SimulationLayoutTemplate.managementCentre: _SimulationLayoutConfig(
+    name: 'Management Centre',
+    left: [
+      _ControlPanelSection.trainSummary,
+      _ControlPanelSection.trainDetails,
+      _ControlPanelSection.timetable,
+      _ControlPanelSection.addTrain,
+      _ControlPanelSection.simulationSettings,
+      _ControlPanelSection.axleCounters,
+      _ControlPanelSection.abReset,
+      _ControlPanelSection.operationsAdvanced,
+      _ControlPanelSection.canvasControls,
+    ],
+    right: [
+      _StatusPanelSection.runningTime,
+      _StatusPanelSection.statusSummary,
+      _StatusPanelSection.eventLog,
+      _StatusPanelSection.pointsStatus,
+      _StatusPanelSection.routeReservations,
+      _StatusPanelSection.axleCounterEvaluator,
+      _StatusPanelSection.abOccupation,
+      _StatusPanelSection.layoutSelector,
+      _StatusPanelSection.crossoverRoutes,
+      _StatusPanelSection.timeAndDate,
+      _StatusPanelSection.quickActions,
+      _StatusPanelSection.relayRack,
+    ],
+    top: [
+      _TopPanelSection.blockControl,
+      _TopPanelSection.trainControls,
+      _TopPanelSection.quickActions,
+      _TopPanelSection.points,
+    ],
+    bottom: [
+      _BottomPanelSection.runningTime,
+      _BottomPanelSection.trainControls,
+    ],
+  ),
+  _SimulationLayoutTemplate.diagnostics: _SimulationLayoutConfig(
+    name: 'Diagnostics',
+    left: [
+      _ControlPanelSection.simulationSettings,
+      _ControlPanelSection.axleCounters,
+      _ControlPanelSection.abReset,
+      _ControlPanelSection.wifiControl,
+      _ControlPanelSection.pointControl,
+      _ControlPanelSection.operationsAdvanced,
+      _ControlPanelSection.canvasControls,
+    ],
+    right: [
+      _StatusPanelSection.axleCounterEvaluator,
+      _StatusPanelSection.abOccupation,
+      _StatusPanelSection.eventLog,
+      _StatusPanelSection.statusSummary,
+      _StatusPanelSection.runningTime,
+      _StatusPanelSection.pointsStatus,
+      _StatusPanelSection.layoutSelector,
+      _StatusPanelSection.crossoverRoutes,
+      _StatusPanelSection.timeAndDate,
+      _StatusPanelSection.quickActions,
+      _StatusPanelSection.relayRack,
+    ],
+    top: [
+      _TopPanelSection.blockControl,
+      _TopPanelSection.canvasTheme,
+      _TopPanelSection.points,
+      _TopPanelSection.signals,
+      _TopPanelSection.quickActions,
+    ],
+    bottom: [
+      _BottomPanelSection.runningTime,
+      _BottomPanelSection.quickActions,
+      _BottomPanelSection.signals,
+    ],
+  ),
+};
+
 class TerminalStationScreen extends StatefulWidget {
   const TerminalStationScreen({Key? key}) : super(key: key);
 
@@ -54,6 +375,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   bool _showLeftPanel = true;
   bool _showRightPanel = true;
   bool _showTopPanel = false;
+  _SimulationLayoutTemplate _layoutTemplate =
+      _SimulationLayoutTemplate.opsFocus;
   String? _selectedBlockForTrain;
   TrainType _selectedTrainType = TrainType.m1;
   String? _selectedDestination;
@@ -85,6 +408,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
   double _topPanelHeight = 120.0; // Default height
   final double _minTopPanelHeight = 80.0;
   final double _maxTopPanelHeight = 300.0;
+  double _bottomPanelHeight = 140.0;
 
   // FIXED: Canvas size controls for expanded 7000×1200 closed-loop network
   double _canvasWidth = 7000.0; // Expanded width for full loop
@@ -115,6 +439,7 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
     // Initialize maintenance edit controller
     _maintenanceEditController = MaintenanceEditController(_controller);
+    _showTopPanel = _activeLayoutConfig.top.isNotEmpty;
 
     _animationController = AnimationController(
       vsync: this,
@@ -129,6 +454,9 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       });
     _animationController.repeat();
   }
+
+  _SimulationLayoutConfig get _activeLayoutConfig =>
+      _simulationLayoutConfigs[_layoutTemplate]!;
 
   /// Syncs local camera state with controller's camera state
   /// This enables search and other features to pan/zoom the viewport
@@ -159,36 +487,13 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final size = MediaQuery.of(context).size;
 
-      final leftPanelWidth = _showLeftPanel
-          ? (_controller.maintenanceModeEnabled
-              ? 300.0
-              : (_controller.controlTableModeEnabled ? 380.0 : 320.0))
-          : 0.0;
-      final rightPanelWidth = _showRightPanel
-          ? (_controller.maintenanceModeEnabled
-              ? 320.0
-              : (_controller.controlTableModeEnabled ? 380.0 : 320.0))
-          : 0.0;
-
-      final visibleWidth = size.width - leftPanelWidth - rightPanelWidth;
-      final toolbarHeight = _controller.maintenanceModeEnabled ? 56.0 : 0.0;
-      final visibleHeight = size.height - toolbarHeight;
-      final centerYOffset =
-          (_controller.maintenanceModeEnabled || _controller.controlTableModeEnabled)
-              ? 120.0
-              : 0.0;
+      final visibleWidth = size.width;
+      final visibleHeight = size.height;
 
       if (!_controller.editModeEnabled) {
-        final panelShiftX =
-            ((leftPanelWidth - rightPanelWidth) / 2) / _zoom;
-        final panelShiftY = (toolbarHeight / 2) / _zoom;
-        final adjustedTarget = Offset(
-          target.dx - panelShiftX,
-          target.dy + (centerYOffset / _zoom) - panelShiftY,
-        );
         _controller.panToPosition(
-          adjustedTarget.dx,
-          adjustedTarget.dy,
+          target.dx,
+          target.dy,
           zoom: _zoom,
           viewportWidth: visibleWidth,
           viewportHeight: visibleHeight,
@@ -196,17 +501,22 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         return;
       }
 
+      final adjustedTarget = Offset(
+        target.dx + _controller.autoPanOffsetX,
+        target.dy + _controller.autoPanOffsetY,
+      );
       final canvasMinX = -_canvasWidth / 2;
       final canvasMinY = -_canvasHeight / 2;
       final scrollableWidth = _canvasWidth * _zoom;
       final scrollableHeight = _canvasHeight * _zoom;
 
-      final targetLocalX = leftPanelWidth + (visibleWidth / 2);
-      final targetLocalY =
-          toolbarHeight + (visibleHeight / 2) + centerYOffset;
+      final targetLocalX = visibleWidth / 2;
+      final targetLocalY = visibleHeight / 2;
 
-      final rawScrollX = ((target.dx - canvasMinX) * _zoom) - targetLocalX;
-      final rawScrollY = ((target.dy - canvasMinY) * _zoom) - targetLocalY;
+      final rawScrollX =
+          ((adjustedTarget.dx - canvasMinX) * _zoom) - targetLocalX;
+      final rawScrollY =
+          ((adjustedTarget.dy - canvasMinY) * _zoom) - targetLocalY;
 
       final maxScrollX = (scrollableWidth - size.width).clamp(0.0, double.infinity);
       final maxScrollY = (scrollableHeight - size.height).clamp(0.0, double.infinity);
@@ -305,6 +615,8 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final prefs = context.watch<WidgetPreferencesService>();
+    _controller.setAutoPanOffsets(prefs.autoPanOffsetX, prefs.autoPanOffsetY);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Railway Simulator'),
@@ -348,6 +660,27 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               );
             },
             tooltip: 'Scenario Builder & Marketplace',
+          ),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<_SimulationLayoutTemplate>(
+              value: _layoutTemplate,
+              dropdownColor: Theme.of(context).colorScheme.surface,
+              icon: const Icon(Icons.view_quilt),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  _layoutTemplate = value;
+                  _showTopPanel =
+                      _simulationLayoutConfigs[value]!.top.isNotEmpty;
+                });
+              },
+              items: _simulationLayoutConfigs.entries
+                  .map((entry) => DropdownMenuItem<_SimulationLayoutTemplate>(
+                        value: entry.key,
+                        child: Text(entry.value.name),
+                      ))
+                  .toList(),
+            ),
           ),
           IconButton(
             icon: Icon(
@@ -466,15 +799,59 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
               Consumer<TerminalStationController>(
                 builder: (context, controller, child) {
                   if (!_showRightPanel) return const SizedBox.shrink();
+                  final screenSize = MediaQuery.of(context).size;
+                  final leftPanelWidth = _showLeftPanel
+                      ? (controller.maintenanceModeEnabled
+                          ? 300.0
+                          : (controller.controlTableModeEnabled ? 380.0 : 320.0))
+                      : 0.0;
+                  final rightPanelWidth = _showRightPanel
+                      ? (controller.maintenanceModeEnabled
+                          ? 320.0
+                          : (controller.controlTableModeEnabled ? 380.0 : 320.0))
+                      : 0.0;
+                  final viewportWidth =
+                      screenSize.width - leftPanelWidth - rightPanelWidth;
+                  final viewportHeight = screenSize.height - kToolbarHeight;
 
                   // Show Maintenance Property Editor in maintenance mode
                   if (controller.maintenanceModeEnabled) {
-                    return const Positioned(
+                    return Positioned(
                       right: 0,
                       top: 0,
                       bottom: 0,
-                      child: MaintenancePropertyEditor(
-                        title: 'Properties',
+                      child: Container(
+                        width: 320,
+                        color: Colors.grey[900],
+                        child: Column(
+                          children: [
+                            const Expanded(
+                              child: MaintenancePropertyEditor(
+                                title: 'Properties',
+                              ),
+                            ),
+                            _buildMiniMapToggleRow(controller),
+                            if (controller.miniMapVisible)
+                              MiniMapWidgetEnhanced(
+                                canvasWidth: _canvasWidth,
+                                canvasHeight: _canvasHeight,
+                                cameraOffsetX: _cameraOffsetX,
+                                cameraOffsetY: _cameraOffsetY,
+                                cameraZoom: _zoom,
+                                viewportWidth: viewportWidth,
+                                viewportHeight: viewportHeight,
+                                onNavigate: (x, y) {
+                                  _controller.panToPosition(
+                                    x,
+                                    y,
+                                    viewportWidth: viewportWidth,
+                                    viewportHeight: viewportHeight,
+                                  );
+                                  _controller.disableAutoFollow();
+                                },
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   }
@@ -505,8 +882,34 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                             ),
                           ],
                         ),
-                        child: const AIControlTablePanel(
-                          title: 'Control Table AI',
+                        child: Column(
+                          children: [
+                            const Expanded(
+                              child: AIControlTablePanel(
+                                title: 'Control Table AI',
+                              ),
+                            ),
+                            _buildMiniMapToggleRow(controller),
+                            if (controller.miniMapVisible)
+                              MiniMapWidgetEnhanced(
+                                canvasWidth: _canvasWidth,
+                                canvasHeight: _canvasHeight,
+                                cameraOffsetX: _cameraOffsetX,
+                                cameraOffsetY: _cameraOffsetY,
+                                cameraZoom: _zoom,
+                                viewportWidth: viewportWidth,
+                                viewportHeight: viewportHeight,
+                                onNavigate: (x, y) {
+                                  _controller.panToPosition(
+                                    x,
+                                    y,
+                                    viewportWidth: viewportWidth,
+                                    viewportHeight: viewportHeight,
+                                  );
+                                  _controller.disableAutoFollow();
+                                },
+                              ),
+                          ],
                         ),
                       ),
                     );
@@ -738,6 +1141,15 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   );
                 },
               ),
+            ),
+
+          // Bottom Panel - template-driven (Layer 8.5)
+          if (_activeLayoutConfig.bottom.isNotEmpty)
+            Positioned(
+              left: _showLeftPanel ? 320 : 0,
+              right: _showRightPanel ? 320 : 0,
+              bottom: 0,
+              child: _buildBottomPanel(),
             ),
 
           // AI Agent Panel - floating draggable assistant (Layer 9)
@@ -1136,41 +1548,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                   scrollDirection: Axis.horizontal,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Block Control Section (NEW - moved from left sidebar)
-                        SizedBox(
-                          width: 350,
-                          child: const BlockControlPanel(),
-                        ),
-
-                        const VerticalDivider(width: 16),
-
-                        // Canvas Theme Section
-                        _buildCanvasThemeSection(),
-
-                        const VerticalDivider(width: 16),
-
-                        // Points Control Section
-                        _buildTopPointsSection(controller),
-
-                        const VerticalDivider(width: 16),
-
-                        // Signal Control Section
-                        _buildTopSignalsSection(controller),
-
-                        const VerticalDivider(width: 16),
-
-                        // Train Control Section
-                        _buildTopTrainControls(controller),
-
-                        const VerticalDivider(width: 16),
-
-                        // Quick Actions Section
-                        _buildTopQuickActions(controller),
-                      ],
-                    ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _buildTopPanelSections(controller),
+                      ),
                   ),
                 ),
               ),
@@ -1204,6 +1585,148 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
         ),
       ],
     );
+  }
+
+  List<Widget> _buildTopPanelSections(
+      TerminalStationController controller) {
+    final sections = _activeLayoutConfig.top;
+    if (sections.isEmpty) {
+      return [const SizedBox.shrink()];
+    }
+    final widgets = <Widget>[];
+    for (var i = 0; i < sections.length; i++) {
+      widgets.add(_buildTopPanelSectionWidget(sections[i], controller));
+      if (i < sections.length - 1) {
+        widgets.add(const VerticalDivider(width: 16));
+      }
+    }
+    return widgets;
+  }
+
+  Widget _buildTopPanelSectionWidget(
+    _TopPanelSection section,
+    TerminalStationController controller,
+  ) {
+    switch (section) {
+      case _TopPanelSection.blockControl:
+        return SizedBox(width: 350, child: const BlockControlPanel());
+      case _TopPanelSection.canvasTheme:
+        return _buildCanvasThemeSection();
+      case _TopPanelSection.points:
+        return _buildTopPointsSection(controller);
+      case _TopPanelSection.signals:
+        return _buildTopSignalsSection(controller);
+      case _TopPanelSection.trainControls:
+        return _buildTopTrainControls(controller);
+      case _TopPanelSection.quickActions:
+        return _buildTopQuickActions(controller);
+    }
+  }
+
+  Widget _buildBottomPanel() {
+    final sections = _activeLayoutConfig.bottom;
+    return Container(
+      height: _bottomPanelHeight,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+            width: 2,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 6,
+            spreadRadius: 2,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Consumer<TerminalStationController>(
+        builder: (context, controller, _) {
+          return Column(
+            children: [
+              Container(
+                height: 16,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withOpacity(0.3),
+                    ),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Text(
+                      'Bottom Panel',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: _buildBottomPanelSections(controller, sections),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  List<Widget> _buildBottomPanelSections(
+    TerminalStationController controller,
+    List<_BottomPanelSection> sections,
+  ) {
+    final widgets = <Widget>[];
+    for (var i = 0; i < sections.length; i++) {
+      widgets.add(_buildBottomPanelSectionWidget(sections[i], controller));
+      if (i < sections.length - 1) {
+        widgets.add(const VerticalDivider(width: 16));
+      }
+    }
+    return widgets;
+  }
+
+  Widget _buildBottomPanelSectionWidget(
+    _BottomPanelSection section,
+    TerminalStationController controller,
+  ) {
+    switch (section) {
+      case _BottomPanelSection.runningTime:
+        return SizedBox(width: 220, child: _buildRunningTimeSection(controller));
+      case _BottomPanelSection.quickActions:
+        return SizedBox(width: 320, child: _buildQuickActionsSection(controller));
+      case _BottomPanelSection.trainControls:
+        return _buildTopTrainControls(controller);
+      case _BottomPanelSection.signals:
+        return _buildTopSignalsSection(controller);
+      case _BottomPanelSection.points:
+        return _buildTopPointsSection(controller);
+      case _BottomPanelSection.blockControl:
+        return SizedBox(width: 350, child: const BlockControlPanel());
+      case _BottomPanelSection.canvasTheme:
+        return _buildCanvasThemeSection();
+    }
   }
 
   // Canvas Theme Section
@@ -1926,1544 +2449,1231 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       ),
       child: Consumer<TerminalStationController>(
         builder: (context, controller, _) {
-          return ListView(
+          final sections = _activeLayoutConfig.left;
+          return ListView.separated(
             padding: const EdgeInsets.all(16),
-            children: [
-              // Simulation Controls
-              Text('Simulation',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
+            itemCount: sections.length,
+            itemBuilder: (context, index) =>
+                _buildControlPanelSection(sections[index], controller),
+            separatorBuilder: (_, __) => const Divider(height: 32),
+          );
+        },
+      ),
+    );
+  }
 
-              // Signal Visibility Toggle
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+
+  Widget _buildControlPanelSection(
+    _ControlPanelSection section,
+    TerminalStationController controller,
+  ) {
+    switch (section) {
+      case _ControlPanelSection.simulationSettings:
+        return _buildSimulationSettingsSection(controller);
+      case _ControlPanelSection.addTrain:
+        return _buildAddTrainSection(controller);
+      case _ControlPanelSection.timetable:
+        return _buildTimetableManagementPanel(controller);
+      case _ControlPanelSection.pointControl:
+        return _buildPointControlPanel(controller);
+      case _ControlPanelSection.wifiControl:
+        return _buildWiFiControlPanel(controller);
+      case _ControlPanelSection.axleCounters:
+        return _buildAxleCounterControlsSection(controller);
+      case _ControlPanelSection.abReset:
+        return _buildABResetSection(controller);
+      case _ControlPanelSection.trainSummary:
+        return _buildTrainSummarySection(controller);
+      case _ControlPanelSection.trainDetails:
+        return _buildTrainDetailsSection(controller);
+      case _ControlPanelSection.operationsAdvanced:
+        return _buildOperationsAdvancedSection(controller);
+      case _ControlPanelSection.canvasControls:
+        return _buildCanvasControlsSection();
+    }
+  }
+
+
+  Widget _buildSimulationSettingsSection(
+      TerminalStationController controller) {
+    final prefs = context.watch<WidgetPreferencesService>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Simulation',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.signalsVisible
+                      ? Icons.traffic
+                      : Icons.traffic_outlined,
+                  color: controller.signalsVisible ? Colors.green : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        controller.signalsVisible
-                            ? Icons.traffic
-                            : Icons.traffic_outlined,
-                        color: controller.signalsVisible
-                            ? Colors.green
-                            : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Signals',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              controller.signalsVisible ? 'Visible' : 'Hidden',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                      const Text(
+                        'Signals',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Switch(
-                        value: controller.signalsVisible,
-                        onChanged: (value) =>
-                            controller.toggleSignalsVisibility(),
-                        activeColor: Colors.green,
+                      Text(
+                        controller.signalsVisible ? 'Visible' : 'Hidden',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Grid Toggle
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+                Switch(
+                  value: controller.signalsVisible,
+                  onChanged: (value) => controller.toggleSignalsVisibility(),
+                  activeColor: Colors.green,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.gridVisible ? Icons.grid_on : Icons.grid_off,
+                  color: controller.gridVisible ? Colors.blue : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        controller.gridVisible ? Icons.grid_on : Icons.grid_off,
-                        color:
-                            controller.gridVisible ? Colors.blue : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Grid',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              controller.gridVisible ? 'Visible' : 'Hidden',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                      const Text(
+                        'Grid',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Switch(
-                        value: controller.gridVisible,
-                        onChanged: (value) => controller.toggleGrid(),
-                        activeColor: Colors.blue,
+                      Text(
+                        controller.gridVisible ? 'Visible' : 'Hidden',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Traction Current Toggle
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+                Switch(
+                  value: controller.gridVisible,
+                  onChanged: (value) => controller.toggleGrid(),
+                  activeColor: Colors.blue,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.tractionCurrentOn
+                      ? Icons.bolt
+                      : Icons.bolt_outlined,
+                  color:
+                      controller.tractionCurrentOn ? Colors.amber : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        controller.tractionCurrentOn
-                            ? Icons.bolt
-                            : Icons.bolt_outlined,
-                        color: controller.tractionCurrentOn
-                            ? Colors.amber
-                            : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Traction Current',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              controller.tractionCurrentOn ? 'ON' : 'OFF',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                      const Text(
+                        'Traction Current',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Switch(
-                        value: controller.tractionCurrentOn,
-                        onChanged: (value) =>
-                            controller.toggleTractionCurrent(),
-                        activeColor: Colors.amber,
+                      Text(
+                        controller.tractionCurrentOn ? 'ON' : 'OFF',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Tooltips Toggle
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+                Switch(
+                  value: controller.tractionCurrentOn,
+                  onChanged: (value) => controller.toggleTractionCurrent(),
+                  activeColor: Colors.amber,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.tooltipsEnabled ? Icons.info : Icons.info_outline,
+                  color: controller.tooltipsEnabled ? Colors.purple : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        controller.tooltipsEnabled
-                            ? Icons.info
-                            : Icons.info_outline,
-                        color: controller.tooltipsEnabled
-                            ? Colors.purple
-                            : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Tooltips',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              controller.tooltipsEnabled
-                                  ? 'Enabled'
-                                  : 'Disabled',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                      const Text(
+                        'Tooltips',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Switch(
-                        value: controller.tooltipsEnabled,
-                        onChanged: (value) => controller.toggleTooltips(),
-                        activeColor: Colors.purple,
+                      Text(
+                        controller.tooltipsEnabled ? 'Enabled' : 'Disabled',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // AI Agent Toggle
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+                Switch(
+                  value: controller.tooltipsEnabled,
+                  onChanged: (value) => controller.toggleTooltips(),
+                  activeColor: Colors.purple,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.aiAgentVisible
+                      ? Icons.smart_toy
+                      : Icons.smart_toy_outlined,
+                  color:
+                      controller.aiAgentVisible ? Colors.deepPurple : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        controller.aiAgentVisible
-                            ? Icons.smart_toy
-                            : Icons.smart_toy_outlined,
-                        color: controller.aiAgentVisible
-                            ? Colors.cyan
-                            : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'AI Agent',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              controller.aiAgentVisible ? 'Visible' : 'Hidden',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                      const Text(
+                        'AI Agent',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Switch(
-                        value: controller.aiAgentVisible,
-                        onChanged: (value) => controller.toggleAiAgent(),
-                        activeColor: Colors.cyan,
+                      Text(
+                        controller.aiAgentVisible ? 'Visible' : 'Hidden',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Relay Rack Toggle
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+                Switch(
+                  value: controller.aiAgentVisible,
+                  onChanged: (value) => controller.toggleAiAgent(),
+                  activeColor: Colors.deepPurple,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  controller.relayRackVisible
+                      ? Icons.storage
+                      : Icons.storage_outlined,
+                  color: controller.relayRackVisible ? Colors.teal : Colors.grey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        controller.relayRackVisible
-                            ? Icons.electrical_services
-                            : Icons.electrical_services_outlined,
-                        color: controller.relayRackVisible
-                            ? Colors.orange
-                            : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Relay Rack',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              controller.relayRackVisible
-                                  ? 'Visible'
-                                  : 'Hidden',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                      const Text(
+                        'Relay Rack',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Switch(
-                        value: controller.relayRackVisible,
-                        onChanged: (value) => controller.toggleRelayRack(),
-                        activeColor: Colors.orange,
+                      Text(
+                        controller.relayRackVisible ? 'Visible' : 'Hidden',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Audio Toggle
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Icon(
-                        SoundService().isEnabled
-                            ? Icons.volume_up
-                            : Icons.volume_off,
-                        color: SoundService().isEnabled
-                            ? Colors.blue
-                            : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Audio',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              SoundService().isEnabled ? 'Unmuted' : 'Muted',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        value: SoundService().isEnabled,
-                        onChanged: (value) {
-                          setState(() {
-                            SoundService().setEnabled(value);
-                          });
-                        },
-                        activeColor: Colors.blue,
-                      ),
-                    ],
-                  ),
+                Switch(
+                  value: controller.relayRackVisible,
+                  onChanged: (value) => controller.toggleRelayRack(),
+                  activeColor: Colors.teal,
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Voice Wake Word Toggles
-              Consumer<WidgetPreferencesService>(
-                builder: (context, prefs, _) {
-                  return Column(
-                    children: [
-                      // Search Wake Word Toggle
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                prefs.searchWakeWordEnabled
-                                    ? Icons.search
-                                    : Icons.search_off,
-                                color: prefs.searchWakeWordEnabled
-                                    ? Colors.purple
-                                    : Colors.grey,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Search Wake Word',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      prefs.searchWakeWordEnabled
-                                          ? 'Say "search for"'
-                                          : 'Disabled',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Switch(
-                                value: prefs.searchWakeWordEnabled,
-                                onChanged: (value) =>
-                                    prefs.setSearchWakeWordEnabled(value),
-                                activeColor: Colors.purple,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // SSM Wake Word Toggle
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                prefs.ssmWakeWordEnabled
-                                    ? Icons.smart_toy
-                                    : Icons.smart_toy_outlined,
-                                color: prefs.ssmWakeWordEnabled
-                                    ? Colors.cyan
-                                    : Colors.grey,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'SSM Wake Word',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      prefs.ssmWakeWordEnabled
-                                          ? 'Say "SSM"'
-                                          : 'Disabled',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Switch(
-                                value: prefs.ssmWakeWordEnabled,
-                                onChanged: (value) =>
-                                    prefs.setSsmWakeWordEnabled(value),
-                                activeColor: Colors.cyan,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  );
-                },
-              ),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: controller.isRunning
-                          ? controller.pauseSimulation
-                          : controller.startSimulation,
-                      icon: Icon(controller.isRunning
-                          ? Icons.pause
-                          : Icons.play_arrow),
-                      label: Text(controller.isRunning ? 'Pause' : 'Start'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            controller.isRunning ? Colors.orange : Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Voice Commands',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.mic, color: Colors.green),
+                    const SizedBox(width: 8),
+                    const Expanded(child: Text('Search Wake Word')),
+                    Switch(
+                      value: prefs.searchWakeWordEnabled,
+                      onChanged: (value) =>
+                          prefs.setSearchWakeWordEnabled(value),
+                      activeColor: Colors.green,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.stop),
-                    color: Colors.red,
-                    onPressed: controller.resetSimulation,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text('Speed: ${controller.simulationSpeed.toStringAsFixed(1)}x'),
-              Slider(
-                value: controller.simulationSpeed,
-                min: 0.1,
-                max: 3.0,
-                onChanged: controller.setSimulationSpeed,
-              ),
-
-              // Self-normalizing points toggle
-              Row(
-                children: [
-                  const Text('Self-normalizing Points:'),
-                  const Spacer(),
-                  Switch(
-                    value: controller.selfNormalizingPoints,
-                    onChanged: (value) =>
-                        controller.toggleSelfNormalizingPoints(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Timetable toggle
-              Card(
-                color: controller.timetableActive ? Colors.green[50] : null,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        color: controller.timetableActive
-                            ? Colors.green
-                            : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Auto Timetable Service',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              controller.timetableActive
-                                  ? 'Active - Trains auto-dispatch'
-                                  : 'Inactive',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        value: controller.timetableActive,
-                        onChanged: (value) =>
-                            controller.toggleTimetableActive(),
-                        activeColor: Colors.green,
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // FIXED: CBTC Controls Section
-              Text('CBTC (Communications-Based Train Control)',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      // CBTC Device toggle
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.radio,
-                            color: controller.cbtcDevicesEnabled
-                                ? Colors.blue
-                                : Colors.grey,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'CBTC Devices',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  controller.cbtcDevicesEnabled
-                                      ? 'Enabled (Transponders + WiFi)'
-                                      : 'Disabled',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: controller.cbtcDevicesEnabled,
-                            onChanged: (value) =>
-                                controller.toggleCbtcDevices(value),
-                            activeColor: Colors.blue,
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      // CBTC Mode toggle
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.settings_input_antenna,
-                            color: controller.cbtcModeActive
-                                ? Colors.green
-                                : Colors.grey,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'CBTC Mode (Moving Block)',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  controller.cbtcModeActive
-                                      ? 'Active - Signals Blue'
-                                      : 'Inactive - Fixed Block',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: controller.cbtcModeActive,
-                            onChanged: controller.cbtcDevicesEnabled
-                                ? (value) => controller.toggleCbtcMode(value)
-                                : null,
-                            activeColor: Colors.green,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                Row(
+                  children: [
+                    const Icon(Icons.mic, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    const Expanded(child: Text('SSM Wake Word')),
+                    Switch(
+                      value: prefs.ssmWakeWordEnabled,
+                      onChanged: (value) => prefs.setSsmWakeWordEnabled(value),
+                      activeColor: Colors.blue,
+                    ),
+                  ],
                 ),
-              ),
-
-              const Divider(height: 32),
-
-              // Smart Train Addition
-              _buildAddTrainSection(controller),
-              const Divider(height: 32),
-
-              // Point Control Panel
-              _buildPointControlPanel(controller),
-              const Divider(height: 32),
-
-              // WiFi Control Panel
-              _buildWiFiControlPanel(controller),
-              const Divider(height: 32),
-
-              // Timetable Management Panel
-              _buildTimetableManagementPanel(controller),
-              const Divider(height: 32),
-
-              // Axle Counter Controls
-              _buildAxleCounterControlsSection(controller),
-              const Divider(height: 32),
-
-              // AB Reset Controls
-              _buildABResetSection(controller),
-              const Divider(height: 32),
-
-              // Enhanced Train Management Section
-              Text('Train Management',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-
-              // Simulation Timer
-              Card(
-                color: Colors.blue[50],
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      Text('Simulation Timer',
-                          style: TextStyle(
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text('Simulation Speed',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Slider(
+          value: controller.simulationSpeed,
+          min: 0.1,
+          max: 4.0,
+          divisions: 39,
+          label: '${controller.simulationSpeed.toStringAsFixed(1)}x',
+          onChanged: (value) {
+            controller.simulationSpeed = value;
+          },
+        ),
+        Text('Speed: ${controller.simulationSpeed.toStringAsFixed(1)}x'),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text('Self-normalizing Points:',
+                      style: TextStyle(fontSize: 14)),
+                ),
+                Switch(
+                  value: controller.selfNormalizingPoints,
+                  onChanged: (value) => controller.toggleSelfNormalizingPoints(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                const Expanded(
+                  child:
+                      Text('Timetable Service:', style: TextStyle(fontSize: 14)),
+                ),
+                Switch(
+                  value: controller.timetableActive,
+                  onChanged: (value) => controller.toggleTimetableActive(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text('CBTC (Communications-Based Train Control)',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      controller.cbtcDevicesEnabled
+                          ? Icons.settings_input_antenna
+                          : Icons.settings_input_antenna_outlined,
+                      color: controller.cbtcDevicesEnabled
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CBTC Devices',
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue[800])),
-                      const SizedBox(height: 8),
-                      Text(controller.getFormattedRunningTime(),
-                          style: const TextStyle(
-                              fontSize: 24,
+                            ),
+                          ),
+                          Text(
+                            controller.cbtcDevicesEnabled ? 'Active' : 'Inactive',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: controller.cbtcDevicesEnabled,
+                      onChanged: (value) => controller.toggleCbtcDevices(value),
+                      activeColor: Colors.green,
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                Row(
+                  children: [
+                    Icon(
+                      controller.cbtcModeActive
+                          ? Icons.network_check
+                          : Icons.network_locked,
+                      color: controller.cbtcModeActive
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CBTC Mode (Moving Block)',
+                            style: TextStyle(
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              fontFamily: 'monospace')),
-                      const SizedBox(height: 4),
-                      Text('Running Time',
-                          style:
-                              TextStyle(fontSize: 12, color: Colors.grey[600])),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Quick Train Actions
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Quick Actions',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: controller.trains.isNotEmpty
-                                ? () {
-                                    for (var train in controller.trains) {
-                                      if (train.controlMode ==
-                                          TrainControlMode.automatic) {
-                                        controller.departAutoTrain(train.id);
-                                      } else {
-                                        controller.departTrain(train.id);
-                                      }
-                                    }
-                                  }
-                                : null,
-                            icon: const Icon(Icons.play_arrow, size: 16),
-                            label: const Text('All Go'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
                             ),
                           ),
-                          ElevatedButton.icon(
-                            onPressed: controller.trains.isNotEmpty
-                                ? () {
-                                    for (var train in controller.trains) {
-                                      controller.stopTrain(train.id);
-                                    }
-                                  }
-                                : null,
-                            icon: const Icon(Icons.stop, size: 16),
-                            label: const Text('All Stop'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                            ),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: controller.trains.isNotEmpty
-                                ? () {
-                                    for (var train in controller.trains) {
-                                      if (train.emergencyBrake) {
-                                        controller
-                                            .resetTrainEmergencyBrake(train.id);
-                                      }
-                                    }
-                                  }
-                                : null,
-                            icon: const Icon(Icons.emergency, size: 16),
-                            label: const Text('Reset All E-Brake'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                            ),
+                          Text(
+                            controller.cbtcModeActive
+                                ? 'Active - Signals Blue'
+                                : 'Inactive - Fixed Block',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.grey[600]),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    Switch(
+                      value: controller.cbtcModeActive,
+                      onChanged: controller.cbtcDevicesEnabled
+                          ? (value) => controller.toggleCbtcMode(value)
+                          : null,
+                      activeColor: Colors.green,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-              // Train Statistics
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Train Statistics',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+  Widget _buildTrainSummarySection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Train Management',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Card(
+          color: Colors.blue[50],
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                Text('Simulation Timer',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[800])),
+                const SizedBox(height: 8),
+                Text(controller.getFormattedRunningTime(),
+                    style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace')),
+                const SizedBox(height: 4),
+                Text('Running Time',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Quick Actions',
+                    style:
+                        TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: controller.trains.isNotEmpty
+                          ? () {
+                              for (var train in controller.trains) {
+                                if (train.controlMode ==
+                                    TrainControlMode.automatic) {
+                                  controller.departAutoTrain(train.id);
+                                } else {
+                                  controller.departTrain(train.id);
+                                }
+                              }
+                            }
+                          : null,
+                      icon: const Icon(Icons.play_arrow, size: 16),
+                      label: const Text('All Go'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: controller.trains.isNotEmpty
+                          ? () {
+                              for (var train in controller.trains) {
+                                controller.stopTrain(train.id);
+                              }
+                            }
+                          : null,
+                      icon: const Icon(Icons.stop, size: 16),
+                      label: const Text('All Stop'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: controller.trains.isNotEmpty
+                          ? () {
+                              for (var train in controller.trains) {
+                                controller.resetTrainEmergencyBrake(train.id);
+                              }
+                            }
+                          : null,
+                      icon: const Icon(Icons.warning, size: 16),
+                      label: const Text('Reset All E-Brake'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Train Statistics',
+                    style:
+                        TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
                         children: [
-                          Text('Total Trains:', style: TextStyle(fontSize: 12)),
+                          const Text('Total Trains:',
+                              style: TextStyle(fontSize: 12)),
                           Text('${controller.trains.length}',
-                              style: TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold)),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                    Expanded(
+                      child: Column(
                         children: [
-                          Text('Auto Mode:', style: TextStyle(fontSize: 12)),
+                          const Text('Auto Mode:',
+                              style: TextStyle(fontSize: 12)),
                           Text(
                               '${controller.trains.where((t) => t.controlMode == TrainControlMode.automatic).length}',
-                              style: TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold)),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
                         children: [
-                          Text('Manual Mode:', style: TextStyle(fontSize: 12)),
+                          const Text('Manual Mode:',
+                              style: TextStyle(fontSize: 12)),
                           Text(
                               '${controller.trains.where((t) => t.controlMode == TrainControlMode.manual).length}',
-                              style: TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold)),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                    Expanded(
+                      child: Column(
                         children: [
-                          Text('Moving:', style: TextStyle(fontSize: 12)),
+                          const Text('Moving:',
+                              style: TextStyle(fontSize: 12)),
                           Text(
-                              '${controller.trains.where((t) => t.speed > 0).length}',
-                              style: TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold)),
+                              '${controller.trains.where((t) => t.speed.abs() > 0.01).length}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
                         children: [
-                          Text('Stopped:', style: TextStyle(fontSize: 12)),
+                          const Text('Stopped:',
+                              style: TextStyle(fontSize: 12)),
                           Text(
-                              '${controller.trains.where((t) => t.speed == 0).length}',
-                              style: TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold)),
+                              '${controller.trains.where((t) => t.speed.abs() <= 0.01).length}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                    Expanded(
+                      child: Column(
                         children: [
-                          Text('Emergency Brake:',
+                          const Text('Emergency Brake:',
                               style: TextStyle(fontSize: 12)),
                           Text(
                               '${controller.trains.where((t) => t.emergencyBrake).length}',
-                              style: TextStyle(
-                                  fontSize: 12,
+                              style: const TextStyle(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.red)),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-              // Individual Train Controls
-              Text('Individual Train Controls',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
 
-              ...controller.trains.map((train) => Card(
-                    color: train.controlMode == TrainControlMode.manual
-                        ? Colors.blue.shade50
-                        : Colors.green.shade50,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Train Header
+  Widget _buildTrainDetailsSection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Individual Train Controls',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        ...controller.trains.map((train) {
+          final isMoving = train.speed.abs() > 0.01;
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                    Row(
+                      children: [
+                        Icon(
+                          train.controlMode == TrainControlMode.manual
+                              ? Icons.train
+                              : Icons.settings,
+                          color: train.controlMode == TrainControlMode.manual
+                              ? Colors.blue
+                              : Colors.green,
+                        ),
+                        const SizedBox(width: 8),
+                        Text('Train ${train.id}',
+                            style: const TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.bold)),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: train.controlMode == TrainControlMode.manual
+                                ? Colors.blue
+                                : Colors.green,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            train.controlMode == TrainControlMode.manual
+                                ? 'MANUAL'
+                                : 'AUTO',
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Speed: ${train.speed.toStringAsFixed(1)}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Pos: ${train.x.toStringAsFixed(0)}, ${train.y.toStringAsFixed(0)}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        if (train.emergencyBrake)
+                          const Icon(Icons.warning,
+                              size: 16, color: Colors.red),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('Type: ',
+                                style: TextStyle(fontSize: 12)),
+                            DropdownButton<TrainType>(
+                              value: train.trainType,
+                              onChanged: (newType) {
+                                if (newType != null) {
+                                  controller.updateTrainType(train.id, newType);
+                                }
+                              },
+                              items: TrainType.values.map((type) {
+                                return DropdownMenuItem(
+                                  value: type,
+                                  child: Text(type
+                                      .toString()
+                                      .split('.')
+                                      .last
+                                      .toUpperCase()),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        if (controller.cbtcModeActive)
                           Row(
                             children: [
-                              Container(
-                                width: 16,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  color: train.color,
-                                  shape: BoxShape.circle,
-                                ),
+                              const Text('CBTC Mode: ',
+                                  style: TextStyle(fontSize: 12)),
+                              DropdownButton<TrainControlMode>(
+                                value: train.controlMode,
+                                onChanged: (newMode) {
+                                  if (newMode != null) {
+                                    train.controlMode = newMode;
+                                    controller.notifyListeners();
+                                  }
+                                },
+                                items: TrainControlMode.values.map((mode) {
+                                  return DropdownMenuItem(
+                                    value: mode,
+                                    child: Text(mode
+                                        .toString()
+                                        .split('.')
+                                        .last
+                                        .toUpperCase()),
+                                  );
+                                }).toList(),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  train.name,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              Icon(
-                                train.direction > 0
-                                    ? Icons.arrow_forward
-                                    : Icons.arrow_back,
-                                size: 16,
-                                color: train.direction > 0
-                                    ? Colors.green
-                                    : Colors.orange,
-                              ),
-                              const SizedBox(width: 4),
-                              if (train.emergencyBrake)
-                                Icon(Icons.emergency,
-                                    size: 16, color: Colors.red),
-                              if (train.doorsOpen)
-                                Icon(Icons.door_sliding,
-                                    size: 16, color: Colors.orange),
                             ],
                           ),
-                          const SizedBox(height: 8),
-
-                          // Train Status Info
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                        'Block: ${train.currentBlockId ?? "N/A"}',
-                                        style: const TextStyle(fontSize: 11)),
-                                    Text(
-                                        'Speed: ${train.speed.toStringAsFixed(1)}',
-                                        style: const TextStyle(fontSize: 11)),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: train.controlMode ==
-                                          TrainControlMode.manual
-                                      ? Colors.blue
-                                      : Colors.green,
-                                  borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text('Dest: ',
+                                style: TextStyle(fontSize: 12)),
+                            DropdownButton<String?>(
+                              value: train.smcDestination,
+                              onChanged: (newDest) {
+                                controller.setTrainDestination(
+                                    train.id, newDest);
+                              },
+                              hint: const Text('Set destination',
+                                  style: TextStyle(fontSize: 11)),
+                              items: [
+                                const DropdownMenuItem(
+                                    value: null, child: Text('None')),
+                                ...controller.blocks.keys.map((blockId) {
+                                  return DropdownMenuItem(
+                                    value: blockId,
+                                    child: Text('Block $blockId'),
+                                  );
+                                }).toList(),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  train.controlMode =
+                                      train.controlMode ==
+                                              TrainControlMode.manual
+                                          ? TrainControlMode.automatic
+                                          : TrainControlMode.manual;
+                                  controller.notifyListeners();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      train.controlMode ==
+                                              TrainControlMode.manual
+                                          ? Colors.blue
+                                          : Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 6),
                                 ),
                                 child: Text(
                                   train.controlMode == TrainControlMode.manual
-                                      ? 'MANUAL'
-                                      : 'AUTO',
-                                  style: const TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
+                                      ? 'Manual'
+                                      : 'Auto',
+                                  style: const TextStyle(fontSize: 11),
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Enhanced Train Controls Section
-                          // Train Type Selector
-                          Row(
-                            children: [
-                              const Text('Type: ',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold)),
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: DropdownButton<TrainType>(
-                                    value: train.trainType,
-                                    isExpanded: true,
-                                    underline: const SizedBox(),
-                                    style: const TextStyle(
-                                        fontSize: 11, color: Colors.black),
-                                    items: TrainType.values.map((type) {
-                                      return DropdownMenuItem(
-                                        value: type,
-                                        child: Text(_getTrainTypeName(type)),
-                                      );
-                                    }).toList(),
-                                    onChanged: (newType) {
-                                      if (newType != null) {
-                                        controller.updateTrainType(
-                                            train.id, newType);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-
-                          // CBTC Mode Selector (only for CBTC trains)
-                          if (train.isCbtcTrain) ...[
-                            Row(
-                              children: [
-                                const Text('CBTC Mode: ',
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold)),
-                                Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: _getCbtcModeColor(train.cbtcMode)
-                                          .withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: DropdownButton<CbtcMode>(
-                                      value: train.cbtcMode,
-                                      isExpanded: true,
-                                      underline: const SizedBox(),
-                                      style: const TextStyle(
-                                          fontSize: 11, color: Colors.black),
-                                      items: CbtcMode.values.map((mode) {
-                                        return DropdownMenuItem(
-                                          value: mode,
-                                          child: Text(_getCbtcModeName(mode)),
-                                        );
-                                      }).toList(),
-                                      onChanged: (newMode) {
-                                        if (newMode != null) {
-                                          controller.updateTrainCbtcMode(
-                                              train.id, newMode);
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
-                            const SizedBox(height: 8),
-                          ],
-
-                          // Destination Control
-                          Row(
-                            children: [
-                              const Text('Dest: ',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 4),
+                            if (train.controlMode ==
+                                TrainControlMode.automatic)
                               Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue[50],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: DropdownButton<String>(
-                                    value: train.smcDestination,
-                                    isExpanded: true,
-                                    underline: const SizedBox(),
-                                    hint: const Text('Set destination',
-                                        style: TextStyle(fontSize: 11)),
-                                    style: const TextStyle(
-                                        fontSize: 11, color: Colors.black),
-                                    items: [
-                                      const DropdownMenuItem(
-                                        value: null,
-                                        child: Text('None'),
-                                      ),
-                                      ..._getDestinationOptions(),
-                                    ],
-                                    onChanged: (destination) {
-                                      controller.setTrainDestination(
-                                          train.id, destination);
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Control Buttons - Row 1: Mode and Movement
-                          Row(
-                            children: [
-                              // Mode Toggle
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () =>
-                                      controller.toggleTrainMode(train.id),
-                                  icon: Icon(
-                                    train.controlMode == TrainControlMode.manual
-                                        ? Icons.smart_toy
-                                        : Icons.gamepad,
-                                    size: 14,
-                                  ),
-                                  label: Text(
-                                    train.controlMode == TrainControlMode.manual
-                                        ? 'Auto'
-                                        : 'Manual',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
+                                child: ElevatedButton(
+                                  onPressed: isMoving
+                                      ? () => controller.stopTrain(train.id)
+                                      : () => controller.departAutoTrain(train.id),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: train.controlMode ==
-                                            TrainControlMode.manual
-                                        ? Colors.blue
-                                        : Colors.green,
+                                    backgroundColor:
+                                        isMoving ? Colors.red : Colors.green,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 4, vertical: 6),
                                   ),
+                                  child: Text(isMoving ? 'Stop' : 'Go',
+                                      style: const TextStyle(fontSize: 11)),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-
-                              // Movement Controls
-                              if (train.controlMode ==
-                                  TrainControlMode.automatic) ...[
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () =>
-                                        controller.departAutoTrain(train.id),
-                                    icon:
-                                        const Icon(Icons.play_arrow, size: 14),
-                                    label: const Text('Go',
-                                        style: TextStyle(fontSize: 11)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 6),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () => controller
-                                        .emergencyBrakeAutoTrain(train.id),
-                                    icon: const Icon(Icons.emergency, size: 14),
-                                    label: const Text('E-Stop',
-                                        style: TextStyle(fontSize: 11)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 6),
-                                    ),
-                                  ),
-                                ),
-                              ] else ...[
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () =>
-                                        controller.departTrain(train.id),
-                                    icon:
-                                        const Icon(Icons.play_arrow, size: 14),
-                                    label: const Text('Go',
-                                        style: TextStyle(fontSize: 11)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 6),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () =>
-                                        controller.stopTrain(train.id),
-                                    icon: const Icon(Icons.stop, size: 14),
-                                    label: const Text('Stop',
-                                        style: TextStyle(fontSize: 11)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 6),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Control Buttons - Row 2: Additional Controls
-                          Row(
-                            children: [
-                              // Door Control
+                              )
+                            else
                               Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: _getPlatformForTrain(train) != null
-                                      ? () =>
-                                          controller.toggleTrainDoors(train.id)
-                                      : null,
-                                  icon: Icon(
-                                    train.doorsOpen
-                                        ? Icons.door_sliding
-                                        : Icons.door_front_door,
-                                    size: 14,
-                                  ),
-                                  label: Text(
-                                    train.doorsOpen ? 'Close' : 'Open',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
+                                child: ElevatedButton(
+                                  onPressed: isMoving
+                                      ? () => controller.stopTrain(train.id)
+                                      : () => controller.departTrain(train.id),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: train.doorsOpen
-                                        ? Colors.orange
-                                        : Colors.purple,
+                                    backgroundColor:
+                                        isMoving ? Colors.red : Colors.green,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 4, vertical: 6),
                                   ),
+                                  child: Text(isMoving ? 'Stop' : 'Go',
+                                      style: const TextStyle(fontSize: 11)),
                                 ),
                               ),
-                              const SizedBox(width: 4),
-
-                              // Reverse
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () =>
-                                      controller.reverseTrain(train.id),
-                                  icon: const Icon(Icons.swap_horiz, size: 14),
-                                  label: const Text('Reverse',
-                                      style: TextStyle(fontSize: 11)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 4, vertical: 6),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-
-                              // Emergency Brake Reset
-                              if (train.emergencyBrake)
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () => controller
-                                        .resetTrainEmergencyBrake(train.id),
-                                    icon: const Icon(Icons.emergency, size: 14),
-                                    label: const Text('Reset',
-                                        style: TextStyle(fontSize: 11)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 6),
-                                    ),
-                                  ),
-                                )
-                              else
-                                const Expanded(child: SizedBox()),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Control Buttons - Row 3: Delete
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () =>
-                                      controller.removeTrain(train.id),
-                                  icon: const Icon(Icons.delete,
-                                      size: 14, color: Colors.red),
-                                  label: const Text('Remove Train',
-                                      style: TextStyle(
-                                          fontSize: 11, color: Colors.red)),
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Colors.red),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 4, vertical: 6),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  )),
-              const Divider(height: 32),
-
-              // Points Control
-              Text('Points Control',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              ...controller.points.entries.map((entry) {
-                final point = entry.value;
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: point.position == PointPosition.normal
-                                    ? Colors.red
-                                    : Colors.green,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(point.id,
-                                style: const TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
-                            const Spacer(),
-                            Icon(
-                              point.locked ? Icons.lock : Icons.lock_open,
-                              size: 16,
-                              color: point.locked ? Colors.red : Colors.green,
-                            ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () =>
-                                    controller.togglePointLock(point.id),
-                                child: Text(point.locked ? 'UNLOCK' : 'LOCK'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: point.locked
-                                    ? null
-                                    : () {
-                                        // Manual point control
-                                        final newPosition = point.position ==
-                                                PointPosition.normal
-                                            ? PointPosition.reverse
-                                            : PointPosition.normal;
-                                        point.position = newPosition;
-                                        controller.notifyListeners();
-                                      },
+                                onPressed: () =>
+                                    controller.toggleTrainDoors(train.id),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: train.doorsOpen
+                                      ? Colors.orange
+                                      : Colors.blueGrey,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 6),
+                                ),
                                 child: Text(
-                                    point.position == PointPosition.normal
-                                        ? 'REVERSE'
-                                        : 'NORMAL'),
+                                    train.doorsOpen ? 'Close' : 'Doors',
+                                    style: const TextStyle(fontSize: 11)),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => controller.reverseTrain(train.id),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.purple,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 6),
+                                ),
+                                child: const Text('Reverse',
+                                    style: TextStyle(fontSize: 11)),
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-              const Divider(height: 32),
-              _buildTrainStopControls(controller),
-
-              // Route Setting Controls
-              Text('Route Setting',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              ...controller.signals.entries.map((entry) {
-                final signal = entry.value;
-                if (signal.routes.isEmpty) return const SizedBox.shrink();
-
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                        const SizedBox(height: 6),
                         Row(
                           children: [
-                            Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: signal.aspect == SignalAspect.green
-                                    ? Colors.green
-                                    : Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(signal.id,
-                                style: const TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ...signal.routes.map((route) {
-                          final isActive = signal.activeRouteId == route.id;
-                          final isPendingCancellation =
-                              controller.isRoutePendingCancellation(signal.id);
-
-                          Color buttonColor;
-                          if (isPendingCancellation) {
-                            buttonColor = Colors.yellow[700]!;
-                          } else if (isActive) {
-                            buttonColor = Colors.blue.shade100;
-                          } else {
-                            buttonColor = Colors.orange;
-                          }
-
-                          return InkWell(
-                            onTap: isActive
-                                ? () => controller.cancelRoute(signal.id)
-                                : () =>
-                                    controller.setRoute(signal.id, route.id),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 4),
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: buttonColor,
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(
-                                  color: isActive
-                                      ? Colors.blue
-                                      : Colors.transparent,
-                                  width: 2,
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => controller.removeTrain(train.id),
+                                icon: const Icon(Icons.delete,
+                                    size: 14, color: Colors.red),
+                                label: const Text('Remove Train',
+                                    style: TextStyle(
+                                        fontSize: 11, color: Colors.red)),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Colors.red),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 6),
                                 ),
                               ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      route.name,
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          color: isPendingCancellation
-                                              ? Colors.brown[900]
-                                              : isActive
-                                                  ? Colors.blue
-                                                  : Colors.brown[900]),
-                                    ),
-                                  ),
-                                  if (isPendingCancellation)
-                                    const Icon(Icons.access_time,
-                                        size: 12, color: Colors.brown),
-                                ],
-                              ),
                             ),
-                          );
-                        }),
+                          ],
+                        ),
                       ],
                     ),
-                  ),
-                );
-              }),
-
-              const Divider(height: 32),
-
-              // Camera Controls
-              Text('View',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => setState(() => _cameraOffsetX += 200),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('←'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => setState(() => _cameraOffsetX -= 200),
-                      icon: const Icon(Icons.arrow_forward),
-                      label: const Text('→'),
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _zoomIn,
-                      icon: const Icon(Icons.zoom_in),
-                      label: const Text('+'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _zoomOut,
-                      icon: const Icon(Icons.zoom_out),
-                      label: const Text('-'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Export Layout Button
-              ElevatedButton.icon(
-                onPressed: () => _exportLayout(controller),
-                icon: const Icon(Icons.download),
-                label: const Text('Export Layout XML'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
+            ),
           );
-        },
-      ),
+        }),
+      ],
+    );
+  }
+
+
+  Widget _buildOperationsAdvancedSection(
+      TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Points Control',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        ...controller.points.entries.map((entry) {
+          final point = entry.value;
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: point.position == PointPosition.normal
+                              ? Colors.red
+                              : Colors.green,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(point.id,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      Icon(
+                        point.locked ? Icons.lock : Icons.lock_open,
+                        size: 16,
+                        color: point.locked ? Colors.red : Colors.green,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => controller.togglePointLock(point.id),
+                          child: Text(point.locked ? 'UNLOCK' : 'LOCK'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: point.locked
+                              ? null
+                              : () {
+                                  final newPosition =
+                                      point.position == PointPosition.normal
+                                          ? PointPosition.reverse
+                                          : PointPosition.normal;
+                                  point.position = newPosition;
+                                  controller.notifyListeners();
+                                },
+                          child: Text(point.position == PointPosition.normal
+                              ? 'REVERSE'
+                              : 'NORMAL'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 16),
+        _buildTrainStopControls(controller),
+        const SizedBox(height: 16),
+        Text('Route Setting',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        ...controller.signals.entries.map((entry) {
+          final signal = entry.value;
+          if (signal.routes.isEmpty) return const SizedBox.shrink();
+
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: signal.aspect == SignalAspect.green
+                              ? Colors.green
+                              : Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(signal.id,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ...signal.routes.map((route) {
+                    final isActive = signal.activeRouteId == route.id;
+                    final isPendingCancellation =
+                        controller.isRoutePendingCancellation(signal.id);
+
+                    Color buttonColor;
+                    if (isPendingCancellation) {
+                      buttonColor = Colors.yellow[700]!;
+                    } else if (isActive) {
+                      buttonColor = Colors.blue.shade100;
+                    } else {
+                      buttonColor = Colors.orange;
+                    }
+
+                    return InkWell(
+                      onTap: isActive
+                          ? () => controller.cancelRoute(signal.id)
+                          : () => controller.setRoute(signal.id, route.id),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: buttonColor,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: isActive ? Colors.blue : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                route.name,
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: isPendingCancellation
+                                        ? Colors.brown[900]
+                                        : isActive
+                                            ? Colors.blue
+                                            : Colors.brown[900]),
+                              ),
+                            ),
+                            if (isPendingCancellation)
+                              const Icon(Icons.access_time,
+                                  size: 12, color: Colors.brown),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 16),
+        Text('View',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => setState(() => _cameraOffsetX += 200),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Left'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => setState(() => _cameraOffsetX -= 200),
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Right'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _zoomIn,
+                icon: const Icon(Icons.zoom_in),
+                label: const Text('+'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _zoomOut,
+                icon: const Icon(Icons.zoom_out),
+                label: const Text('-'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () => _exportLayout(controller),
+          icon: const Icon(Icons.download),
+          label: const Text('Export Layout XML'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 
@@ -4404,7 +4614,17 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                       _marqueeEnd = details.localPosition;
                     });
                   }
-                  // CRITICAL: Do NOT pan canvas in edit mode - use scrollbars instead
+                  // Edit mode: pan canvas when not manipulating components/selection
+                  if (!controller.isResizingPlatform &&
+                      !_isDraggingComponent &&
+                      !_isDrawingMarquee &&
+                      controller.selectionMode == SelectionMode.pointer) {
+                    _controller.updateCameraPosition(
+                      _controller.cameraOffsetX + details.delta.dx / _controller.cameraZoom,
+                      _controller.cameraOffsetY + details.delta.dy / _controller.cameraZoom,
+                      _controller.cameraZoom,
+                    );
+                  }
                 } else {
                   // NORMAL MODE: Pan the camera (edit mode off)
                   _controller.updateCameraPosition(
@@ -4659,20 +4879,20 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       }
     }
 
-    // Check blocks (rectangular hit detection)
+    // Check blocks (projection-based hit detection)
     for (final block in controller.blocks.values) {
-      if (canvasX >= block.startX && canvasX <= block.endX) {
-        final distance = (block.y - canvasY).abs();
-        if (distance < _hitRadiusBlock && distance < minDistance) {
-          minDistance = distance;
-          closest = {
-            'type': 'Block',
-            'id': block.id,
-            'x': (block.startX + block.endX) / 2,
-            'y': block.y,
-            'occupied': block.occupied ? 'Yes' : 'No',
-          };
-        }
+      final projected =
+          block.projectPosition(Offset(canvasX, canvasY));
+      final distance = (projected - Offset(canvasX, canvasY)).distance;
+      if (distance < _hitRadiusBlock && distance < minDistance) {
+        minDistance = distance;
+        closest = {
+          'type': 'Block',
+          'id': block.id,
+          'x': block.centerX,
+          'y': block.centerY,
+          'occupied': block.occupied ? 'Yes' : 'No',
+        };
       }
     }
 
@@ -4828,9 +5048,10 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       case 'block':
         final block = controller.blocks[id];
         if (block != null) {
-          return canvasX >= block.startX &&
-              canvasX <= block.endX &&
-              (canvasY - block.y).abs() < _hitRadiusBlock;
+          final projected =
+              block.projectPosition(Offset(canvasX, canvasY));
+          return (projected - Offset(canvasX, canvasY)).distance <
+              _hitRadiusBlock;
         }
         break;
       case 'train':
@@ -5118,23 +5339,19 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
       child: Consumer<TerminalStationController>(
         builder: (context, controller, _) {
           final stats = controller.getStats();
-
-          // Calculate viewport dimensions for search navigation
           final screenSize = MediaQuery.of(context).size;
           final leftPanelWidth = _showLeftPanel ? 320.0 : 0.0;
           final rightPanelWidth = _showRightPanel ? 320.0 : 0.0;
           final viewportWidth = screenSize.width - leftPanelWidth - rightPanelWidth;
           final viewportHeight = screenSize.height - kToolbarHeight;
+          final sections = _activeLayoutConfig.right;
 
           return Column(
             children: [
-              // Search Bar at the top with viewport dimensions for navigation
               RailwaySearchBarEnhanced(
                 viewportWidth: viewportWidth,
                 viewportHeight: viewportHeight,
               ),
-
-              // Mini Map
               if (_controller.miniMapVisible)
                 MiniMapWidgetEnhanced(
                   canvasWidth: _canvasWidth,
@@ -5154,729 +5371,748 @@ class _TerminalStationScreenState extends State<TerminalStationScreen>
                     _controller.disableAutoFollow();
                   },
                 ),
-
-              // Dot Matrix Display - relocated under minimap
               if (_controller.dotMatrixDisplayVisible)
                 Container(
                   width: 280,
-                  height: 300, // Optimized height for better readability
+                  height: 300,
                   margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: const DotMatrixDisplay(),
                 ),
-
-              // Rest of the status panel content
               Expanded(
-                child: ListView(
+                child: ListView.separated(
                   padding: const EdgeInsets.all(16),
-                  children: [
-                    // Simulation Running Time
-                    Card(
-                      color: Colors.blue[50],
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          children: [
-                            Text('Simulation Running',
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800])),
-                            const SizedBox(height: 8),
-                            Text(controller.getFormattedRunningTime(),
-                                style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'monospace')),
-                            const SizedBox(height: 4),
-                            Text('HH:MM:SS',
-                                style: TextStyle(
-                                    fontSize: 10, color: Colors.grey[600])),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Axle Counter Evaluator (ACE) Section
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Text('Axle Counter Evaluator (ACE)',
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold)),
-                                const Spacer(),
-                                ElevatedButton(
-                                  onPressed: () => controller.resetACE(),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                    minimumSize: const Size(0, 30),
-                                  ),
-                                  child: const Text('Reset ACE',
-                                      style: TextStyle(fontSize: 12)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-
-                            // Axle Counter Results
-                            const Text('Axle Counter Results:',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children:
-                                  controller.axleCounters.entries.map((entry) {
-                                final counter = entry.value;
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(4),
-                                    border:
-                                        Border.all(color: Colors.grey[300]!),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(counter.id,
-                                          style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold)),
-                                      Text('${counter.count}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: counter.count != 0
-                                                ? Colors.purple
-                                                : Colors.grey,
-                                          )),
-                                      if (counter.lastDirection.isNotEmpty)
-                                        Text(counter.lastDirection,
-                                            style: TextStyle(
-                                              fontSize: 8,
-                                              color: Colors.grey[600],
-                                            )),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // AB Results - ALL 10 COMPREHENSIVE ABs
-                            const Text('AB Occupation Results (All 10 ABs):',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            ...['AB100', 'AB101', 'AB104', 'AB105', 'AB106', 'AB107', 'AB108', 'AB109', 'AB111', 'AB112']
-                                .map((abId) {
-                              final isOccupied =
-                                  controller.ace.isABOccupied(abId);
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 4),
-                                color: isOccupied
-                                    ? Colors.purple[50]
-                                    : Colors.grey[50],
-                                child: ListTile(
-                                  dense: true,
-                                  title: Text(abId,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: isOccupied
-                                            ? Colors.purple
-                                            : Colors.grey,
-                                      )),
-                                  subtitle: Text(
-                                      isOccupied ? 'OCCUPIED' : 'UNOCCUPIED',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: isOccupied
-                                            ? Colors.purple
-                                            : Colors.green,
-                                        fontWeight: FontWeight.bold,
-                                      )),
-                                  trailing: Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: BoxDecoration(
-                                      color: isOccupied
-                                          ? Colors.purple
-                                          : Colors.green,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    Text('Status',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    _buildStatusCard(
-                        'Trains', '${stats['trains']}', Colors.blue),
-                    _buildStatusCard('Occupied Blocks',
-                        '${stats['occupied_blocks']}', Colors.orange),
-                    // Release Status
-                    _buildStatusCard(
-                        'Pending Cancellations',
-                        '${stats['pending_cancellations']}',
-                        stats['pending_cancellations'] > 0
-                            ? Colors.orange
-                            : Colors.grey),
-                    _buildStatusCard(
-                        'Release State',
-                        '${stats['release_state']}',
-                        stats['release_state'] == 'counting'
-                            ? Colors.orange
-                            : stats['release_state'] == 'completed'
-                                ? Colors.green
-                                : Colors.grey),
-                    if (stats['release_countdown'] > 0)
-                      _buildStatusCard('Release Countdown',
-                          '${stats['release_countdown']}s', Colors.orange),
-                    _buildStatusCard('Active Routes',
-                        '${stats['active_routes']}', Colors.green),
-                    _buildStatusCard('Route Reservations',
-                        '${stats['route_reservations']}', Colors.teal),
-                    _buildStatusCard(
-                        'Self-normalizing',
-                        stats['self_normalizing_points'] ? 'ON' : 'OFF',
-                        stats['self_normalizing_points']
-                            ? Colors.green
-                            : Colors.grey),
-                    _buildStatusCard(
-                        'Train Stops',
-                        stats['train_stops_enabled'] ? 'ENABLED' : 'DISABLED',
-                        stats['train_stops_enabled']
-                            ? Colors.red
-                            : Colors.grey),
-                    _buildStatusCard('Active Train Stops',
-                        '${stats['active_train_stops']}', Colors.orange),
-                    _buildStatusCard(
-                        'Signals',
-                        stats['signals_visible'] ? 'VISIBLE' : 'HIDDEN',
-                        stats['signals_visible'] ? Colors.green : Colors.grey),
-                    // AB Deadlock Status
-                    _buildStatusCard(
-                        'Point 78A Deadlocked',
-                        stats['point_78a_deadlocked'] ? 'YES' : 'NO',
-                        stats['point_78a_deadlocked']
-                            ? Colors.red
-                            : Colors.green),
-                    _buildStatusCard(
-                        'Point 78B Deadlocked',
-                        stats['point_78b_deadlocked'] ? 'YES' : 'NO',
-                        stats['point_78b_deadlocked']
-                            ? Colors.red
-                            : Colors.green),
-                    _buildStatusCard(
-                        'AB104 Occupied',
-                        stats['ab104_occupied'] ? 'YES' : 'NO',
-                        stats['ab104_occupied'] ? Colors.orange : Colors.green),
-                    _buildStatusCard(
-                        'AB106 Occupied',
-                        stats['ab106_occupied'] ? 'YES' : 'NO',
-                        stats['ab106_occupied']
-                            ? Colors.deepOrange
-                            : Colors.green),
-                    _buildStatusCard(
-                        'AB109 Occupied',
-                        stats['ab109_occupied'] ? 'YES' : 'NO',
-                        stats['ab109_occupied'] ? Colors.orange : Colors.green),
-                    const Divider(height: 32),
-
-                    // Layout Selector Dropdown
-                    const LayoutSelectorDropdown(),
-                    const Divider(height: 32),
-
-                    // Crossover Route Table
-                    CrossoverRouteTableTerminal(controller: controller),
-                    const Divider(height: 32),
-
-                    // Points Status
-                    Text('Points',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    ...controller.points.entries.map((entry) {
-                      final point = entry.value;
-                      final isDeadlocked = (point.id == '78A' &&
-                              stats['point_78a_deadlocked']) ||
-                          (point.id == '78B' && stats['point_78b_deadlocked']);
-                      final deadlockReason = point.id == '78A'
-                          ? (stats['ab106_occupied'] ? 'AB106' : 'AB104')
-                          : (stats['ab106_occupied'] ? 'AB106' : 'AB109');
-
-                      return Card(
-                        child: ListTile(
-                          dense: true,
-                          title: Row(
-                            children: [
-                              Text(point.id,
-                                  style: const TextStyle(fontSize: 13)),
-                              if (isDeadlocked) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: stats['ab106_occupied']
-                                        ? Colors.deepOrange
-                                        : Colors.red,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    deadlockReason,
-                                    style: const TextStyle(
-                                      fontSize: 8,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          subtitle: Text(
-                              '${point.position.name.toUpperCase()} '
-                              '${point.locked ? '(LOCKED)' : '(UNLOCKED)'} '
-                              '${isDeadlocked ? '🔒' : ''}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: isDeadlocked
-                                    ? (stats['ab106_occupied']
-                                        ? Colors.deepOrange
-                                        : Colors.red)
-                                    : Colors.black,
-                              )),
-                          trailing: Icon(
-                            point.locked ? Icons.lock : Icons.lock_open,
-                            size: 16,
-                            color: isDeadlocked
-                                ? (stats['ab106_occupied']
-                                    ? Colors.deepOrange
-                                    : Colors.red)
-                                : (point.locked ? Colors.red : Colors.green),
-                          ),
-                        ),
-                      );
-                    }),
-                    const Divider(height: 32),
-
-                    // Route Reservations
-                    Text('Active Reservations',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    ...controller.routeReservations.values.map((reservation) {
-                      final isPendingCancellation = controller
-                          .isRoutePendingCancellation(reservation.signalId);
-                      return Card(
-                        child: ListTile(
-                          dense: true,
-                          leading: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: isPendingCancellation
-                                  ? Colors.orange
-                                  : Colors.yellow,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          title: Text(
-                              '${reservation.signalId} → ${reservation.trainId.replaceAll('T', '').replaceAll('route_active', 'Active')}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isPendingCancellation
-                                    ? Colors.orange
-                                    : Colors.brown,
-                              )),
-                          subtitle: Text(
-                              'Blocks: ${reservation.reservedBlocks.join(', ')}',
-                              style: const TextStyle(fontSize: 10)),
-                          trailing: isPendingCancellation
-                              ? const Icon(Icons.access_time,
-                                  size: 16, color: Colors.orange)
-                              : null,
-                        ),
-                      );
-                    }),
-                    if (controller.routeReservations.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text('No active route reservations',
-                            style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      ),
-                    const Divider(height: 32),
-
-                    // Event Log
-                    Text('Event Log',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 200,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: ListView.builder(
-                        itemCount: controller.eventLog.length,
-                        itemBuilder: (context, index) {
-                          final event = controller.eventLog[index];
-                          Color textColor = Colors.greenAccent;
-
-                          // Color code events based on content
-                          if (event.contains('❌') ||
-                              event.contains('🚨') ||
-                              event.contains('💥')) {
-                            textColor = Colors.redAccent;
-                          } else if (event.contains('⚠️') ||
-                              event.contains('🟡')) {
-                            textColor = Colors.orangeAccent;
-                          } else if (event.contains('🔒') ||
-                              event.contains('🔓')) {
-                            textColor = Colors.blueAccent;
-                          } else if (event.contains('🔄') ||
-                              event.contains('🔧')) {
-                            textColor = Colors.yellowAccent;
-                          } else if (event.contains('✅') ||
-                              event.contains('🎉')) {
-                            textColor = Colors.greenAccent;
-                          } else if (event.contains('🔢')) {
-                            textColor = Colors.purpleAccent;
-                          }
-
-                          return Text(
-                            event,
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: textColor,
-                                fontFamily: 'monospace'),
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Current Time and Date
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          children: [
-                            Text(
-                              controller.getCurrentTime(),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              controller.getCurrentDate(),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            // Simulation Running Time
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[50],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Simulation Running Time',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    controller.getFormattedRunningTime(),
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'monospace',
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Quick Actions Section
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Quick Actions',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                // Signal Visibility Toggle
-                                ElevatedButton.icon(
-                                  onPressed: () =>
-                                      controller.toggleSignalsVisibility(),
-                                  icon: Icon(
-                                    controller.signalsVisible
-                                        ? Icons.traffic
-                                        : Icons.traffic_outlined,
-                                    size: 16,
-                                  ),
-                                  label: Text(
-                                    'Signals: ${controller.signalsVisible ? 'ON' : 'OFF'}',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: controller.signalsVisible
-                                        ? Colors.green
-                                        : Colors.grey,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                  ),
-                                ),
-
-                                // Axle Counter Visibility Toggle
-                                ElevatedButton.icon(
-                                  onPressed: () =>
-                                      controller.toggleAxleCounterVisibility(),
-                                  icon: Icon(
-                                    controller.axleCountersVisible
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
-                                    size: 16,
-                                  ),
-                                  label: Text(
-                                    'Axle Counters: ${controller.axleCountersVisible ? 'ON' : 'OFF'}',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        controller.axleCountersVisible
-                                            ? Colors.purple
-                                            : Colors.grey,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                  ),
-                                ),
-
-                                // Mini Map Visibility Toggle
-                                ElevatedButton.icon(
-                                  onPressed: () =>
-                                      controller.toggleMiniMapVisibility(),
-                                  icon: Icon(
-                                    controller.miniMapVisible
-                                        ? Icons.map
-                                        : Icons.map_outlined,
-                                    size: 16,
-                                  ),
-                                  label: Text(
-                                    'Mini Map: ${controller.miniMapVisible ? 'ON' : 'OFF'}',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        controller.miniMapVisible
-                                            ? Colors.blue
-                                            : Colors.grey,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                  ),
-                                ),
-
-                                // Dot Matrix Display Visibility Toggle
-                                ElevatedButton.icon(
-                                  onPressed: () =>
-                                      controller.toggleDotMatrixDisplayVisibility(),
-                                  icon: Icon(
-                                    controller.dotMatrixDisplayVisible
-                                        ? Icons.grid_on
-                                        : Icons.grid_off,
-                                    size: 16,
-                                  ),
-                                  label: Text(
-                                    'Train Info: ${controller.dotMatrixDisplayVisible ? 'ON' : 'OFF'}',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        controller.dotMatrixDisplayVisible
-                                            ? Colors.orange
-                                            : Colors.grey,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                  ),
-                                ),
-
-                                // Reset ACE
-                                ElevatedButton.icon(
-                                  onPressed: () => controller.resetACE(),
-                                  icon: const Icon(Icons.refresh, size: 16),
-                                  label: const Text(
-                                    'Reset ACE',
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                  ),
-                                ),
-
-                                // Reset Individual AB Sections
-                                PopupMenuButton<String>(
-                                  icon: const Icon(Icons.cleaning_services,
-                                      size: 16),
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: 'AB104',
-                                      child: Text('Reset AB104'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'AB106',
-                                      child: Text('Reset AB106'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'AB109',
-                                      child: Text('Reset AB109'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'AB111',
-                                      child: Text('Reset AB111'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'AB105',
-                                      child: Text('Reset AB105'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'AB100',
-                                      child: Text('Reset AB100'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'AB108',
-                                      child: Text('Reset AB108'),
-                                    ),
-                                  ],
-                                  onSelected: (abId) =>
-                                      controller.resetIndividualAB(abId),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.cleaning_services,
-                                            size: 16, color: Colors.white),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Reset AB',
-                                          style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.white),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-
-                                // Export Layout
-                                ElevatedButton.icon(
-                                  onPressed: () => _exportLayout(controller),
-                                  icon: const Icon(Icons.download, size: 16),
-                                  label: const Text(
-                                    'Export XML',
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Relay Rack Panel
-                    if (controller.relayRackVisible) const RelayRackPanel(),
-
-                    if (controller.relayRackVisible) const SizedBox(height: 16),
-                  ],
+                  itemCount: sections.length,
+                  itemBuilder: (context, index) => _buildStatusPanelSection(
+                    sections[index],
+                    controller,
+                    stats,
+                  ),
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+
+  Widget _buildStatusPanelSection(
+    _StatusPanelSection section,
+    TerminalStationController controller,
+    Map<String, dynamic> stats,
+  ) {
+    switch (section) {
+      case _StatusPanelSection.statusSummary:
+        return _buildStatusSummarySection(stats);
+      case _StatusPanelSection.runningTime:
+        return _buildRunningTimeSection(controller);
+      case _StatusPanelSection.axleCounterEvaluator:
+        return _buildAxleCounterEvaluatorSection(controller);
+      case _StatusPanelSection.abOccupation:
+        return _buildABOccupationSection(controller);
+      case _StatusPanelSection.layoutSelector:
+        return const LayoutSelectorDropdown();
+      case _StatusPanelSection.crossoverRoutes:
+        return CrossoverRouteTableTerminal(controller: controller);
+      case _StatusPanelSection.pointsStatus:
+        return _buildPointsStatusSection(controller, stats);
+      case _StatusPanelSection.routeReservations:
+        return _buildRouteReservationsSection(controller);
+      case _StatusPanelSection.eventLog:
+        return _buildEventLogSection(controller);
+      case _StatusPanelSection.timeAndDate:
+        return _buildTimeAndDateSection(controller);
+      case _StatusPanelSection.quickActions:
+        return _buildQuickActionsSection(controller);
+      case _StatusPanelSection.relayRack:
+        return _buildRelayRackSection(controller);
+    }
+  }
+
+  Widget _buildRunningTimeSection(TerminalStationController controller) {
+    return Card(
+      color: Colors.blue[50],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Text('Simulation Running',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[800])),
+            const SizedBox(height: 8),
+            Text(controller.getFormattedRunningTime(),
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace')),
+            const SizedBox(height: 4),
+            Text('HH:MM:SS',
+                style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAxleCounterEvaluatorSection(
+      TerminalStationController controller) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('Axle Counter Evaluator (ACE)',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: () => controller.resetACE(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(0, 30),
+                  ),
+                  child: const Text('Reset ACE', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text('Axle Counter Results:',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: controller.axleCounters.entries.map((entry) {
+                final counter = entry.value;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(counter.id,
+                          style: const TextStyle(
+                              fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text('${counter.count}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: counter.count != 0
+                                ? Colors.purple
+                                : Colors.grey,
+                          )),
+                      if (counter.lastDirection.isNotEmpty)
+                        Text(counter.lastDirection,
+                            style:
+                                TextStyle(fontSize: 8, color: Colors.grey[600])),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildABOccupationSection(TerminalStationController controller) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('AB Occupation Results (All 10 ABs):',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            ...[
+              'AB100',
+              'AB101',
+              'AB104',
+              'AB105',
+              'AB106',
+              'AB107',
+              'AB108',
+              'AB109',
+              'AB111',
+              'AB112'
+            ].map((abId) {
+              final isOccupied = controller.ace.isABOccupied(abId);
+              return Card(
+                margin: const EdgeInsets.only(bottom: 4),
+                color: isOccupied ? Colors.purple[50] : Colors.grey[50],
+                child: ListTile(
+                  dense: true,
+                  title: Text(abId,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isOccupied ? Colors.purple : Colors.grey,
+                      )),
+                  subtitle: Text(isOccupied ? 'OCCUPIED' : 'UNOCCUPIED',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isOccupied ? Colors.purple : Colors.green,
+                        fontWeight: FontWeight.bold,
+                      )),
+                  trailing: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: isOccupied ? Colors.purple : Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusSummarySection(Map<String, dynamic> stats) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Status',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        _buildStatusCard('Trains', '${stats['trains']}', Colors.blue),
+        _buildStatusCard(
+            'Occupied Blocks', '${stats['occupied_blocks']}', Colors.orange),
+        _buildStatusCard(
+            'Pending Cancellations',
+            '${stats['pending_cancellations']}',
+            stats['pending_cancellations'] > 0 ? Colors.orange : Colors.grey),
+        _buildStatusCard(
+            'Release State',
+            '${stats['release_state']}',
+            stats['release_state'] == 'counting'
+                ? Colors.orange
+                : stats['release_state'] == 'completed'
+                    ? Colors.green
+                    : Colors.grey),
+        if (stats['release_countdown'] > 0)
+          _buildStatusCard('Release Countdown',
+              '${stats['release_countdown']}s', Colors.orange),
+        _buildStatusCard(
+            'Active Routes', '${stats['active_routes']}', Colors.green),
+        _buildStatusCard('Route Reservations',
+            '${stats['route_reservations']}', Colors.teal),
+        _buildStatusCard(
+            'Self-normalizing',
+            stats['self_normalizing_points'] ? 'ON' : 'OFF',
+            stats['self_normalizing_points'] ? Colors.green : Colors.grey),
+        _buildStatusCard(
+            'Train Stops',
+            stats['train_stops_enabled'] ? 'ENABLED' : 'DISABLED',
+            stats['train_stops_enabled'] ? Colors.red : Colors.grey),
+        _buildStatusCard('Active Train Stops',
+            '${stats['active_train_stops']}', Colors.orange),
+        _buildStatusCard(
+            'Signals',
+            stats['signals_visible'] ? 'VISIBLE' : 'HIDDEN',
+            stats['signals_visible'] ? Colors.green : Colors.grey),
+        _buildStatusCard(
+            'Point 78A Deadlocked',
+            stats['point_78a_deadlocked'] ? 'YES' : 'NO',
+            stats['point_78a_deadlocked'] ? Colors.red : Colors.green),
+        _buildStatusCard(
+            'Point 78B Deadlocked',
+            stats['point_78b_deadlocked'] ? 'YES' : 'NO',
+            stats['point_78b_deadlocked'] ? Colors.red : Colors.green),
+        _buildStatusCard(
+            'AB104 Occupied',
+            stats['ab104_occupied'] ? 'YES' : 'NO',
+            stats['ab104_occupied'] ? Colors.orange : Colors.green),
+        _buildStatusCard(
+            'AB106 Occupied',
+            stats['ab106_occupied'] ? 'YES' : 'NO',
+            stats['ab106_occupied'] ? Colors.deepOrange : Colors.green),
+        _buildStatusCard(
+            'AB109 Occupied',
+            stats['ab109_occupied'] ? 'YES' : 'NO',
+            stats['ab109_occupied'] ? Colors.orange : Colors.green),
+      ],
+    );
+  }
+
+  Widget _buildPointsStatusSection(
+    TerminalStationController controller,
+    Map<String, dynamic> stats,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Points',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        ...controller.points.entries.map((entry) {
+          final point = entry.value;
+          final isDeadlocked =
+              (point.id == '78A' && stats['point_78a_deadlocked']) ||
+                  (point.id == '78B' && stats['point_78b_deadlocked']);
+          final deadlockReason = point.id == '78A'
+              ? (stats['ab106_occupied'] ? 'AB106' : 'AB104')
+              : (stats['ab106_occupied'] ? 'AB106' : 'AB109');
+
+          return Card(
+            child: ListTile(
+              dense: true,
+              title: Row(
+                children: [
+                  Text(point.id, style: const TextStyle(fontSize: 13)),
+                  if (isDeadlocked) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: stats['ab106_occupied']
+                            ? Colors.deepOrange
+                            : Colors.red,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        deadlockReason,
+                        style: const TextStyle(
+                          fontSize: 8,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              subtitle: Text(
+                  '${point.position.name.toUpperCase()} '
+                  '${point.locked ? '(LOCKED)' : '(UNLOCKED)'}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDeadlocked
+                        ? (stats['ab106_occupied']
+                            ? Colors.deepOrange
+                            : Colors.red)
+                        : Colors.black,
+                  )),
+              trailing: Icon(
+                point.locked ? Icons.lock : Icons.lock_open,
+                size: 16,
+                color: isDeadlocked
+                    ? (stats['ab106_occupied']
+                        ? Colors.deepOrange
+                        : Colors.red)
+                    : (point.locked ? Colors.red : Colors.green),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildRouteReservationsSection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Active Reservations',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        ...controller.routeReservations.values.map((reservation) {
+          final isPendingCancellation =
+              controller.isRoutePendingCancellation(reservation.signalId);
+          return Card(
+            child: ListTile(
+              dense: true,
+              leading: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: isPendingCancellation ? Colors.orange : Colors.yellow,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              title: Text(
+                  '${reservation.signalId} -> ${reservation.trainId.replaceAll('T', '')}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isPendingCancellation
+                        ? Colors.orange
+                        : Colors.brown,
+                  )),
+              subtitle: Text(
+                  'Blocks: ${reservation.reservedBlocks.join(', ')}',
+                  style: const TextStyle(fontSize: 10)),
+              trailing: isPendingCancellation
+                  ? const Icon(Icons.access_time,
+                      size: 16, color: Colors.orange)
+                  : null,
+            ),
+          );
+        }),
+        if (controller.routeReservations.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text('No active route reservations',
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildEventLogSection(TerminalStationController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Event Log',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Card(
+          child: SizedBox(
+            height: 180,
+            child: ListView.builder(
+              itemCount: controller.eventLog.length,
+              itemBuilder: (context, index) {
+                final event = controller.eventLog[index];
+                Color textColor = Colors.white;
+                if (event.contains('ERROR') || event.contains('Error')) {
+                  textColor = Colors.redAccent;
+                } else if (event.contains('WARN') || event.contains('Warning')) {
+                  textColor = Colors.orangeAccent;
+                } else if (event.contains('INFO') || event.contains('Info')) {
+                  textColor = Colors.blueAccent;
+                }
+                return Text(
+                  event,
+                  style: TextStyle(
+                      fontSize: 10,
+                      color: textColor,
+                      fontFamily: 'monospace'),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeAndDateSection(TerminalStationController controller) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Text(
+              controller.getCurrentTime(),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              controller.getCurrentDate(),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Simulation Running Time',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    controller.getFormattedRunningTime(),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                      color: Colors.blue,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsSection(TerminalStationController controller) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Quick Actions',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => controller.toggleSignalsVisibility(),
+                  icon: Icon(
+                    controller.signalsVisible
+                        ? Icons.traffic
+                        : Icons.traffic_outlined,
+                    size: 16,
+                  ),
+                  label: Text(
+                    'Signals: ${controller.signalsVisible ? 'ON' : 'OFF'}',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        controller.signalsVisible ? Colors.green : Colors.grey,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => controller.toggleAxleCounterVisibility(),
+                  icon: Icon(
+                    controller.axleCountersVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    size: 16,
+                  ),
+                  label: Text(
+                    'Axle Counters: ${controller.axleCountersVisible ? 'ON' : 'OFF'}',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: controller.axleCountersVisible
+                        ? Colors.purple
+                        : Colors.grey,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => controller.toggleMiniMapVisibility(),
+                  icon: Icon(
+                    controller.miniMapVisible ? Icons.map : Icons.map_outlined,
+                    size: 16,
+                  ),
+                  label: Text(
+                    'Mini Map: ${controller.miniMapVisible ? 'ON' : 'OFF'}',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        controller.miniMapVisible ? Colors.blue : Colors.grey,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      controller.toggleDotMatrixDisplayVisibility(),
+                  icon: Icon(
+                    controller.dotMatrixDisplayVisible
+                        ? Icons.grid_on
+                        : Icons.grid_off,
+                    size: 16,
+                  ),
+                  label: Text(
+                    'Train Info: ${controller.dotMatrixDisplayVisible ? 'ON' : 'OFF'}',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: controller.dotMatrixDisplayVisible
+                        ? Colors.orange
+                        : Colors.grey,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => controller.resetACE(),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Reset ACE',
+                      style: TextStyle(fontSize: 11)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.cleaning_services, size: 16),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'AB104',
+                      child: Text('Reset AB104'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'AB106',
+                      child: Text('Reset AB106'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'AB109',
+                      child: Text('Reset AB109'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'AB111',
+                      child: Text('Reset AB111'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'AB105',
+                      child: Text('Reset AB105'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'AB100',
+                      child: Text('Reset AB100'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'AB108',
+                      child: Text('Reset AB108'),
+                    ),
+                  ],
+                  onSelected: (abId) => controller.resetIndividualAB(abId),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cleaning_services,
+                            size: 16, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          'Reset AB',
+                          style: TextStyle(fontSize: 11, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _exportLayout(controller),
+                  icon: const Icon(Icons.download, size: 16),
+                  label: const Text('Export XML',
+                      style: TextStyle(fontSize: 11)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRelayRackSection(TerminalStationController controller) {
+    if (!controller.relayRackVisible) return const SizedBox.shrink();
+    return const RelayRackPanel();
+  }
+
+  Widget _buildMiniMapToggleRow(TerminalStationController controller) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            controller.miniMapVisible ? Icons.map : Icons.map_outlined,
+            color: controller.miniMapVisible ? Colors.blue : Colors.grey,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'Mini Map',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Switch(
+            value: controller.miniMapVisible,
+            onChanged: (_) => controller.toggleMiniMapVisibility(),
+            activeColor: Colors.blue,
+            activeTrackColor: Colors.blue.withOpacity(0.4),
+            inactiveThumbColor: Colors.grey,
+            inactiveTrackColor: Colors.grey.withOpacity(0.4),
+          ),
+        ],
       ),
     );
   }

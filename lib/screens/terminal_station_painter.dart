@@ -1537,21 +1537,44 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
 
     final dashPath = Path();
     final glowPath = Path();
-    double currentX = block.startX;
     const dashLength = 15.0;
     const gapLength = 5.0;
 
-    // Draw dashed line with glow effect
-    while (currentX < block.endX) {
-      dashPath.moveTo(currentX, block.y + reservationOffset);
-      dashPath.lineTo(math.min(currentX + dashLength, block.endX),
-          block.y + reservationOffset);
+    if (block.isAngled) {
+      final start = block.startPoint;
+      final end = block.endPoint;
+      final direction = end - start;
+      final length = direction.distance;
+      if (length > 0) {
+        final unit = direction / length;
+        final perp = Offset(-unit.dy, unit.dx) * reservationOffset;
+        double current = 0.0;
+        while (current < length) {
+          final dashStart = start + unit * current + perp;
+          final dashEnd = start +
+              unit * math.min(current + dashLength, length) +
+              perp;
+          dashPath.moveTo(dashStart.dx, dashStart.dy);
+          dashPath.lineTo(dashEnd.dx, dashEnd.dy);
+          glowPath.moveTo(dashStart.dx, dashStart.dy);
+          glowPath.lineTo(dashEnd.dx, dashEnd.dy);
+          current += dashLength + gapLength;
+        }
+      }
+    } else {
+      double currentX = block.startX;
+      // Draw dashed line with glow effect
+      while (currentX < block.endX) {
+        dashPath.moveTo(currentX, block.y + reservationOffset);
+        dashPath.lineTo(math.min(currentX + dashLength, block.endX),
+            block.y + reservationOffset);
 
-      glowPath.moveTo(currentX, block.y + reservationOffset);
-      glowPath.lineTo(math.min(currentX + dashLength, block.endX),
-          block.y + reservationOffset);
+        glowPath.moveTo(currentX, block.y + reservationOffset);
+        glowPath.lineTo(math.min(currentX + dashLength, block.endX),
+            block.y + reservationOffset);
 
-      currentX += dashLength + gapLength;
+        currentX += dashLength + gapLength;
+      }
     }
 
     // Draw glow first, then main line
@@ -1572,14 +1595,74 @@ class TerminalStationPainter extends CustomPainter with CollisionVisualEffects {
   }
 
   void _drawTracks(Canvas canvas) {
-    // FIXED: Dynamically draw ALL blocks in the expanded 7000×1200 network
+    // FIXED: Dynamically draw ALL blocks in the expanded 7000?1200 network
     for (var block in controller.blocks.values) {
       if (block.id.startsWith('crossover')) {
         continue; // Skip crossovers, draw them separately
       }
-      _drawBlock(canvas, block);
+      if (block.isAngled) {
+        _drawAngledBlock(canvas, block);
+      } else {
+        _drawBlock(canvas, block);
+      }
     }
     _drawCrossoverTrack(canvas);
+  }
+
+  void _drawAngledBlock(Canvas canvas, BlockSection block) {
+    final blockPaint = Paint()
+      ..color = block.occupied
+          ? themeData.trackOccupiedColor.withOpacity(0.3)
+          : themeData.trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 30;
+
+    final start = block.startPoint;
+    final end = block.endPoint;
+    canvas.drawLine(start, end, blockPaint);
+
+    final railColor = controller.isTractionOnAt(
+            (block.startX + block.endX) / 2)
+        ? themeData.railColor
+        : Colors.red;
+    final outerRailPaint = Paint()
+      ..color = railColor
+      ..strokeWidth = 3 * themeData.strokeWidthMultiplier
+      ..strokeCap = StrokeCap.round;
+    final innerRailPaint = Paint()
+      ..color = railColor
+      ..strokeWidth = 2 * themeData.strokeWidthMultiplier
+      ..strokeCap = StrokeCap.round;
+
+    const railSpacing = 12.0;
+    final direction = end - start;
+    final length = direction.distance;
+    if (length == 0) {
+      return;
+    }
+    final unit = direction / length;
+    final perp = Offset(-unit.dy, unit.dx);
+
+    final outerOffset = perp * (railSpacing / 2 + 8);
+    final innerOffset = perp * (railSpacing / 2 - 8);
+
+    canvas.drawLine(start + outerOffset, end + outerOffset, outerRailPaint);
+    canvas.drawLine(start + innerOffset, end + innerOffset, innerRailPaint);
+    canvas.drawLine(start - innerOffset, end - innerOffset, innerRailPaint);
+    canvas.drawLine(start - outerOffset, end - outerOffset, outerRailPaint);
+
+    final sleeperPaint = Paint()
+      ..color = themeData.sleeperColor
+      ..strokeWidth = 6 * themeData.strokeWidthMultiplier;
+    for (double d = 0; d <= length; d += 15) {
+      final center = start + unit * d;
+      final sleeperHalf = perp * 12;
+      canvas.drawLine(
+        center - sleeperHalf,
+        center + sleeperHalf,
+        sleeperPaint,
+      );
+    }
   }
 
   void _drawBlock(Canvas canvas, BlockSection block) {

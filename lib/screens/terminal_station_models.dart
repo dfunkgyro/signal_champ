@@ -106,6 +106,7 @@ class BlockSection {
   double startX;  // Made mutable for edit mode
   double endX;    // Made mutable for edit mode
   double y;       // Made mutable for edit mode
+  double endY;    // Made mutable for edit mode (angled blocks)
   bool occupied;
   String? occupyingTrainId;
 
@@ -119,11 +120,12 @@ class BlockSection {
     required this.startX,
     required this.endX,
     required this.y,
+    double? endY,
     this.occupied = false,
     this.occupyingTrainId,
     this.primaryDirection,
     this.isBidirectional = false,
-  });
+  }) : endY = endY ?? y;
 
   /// Get the guideway direction for this block
   GuidewayDirection? get guidewayDirection => primaryDirection?.guidewayDirection;
@@ -141,24 +143,42 @@ class BlockSection {
   }
 
   bool containsPosition(double x, double y) {
-    // Check X range first
-    if (x < startX || x > endX) return false;
+    if (!isAngled) {
+      // Check X range first
+      if (x < startX || x > endX) return false;
 
-    // Crossover blocks (y=150 or y=200-250) need wider Y tolerance
-    // because trains cross diagonally between y=100 and y=300
-    // CRITICAL FIX: Increased from 100 to 110 to prevent trains escaping
-    // at y=300 (edge case where |200-300| = 100, which was NOT < 100)
-    if (name?.contains('crossover') ?? false) {
-      return (this.y - y).abs() <= 110;
+      // Crossover blocks (y=150 or y=200-250) need wider Y tolerance
+      // because trains cross diagonally between y=100 and y=300
+      // CRITICAL FIX: Increased from 100 to 110 to prevent trains escaping
+      // at y=300 (edge case where |200-300| = 100, which was NOT < 100)
+      if (name?.contains('crossover') ?? false) {
+        return (this.y - y).abs() <= 110;
+      }
+
+      // Regular blocks use standard 50-unit tolerance
+      return (this.y - y).abs() < 50;
     }
 
-    // Regular blocks use standard 50-unit tolerance
-    return (this.y - y).abs() < 50;
+    final start = startPoint;
+    final end = endPoint;
+    final projection = _projectPoint(Offset(x, y), start, end);
+    if (projection.t < 0.0 || projection.t > 1.0) return false;
+
+    final tolerance =
+        (name?.contains('crossover') ?? false) ? 110.0 : 25.0;
+    return (projection.point - Offset(x, y)).distance <= tolerance;
   }
 
+  Offset get startPoint => Offset(startX, y);
+  Offset get endPoint => Offset(endX, endY);
   double get centerX => startX + (endX - startX) / 2;
+  double get centerY => y + (endY - y) / 2;
   double get x => startX;
-  double get length => endX - startX;
+  double get length =>
+      (endPoint - startPoint).distance;
+  bool get isAngled => (endY - y).abs() > 0.01;
+  double get angleRadians =>
+      math.atan2(endY - y, endX - startX);
   BlockState get state => occupied ? BlockState.occupied : BlockState.clear;
   List<String> get connectedBlocks => const [];
 
@@ -167,6 +187,53 @@ class BlockSection {
     startX = value;
     endX = value + currentLength;
   }
+
+  Offset positionAtDistance(double distance, {bool fromStart = true}) {
+    final start = startPoint;
+    final end = endPoint;
+    final direction = end - start;
+    final total = direction.distance;
+    if (total == 0) return start;
+    final unit = direction / total;
+    final along = fromStart ? distance : total - distance;
+    return start + (unit * along);
+  }
+
+  Offset projectPosition(Offset position) {
+    final projection = _projectPoint(position, startPoint, endPoint);
+    return projection.point;
+  }
+
+  double projectT(Offset position) {
+    final projection = _projectPoint(position, startPoint, endPoint);
+    return projection.t;
+  }
+
+  _Projection _projectPoint(
+    Offset point,
+    Offset start,
+    Offset end,
+  ) {
+    final length = (end - start).distance;
+    if (length == 0) {
+      return _Projection(point: start, t: 0);
+    }
+    final t = ((point.dx - start.dx) * (end.dx - start.dx) +
+            (point.dy - start.dy) * (end.dy - start.dy)) /
+        (length * length);
+    final clamped = t.clamp(0.0, 1.0);
+    final projection =
+        Offset(start.dx + clamped * (end.dx - start.dx),
+            start.dy + clamped * (end.dy - start.dy));
+    return _Projection(point: projection, t: clamped);
+  }
+}
+
+class _Projection {
+  final Offset point;
+  final double t;
+
+  const _Projection({required this.point, required this.t});
 }
 
 class Crossover {

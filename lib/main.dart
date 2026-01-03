@@ -25,10 +25,13 @@ import 'weather_system.dart';
 import 'achievements_service.dart';
 import 'custom_bottom_nav.dart';
 import '../screens/terminal_station_screen.dart';
+import '../screens/builder_mode_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/analytics_screen.dart';
 import '../screens/crash_reports_screen.dart';
 import '../controllers/terminal_station_controller.dart';
+import '../builder/providers/terminal_editor_provider.dart';
+import '../builder/providers/supabase_status_provider.dart';
 
 Future<void> main() async {
   // Wrap entire app initialization with error handling
@@ -267,6 +270,10 @@ class RailChampApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AchievementsService(client)),
         ChangeNotifierProvider(create: (_) => ScenarioService(client)),
         ChangeNotifierProvider(create: (_) => TerminalStationController()),
+        ChangeNotifierProvider(create: (_) => TerminalEditorProvider()),
+        ChangeNotifierProvider(
+          create: (_) => SupabaseStatusProvider()..checkConnection(),
+        ),
         ChangeNotifierProvider(
           create: (_) {
             final intentService = IntentService();
@@ -439,65 +446,78 @@ class _MainScreenState extends State<MainScreen> {
     try {
       // STEP 0: Request necessary permissions
       try {
-        debugPrint('  → Requesting app permissions...');
+        debugPrint('  -> Requesting app permissions...');
         await _requestPermissions();
-        debugPrint('  ✅ Permissions checked');
+        debugPrint('  OK: Permissions checked');
       } catch (e) {
-        debugPrint('  ⚠️ Permission request failed (non-critical): $e');
+        debugPrint('  WARN: Permission request failed (non-critical): $e');
       }
 
-      // STEP 1: Initialize Supabase presence (if available)
+      // STEP 1: Sync user settings (local/Supabase) into widget preferences
       try {
-        debugPrint('  → Initializing Supabase presence...');
+        debugPrint('  -> Loading user settings...');
+        final authService = context.read<AuthService>();
+        final prefsService = context.read<WidgetPreferencesService>();
+        prefsService.attachAuthService(authService);
+        final settings = await authService.loadSettings();
+        await prefsService.applySettings(settings);
+        debugPrint('  OK: User settings loaded');
+      } catch (e) {
+        debugPrint('  WARN: User settings load failed (non-critical): $e');
+      }
+
+      // STEP 2: Initialize Supabase presence (if available)
+      try {
+        debugPrint('  -> Initializing Supabase presence...');
         final supabaseService = context.read<SupabaseService>();
         await supabaseService.initializePresence();
-        debugPrint('  ✅ Supabase presence initialized');
+        debugPrint('  OK: Supabase presence initialized');
 
         // Wait for presence to stabilize
         await Future.delayed(const Duration(milliseconds: 200));
       } catch (e) {
-        debugPrint('  ⚠️ Supabase presence failed (non-critical): $e');
+        debugPrint('  WARN: Supabase presence failed (non-critical): $e');
       }
 
-      // STEP 2: Load achievements
+      // STEP 3: Load achievements
       try {
-        debugPrint('  → Loading achievements...');
+        debugPrint('  -> Loading achievements...');
         final achievements = context.read<AchievementsService>();
         await achievements.loadEarnedAchievements();
-        debugPrint('  ✅ Achievements loaded');
+        debugPrint('  OK: Achievements loaded');
 
         // Small delay before next service
         await Future.delayed(const Duration(milliseconds: 150));
       } catch (e) {
-        debugPrint('  ⚠️ Achievements loading failed (non-critical): $e');
+        debugPrint('  WARN: Achievements loading failed (non-critical): $e');
       }
 
-      // STEP 3: Start connection monitoring
+      // STEP 4: Start connection monitoring
       try {
-        debugPrint('  → Starting connection monitoring...');
+        debugPrint('  -> Starting connection monitoring...');
         final connectionService = context.read<ConnectionService>();
         await connectionService.checkAllConnections();
-        debugPrint('  ✅ Connection monitoring started');
+        debugPrint('  OK: Connection monitoring started');
 
         // Small delay before analytics
         await Future.delayed(const Duration(milliseconds: 100));
       } catch (e) {
-        debugPrint('  ⚠️ Connection monitoring failed (non-critical): $e');
+        debugPrint('  WARN: Connection monitoring failed (non-critical): $e');
       }
 
-      // STEP 4: Log app open event (analytics - low priority)
+      // STEP 5: Log app open event (analytics - low priority)
       try {
-        debugPrint('  → Logging app open event...');
+        debugPrint('  -> Logging app open event...');
         final analyticsService = context.read<AnalyticsService>();
         await analyticsService.logEvent('app_opened');
-        debugPrint('  ✅ App open event logged');
+        debugPrint('  OK: App open event logged');
       } catch (e) {
-        debugPrint('  ⚠️ Analytics logging failed (non-critical): $e');
+        debugPrint('  WARN: Analytics logging failed (non-critical): $e');
       }
 
-      debugPrint('✅ MainScreen: All services initialized successfully\n');
+      debugPrint('MainScreen: All services initialized successfully');
     } catch (e) {
-      debugPrint('❌ MainScreen: Service initialization error: $e');
+      debugPrint('MainScreen: Service initialization error: $e');
     }
   }
 
@@ -506,10 +526,14 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: const [
-          TerminalStationScreen(), // ✅ Terminal station with crossover!
-          AnalyticsScreen(), // 📊 Analytics tab
-          SettingsScreen(), // ⚙️ Settings tab
+        children: [
+          const TerminalStationScreen(),
+          BuilderModeScreen(
+            onSwitchToSimulation: () =>
+                setState(() => _currentIndex = 0),
+          ),
+          const AnalyticsScreen(),
+          const SettingsScreen(),
         ],
       ),
       bottomNavigationBar: CustomBottomNav(
